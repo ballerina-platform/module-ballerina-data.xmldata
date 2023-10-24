@@ -457,13 +457,103 @@ function testXmlStringToRecord41() returns error? {
 
 // Negative cases
 type DataN1 record {|
-    string A;
+    int A;
 |};
 
 
 @test:Config{}
 function testXmlStringToRecordNegative1() {
     string xmlStr1 = "<Data><B></B></Data>";
-    DataN1|error rec1 = trap fromXmlStringWithType(xmlStr1);
+    DataN1|error rec1 = fromXmlStringWithType(xmlStr1);
     test:assertEquals((<error>rec1).message(), "Required field A not present in XML");
+}
+
+@test:Config{}
+function testXmlStringToRecordNegative2() {
+    string xmlStr1 = "<Data><A>1.0</A></Data>";
+    DataN1|error rec1 = fromXmlStringWithType(xmlStr1);
+    test:assertEquals((<error>rec1).message(), "'string' value '1.0' cannot be converted to 'int'");
+}
+
+type DataN2 int;
+
+@test:Config{}
+function testXmlStringToRecordNegative3() {
+    string xmlStr1 = "<Data><A>1.0</A></Data>";
+    DataN2|error rec1 = fromXmlStringWithType(xmlStr1);
+    test:assertEquals((<error>rec1).message(), "unsupported type expected record type but found 'DataN2'");
+}
+
+@test:Config{}
+function testXmlStringToRecordNegative4() {
+    string xmlStr1 = "<Data><A>1</A><A>2</A></Data>";
+    DataN1|error rec1 = fromXmlStringWithType(xmlStr1);
+    test:assertEquals((<error>rec1).message(), "Incompatible type expected 'array' type but found 'int' for field 'A'");
+}
+
+type DataN3 record {|
+    int[4] A;
+|};
+
+@test:Config{}
+function testXmlStringToRecordNegative5() {
+    string xmlStr1 = "<Data><A>1</A><A>2</A><A>3</A></Data>";
+    DataN3|error rec1 = fromXmlStringWithType(xmlStr1);
+    test:assertEquals((<error>rec1).message(), "Array size is not compatible with the expected size");
+}
+
+type DataN4 record {|
+    string...;
+|};
+
+@test:Config{}
+function testXmlStringToRecordNegative6() {
+    string xmlStr1 = "<Data><A>1</A><A>2</A><A>3</A></Data>";
+    DataN4|error rec1 = fromXmlStringWithType(xmlStr1);
+    test:assertEquals((<error>rec1).message(), "Expected an 'string' type for the field 'A' found 'array' value");
+}
+
+@Name {
+    value: "Space"
+}
+type DataN5 record {|
+    string A;
+|};
+
+@test:Config{}
+function testXmlStringToRecordNegative7() {
+    string xmlStr1 = "<Data><A>1</A></Data>";
+    DataN5|error rec1 = fromXmlStringWithType(xmlStr1);
+    test:assertEquals((<error>rec1).message(), "the record type name `Space` mismatch with given XML name `Data`");
+}
+
+@Namespace {
+    uri: "www.example.com"
+}
+type DataN6 record {|
+    string A;
+|};
+
+@test:Config{}
+function testXmlStringToRecordNegative8() {
+    string xmlStr1 = string `<Data xmlns="www.test.com"><A>1</A></Data>`;
+    DataN6|error rec1 = fromXmlStringWithType(xmlStr1);
+    test:assertEquals((<error>rec1).message(), "namespace mismatched for the type: DataN6");
+}
+
+type DataN7 record {|
+    @Name {
+        value: "ns1:A"
+    }
+    @Namespace {
+        uri: "www.example.com"
+    }
+    string A;
+|};
+
+@test:Config{}
+function testXmlStringToRecordNegative9() {
+    string xmlStr1 = string `<Data xmlns:ns1="www.test.com"><ns1:A>1</ns1:A></Data>`;
+    DataN7|error rec1 = fromXmlStringWithType(xmlStr1);
+    test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: A");
 }

@@ -58,27 +58,9 @@ public isolated function fromXmlWithType(xml v, Options options = {}, typedesc<a
 
 # A Parser a xml string value with projection
 #
-# + s - Source XML string value 
+# + s - Source XML string value or byte[] or bytestrem
 # + options - Options to be used for filtering in the projection 
 # + t - Target type to be used for filtering in the projection
 # + return - On success, returns the given target type value, else returns an `xml:Error` 
-public isolated function fromXmlStringWithType(string s, Options options = {}, typedesc<anydata> t = <>)
-        returns t|ConversionError = @java:Method {'class: "io.ballerina.stdlib.data.xml.Native"} external;
-
-# Parse a xml byte array with projection
-#
-# + v - Byte array of xml
-# + options - Options to be used for filtering in the projection
-# + t - Target type to be used for filtering in the projection
-# + return - On success, returns the given target type value, else returns an `xml:Error` 
-public isolated function fromXmlByteArrayWithType(byte[] v, Options options = {}, typedesc<anydata> t = <>)
-        returns t|ConversionError = @java:Method {'class: "io.ballerina.stdlib.data.xml.Native"} external;
-
-# Parse a xml byte stream with projection
-#
-# + v - Byte stream of json value
-# + options - Options to be used for filtering in the projection
-# + t - Target type to be used for filtering in the projection
-# + return - On success, returns the given target type value, else returns an `xml:Error` 
-public isolated function fromXmlByteStreamWithType(stream<byte[], error?> v, Options options = {}, typedesc<anydata> t = <>)
+public isolated function fromXmlStringWithType(string|byte[]|stream<byte[], error?> s, Options options = {}, typedesc<anydata> t = <>)
         returns t|ConversionError = @java:Method {'class: "io.ballerina.stdlib.data.xml.Native"} external;

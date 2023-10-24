@@ -55,26 +55,29 @@ public class FromString {
 
     private static Object fromStringWithType(BString string, Type expType) {
         String value = string.getValue();
-
-        switch (expType.getTag()) {
-            case TypeTags.INT_TAG:
-                return stringToInt(value);
-            case TypeTags.FLOAT_TAG:
-                return stringToFloat(value);
-            case TypeTags.DECIMAL_TAG:
-                return stringToDecimal(value);
-            case TypeTags.STRING_TAG:
-                return string;
-            case TypeTags.BOOLEAN_TAG:
-                return stringToBoolean(value);
-            case TypeTags.NULL_TAG:
-                return stringToNull(value);
-            case TypeTags.UNION_TAG:
-                return stringToUnion(string, (UnionType) expType);
-            case TypeTags.TYPE_REFERENCED_TYPE_TAG:
-                return fromStringWithType(string, ((ReferenceType) expType).getReferredType());
-            default:
-                return returnError(value, expType.toString());
+        try {
+            switch (expType.getTag()) {
+                case TypeTags.INT_TAG:
+                    return stringToInt(value);
+                case TypeTags.FLOAT_TAG:
+                    return stringToFloat(value);
+                case TypeTags.DECIMAL_TAG:
+                    return stringToDecimal(value);
+                case TypeTags.STRING_TAG:
+                    return string;
+                case TypeTags.BOOLEAN_TAG:
+                    return stringToBoolean(value);
+                case TypeTags.NULL_TAG:
+                    return stringToNull(value);
+                case TypeTags.UNION_TAG:
+                    return stringToUnion(string, (UnionType) expType);
+                case TypeTags.TYPE_REFERENCED_TYPE_TAG:
+                    return fromStringWithType(string, ((ReferenceType) expType).getReferredType());
+                default:
+                    return returnError(value, expType.toString());
+            }
+        } catch (NumberFormatException e) {
+            return returnError(value, expType.toString());
         }
     }
 

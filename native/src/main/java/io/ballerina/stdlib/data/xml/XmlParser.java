@@ -317,7 +317,10 @@ public class XmlParser {
             case TypeTags.UNION_TAG:
                 return convertStringToExpType(value, expType);
             case TypeTags.ANYDATA_TAG:
+            case TypeTags.JSON_TAG:
                 return convertStringToExpType(value, PredefinedTypes.TYPE_STRING);
+            case TypeTags.TYPE_REFERENCED_TYPE_TAG:
+                return convertStringToExpType(value, TypeUtils.getReferredType(expType));
         }
         throw DataUtils.getXmlError("Invalid rest type '" + expType.getName() + "'");
     }
@@ -527,7 +530,7 @@ public class XmlParser {
 
         if (restType.getTag() != TypeTags.ARRAY_TAG) {
             throw DataUtils.getXmlError("Expected an '" + restType + "' type for the field '" + elemName
-                    + "' found 'array' type");
+                    + "' found 'array' value");
         }
         BArray tempArray = ValueCreator.createArrayValue(definedAnyDataArrayType);
         tempArray.append(currentElement);
@@ -595,8 +598,8 @@ public class XmlParser {
             if (!key.contains(Constants.FIELD) && key.endsWith(Constants.NAME)) {
                 String name = ((BMap<BString, Object>) annotations.get(annotationsKey)).get(Constants.VALUE).toString();
                 if (!name.equals(elementName)) {
-                    throw DataUtils.getXmlError("the record type name: " + name +
-                            " mismatch with given XML name: " + elementName);
+                    throw DataUtils.getXmlError("the record type name `" + name +
+                            "` mismatch with given XML name `" + elementName + "`");
                 }
                 return name;
             }

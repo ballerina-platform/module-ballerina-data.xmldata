@@ -8,6 +8,8 @@ import io.ballerina.runtime.api.values.BTypedesc;
 import io.ballerina.runtime.api.values.BXml;
 import io.ballerina.stdlib.data.utils.DataUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 
 /**
@@ -17,21 +19,23 @@ import java.io.StringReader;
  */
 public class Native {
 
-    public static Object fromXmlByteArrayWithType(BArray byteArr, BMap<BString, Object> map, BTypedesc typed) {
-        return null;
-    }
-
-    public static Object fromXmlByteStreamWithType(BStream byteStream, BMap<BString, Object> map, BTypedesc typed) {
-        return null;
-    }
-
     public static Object fromXmlWithType(BXml xml, BMap<BString, Object> map, BTypedesc typed) {
         return null;
     }
 
-    public static Object fromXmlStringWithType(BString xml, BMap<BString, Object> map, BTypedesc typed) {
+    public static Object fromXmlStringWithType(Object xml, BMap<BString, Object> map, BTypedesc typed) {
         try {
-            return XmlParser.parse(new StringReader(xml.getValue()), typed.getDescribingType());
+            if (xml instanceof BString) {
+                return XmlParser.parse(new StringReader(((BString) xml).getValue()), typed.getDescribingType());
+            } else if (xml instanceof BArray) {
+                byte[] bytes = ((BArray) xml).getBytes();
+                return XmlParser.parse(
+                        new InputStreamReader(new ByteArrayInputStream(bytes)), typed.getDescribingType());
+            } else if (xml instanceof BStream) {
+                return null;
+            } else {
+                return DataUtils.getError("invalid input type");
+            }
         } catch (Exception e) {
             return DataUtils.getError(e.getMessage());
         }
