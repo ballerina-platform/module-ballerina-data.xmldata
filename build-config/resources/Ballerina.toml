@@ -1,0 +1,15 @@
+[package]
+org = "ballerina"
+name = "data"
+version = "@toml.version@"
+authors = ["Ballerina"]
+keywords = ["xml", "json"]
+repository = "https://github.com/hasithaa/module-ballerina-data"
+license = ["Apache-2.0"]
+distribution = "2201.5.0"
+
+[[platform.java11.dependency]]
+groupId = "io.ballerina.stdlib"
+artifactId = "data-native"
+version = "@toml.version@"
+path = "../native/build/libs/data-native-@project.version@.jar"
