@@ -327,7 +327,7 @@ public class XmlParser {
 
     private Object buildDocument(XmlParserData xmlParserData) {
         validateRequiredFields(xmlParserData.siblings, xmlParserData);
-        return xmlParserData.nodesStack.peek();
+        return currentNode;
     }
 
     private void endElement(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
@@ -386,6 +386,7 @@ public class XmlParser {
             }
             String restStartPoint = lastElement.orElseGet(() -> xmlParserData.rootElement);
             xmlParserData.restFieldsPoints.push(restStartPoint);
+            xmlParserData.nodesStack.push(currentNode);
             currentNode = (BMap<BString, Object>) parseRestField(xmlParserData);
             return;
         }
@@ -515,7 +516,6 @@ public class XmlParser {
             } else {
                 currentNode.put(currentFieldName, ValueCreator.createMapValue(PredefinedTypes.TYPE_ANYDATA));
             }
-            xmlParserData.nodesStack.add(currentNode);
             return currentFieldName;
         }
 
@@ -528,7 +528,7 @@ public class XmlParser {
             return currentFieldName;
         }
 
-        if (restType.getTag() != TypeTags.ARRAY_TAG) {
+        if (!isArrayValueAssignable(restType)) {
             throw DataUtils.getXmlError("Expected an '" + restType + "' type for the field '" + elemName
                     + "' found 'array' value");
         }
@@ -542,6 +542,11 @@ public class XmlParser {
         tempArray.append(temp);
         currentNode = temp;
         return currentFieldName;
+    }
+
+    private boolean isArrayValueAssignable(Type type) {
+        int typeTag = type.getTag();
+        return typeTag == TypeTags.ARRAY_TAG || typeTag == TypeTags.ANYDATA_TAG || typeTag == TypeTags.JSON_TAG;
     }
 
     private void endElementRest(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
