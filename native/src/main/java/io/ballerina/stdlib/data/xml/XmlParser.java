@@ -736,7 +736,7 @@ public class XmlParser {
             }
 
             currentNode.put(StringUtils.fromString(field.getFieldName()), convertStringToExpType(
-                    StringUtils.fromString(xmlStreamReader.getAttributeValue(0)), field.getFieldType()));
+                    StringUtils.fromString(xmlStreamReader.getAttributeValue(i)), field.getFieldType()));
         }
     }
 
