@@ -53,10 +53,10 @@ public class Native {
 
                     Object result = XmlParser.parse(new InputStreamReader(byteBlockSteam), typed.getDescribingType());
                     future.complete(result);
+                    return null;
                 } catch (Exception e) {
                     return DataUtils.getError("Error occurred while reading the stream: " + e.getMessage());
                 }
-                return DataUtils.getError("Error occurred while reading the stream");
             } else {
                 return DataUtils.getError("invalid input type");
             }
