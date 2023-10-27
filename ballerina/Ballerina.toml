@@ -4,11 +4,12 @@ name = "data"
 version = "0.1.0"
 authors = ["Ballerina"]
 keywords = ["xml"]
-repository = "https://github.com/hasithaa/module-ballerina-data"
+repository = "https://github.com/ballerina-platform/module-ballerina-data.xml"
 license = ["Apache-2.0"]
 distribution = "2201.8.1"
+export = ["data.xml"]
 
-[[platform.java17.dependency]]
+[[platform.java11.dependency]]
 groupId = "io.ballerina.stdlib"
 artifactId = "data-native"
 version = "0.1.0"
