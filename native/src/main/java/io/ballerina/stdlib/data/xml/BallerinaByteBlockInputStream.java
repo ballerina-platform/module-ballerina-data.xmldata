@@ -140,7 +140,6 @@ public class BallerinaByteBlockInputStream extends InputStream {
             public void notifySuccess(Object result) {
                 if (result == null) {
                     done.set(true);
-                    // futureResultConsumer.accept(parser);
                     currentChunk = new byte[0];
                     semaphore.release();
                     return;

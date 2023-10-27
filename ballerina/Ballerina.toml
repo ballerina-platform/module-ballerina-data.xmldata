@@ -1,6 +1,6 @@
 [package]
 org = "ballerina"
-name = "data"
+name = "data.xml"
 version = "0.1.0"
 authors = ["Ballerina"]
 keywords = ["xml"]
@@ -9,8 +9,8 @@ license = ["Apache-2.0"]
 distribution = "2201.8.1"
 export = ["data.xml"]
 
-[[platform.java11.dependency]]
+[[platform.java17.dependency]]
 groupId = "io.ballerina.stdlib"
 artifactId = "data-native"
 version = "0.1.0"
-path = "../native/build/libs/data-native-0.1.0-SNAPSHOT.jar"
+path = "../native/build/libs/data-xml-native-0.1.0-SNAPSHOT.jar"
