@@ -76,5 +76,5 @@ release {
 }
 
 task build {
-    dependsOn('data-ballerina:build')
+    dependsOn('data-xml-ballerina:build')
 }
