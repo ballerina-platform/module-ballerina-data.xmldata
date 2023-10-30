@@ -13,4 +13,4 @@ export = ["data.xml"]
 groupId = "io.ballerina.stdlib"
 artifactId = "data-native"
 version = "@toml.version@"
-path = "../native/build/libs/data-native-@project.version@.jar"
+path = "../native/build/libs/data-xml-native-@project.version@.jar"

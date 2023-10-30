@@ -1,0 +1,38 @@
+<invoice>
+    <p:products xmlns:p="http://www.example.com/products">
+        <p:product id="1" name="Product 1">
+            <p:description>This is the description for Product 1.</p:description>
+            <p:price currency="USD">57.70</p:price>
+            <p:category>Home and Garden</p:category>
+        </p:product>
+        <p:product id="2" name="Product 2">
+            <p:description>This is the description for Product 2.</p:description>
+            <p:price currency="USD">63.36</p:price>
+            <p:category>Books</p:category>
+        </p:product>
+    </p:products>
+    <c:customers xmlns:c="http://www.example.com/customer">
+        <c:customer id="C001">
+            <c:name>KLLBCQVN0Y</c:name>
+            <c:email>kllbcqvn0y@example.com</c:email>
+            <c:phone>569-5052</c:phone>
+            <c:address>
+                <c:street>MZ738SI4DV St.</c:street>
+                <c:city>Newport</c:city>
+                <c:state>NY</c:state>
+                <c:zip>19140</c:zip>
+            </c:address>
+        </c:customer>
+        <c:customer id="C002">
+            <c:name>T8VQU3X0QH</c:name>
+            <c:email>t8vqu3x0qh@example.com</c:email>
+            <c:phone>674-2864</c:phone>
+            <c:address>
+                <c:street>ZI0TGK3BKG St.</c:street>
+                <c:city>Otherville</c:city>
+                <c:state>CA</c:state>
+                <c:zip>77855</c:zip>
+            </c:address>
+        </c:customer>
+    </c:customers>
+</invoice>
