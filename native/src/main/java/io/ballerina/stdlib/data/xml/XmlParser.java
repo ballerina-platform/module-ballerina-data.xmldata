@@ -233,7 +233,7 @@ public class XmlParser {
         BString bText = StringUtils.fromString(text);
         String fieldName = currentField.getFieldName();
         BString bFieldName = StringUtils.fromString(fieldName);
-        Type fieldType = currentField.getFieldType();
+        Type fieldType = TypeUtils.getReferredType(currentField.getFieldType());
         if (currentNode.containsKey(bFieldName)) {
             // Handle - <name>James <!-- FirstName --> Clark</name>
             if (!xmlParserData.siblings.get(
@@ -285,7 +285,7 @@ public class XmlParser {
             }
         }
 
-        Type restType = recordType.getRestFieldType();
+        Type restType = TypeUtils.getReferredType(recordType.getRestFieldType());
         if (restType == null) {
             return;
         }
@@ -495,7 +495,7 @@ public class XmlParser {
         String elemName = getElementName(xmlStreamReader);
         BString currentFieldName = StringUtils.fromString(elemName);
         String lastElement = getLastElementInSiblings(xmlParserData.siblings);
-        Type restType = xmlParserData.restTypes.peek();
+        Type restType = TypeUtils.getReferredType(xmlParserData.restTypes.peek());
 
         if (!xmlParserData.siblings.isEmpty() && lastElement != null
                 && !xmlParserData.siblings.getOrDefault(lastElement, true)) {
@@ -576,7 +576,7 @@ public class XmlParser {
         }
 
         BString bText = StringUtils.fromString(text);
-        Type restType = xmlParserData.restTypes.peek();
+        Type restType = TypeUtils.getReferredType(xmlParserData.restTypes.peek());
         // TODO: <name>James <!-- FirstName --> Clark</name>
         if (currentNode.get(currentFieldName) instanceof BArray) {
             ((BArray) currentNode.get(currentFieldName)).append(
@@ -637,9 +637,9 @@ public class XmlParser {
         for (BString annotationKey : annotations.getKeys()) {
             String keyStr = annotationKey.getValue();
             if (keyStr.contains(Constants.FIELD)) {
-                String elementName = keyStr.split("\\$field\\$\\.")[1].replaceAll("\\\\", "");
+                String fieldName = keyStr.split("\\$field\\$\\.")[1].replaceAll("\\\\", "");
                 Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
-                modifiedNames.put(elementName, getModifiedName(fieldAnnotation, elementName));
+                modifiedNames.put(fieldName, getModifiedName(fieldAnnotation, fieldName));
             }
         }
 
@@ -742,7 +742,7 @@ public class XmlParser {
 
     private Optional<Object> handleRecordRestType(XmlParserData xmlParserData, XMLStreamReader xmlStreamReader) {
         xmlParserData.currentField = null;
-        Type restType = xmlParserData.restTypes.peek();
+        Type restType = TypeUtils.getReferredType(xmlParserData.restTypes.peek());
         int restTypeTag = restType.getTag();
         String elementName = getElementName(xmlStreamReader);
         if (restTypeTag == TypeTags.RECORD_TYPE_TAG) {

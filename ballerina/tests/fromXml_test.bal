@@ -313,7 +313,7 @@ type RecRest6 record {|
     int[]...;
 |};
 
-public function main() returns error? {
+public function testXmlStringToRecord26() returns error? {
     string xmlStr = string `
     <Data>
         <A>1</A>
