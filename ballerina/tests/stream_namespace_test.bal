@@ -17,19 +17,23 @@ import ballerina/io;
 import ballerina/test;
 
 @Namespace {
-    uri: "http://www.example.com/products"
+    uri: "http://www.example.com/products",
+    prefix: "prod"
 }
-type ProductFull record {
+type ProductFullNS record {
     @Namespace {
-        uri: "http://www.example.com/products"
+        uri: "http://www.example.com/products",
+        prefix: "prod"
     }
     string description;
     @Namespace {
-        uri: "http://www.example.com/products"
+        uri: "http://www.example.com/products",
+        prefix: "prod"
     }
-    PriceFull price;
+    PriceFullNS price;
     @Namespace {
-        uri: "http://www.example.com/products"
+        uri: "http://www.example.com/products",
+        prefix: "prod"
     }
     string category;
     @Attribute
@@ -39,79 +43,91 @@ type ProductFull record {
 };
 
 @Namespace {
-    uri: "http://www.example.com/products"
+    uri: "http://www.example.com/products",
+    prefix: "prod"
 }
-type PriceFull record {
+type PriceFullNS record {
     decimal \#content;
     @Attribute
     string currency;
 };
 
 @Namespace {
-    uri: "http://www.example.com/products"
+    uri: "http://www.example.com/products",
+    prefix: "prod"
 }
-type ProductsFull record {
-    ProductFull[] product;
+type ProductsFullNS record {
+    ProductFullNS[] product;
 };
 
 @Namespace {
-    uri: "http://www.example.com/customer"
+    uri: "http://www.example.com/customer",
+    prefix: "cust"
 }
-type AddressFull record {
+type AddressFullNS record {
     @Namespace {
-        uri: "http://www.example.com/customer"
+        uri: "http://www.example.com/customer",
+        prefix: "cust"
     }
     string street;
     @Namespace {
-        uri: "http://www.example.com/customer"
+        uri: "http://www.example.com/customer",
+        prefix: "cust"
     }
     string city;
     @Namespace {
-        uri: "http://www.example.com/customer"
+        uri: "http://www.example.com/customer",
+        prefix: "cust"
     }
     string state;
     @Namespace {
-        uri: "http://www.example.com/customer"
+        uri: "http://www.example.com/customer",
+        prefix: "cust"
     }
     int zip;
 };
 
 @Namespace {
-    uri: "http://www.example.com/customer"
+    uri: "http://www.example.com/customer",
+    prefix: "cust"
 }
-type CustomerFull record {
+type CustomerFullNS record {
     @Namespace {
-        uri: "http://www.example.com/customer"
+        uri: "http://www.example.com/customer",
+        prefix: "cust"
     }
     string name;
     @Namespace {
-        uri: "http://www.example.com/customer"
+        uri: "http://www.example.com/customer",
+        prefix: "cust"
     }
     string email;
     @Namespace {
-        uri: "http://www.example.com/customer"
+        uri: "http://www.example.com/customer",
+        prefix: "cust"
     }
     string phone;
-    AddressFull address;
+    AddressFullNS address;
     @Attribute
     string id;
 };
 
 @Namespace {
-    uri: "http://www.example.com/customer"
+    uri: "http://www.example.com/customer",
+    prefix: "cust"
 }
-type CustomersFull record {
+type CustomersFullNS record {
     CustomerFull[] customer;
 };
 
 @Name {value: "invoice"}
-type InvoiceFull record {
+type InvoiceFullNS record {
     ProductsFull products;
     CustomersFull customers;
 };
 
 @test:Config
-function testDefaultNamespaceInvoiceFull() returns error? {
+function testNamespaceInvoiceFull() returns error? {
     stream<byte[], error?> dataStream = check io:fileReadBlocksAsStream("tests/resources/default_namespaced_invoice.xml");
     InvoiceFull invoice = check fromXmlStringWithType(dataStream);
 
@@ -151,3 +167,4 @@ function testDefaultNamespaceInvoiceFull() returns error? {
     test:assertEquals(invoice.customers.customer[1].address.state, "CA");
     test:assertEquals(invoice.customers.customer[1].address.zip, 77855);
 }
+

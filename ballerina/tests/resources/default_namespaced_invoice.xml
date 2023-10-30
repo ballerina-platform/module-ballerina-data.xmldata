@@ -11,14 +11,14 @@
             <description xmlns="http://www.example.com/products">This is the description for
                 Product 2.
             </description>
-            <price currency="USD" xmlns="http://www.example.com/products">63.36</price>
+            <price currency="LKR" xmlns="http://www.example.com/products">6312.36</price>
             <category xmlns="http://www.example.com/products">Books</category>
         </product>
     </products>
     <customers xmlns="http://www.example.com/customer">
         <customer id="C001" xmlns="http://www.example.com/customer">
-            <name xmlns="http://www.example.com/customer">KLLBCQVN0Y</name>
-            <email xmlns="http://www.example.com/customer">kllbcqvn0y@example.com</email>
+            <name xmlns="http://www.example.com/customer">John Doe</name>
+            <email xmlns="http://www.example.com/customer">john@example.com</email>
             <phone xmlns="http://www.example.com/customer">569-5052</phone>
             <address xmlns="http://www.example.com/customer">
                 <street xmlns="http://www.example.com/customer">MZ738SI4DV St.</street>
@@ -28,8 +28,8 @@
             </address>
         </customer>
         <customer id="C002" xmlns="http://www.example.com/customer">
-            <name xmlns="http://www.example.com/customer">T8VQU3X0QH</name>
-            <email xmlns="http://www.example.com/customer">t8vqu3x0qh@example.com</email>
+            <name xmlns="http://www.example.com/customer">Jane Doe</name>
+            <email xmlns="http://www.example.com/customer">jane@example.com</email>
             <phone xmlns="http://www.example.com/customer">674-2864</phone>
             <address xmlns="http://www.example.com/customer">
                 <street xmlns="http://www.example.com/customer">ZI0TGK3BKG St.</street>
