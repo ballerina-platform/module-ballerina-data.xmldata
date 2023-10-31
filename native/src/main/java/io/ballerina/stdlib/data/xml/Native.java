@@ -19,8 +19,12 @@ import java.io.StringReader;
  */
 public class Native {
 
-    public static Object fromXmlWithType(BXml xml, BMap<BString, Object> map, BTypedesc typed) {
-        return null;
+    public static Object fromXmlWithType(BXml xml, BMap<BString, Object> options, BTypedesc typed) {
+        try {
+            return XmlTraversal.traverse(xml, typed.getDescribingType());
+        } catch (Exception e) {
+            return DataUtils.getXmlError(e.getMessage());
+        }
     }
 
     public static Object fromXmlStringWithType(Object xml, BMap<BString, Object> map, BTypedesc typed) {
