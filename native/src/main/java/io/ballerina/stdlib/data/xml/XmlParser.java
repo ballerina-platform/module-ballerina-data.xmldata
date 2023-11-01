@@ -202,7 +202,7 @@ public class XmlParser {
             xmlParserData.rootElement =
                     validateAndGetXmlNameFromRecordAnnotation(rootRecord, rootRecord.getName(), elementName);
 
-            validateNamespace(xmlStreamReader, rootRecord, false, xmlParserData);
+            validateTypeNamespace(xmlStreamReader, rootRecord);
 
             // Keep track of fields and attributes
             xmlParserData.fieldHierarchy.push(new HashMap<>(getAllFieldsInRecordType(rootRecord, xmlParserData)));
@@ -391,10 +391,9 @@ public class XmlParser {
             return;
         }
 
-        validateNamespace(xmlStreamReader, xmlParserData.rootRecord, true, xmlParserData);
-
         Field currentField = xmlParserData.currentField;
         String fieldName = currentField.getFieldName();
+        validateFieldNamespace(xmlStreamReader, xmlParserData.rootRecord, fieldName, xmlParserData);
         Object temp = currentNode.get(StringUtils.fromString(fieldName));
         if (!xmlParserData.siblings.containsKey(elemName)) {
             xmlParserData.siblings.put(elemName, false);
@@ -428,7 +427,7 @@ public class XmlParser {
         xmlParserData.rootRecord = recordType;
         updateNextValue(recordType, fieldName, fieldType, xmlParserData);
         xmlParserData.attributeHierarchy.push(new HashMap<>(getAllAttributesInRecordType(recordType)));
-        validateNamespace(xmlStreamReader, recordType, false, xmlParserData);
+        validateTypeNamespace(xmlStreamReader, recordType);
         handleAttributes(xmlStreamReader, xmlParserData);
     }
 
@@ -646,7 +645,14 @@ public class XmlParser {
         Map<String, Field> fields = new HashMap<>();
         Map<String, Field> recordFields = recordType.getFields();
         for (String key : recordFields.keySet()) {
-            fields.put(modifiedNames.getOrDefault(key, key), recordFields.get(key));
+            String modifiedName = modifiedNames.getOrDefault(key, key);
+            if (fields.containsKey(modifiedName)) {
+                // TODO: Handle the cases with different namespace by representing field with QName.
+                // eg:- <x:foo xmlns:x="example.com" xmlns:y="example2.com" ><x:bar></x:bar><y:bar></y:bar></x:foo>
+                throw DataUtils.getXmlError("Duplicate field '" + modifiedName + "'");
+            }
+
+            fields.put(modifiedName, recordFields.get(key));
         }
         xmlParserData.modifiedNamesHierarchy.add(modifiedNames);
         return fields;
@@ -661,9 +667,8 @@ public class XmlParser {
         return attributeName;
     }
 
-    private void validateNamespace(XMLStreamReader xmlStreamReader, RecordType recordType, boolean isField,
-                                   XmlParserData xmlParserData) {
-        ArrayList<String> namespace = getNamespace(recordType, isField);
+    private void validateTypeNamespace(XMLStreamReader xmlStreamReader, RecordType recordType) {
+        ArrayList<String> namespace = getNamespace(recordType);
 
         if (namespace.isEmpty()) {
             return;
@@ -673,29 +678,54 @@ public class XmlParser {
                 && xmlStreamReader.getName().getNamespaceURI().equals(namespace.get(1))) {
             return;
         }
-
-        if (isField) {
-            throw DataUtils.getXmlError("namespace mismatched for the field: "
-                    + xmlParserData.currentField.getFieldName());
-        } else {
-            throw DataUtils.getXmlError("namespace mismatched for the type: "
-                    + recordType.getName());
-        }
+        throw DataUtils.getXmlError("namespace mismatched for the type: "
+                + recordType.getName());
     }
 
-    private ArrayList<String> getNamespace(RecordType recordType, boolean isField) {
+    private void validateFieldNamespace(XMLStreamReader xmlStreamReader, RecordType recordType, String fieldName,
+                                        XmlParserData xmlParserData) {
+        ArrayList<String> namespace = getFieldNamespace(recordType, fieldName);
+
+        if (namespace.isEmpty()) {
+            return;
+        }
+
+        if (xmlStreamReader.getName().getPrefix().equals(namespace.get(0))
+                && xmlStreamReader.getName().getNamespaceURI().equals(namespace.get(1))) {
+            return;
+        }
+        throw DataUtils.getXmlError("namespace mismatched for the field: " + xmlParserData.currentField.getFieldName());
+    }
+
+    private ArrayList<String> getNamespace(RecordType recordType) {
         BMap<BString, Object> annotations = recordType.getAnnotations();
         String namespacePrefix = null;
         String namespaceUri = null;
         for (BString annotationsKey : annotations.getKeys()) {
             String key = annotationsKey.getValue();
-            if (!isField && !key.contains(Constants.FIELD) && key.endsWith(Constants.NAME_SPACE)) {
+            if (!key.contains(Constants.FIELD) && key.endsWith(Constants.NAME_SPACE)) {
                 BMap<BString, Object> namespaceAnnotation = (BMap<BString, Object>) annotations.get(annotationsKey);
                 namespacePrefix = namespaceAnnotation.containsKey(Constants.PREFIX) ?
                         ((BString) namespaceAnnotation.get(Constants.PREFIX)).getValue() : "";
                 namespaceUri = ((BString) namespaceAnnotation.get(Constants.URI)).getValue();
                 break;
-            } else if (isField && key.contains(Constants.FIELD)) {
+            }
+        }
+        ArrayList<String> namespace = new ArrayList<>();
+        if (namespacePrefix != null && namespaceUri != null) {
+            namespace.add(namespacePrefix);
+            namespace.add(namespaceUri);
+        }
+        return namespace;
+    }
+
+    private ArrayList<String> getFieldNamespace(RecordType recordType, String fieldName) {
+        BMap<BString, Object> annotations = recordType.getAnnotations();
+        String namespacePrefix = null;
+        String namespaceUri = null;
+        for (BString annotationsKey : annotations.getKeys()) {
+            String key = annotationsKey.getValue();
+            if (key.contains(Constants.FIELD) && key.split("\\$field\\$\\.")[1].equals(fieldName)) {
                 BMap<BString, Object> namespaceAnnotation = (BMap<BString, Object>) annotations.get(annotationsKey);
                 for (BString keyStr : namespaceAnnotation.getKeys()) {
                     if (keyStr.getValue().endsWith(Constants.NAME_SPACE)) {
@@ -770,10 +800,7 @@ public class XmlParser {
     }
 
     private String getElementName(XMLStreamReader xmlStreamReader) {
-        QName qName = xmlStreamReader.getName();
-        String prefix = qName.getPrefix();
-        String attributeName = qName.getLocalPart();
-        return prefix.equals("") ? attributeName : prefix + ":" + attributeName;
+        return xmlStreamReader.getName().getLocalPart();
     }
 
     static class XmlParserData {
