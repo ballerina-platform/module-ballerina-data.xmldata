@@ -63,10 +63,6 @@ ballerina {
     langVersion = ballerinaLangVersion
 }
 
-configurations {
-    externalJars
-}
-
 task updateTomlFiles {
     doLast {
         def newConfig = ballerinaTomlFilePlaceHolder.text.replace("@project.version@", project.version)
@@ -113,6 +109,8 @@ task deleteDependencyTomlFiles {
     }
 }
 
+
+updateTomlFiles.dependsOn unpackStdLibs
 build.dependsOn "generatePomFileForMavenPublication"
 build.dependsOn ":${packageName}-native:build"
 build.dependsOn deleteDependencyTomlFiles
