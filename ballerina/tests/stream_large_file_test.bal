@@ -57,7 +57,7 @@ const LARGE_XML_FILE = "build//resources//large_data.xml";
 # Test reading large xml file with namespaces.
 # + return - return error on failure, else nil.
 @test:Config {
-    enable: false
+    enable: true
 }
 function testLargeFileStreamWithNamespace() returns error? {
     stream<byte[], error?> dataStream = check io:fileReadBlocksAsStream(LARGE_XML_FILE);
@@ -93,14 +93,14 @@ type SimpleCustomer record {|
 # Test reading large xml file without considering namespaces.
 # + return - return error on failure, else nil.
 @test:Config {
-    enable: false
+    enable: true
 }
 function testLargeFileStream() returns error? {
     stream<byte[], error?> dataStream = check io:fileReadBlocksAsStream(LARGE_XML_FILE);
     SimpleInvoice invoice = check fromXmlStringWithType(dataStream);
 
     test:assertEquals(invoice.customers.length(), 1, "Invalid number of customers fields");
-    test:assertEquals(invoice.customers.customer.length(), 100000, "Invalid customers/customer length");
+    test:assertEquals(invoice.customers.customer.length(), 100001, "Invalid customers/customer length");
     test:assertEquals(invoice.customers.customer[0].length(), 3, "Invalid customers/customer/[0] fields");
 
     test:assertEquals(invoice.customers.customer[0].id, 0, "Invalid customers/customer/[0]/id");
