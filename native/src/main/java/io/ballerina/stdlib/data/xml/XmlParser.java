@@ -356,16 +356,19 @@ public class XmlParser {
 
         for (String key : xmlParserData.fieldHierarchy.peek().keySet()) {
             // Validate required array size
-            if (xmlParserData.fieldHierarchy.peek().get(key).getFieldType().getTag() == TypeTags.ARRAY_TAG) {
-                ArrayType arrayType = (ArrayType) xmlParserData.fieldHierarchy.peek().get(key).getFieldType();
+            Field field = xmlParserData.fieldHierarchy.peek().get(key);
+            String fieldName = field.getFieldName();
+            if (field.getFieldType().getTag() == TypeTags.ARRAY_TAG) {
+                ArrayType arrayType = (ArrayType) field.getFieldType();
                 if (arrayType.getSize() != -1
-                        && arrayType.getSize() != ((BArray) currentNode.get(StringUtils.fromString(key))).getLength()) {
+                        && arrayType.getSize() != ((BArray) currentNode.get(
+                                StringUtils.fromString(fieldName))).getLength()) {
                     throw DataUtils.getXmlError("Array size is not compatible with the expected size");
                 }
             }
 
-            if (!siblingKeys.contains(xmlParserData.modifiedNamesHierarchy.peek().getOrDefault(key, key))) {
-                throw DataUtils.getXmlError("Required field " + key + " not present in XML");
+            if (!siblingKeys.contains(xmlParserData.modifiedNamesHierarchy.peek().getOrDefault(fieldName, fieldName))) {
+                throw DataUtils.getXmlError("Required field " + fieldName + " not present in XML");
             }
         }
     }
