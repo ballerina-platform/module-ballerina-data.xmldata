@@ -6,10 +6,60 @@ This library is the refined successor of the `ballerina/xmldata` module, incorpo
 
 ## Features
 
-- **Versatile XML Data Input**: Accept XML data as a string, byte array, or a stream and convert it into a Record value.
+- **Versatile XML Data Input**: Accept XML data as a xml, a string, byte array, or a stream and convert it into a Record value.
 - **XML to Record Value Conversion**: Transform XML data into Ballerina records with ease in compliance with OpenAPI 3 standards.
 - **Projection Support**: Perform selective conversion of XML data subsets into Record values through projection.
 
+## Usage
+
+### Converting an XML value to a Record value
+
+To convert an XML value to a Record value, you can utilize the `fromXmlWithType` function provided by the library. The example below showcases the transformation of an XML value into a Record value.
+
+```ballerina
+import ballerina/data.xml as xmldata;
+import ballerina/io;
+
+public function main() returns error? {
+    xml data = xml `<book>
+        <id>0</id>
+        <title>string</title>
+        <author>string</author>
+    </book>`;
+
+    Book book = check xmldata:fromXmlWithType(data, Book);
+    io:println(book);
+}
+
+type Book record {
+    int id;
+    string title;
+    string author;
+};
+```
+
+### Converting an external XML document to a Record value
+
+For transforming XML content from an external source into a Record value, the `fromXmlStringWithType` function can be used. This external source can be in the form of a string or a byte array/byte stream that houses the XML data. This is commonly extracted from files or network sockets. The example below demonstrates the conversion of an XML value from an external source into a Record value.
+
+```ballerina
+import ballerina/data.xml as xmldata;
+import ballerina/io;
+
+public function main() returns error? {
+    string xmlContent = check io:fileReadString("path/to/file.xml");
+    Book book = check xmldata:fromXmlStringWithType(xmlContent, Book);
+    io:println(book);
+}
+
+type Book record {
+    int id;
+    string title;
+    string author;
+};
+```
+
+Make sure to handle possible errors that may arise during the file reading or XML to record conversion process. The `check` keyword is utilized to handle these errors, but more sophisticated error handling can be implemented as per your requirements.
 
 ## XML to Record Canonical Representation
 
@@ -106,6 +156,8 @@ type Book record {
     string author;
 };
 ```
+
+Additionally the `@Attribute` annotation can be utilized to explicitly specify the name of the record field, providing control over the translation process.
 
 ### Child Elements
 
