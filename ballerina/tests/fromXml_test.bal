@@ -530,6 +530,40 @@ function testXmlStringToRecord41() returns error? {
     test:assertEquals(rec2.A[1], 2);
 }
 
+@Namespace {
+    uri: "http://www.example.com/invoice",
+    prefix: "inv"
+}
+@Name {
+    value: "invoice"
+}
+type DataProj5 record {|
+    DataProjField customers;
+|};
+
+type DataProjField record {|
+    @Name {
+        value: "customer"
+    }
+    string[2] cust;
+|};
+
+@test:Config
+function testXmlStringToRecord42() returns error? {
+string xmlStr = string `<inv:invoice xmlns:inv="http://www.example.com/invoice">
+    <customers>
+        <customer>KLLBCQVN0Y</customer>
+        <customer>T8VQU3X0QH</customer>
+        <customer>DAWQU3X0QH</customer>
+    </customers>
+    </inv:invoice>`;
+
+    DataProj5 invoice = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(invoice.customers.cust.length(), 2);
+    test:assertEquals(invoice.customers.cust[0], "KLLBCQVN0Y");
+    test:assertEquals(invoice.customers.cust[1], "T8VQU3X0QH");
+}
+
 // Negative cases
 type DataN1 record {|
     int A;
