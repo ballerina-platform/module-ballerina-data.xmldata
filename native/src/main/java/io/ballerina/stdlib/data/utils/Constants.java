@@ -20,7 +20,9 @@ package io.ballerina.stdlib.data.utils;
 
 import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.creators.TypeCreator;
+import io.ballerina.runtime.api.flags.SymbolFlags;
 import io.ballerina.runtime.api.types.ArrayType;
+import io.ballerina.runtime.api.types.Field;
 import io.ballerina.runtime.api.types.MapType;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BString;
@@ -48,4 +50,6 @@ public class Constants {
     public static final String NAME = "Name";
     public static final BString VALUE = StringUtils.fromString("value");
     public static final String CONTENT = "#content";
+    public static final Field CONTENT_FIELD =
+            TypeCreator.createField(PredefinedTypes.TYPE_ANYDATA, Constants.CONTENT, SymbolFlags.REQUIRED);
 }

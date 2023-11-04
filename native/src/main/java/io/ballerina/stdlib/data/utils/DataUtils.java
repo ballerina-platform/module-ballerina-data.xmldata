@@ -32,6 +32,7 @@ import io.ballerina.runtime.api.values.BArray;
 import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
+import io.ballerina.runtime.api.values.BXmlItem;
 import io.ballerina.stdlib.data.FromString;
 
 import java.util.ArrayList;
@@ -81,41 +82,27 @@ public class DataUtils {
         return recordName;
     }
 
-    public static void validateNamespace(String prefix, String uri, RecordType recordType, boolean isField,
-                                   XmlAnalyzerData analyzerData) {
-        ArrayList<String> namespace = getNamespace(recordType, isField);
+    public static void validateFieldNamespace(String prefix, String uri, String fieldName,
+                                              RecordType recordType, XmlAnalyzerData analyzerData) {
+        ArrayList<String> namespace = getFieldNamespace(recordType, fieldName);
 
         if (namespace.isEmpty()) {
             return;
         }
 
-        if (prefix.equals(namespace.get(0))
-                && uri.equals(namespace.get(1))) {
+        if (prefix.equals(namespace.get(0)) && uri.equals(namespace.get(1))) {
             return;
         }
-
-        if (isField) {
-            throw DataUtils.getXmlError("namespace mismatched for the field: "
-                    + analyzerData.currentField.getFieldName());
-        } else {
-            throw DataUtils.getXmlError("namespace mismatched for the type: "
-                    + recordType.getName());
-        }
+        throw DataUtils.getXmlError("namespace mismatched for the field: " + analyzerData.currentField.getFieldName());
     }
 
-    private static ArrayList<String> getNamespace(RecordType recordType, boolean isField) {
+    public static ArrayList<String> getFieldNamespace(RecordType recordType, String fieldName) {
         BMap<BString, Object> annotations = recordType.getAnnotations();
         String namespacePrefix = null;
         String namespaceUri = null;
         for (BString annotationsKey : annotations.getKeys()) {
             String key = annotationsKey.getValue();
-            if (!isField && !key.contains(Constants.FIELD) && key.endsWith(Constants.NAME_SPACE)) {
-                BMap<BString, Object> namespaceAnnotation = (BMap<BString, Object>) annotations.get(annotationsKey);
-                namespacePrefix = namespaceAnnotation.containsKey(Constants.PREFIX) ?
-                        ((BString) namespaceAnnotation.get(Constants.PREFIX)).getValue() : "";
-                namespaceUri = ((BString) namespaceAnnotation.get(Constants.URI)).getValue();
-                break;
-            } else if (isField && key.contains(Constants.FIELD)) {
+            if (key.contains(Constants.FIELD) && key.split("\\$field\\$\\.")[1].equals(fieldName)) {
                 BMap<BString, Object> namespaceAnnotation = (BMap<BString, Object>) annotations.get(annotationsKey);
                 for (BString keyStr : namespaceAnnotation.getKeys()) {
                     if (keyStr.getValue().endsWith(Constants.NAME_SPACE)) {
@@ -126,6 +113,41 @@ public class DataUtils {
                         break;
                     }
                 }
+                break;
+            }
+        }
+        ArrayList<String> namespace = new ArrayList<>();
+        if (namespacePrefix != null && namespaceUri != null) {
+            namespace.add(namespacePrefix);
+            namespace.add(namespaceUri);
+        }
+        return namespace;
+    }
+
+    public static void validateTypeNamespace(String prefix, String uri, RecordType recordType) {
+        ArrayList<String> namespace = getNamespace(recordType);
+
+        if (namespace.isEmpty()) {
+            return;
+        }
+
+        if (prefix.equals(namespace.get(0)) && uri.equals(namespace.get(1))) {
+            return;
+        }
+        throw DataUtils.getXmlError("namespace mismatched for the type: " + recordType.getName());
+    }
+
+    private static ArrayList<String> getNamespace(RecordType recordType) {
+        BMap<BString, Object> annotations = recordType.getAnnotations();
+        String namespacePrefix = null;
+        String namespaceUri = null;
+        for (BString annotationsKey : annotations.getKeys()) {
+            String key = annotationsKey.getValue();
+            if (!key.contains(Constants.FIELD) && key.endsWith(Constants.NAME_SPACE)) {
+                BMap<BString, Object> namespaceAnnotation = (BMap<BString, Object>) annotations.get(annotationsKey);
+                namespacePrefix = namespaceAnnotation.containsKey(Constants.PREFIX) ?
+                        ((BString) namespaceAnnotation.get(Constants.PREFIX)).getValue() : "";
+                namespaceUri = ((BString) namespaceAnnotation.get(Constants.URI)).getValue();
                 break;
             }
         }
@@ -154,7 +176,6 @@ public class DataUtils {
         for (String key : recordFields.keySet()) {
             fields.put(modifiedNames.getOrDefault(key, key), recordFields.get(key));
         }
-        analyzerData.modifiedNamesHierarchy.add(modifiedNames);
         return fields;
     }
 
@@ -175,6 +196,28 @@ public class DataUtils {
             }
         }
         return attributes;
+    }
+
+    public static void handleAttributes(BXmlItem xmlItem, BMap<BString, Object> currentNode,
+                                        XmlAnalyzerData analyzerData) {
+        BMap<BString, BString> attributeMap = xmlItem.getAttributesMap();
+        for (BString key : attributeMap.getKeys()) {
+            String attributeName = key.getValue();
+            String fieldName = attributeName;
+            Field field = analyzerData.attributeHierarchy.peek().remove(fieldName);
+            if (field == null) {
+                field = analyzerData.fieldHierarchy.peek().remove(fieldName);
+            } else {
+                analyzerData.fieldHierarchy.peek().remove(fieldName);
+            }
+
+            if (field == null) {
+                return;
+            }
+
+            currentNode.put(StringUtils.fromString(field.getFieldName()),
+                    convertStringToExpType(attributeMap.get(key), field.getFieldType()));
+        }
     }
 
     private static String getModifiedName(Map<BString, Object> fieldAnnotation, String attributeName) {
@@ -229,6 +272,26 @@ public class DataUtils {
         return result;
     }
 
+    public static void validateRequiredFields(BMap<BString, Object> currentMapValue, XmlAnalyzerData analyzerData) {
+        for (String key : analyzerData.fieldHierarchy.peek().keySet()) {
+            // Validate required array size
+            Field field = analyzerData.fieldHierarchy.peek().get(key);
+            String fieldName = field.getFieldName();
+            if (field.getFieldType().getTag() == TypeTags.ARRAY_TAG) {
+                ArrayType arrayType = (ArrayType) field.getFieldType();
+                if (arrayType.getSize() != -1
+                        && arrayType.getSize() != ((BArray) currentMapValue.get(
+                        StringUtils.fromString(fieldName))).getLength()) {
+                    throw DataUtils.getXmlError("Array size is not compatible with the expected size");
+                }
+            }
+
+            if (!currentMapValue.containsKey(StringUtils.fromString(fieldName))) {
+                throw DataUtils.getXmlError("Required field " + key + " not present in XML");
+            }
+        }
+    }
+
     /**
      * Holds data required for the parsing and traversing.
      *
@@ -238,13 +301,9 @@ public class DataUtils {
         public final Stack<Object> nodesStack = new Stack<>();
         public final Stack<Map<String, Field>> fieldHierarchy = new Stack<>();
         public final Stack<Map<String, Field>> attributeHierarchy = new Stack<>();
-        public final Stack<Map<String, String>> modifiedNamesHierarchy = new Stack<>();
         public final Stack<Type> restTypes = new Stack<>();
-        public final Stack<String> restFieldsPoints = new Stack<>();
         public RecordType rootRecord;
         public Field currentField;
         public String rootElement;
-        public final Stack<LinkedHashMap<String, Boolean>> parents = new Stack<>();
-        public LinkedHashMap<String, Boolean> siblings = new LinkedHashMap<>();
     }
 }
