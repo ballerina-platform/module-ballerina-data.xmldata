@@ -22,7 +22,7 @@ plugins {
     id 'com.github.spotbugs'
 }
 
-description = 'Ballerina - Data Java Utils'
+description = 'Ballerina - Data.XML Java Utils'
 
 dependencies {
     implementation 'junit:junit:4.13.1'

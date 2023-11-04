@@ -32,17 +32,18 @@ buildscript {
     }
 }
 
-description = 'Ballerina - Data Ballerina Generator'
+description = 'Ballerina - Data XML Module'
 
-def packageName = "data"
+def packageName = "data-xml"
 def packageOrg = "ballerina"
+
 def tomlVersion = stripBallerinaExtensionVersion("${project.version}")
 def ballerinaTomlFilePlaceHolder = new File("${project.rootDir}/build-config/resources/Ballerina.toml")
 def ballerinaTomlFile = new File("$project.projectDir/Ballerina.toml")
 
 def stripBallerinaExtensionVersion(String extVersion) {
     if (extVersion.matches(project.ext.timestampedVersionRegex)) {
-        def splitVersion = extVersion.split('-')
+        def splitVersion = extVersion.split('-');
         if (splitVersion.length > 3) {
             def strippedValues = splitVersion[0..-4]
             return strippedValues.join('-')
@@ -71,7 +72,16 @@ task updateTomlFiles {
 }
 
 task commitTomlFiles {
-    
+    doLast {
+        project.exec {
+            ignoreExitValue true
+            if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+                commandLine 'cmd', '/c', "git commit -m \"[Automated] Update the native jar versions\" Ballerina.toml Dependencies.toml"
+            } else {
+                commandLine 'sh', '-c', "git commit -m '[Automated] Update the native jar versions' Ballerina.toml Dependencies.toml"
+            }
+        }
+    }
 }
 
 publishing {
@@ -93,9 +103,16 @@ publishing {
     }
 }
 
-updateTomlFiles.dependsOn unpackJballerinaTools
+task deleteDependencyTomlFiles {
+    if (project.hasProperty("deleteDependencies")) {
+        delete "${project.projectDir}/Dependencies.toml"
+    }
+}
 
+
+updateTomlFiles.dependsOn unpackStdLibs
 build.dependsOn "generatePomFileForMavenPublication"
 build.dependsOn ":${packageName}-native:build"
+build.dependsOn deleteDependencyTomlFiles
 
 test.dependsOn ":${packageName}-native:build"

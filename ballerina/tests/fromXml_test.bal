@@ -533,7 +533,7 @@ function testXmlStringToRecord31() returns error? {
 }
 
 type Rec record {|
-    string example\:element1;
+    string element1;
     string element2;
 |};
 
@@ -546,8 +546,83 @@ function testXmlStringToRecord32() returns error? {
     </root>`;
 
     Rec rec1 = check fromXmlStringWithType(xmlStr1);
-    test:assertEquals(rec1.example\:element1, "Value 1");
+    test:assertEquals(rec1.element1, "Value 1");
     test:assertEquals(rec1.element2, "Value 2");
+}
+
+@Namespace {
+    prefix: "x",
+    uri: "example.com"
+}
+type NSRec1 record {|
+    string \#content;
+|};
+
+@test:Config{}
+function testXmlStringToRecord33() returns error? {
+    string xmlStr1 = string `<x:foo xmlns:x="example.com">1</x:foo>`;
+    NSRec1 rec1 = check fromXmlStringWithType(xmlStr1);
+    test:assertEquals(rec1.get("#content"), "1");
+}
+
+@Namespace {
+    prefix: "x",
+    uri: "example.com"
+}
+type NSRec2 record {|
+    @Namespace {
+        prefix: "x",
+        uri: "example.com"
+    }
+    string bar;
+|};
+
+@test:Config{}
+function testXmlStringToRecord34() returns error? {
+    string xmlStr1 = string `<x:foo xmlns:x="example.com"><x:bar>1</x:bar></x:foo>`;
+    NSRec2 rec1 = check fromXmlStringWithType(xmlStr1);
+    test:assertEquals(rec1.bar, "1");
+}
+
+@Namespace {
+    prefix: "x",
+    uri: "example.com"
+}
+type NSRec3 record {|
+    @Namespace {
+        prefix: "x",
+        uri: "example.com"
+    }
+    record {|
+        @Namespace {
+            uri: "example2.com"
+        }
+        string baz;
+    |} bar;
+|};
+
+@test:Config{}
+function testXmlStringToRecord35() returns error? {
+    string xmlStr1 = string `<x:foo xmlns:x="example.com" xmlns="example2.com"><x:bar><baz>2</baz></x:bar></x:foo>`;
+    NSRec3 rec1 = check fromXmlStringWithType(xmlStr1);
+    test:assertEquals(rec1.bar.baz, "2");
+}
+
+@Namespace {
+    uri: "example.com"
+}
+type NSRec4 record {|
+    @Namespace {
+        uri: "example.com"
+    }
+    string bar;
+|};
+
+@test:Config{}
+function testXmlStringToRecord36() returns error? {
+    string xmlStr1 = string `<foo xmlns="example.com"><bar>1</bar></foo>`;
+    NSRec4 rec1 = check fromXmlStringWithType(xmlStr1);
+    test:assertEquals(rec1.bar, "1");
 }
 
 // Test projection with fixed array size.
@@ -618,6 +693,40 @@ function testXmlStringToRecord41() returns error? {
     test:assertEquals(rec2.A.length(), 2);
     test:assertEquals(rec2.A[0], 1);
     test:assertEquals(rec2.A[1], 2);
+}
+
+@Namespace {
+    uri: "http://www.example.com/invoice",
+    prefix: "inv"
+}
+@Name {
+    value: "invoice"
+}
+type DataProj5 record {|
+    DataProjField customers;
+|};
+
+type DataProjField record {|
+    @Name {
+        value: "customer"
+    }
+    string[2] cust;
+|};
+
+@test:Config
+function testXmlStringToRecord42() returns error? {
+string xmlStr = string `<inv:invoice xmlns:inv="http://www.example.com/invoice">
+    <customers>
+        <customer>KLLBCQVN0Y</customer>
+        <customer>T8VQU3X0QH</customer>
+        <customer>DAWQU3X0QH</customer>
+    </customers>
+    </inv:invoice>`;
+
+    DataProj5 invoice = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(invoice.customers.cust.length(), 2);
+    test:assertEquals(invoice.customers.cust[0], "KLLBCQVN0Y");
+    test:assertEquals(invoice.customers.cust[1], "T8VQU3X0QH");
 }
 
 // Negative cases
@@ -707,9 +816,6 @@ function testXmlStringToRecordNegative8() {
 }
 
 type DataN7 record {|
-    @Name {
-        value: "ns1:A"
-    }
     @Namespace {
         uri: "www.example.com"
     }
@@ -721,4 +827,46 @@ function testXmlStringToRecordNegative9() {
     string xmlStr1 = string `<Data xmlns:ns1="www.test.com"><ns1:A>1</ns1:A></Data>`;
     DataN7|error rec1 = fromXmlStringWithType(xmlStr1);
     test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: A");
+}
+
+@Namespace {
+    prefix: "x",
+    uri: "example.com"
+}
+type DataN8 record {|
+    @Namespace {
+        uri: "example.com"
+    }
+    string bar;
+|};
+
+@test:Config{}
+function testXmlStringToRecordNegative10() {
+    string xmlStr1 = string `<x:foo xmlns:x="example.com"><x:bar>1</x:bar></x:foo>`;
+    DataN8|error rec1 = fromXmlStringWithType(xmlStr1);
+    test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: bar");
+}
+
+@Namespace {
+    prefix: "x",
+    uri: "example.com"
+}
+type DataN9 record {|
+    @Namespace {
+        prefix: "x",
+        uri: "example.com"
+    }
+    record {|
+        @Namespace {
+            uri: "example.com"
+        }
+        string baz;
+    |} bar;
+|};
+
+@test:Config{}
+function testXmlStringToRecordNegative11() {
+    string xmlStr1 = string `<x:foo xmlns:x="example.com" xmlns="example2.com"><x:bar><baz>2</baz></x:bar></x:foo>`;
+    DataN9|error rec1 = fromXmlStringWithType(xmlStr1);
+    test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: baz");
 }
