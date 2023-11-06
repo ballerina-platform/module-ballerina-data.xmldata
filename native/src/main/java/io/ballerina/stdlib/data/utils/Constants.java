@@ -20,7 +20,9 @@ package io.ballerina.stdlib.data.utils;
 
 import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.creators.TypeCreator;
+import io.ballerina.runtime.api.flags.SymbolFlags;
 import io.ballerina.runtime.api.types.ArrayType;
+import io.ballerina.runtime.api.types.Field;
 import io.ballerina.runtime.api.types.MapType;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BString;
@@ -38,6 +40,7 @@ public class Constants {
     public static final String COLON = ":";
     public static final MapType JSON_MAP_TYPE = TypeCreator.createMapType(PredefinedTypes.TYPE_JSON);
     public static final ArrayType JSON_ARRAY_TYPE = TypeCreator.createArrayType(PredefinedTypes.TYPE_JSON);
+    public static final ArrayType ANYDATA_ARRAY_TYPE = TypeCreator.createArrayType(PredefinedTypes.TYPE_ANYDATA);
     public static final String FIELD = "$field$.";
     public static final String NAME_SPACE = "Namespace";
     public static final BString URI = StringUtils.fromString("uri");
@@ -47,4 +50,6 @@ public class Constants {
     public static final String NAME = "Name";
     public static final BString VALUE = StringUtils.fromString("value");
     public static final String CONTENT = "#content";
+    public static final Field CONTENT_FIELD =
+            TypeCreator.createField(PredefinedTypes.TYPE_ANYDATA, Constants.CONTENT, SymbolFlags.REQUIRED);
 }
