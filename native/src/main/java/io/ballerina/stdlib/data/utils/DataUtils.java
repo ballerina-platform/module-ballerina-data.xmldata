@@ -273,9 +273,10 @@ public class DataUtils {
     }
 
     public static void validateRequiredFields(BMap<BString, Object> currentMapValue, XmlAnalyzerData analyzerData) {
-        for (String key : analyzerData.fieldHierarchy.peek().keySet()) {
+        Map<String, Field> fields = analyzerData.fieldHierarchy.peek();
+        for (String key : fields.keySet()) {
             // Validate required array size
-            Field field = analyzerData.fieldHierarchy.peek().get(key);
+            Field field = fields.get(key);
             String fieldName = field.getFieldName();
             if (field.getFieldType().getTag() == TypeTags.ARRAY_TAG) {
                 ArrayType arrayType = (ArrayType) field.getFieldType();
@@ -287,7 +288,7 @@ public class DataUtils {
             }
 
             if (!currentMapValue.containsKey(StringUtils.fromString(fieldName))) {
-                throw DataUtils.getXmlError("Required field " + key + " not present in XML");
+                throw DataUtils.getXmlError("Required field " + fieldName + " not present in XML");
             }
         }
     }

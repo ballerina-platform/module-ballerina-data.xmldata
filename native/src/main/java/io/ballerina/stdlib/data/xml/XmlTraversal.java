@@ -1,3 +1,20 @@
+/*
+ * Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package io.ballerina.stdlib.data.xml;
 
 import io.ballerina.runtime.api.PredefinedTypes;
@@ -42,11 +59,7 @@ public class XmlTraversal {
 
     public static Object traverse(BXml xml, Type type) {
         XmlTree xmlTree = tlXmlTree.get();
-        try {
-            return xmlTree.traverseXml(xml, type);
-        } finally {
-//            jsonTree.reset();
-        }
+        return xmlTree.traverseXml(xml, type);
     }
 
     static class XmlTree {
@@ -60,7 +73,9 @@ public class XmlTraversal {
                     RecordType recordType = (RecordType) referredType;
                     currentNode = ValueCreator.createRecordValue(recordType);
                     xml = validateRootElement(xml, recordType, analyzerData);
-                    return traverseXml(xml, recordType, analyzerData);
+                    Object resultRecordValue = traverseXml(xml, recordType, analyzerData);
+                    DataUtils.validateRequiredFields((BMap<BString, Object>) resultRecordValue, analyzerData);
+                    return resultRecordValue;
                 case TypeTags.MAP_TAG:
                     // TODO: Need to handle this.
                     return DataUtils.getXmlError("handle this: " + type.getName());
@@ -144,7 +159,7 @@ public class XmlTraversal {
                 currentNode = updateNextRecord(xmlItem, (RecordType) currentFieldType, fieldName,
                         currentFieldType, mapValue, analyzerData);
                 traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
-//                DataUtils.validateRequiredFields((BMap<BString, Object>) currentNode, analyzerData);
+                DataUtils.validateRequiredFields((BMap<BString, Object>) currentNode, analyzerData);
                 analyzerData.fieldHierarchy.pop();
                 analyzerData.restTypes.pop();
                 currentNode = analyzerData.nodesStack.pop();
@@ -160,7 +175,7 @@ public class XmlTraversal {
                     currentNode = updateNextRecord(xmlItem, (RecordType) elementType, fieldName,
                             currentFieldType, mapValue, analyzerData);
                     traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
-//                    DataUtils.validateRequiredFields((BMap<BString, Object>) currentNode, analyzerData);
+                    DataUtils.validateRequiredFields((BMap<BString, Object>) currentNode, analyzerData);
                     analyzerData.fieldHierarchy.pop();
                     analyzerData.restTypes.pop();
                     currentNode = analyzerData.nodesStack.pop();
@@ -324,12 +339,13 @@ public class XmlTraversal {
         }
 
         private BXml validateRootElement(BXml xml, RecordType recordType, XmlAnalyzerData analyzerData) {
-            if (!(xml instanceof BXmlItem)) {
-                // TODO: Correct the behaviour properly
-//                List<BXml> children = ((BXmlSequence) xml).getChildrenList();
-//                for (BXml child : children) {
-//
-//                }
+            if (xml.getNodeType() == XmlNodeType.SEQUENCE) {
+                List<BXml> newSequence = filterEmptyValues(((BXmlSequence) xml).getChildrenList());
+                if (newSequence.size() == 1) {
+                    return validateRootElement(newSequence.get(0), recordType, analyzerData);
+                }
+                throw DataUtils.getXmlError("XML root element is missing");
+            } else if (xml.getNodeType() == XmlNodeType.TEXT) {
                 throw DataUtils.getXmlError("XML root element is missing");
             }
             BXmlItem xmlItem = (BXmlItem) xml;
@@ -349,5 +365,3 @@ public class XmlTraversal {
         }
     }
 }
-
-// TODO: Validate all the required fields.
