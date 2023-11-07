@@ -351,6 +351,7 @@ public class DataUtils {
                 } else if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
                     processArray(fieldType, annotations, recordValue, entry);
                 } else {
+                    key = addFieldNamespaceAnnotation(key, annotations, recordValue);
                     addPrimitiveValue(StringUtils.fromString(key), annotations, recordValue, value);
                 }
             } else {
@@ -360,12 +361,44 @@ public class DataUtils {
         return recordValue;
     }
 
+    private static String addFieldNamespaceAnnotation(String key, BMap<BString, Object> annotations,
+                                                    BMap<BString, Object> recordValue) {
+        BString annotationKey =
+                StringUtils.fromString((Constants.FIELD + key).replace(Constants.COLON, "\\:"));
+        if (annotations.containsKey(annotationKey)) {
+            BMap<BString, Object> annotationValue = (BMap<BString, Object>) annotations.get(annotationKey);
+            for (BString fieldKey : annotationValue.getKeys()) {
+                if (fieldKey.toString().endsWith(Constants.NAME_SPACE)) {
+                    return processFieldNamespaceAnnotation(annotationValue, key, fieldKey, recordValue);
+                }
+            }
+        }
+        return key;
+    }
+
+    private static BMap<BString, Object> getFieldNamespaceAnnotations(String key, BMap<BString, Object> parentAnnotations) {
+        BMap<BString, Object> nsFieldAnnotation = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
+        BString annotationKey =
+                StringUtils.fromString((Constants.FIELD + key).replace(Constants.COLON, "\\:"));
+        if (parentAnnotations.containsKey(annotationKey)) {
+            BMap<BString, Object> annotationValue = (BMap<BString, Object>) parentAnnotations.get(annotationKey);
+            for (BString fieldKey : annotationValue.getKeys()) {
+                if (fieldKey.toString().endsWith(Constants.NAME_SPACE)) {
+                    nsFieldAnnotation.put(fieldKey, annotationValue.get(fieldKey));
+                    break;
+                }
+            }
+        }
+        return nsFieldAnnotation;
+    }
+
     @SuppressWarnings("unchecked")
     private static void processRecord(String key, BMap<BString, Object> parentAnnotations,
                                       BMap<BString, Object> record, Object value, Type childType) {
         BMap<BString, Object>  parentRecordAnnotations = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         BMap<BString, Object> annotation = ((RecordType) childType).getAnnotations();
         if (parentAnnotations.size() > 0) {
+            annotation.merge(getFieldNamespaceAnnotations(key, parentAnnotations), true);
             processSubRecordAnnotation(parentAnnotations, parentRecordAnnotations);
         }
         BMap<BString, Object> subRecord = addFields(((BMap<BString, Object>) value), childType);
@@ -385,11 +418,19 @@ public class DataUtils {
                                           BMap<BString, Object> record, Object value) {
         BString annotationKey =
                 StringUtils.fromString((Constants.FIELD + key).replace(Constants.COLON, "\\:"));
+        BMap<BString, Object> currentValue;
+        if (record.containsKey(key)) {
+            currentValue = (BMap<BString, Object>) record.get(key);
+            key = StringUtils.fromString("#content");
+        } else {
+            currentValue = record;
+        }
+
         if (annotations.containsKey(annotationKey)) {
             BMap<BString, Object> annotationValue = (BMap<BString, Object>) annotations.get(annotationKey);
-            record.put(StringUtils.fromString(processFieldAnnotation(annotationValue, key.getValue())), value);
+            currentValue.put(StringUtils.fromString(processFieldAnnotation(annotationValue, key.getValue())), value);
         } else {
-            record.put(key, value);
+            currentValue.put(key, value);
         }
     }
 
@@ -562,6 +603,23 @@ public class DataUtils {
             subRecord.put(StringUtils.fromString(ATTRIBUTE_PREFIX + "xmlns:" + prefix), uri);
             key = prefix.getValue().concat(Constants.COLON).concat(key);
         }
+        return key;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String processFieldNamespaceAnnotation(BMap<BString, Object> annotation, String key, BString value,
+                                                     BMap<BString, Object>  subRecord) {
+        BMap<BString, Object> namespaceAnnotation = (BMap<BString, Object>) annotation.get(value);
+        BString uri = (BString) namespaceAnnotation.get(Constants.URI);
+        BString prefix = (BString) namespaceAnnotation.get(Constants.PREFIX);
+        BMap<BString, Object> nextMapValue = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
+        if (prefix ==  null) {
+            nextMapValue.put(StringUtils.fromString(ATTRIBUTE_PREFIX + "xmlns"), uri);
+        } else {
+            nextMapValue.put(StringUtils.fromString(ATTRIBUTE_PREFIX + "xmlns:" + prefix), uri);
+            key = prefix.getValue().concat(Constants.COLON).concat(key);
+        }
+        subRecord.put(StringUtils.fromString(key), nextMapValue);
         return key;
     }
 
