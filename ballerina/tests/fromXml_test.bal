@@ -514,22 +514,56 @@ function testXmlStringToRecord30() returns error? {
     test:assertEquals(rec1.B, 2);
 }
 
+@test:Config{}
+function testXmlToRecord30() returns error? {
+    xml xmlVal1 = xml `<RecAtt1><A c="3">1</A><A c="5">6</A><B>2</B></RecAtt1>`;
+    RecAtt1 rec1 = check fromXmlWithType(xmlVal1);
+    test:assertEquals(rec1.A.length(), 2);
+    test:assertEquals(rec1.A[0].c, 3);
+    test:assertEquals(rec1.A[0].get("#content"), 1);
+    test:assertEquals(rec1.A[1].c, 5);
+    test:assertEquals(rec1.A[1].get("#content"), 6);
+    test:assertEquals(rec1.B, 2);
+}
+
+
 type RecAtt2 record {|
     RecNs1[] A;
 |};
 
 type RecNs1 record {|
+    @Namespace {
+        prefix: "ns1",
+        uri: "http://example.com"
+    }
     @Attribute
-    string ns1\:data;
+    string data;
 |};
 
 @test:Config{}
 function testXmlStringToRecord31() returns error? {
-    string xmlStr = "<RecAtt2><A xmlns:ns1=\"NS1\" ns1:data=\"ns1\"></A><A xmlns:ns1=\"NS1\" ns1:data=\"ns1\"></A></RecAtt2>";
+    string xmlStr = string `
+    <RecAtt2>
+        <A xmlns:ns1="http://example.com" ns1:data="James"></A>
+        <A xmlns:ns1="http://example.com" ns1:data="Gunn"></A>
+    </RecAtt2>`;
     RecAtt2 rec = check fromXmlStringWithType(xmlStr);
     test:assertEquals(rec.A.length(), 2);
-    test:assertEquals(rec.A[0].get("ns1:data"), "ns1");
-    test:assertEquals(rec.A[1].get("ns1:data"), "ns1");
+    test:assertEquals(rec.A[0].get("data"), "James");
+    test:assertEquals(rec.A[1].get("data"), "Gunn");
+}
+
+@test:Config{}
+function testXmlToRecord31() returns error? {
+    xml xmlVal = xml `
+    <RecAtt2>
+        <A xmlns:ns1="http://example.com" ns1:data="James"></A>
+        <A xmlns:ns1="http://example.com" ns1:data="Gunn"></A>
+    </RecAtt2>`;
+    RecAtt2 rec = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec.A.length(), 2);
+    test:assertEquals(rec.A[0].get("data"), "James");
+    test:assertEquals(rec.A[1].get("data"), "Gunn");
 }
 
 type Rec record {|
@@ -550,6 +584,19 @@ function testXmlStringToRecord32() returns error? {
     test:assertEquals(rec1.element2, "Value 2");
 }
 
+@test:Config{}
+function testXmlToRecord32() returns error? {
+    xml xmlVal1 = xml `
+    <root xmlns:example="http://www.example.com">
+        <example:element1>Value 1</example:element1>
+        <element2>Value 2</element2>
+    </root>`;
+
+    Rec rec1 = check fromXmlWithType(xmlVal1);
+    test:assertEquals(rec1.element1, "Value 1");
+    test:assertEquals(rec1.element2, "Value 2");
+}
+
 @Namespace {
     prefix: "x",
     uri: "example.com"
@@ -562,6 +609,13 @@ type NSRec1 record {|
 function testXmlStringToRecord33() returns error? {
     string xmlStr1 = string `<x:foo xmlns:x="example.com">1</x:foo>`;
     NSRec1 rec1 = check fromXmlStringWithType(xmlStr1);
+    test:assertEquals(rec1.get("#content"), "1");
+}
+
+@test:Config{}
+function testXmlToRecord33() returns error? {
+    xml xmlVal1 = xml `<x:foo xmlns:x="example.com">1</x:foo>`;
+    NSRec1 rec1 = check fromXmlWithType(xmlVal1);
     test:assertEquals(rec1.get("#content"), "1");
 }
 
@@ -581,6 +635,13 @@ type NSRec2 record {|
 function testXmlStringToRecord34() returns error? {
     string xmlStr1 = string `<x:foo xmlns:x="example.com"><x:bar>1</x:bar></x:foo>`;
     NSRec2 rec1 = check fromXmlStringWithType(xmlStr1);
+    test:assertEquals(rec1.bar, "1");
+}
+
+@test:Config{}
+function testXmlToRecord34() returns error? {
+    xml xmlVal1 = xml `<x:foo xmlns:x="example.com"><x:bar>1</x:bar></x:foo>`;
+    NSRec2 rec1 = check fromXmlWithType(xmlVal1);
     test:assertEquals(rec1.bar, "1");
 }
 
@@ -608,6 +669,13 @@ function testXmlStringToRecord35() returns error? {
     test:assertEquals(rec1.bar.baz, "2");
 }
 
+@test:Config{}
+function testXmlToRecord35() returns error? {
+    xml xmlVal1 = xml `<x:foo xmlns:x="example.com" xmlns="example2.com"><x:bar><baz>2</baz></x:bar></x:foo>`;
+    NSRec3 rec1 = check fromXmlWithType(xmlVal1);
+    test:assertEquals(rec1.bar.baz, "2");
+}
+
 @Namespace {
     uri: "example.com"
 }
@@ -623,6 +691,156 @@ function testXmlStringToRecord36() returns error? {
     string xmlStr1 = string `<foo xmlns="example.com"><bar>1</bar></foo>`;
     NSRec4 rec1 = check fromXmlStringWithType(xmlStr1);
     test:assertEquals(rec1.bar, "1");
+}
+
+@test:Config{}
+function testXmlToRecord36() returns error? {
+    xml xmlVal = xml `<foo xmlns="example.com"><bar>1</bar></foo>`;
+    NSRec4 rec1 = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec1.bar, "1");
+}
+
+@Namespace {
+    prefix: "ns1",
+    uri: "http://example.com"
+}
+type NSRec5 record {|
+    @Namespace {
+        uri: "http://ballerina.io"
+    }
+    record {|
+        @Attribute
+        string value;
+        string \#content;
+    |} name;
+    @Namespace {
+        prefix: "ns2",
+        uri: "http://workspace.com"
+    }
+    int age;
+|};
+
+@test:Config{}
+function testXmlStringToRecord37() returns error? {
+    string xmlStr = string `<ns1:Person xmlns:ns1="http://example.com">
+        <name xmlns="http://ballerina.io" value="karen">kumar</name>
+        <ns2:age xmlns:ns2="http://workspace.com">18</ns2:age>
+    </ns1:Person>`;
+
+    NSRec5 rec = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec.name.value, "karen");
+    test:assertEquals(rec.name.get("#content"), "kumar");
+    test:assertEquals(rec.age, 18);
+}
+
+@test:Config{}
+function testXmlToRecord37() returns error? {
+    xml xmlVal = xml `<ns1:Person xmlns:ns1="http://example.com">
+        <name xmlns="http://ballerina.io" value="karen">kumar</name>
+        <ns2:age xmlns:ns2="http://workspace.com">18</ns2:age>
+    </ns1:Person>`;
+
+    NSRec5 rec = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec.name.value, "karen");
+    test:assertEquals(rec.name.get("#content"), "kumar");
+    test:assertEquals(rec.age, 18);
+}
+
+type RecAtt3 record {|
+    string A;
+|};
+
+type RecAtt4 record {|
+    record {} A;
+|};
+
+type RecAtt5 record {|
+    @Attribute
+    string A;
+|};
+
+@test:Config{}
+function testXmlStringToRecord38() returns error? {
+    string xmlStr = string `<Data101 A="name"><A>1</A></Data101>`;
+    RecAtt3 rec = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec.A, "1");
+
+    RecAtt4 rec2 = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec2.A.get("#content"), "1");
+
+    RecAtt5 rec3 = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec3.A, "name");
+}
+
+@test:Config{}
+function testXmlToRecord38() returns error? {
+    xml xmlVal = xml `<Data101 A="name"><A>1</A></Data101>`;
+    RecAtt3 rec = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec.A, "1");
+
+    RecAtt4 rec2 = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec2.A.get("#content"), "1");
+
+    RecAtt5 rec3 = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec3.A, "name");
+}
+
+type RecAtt6 record {|
+    record {|
+        @Attribute
+        string data;
+        string \#content;
+    |}...;
+|};
+
+type RecAtt7 record {|
+    record {|
+        record {|
+            @Attribute
+            string data;
+            string \#content;
+        |} person;
+    |}...;
+|};
+
+@test:Config{}
+function testXmlStringToRecord39() returns error? {
+    string xmlStr = string `<Data>
+        <A data="dataValue1">1</A>
+        <B data="dataValue2">2</B>
+    </Data>`;
+
+    RecAtt6 rec = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec.get("A").data, "dataValue1");
+    test:assertEquals(rec.get("A").get("#content"), "1");
+
+    string xmlStr2 = string `<Data>
+        <A><person data="James">1</person></A>
+        <B><person data="Gunn">2</person></B>
+        </Data>`;
+    RecAtt7 rec2 = check fromXmlStringWithType(xmlStr2);
+    test:assertEquals(rec2.get("A").person.data, "James");
+    test:assertEquals(rec2.get("A").person.get("#content"), "1");
+}
+
+@test:Config{}
+function testXmlToRecord39() returns error? {
+    xml xmlVal1 = xml `<Data>
+        <A data="dataValue1">1</A>
+        <B data="dataValue2">2</B>
+    </Data>`;
+
+    RecAtt6 rec = check fromXmlWithType(xmlVal1);
+    test:assertEquals(rec.get("A").data, "dataValue1");
+    test:assertEquals(rec.get("A").get("#content"), "1");
+
+    xml xmlVal2 = xml `<Data>
+        <A><person data="James">1</person></A>
+        <B><person data="Gunn">2</person></B>
+        </Data>`;
+    RecAtt7 rec2 = check fromXmlWithType(xmlVal2);
+    test:assertEquals(rec2.get("A").person.data, "James");
+    test:assertEquals(rec2.get("A").person.get("#content"), "1");
 }
 
 // Test projection with fixed array size.
@@ -655,6 +873,30 @@ function testXmlStringToRecord40() returns error? {
     </DataProj2>`;
 
     DataProj2 rec2 = check fromXmlStringWithType(xmlStr2);
+    test:assertEquals(rec2.A.length(), 3);
+    test:assertEquals(rec2.A[0], 1);
+    test:assertEquals(rec2.A[1], 2);
+    test:assertEquals(rec2.A[2], 3);
+}
+
+@test:Config
+function testXmlToRecord40() returns error? {
+    xml xmlVal = xml `<DataProj>
+        <A><B>1</B></A>
+        <A><B>2</B></A>
+        <A><B>3</B></A>
+    </DataProj>`;
+    DataProj rec = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec.A.length(), 1);
+    test:assertEquals(rec.A[0].B, 1);
+
+    xml xmlVal2 = xml `<DataProj2>
+        <A>1</A>
+        <A>2</A>
+        <A>3</A>
+    </DataProj2>`;
+
+    DataProj2 rec2 = check fromXmlWithType(xmlVal2);
     test:assertEquals(rec2.A.length(), 3);
     test:assertEquals(rec2.A[0], 1);
     test:assertEquals(rec2.A[1], 2);
@@ -695,6 +937,30 @@ function testXmlStringToRecord41() returns error? {
     test:assertEquals(rec2.A[1], 2);
 }
 
+@test:Config
+function testXmlToRecord41() returns error? {
+    xml xmlVal = xml `<DataProj3>
+        <A><B>1</B></A>
+        <A><B>2</B></A>
+        <A><B>3</B></A>
+    </DataProj3>`;
+    DataProj3 rec = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec.A.length(), 2);
+    test:assertEquals(rec.A[0].B, 1);
+    test:assertEquals(rec.A[1].B, 2);
+
+    xml xmlVal2 = xml `<DataProj4>
+        <A>1</A>
+        <A>2</A>
+        <A>3</A>
+    </DataProj4>`;
+
+    DataProj4 rec2 = check fromXmlWithType(xmlVal2);
+    test:assertEquals(rec2.A.length(), 2);
+    test:assertEquals(rec2.A[0], 1);
+    test:assertEquals(rec2.A[1], 2);
+}
+
 @Namespace {
     uri: "http://www.example.com/invoice",
     prefix: "inv"
@@ -715,12 +981,12 @@ type DataProjField record {|
 
 @test:Config
 function testXmlStringToRecord42() returns error? {
-string xmlStr = string `<inv:invoice xmlns:inv="http://www.example.com/invoice">
-    <customers>
-        <customer>KLLBCQVN0Y</customer>
-        <customer>T8VQU3X0QH</customer>
-        <customer>DAWQU3X0QH</customer>
-    </customers>
+    string xmlStr = string `<inv:invoice xmlns:inv="http://www.example.com/invoice">
+        <customers>
+            <customer>KLLBCQVN0Y</customer>
+            <customer>T8VQU3X0QH</customer>
+            <customer>DAWQU3X0QH</customer>
+        </customers>
     </inv:invoice>`;
 
     DataProj5 invoice = check fromXmlStringWithType(xmlStr);
@@ -729,23 +995,144 @@ string xmlStr = string `<inv:invoice xmlns:inv="http://www.example.com/invoice">
     test:assertEquals(invoice.customers.cust[1], "T8VQU3X0QH");
 }
 
+@test:Config
+function testXmlToRecord42() returns error? {
+    xml xmlVal = xml `<inv:invoice xmlns:inv="http://www.example.com/invoice">
+        <customers>
+            <customer>KLLBCQVN0Y</customer>
+            <customer>T8VQU3X0QH</customer>
+            <customer>DAWQU3X0QH</customer>
+        </customers>
+    </inv:invoice>`;
+
+    DataProj5 invoice = check fromXmlWithType(xmlVal);
+    test:assertEquals(invoice.customers.cust.length(), 2);
+    test:assertEquals(invoice.customers.cust[0], "KLLBCQVN0Y");
+    test:assertEquals(invoice.customers.cust[1], "T8VQU3X0QH");
+}
+
+// Test xml with comment, processing instructions.
+
+@test:Config
+function testXmlStringToRecord51() returns error? {
+    string xmlStr = string `<?xml version="1.0" encoding="UTF-8"?>
+        <!-- This is a sample XML document with comments and a processing instruction. -->
+
+        <root>
+            <!-- This is a comment within the root element. -->
+            
+            <?target instruction?>
+            
+            <element1>
+                <!-- Comment for element1 -->
+                <subelement>Value 1</subelement>
+            </element1>
+            
+            <element2>
+                <!-- Comment for element2 -->
+                <subelement>Value 2</subelement>
+            </element2>
+        </root>`;
+    record {|
+        record {} element1;
+    |} rec = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec.length(), 1);
+    test:assertEquals(rec.element1.get("subelement"), "Value 1");
+
+    record {|
+        map<string> element1;
+        map<string> element2;
+    |} rec2 = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec2.length(), 2);
+    test:assertEquals(rec2.element1.get("subelement"), "Value 1");
+    test:assertEquals(rec2.element2.get("subelement"), "Value 2");
+}
+
+@test:Config
+function testXmlToRecord51() returns error? {
+    xml xmlVal = xml `<?xml version="1.0" encoding="UTF-8"?>
+        <!-- This is a sample XML document with comments and a processing instruction. -->
+
+        <root>
+            <!-- This is a comment within the root element. -->
+            
+            <?target instruction?>
+            
+            <element1>
+                <!-- Comment for element1 -->
+                <subelement>Value 1</subelement>
+            </element1>
+            
+            <element2>
+                <!-- Comment for element2 -->
+                <subelement>Value 2</subelement>
+            </element2>
+        </root>`;
+    record {|
+        record {} element1;
+    |} rec = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec.length(), 1);
+    test:assertEquals(rec.element1.get("subelement"), "Value 1");
+
+    record {|
+        map<string> element1;
+        map<string> element2;
+    |} rec2 = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec2.length(), 2);
+    test:assertEquals(rec2.element1.get("subelement"), "Value 1");
+    test:assertEquals(rec2.element2.get("subelement"), "Value 2");
+}
+
+@test:Config
+function testOptionalFieldInXmlConversion() returns error? {
+    string xmlStr = string `<Data><A></A><B>2</B></Data>`;
+    record {|
+        string A?;
+        string B;
+    |} rec1 = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec1.length(), 1);
+    test:assertEquals(rec1.B, "2");
+
+    xml xmlVal = xml `<Data><A></A><B>2</B></Data>`;
+    record {|
+        string A?;
+        string B;
+    |} rec2 = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec2.length(), 1);
+    test:assertEquals(rec2.B, "2");
+}
+
+
 // Negative cases
 type DataN1 record {|
     int A;
 |};
 
-
 @test:Config{}
 function testXmlStringToRecordNegative1() {
     string xmlStr1 = "<Data><B></B></Data>";
     DataN1|error rec1 = fromXmlStringWithType(xmlStr1);
-    test:assertEquals((<error>rec1).message(), "Required field A not present in XML");
+    test:assertEquals((<error>rec1).message(), "Required field 'A' not present in XML");
+}
+
+@test:Config{}
+function testXmlToRecordNegative1() {
+    xml xmlVal1 = xml `<Data><B></B></Data>`;
+    DataN1|error rec1 = fromXmlWithType(xmlVal1);
+    test:assertEquals((<error>rec1).message(), "Required field 'A' not present in XML");
 }
 
 @test:Config{}
 function testXmlStringToRecordNegative2() {
     string xmlStr1 = "<Data><A>1.0</A></Data>";
     DataN1|error rec1 = fromXmlStringWithType(xmlStr1);
+    test:assertEquals((<error>rec1).message(), "'string' value '1.0' cannot be converted to 'int'");
+}
+
+@test:Config{}
+function testXmlToRecordNegative2() {
+    xml xmlVal1 = xml `<Data><A>1.0</A></Data>`;
+    DataN1|error rec1 = fromXmlWithType(xmlVal1);
     test:assertEquals((<error>rec1).message(), "'string' value '1.0' cannot be converted to 'int'");
 }
 
@@ -759,10 +1146,24 @@ function testXmlStringToRecordNegative3() {
 }
 
 @test:Config{}
+function testXmlToRecordNegative3() {
+    xml xmlVal1 = xml `<Data><A>1.0</A></Data>`;
+    DataN2|error rec1 = fromXmlWithType(xmlVal1);
+    test:assertEquals((<error>rec1).message(), "unsupported type: 'DataN2'");
+}
+
+@test:Config{}
 function testXmlStringToRecordNegative4() {
     string xmlStr1 = "<Data><A>1</A><A>2</A></Data>";
     DataN1|error rec1 = fromXmlStringWithType(xmlStr1);
-    test:assertEquals((<error>rec1).message(), "Incompatible type expected 'array' type but found 'int' for field 'A'");
+    test:assertEquals((<error>rec1).message(), "Expected an 'int' value for the field 'A' found 'array' value");
+}
+
+@test:Config{}
+function testXmlToRecordNegative4() {
+    xml xmlVal1 = xml `<Data><A>1</A><A>2</A></Data>`;
+    DataN1|error rec1 = fromXmlWithType(xmlVal1);
+    test:assertEquals((<error>rec1).message(), "Expected an 'int' value for the field 'A' found 'array' value");
 }
 
 type DataN3 record {|
@@ -776,6 +1177,13 @@ function testXmlStringToRecordNegative5() {
     test:assertEquals((<error>rec1).message(), "Array size is not compatible with the expected size");
 }
 
+@test:Config{}
+function testXmlToRecordNegative5() {
+    xml xmlVal1 = xml `<Data><A>1</A><A>2</A><A>3</A></Data>`;
+    DataN3|error rec1 = fromXmlWithType(xmlVal1);
+    test:assertEquals((<error>rec1).message(), "Array size is not compatible with the expected size");
+}
+
 type DataN4 record {|
     string...;
 |};
@@ -784,7 +1192,14 @@ type DataN4 record {|
 function testXmlStringToRecordNegative6() {
     string xmlStr1 = "<Data><A>1</A><A>2</A><A>3</A></Data>";
     DataN4|error rec1 = fromXmlStringWithType(xmlStr1);
-    test:assertEquals((<error>rec1).message(), "Expected an 'string' type for the field 'A' found 'array' value");
+    test:assertEquals((<error>rec1).message(), "Expected an 'string' value for the field 'A' found 'array' value");
+}
+
+@test:Config{}
+function testXmlToRecordNegative6() {
+    xml xmlVal1 = xml `<Data><A>1</A><A>2</A><A>3</A></Data>`;
+    DataN4|error rec1 = fromXmlWithType(xmlVal1);
+    test:assertEquals((<error>rec1).message(), "Expected an 'string' value for the field 'A' found 'array' value");
 }
 
 @Name {
@@ -798,6 +1213,13 @@ type DataN5 record {|
 function testXmlStringToRecordNegative7() {
     string xmlStr1 = "<Data><A>1</A></Data>";
     DataN5|error rec1 = fromXmlStringWithType(xmlStr1);
+    test:assertEquals((<error>rec1).message(), "the record type name `Space` mismatch with given XML name `Data`");
+}
+
+@test:Config{}
+function testXmlToRecordNegative7() {
+    xml xmlVal1 = xml `<Data><A>1</A></Data>`;
+    DataN5|error rec1 = fromXmlWithType(xmlVal1);
     test:assertEquals((<error>rec1).message(), "the record type name `Space` mismatch with given XML name `Data`");
 }
 
@@ -815,6 +1237,13 @@ function testXmlStringToRecordNegative8() {
     test:assertEquals((<error>rec1).message(), "namespace mismatched for the type: DataN6");
 }
 
+@test:Config{}
+function testXmlToRecordNegative8() {
+    xml xmlVal1 = xml `<Data xmlns="www.test.com"><A>1</A></Data>`;
+    DataN6|error rec1 = fromXmlWithType(xmlVal1);
+    test:assertEquals((<error>rec1).message(), "namespace mismatched for the type: DataN6");
+}
+
 type DataN7 record {|
     @Namespace {
         uri: "www.example.com"
@@ -826,6 +1255,13 @@ type DataN7 record {|
 function testXmlStringToRecordNegative9() {
     string xmlStr1 = string `<Data xmlns:ns1="www.test.com"><ns1:A>1</ns1:A></Data>`;
     DataN7|error rec1 = fromXmlStringWithType(xmlStr1);
+    test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: A");
+}
+
+@test:Config{}
+function testXmlToRecordNegative9() {
+    xml xmlVal1 = xml `<Data xmlns:ns1="www.test.com"><ns1:A>1</ns1:A></Data>`;
+    DataN7|error rec1 = fromXmlWithType(xmlVal1);
     test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: A");
 }
 
@@ -844,6 +1280,13 @@ type DataN8 record {|
 function testXmlStringToRecordNegative10() {
     string xmlStr1 = string `<x:foo xmlns:x="example.com"><x:bar>1</x:bar></x:foo>`;
     DataN8|error rec1 = fromXmlStringWithType(xmlStr1);
+    test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: bar");
+}
+
+@test:Config{}
+function testXmlToRecordNegative10() {
+    xml xmlVal1 = xml `<x:foo xmlns:x="example.com"><x:bar>1</x:bar></x:foo>`;
+    DataN8|error rec1 = fromXmlWithType(xmlVal1);
     test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: bar");
 }
 
@@ -869,4 +1312,33 @@ function testXmlStringToRecordNegative11() {
     string xmlStr1 = string `<x:foo xmlns:x="example.com" xmlns="example2.com"><x:bar><baz>2</baz></x:bar></x:foo>`;
     DataN9|error rec1 = fromXmlStringWithType(xmlStr1);
     test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: baz");
+}
+
+@test:Config{}
+function testXmlToRecordNegative11() {
+    xml xmlVal1 = xml `<x:foo xmlns:x="example.com" xmlns="example2.com"><x:bar><baz>2</baz></x:bar></x:foo>`;
+    DataN9|error rec1 = fromXmlWithType(xmlVal1);
+    test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: baz");
+}
+
+@test:Config{}
+function testXmlStringToRecordNegative12() {
+    string xmlStr = string `<Data>
+        <A>1</A>
+        <B data="dataValue2">2</B>
+    </Data>`;
+
+    RecAtt6|error rec = fromXmlStringWithType(xmlStr);
+    test:assertEquals((<error>rec).message(), "Required attribute 'data' not present in XML");
+}
+
+@test:Config{}
+function testXmlToRecordNegative12() {
+    xml xmlVal = xml `<Data>
+        <A>1</A>
+        <B data="dataValue2">2</B>
+    </Data>`;
+
+    RecAtt6|error rec = fromXmlWithType(xmlVal);
+    test:assertEquals((<error>rec).message(), "Required attribute 'data' not present in XML");
 }
