@@ -1036,8 +1036,16 @@ function testXmlStringToRecord51() returns error? {
     record {|
         record {} element1;
     |} rec = check fromXmlStringWithType(xmlStr);
-    test:assertEquals(rec.element1.length(), 1);
+    test:assertEquals(rec.length(), 1);
     test:assertEquals(rec.element1.get("subelement"), "Value 1");
+
+    record {|
+        map<string> element1;
+        map<string> element2;
+    |} rec2 = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec2.length(), 2);
+    test:assertEquals(rec2.element1.get("subelement"), "Value 1");
+    test:assertEquals(rec2.element2.get("subelement"), "Value 2");
 }
 
 @test:Config
@@ -1063,8 +1071,16 @@ function testXmlToRecord51() returns error? {
     record {|
         record {} element1;
     |} rec = check fromXmlWithType(xmlVal);
-    test:assertEquals(rec.element1.length(), 1);
+    test:assertEquals(rec.length(), 1);
     test:assertEquals(rec.element1.get("subelement"), "Value 1");
+
+    record {|
+        map<string> element1;
+        map<string> element2;
+    |} rec2 = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec2.length(), 2);
+    test:assertEquals(rec2.element1.get("subelement"), "Value 1");
+    test:assertEquals(rec2.element2.get("subelement"), "Value 2");
 }
 
 @test:Config

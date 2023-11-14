@@ -25,7 +25,6 @@ import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.flags.SymbolFlags;
 import io.ballerina.runtime.api.types.ArrayType;
 import io.ballerina.runtime.api.types.Field;
-import io.ballerina.runtime.api.types.MapType;
 import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.utils.StringUtils;
@@ -209,17 +208,6 @@ public class DataUtils {
         return attributeName;
     }
 
-    public static BMap<BString, Object> createMapValue(Type type) {
-        if (type != null) {
-            if (type.getTag() == TypeTags.MAP_TAG) {
-                return ValueCreator.createMapValue((MapType) type);
-            } else if (type.getTag() == TypeTags.RECORD_TYPE_TAG) {
-                return ValueCreator.createRecordValue((RecordType) type);
-            }
-        }
-        return ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
-    }
-
     public static BArray createNewAnydataList() {
         return ValueCreator.createArrayValue(Constants.ANYDATA_ARRAY_TYPE);
     }
@@ -287,6 +275,18 @@ public class DataUtils {
 
     public static boolean isStringValueAssignable(int typeTag) {
         return typeTag == TypeTags.STRING_TAG || typeTag == TypeTags.ANYDATA_TAG || typeTag == TypeTags.JSON_TAG;
+    }
+
+    public static void updateExpectedTypeStacks(RecordType recordType, XmlAnalyzerData analyzerData) {
+        analyzerData.attributeHierarchy.push(new HashMap<>(getAllAttributesInRecordType(recordType)));
+        analyzerData.fieldHierarchy.push(new HashMap<>(getAllFieldsInRecordType(recordType, analyzerData)));
+        analyzerData.restTypes.push(recordType.getRestFieldType());
+    }
+
+    public static void removeExpectedTypeStacks(XmlAnalyzerData analyzerData) {
+        analyzerData.attributeHierarchy.pop();
+        analyzerData.fieldHierarchy.pop();
+        analyzerData.restTypes.pop();
     }
 
     /**

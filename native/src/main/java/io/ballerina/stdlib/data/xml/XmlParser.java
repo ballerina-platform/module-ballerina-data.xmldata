@@ -24,6 +24,7 @@ import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.flags.SymbolFlags;
 import io.ballerina.runtime.api.types.ArrayType;
 import io.ballerina.runtime.api.types.Field;
+import io.ballerina.runtime.api.types.MapType;
 import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.utils.StringUtils;
@@ -438,6 +439,10 @@ public class XmlParser {
                 return;
             }
             updateNextRecord(xmlStreamReader, xmlParserData, fieldName, fieldType, (RecordType) referredType);
+        } else if (fieldType.getTag() == TypeTags.MAP_TAG) {
+            RecordType recordType = TypeCreator.createRecordType("$anonType$", fieldType.getPackage(), 0,
+                    new HashMap<>(), ((MapType) fieldType).getConstrainedType(), false, 0);
+            updateNextRecord(xmlStreamReader, xmlParserData, fieldName, fieldType, recordType);
         }
     }
 
