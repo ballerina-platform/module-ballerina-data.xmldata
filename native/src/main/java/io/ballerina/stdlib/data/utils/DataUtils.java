@@ -22,6 +22,7 @@ import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.TypeTags;
 import io.ballerina.runtime.api.creators.ErrorCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
+import io.ballerina.runtime.api.flags.SymbolFlags;
 import io.ballerina.runtime.api.types.ArrayType;
 import io.ballerina.runtime.api.types.Field;
 import io.ballerina.runtime.api.types.MapType;
@@ -32,7 +33,6 @@ import io.ballerina.runtime.api.values.BArray;
 import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
-import io.ballerina.runtime.api.values.BXmlItem;
 import io.ballerina.stdlib.data.FromString;
 
 import java.util.ArrayList;
@@ -82,8 +82,7 @@ public class DataUtils {
         return recordName;
     }
 
-    public static void validateFieldNamespace(String prefix, String uri, String fieldName,
-                                              RecordType recordType, XmlAnalyzerData analyzerData) {
+    public static void validateFieldNamespace(String prefix, String uri, String fieldName, RecordType recordType) {
         ArrayList<String> namespace = getFieldNamespace(recordType, fieldName);
 
         if (namespace.isEmpty()) {
@@ -93,7 +92,7 @@ public class DataUtils {
         if (prefix.equals(namespace.get(0)) && uri.equals(namespace.get(1))) {
             return;
         }
-        throw DataUtils.getXmlError("namespace mismatched for the field: " + analyzerData.currentField.getFieldName());
+        throw DataUtils.getXmlError("namespace mismatched for the field: " + fieldName);
     }
 
     public static ArrayList<String> getFieldNamespace(RecordType recordType, String fieldName) {
@@ -174,6 +173,9 @@ public class DataUtils {
         Map<String, Field> fields = new HashMap<>();
         Map<String, Field> recordFields = recordType.getFields();
         for (String key : recordFields.keySet()) {
+            if (analyzerData.attributeHierarchy.peek().containsKey(key)) {
+                continue;
+            }
             fields.put(modifiedNames.getOrDefault(key, key), recordFields.get(key));
         }
         return fields;
@@ -196,28 +198,6 @@ public class DataUtils {
             }
         }
         return attributes;
-    }
-
-    public static void handleAttributes(BXmlItem xmlItem, BMap<BString, Object> currentNode,
-                                        XmlAnalyzerData analyzerData) {
-        BMap<BString, BString> attributeMap = xmlItem.getAttributesMap();
-        for (BString key : attributeMap.getKeys()) {
-            String attributeName = key.getValue();
-            String fieldName = attributeName;
-            Field field = analyzerData.attributeHierarchy.peek().remove(fieldName);
-            if (field == null) {
-                field = analyzerData.fieldHierarchy.peek().remove(fieldName);
-            } else {
-                analyzerData.fieldHierarchy.peek().remove(fieldName);
-            }
-
-            if (field == null) {
-                return;
-            }
-
-            currentNode.put(StringUtils.fromString(field.getFieldName()),
-                    convertStringToExpType(attributeMap.get(key), field.getFieldType()));
-        }
     }
 
     private static String getModifiedName(Map<BString, Object> fieldAnnotation, String attributeName) {
@@ -245,9 +225,7 @@ public class DataUtils {
     }
 
     public static String getElementName(QName qName) {
-        String prefix = qName.getPrefix();
-        String attributeName = qName.getLocalPart();
-        return prefix.equals("") ? attributeName : prefix + ":" + attributeName;
+        return qName.getLocalPart();
     }
 
     public static Object convertStringToExpType(BString value, Type expType) {
@@ -287,10 +265,28 @@ public class DataUtils {
                 }
             }
 
-            if (!currentMapValue.containsKey(StringUtils.fromString(fieldName))) {
-                throw DataUtils.getXmlError("Required field " + fieldName + " not present in XML");
+            if (!SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.OPTIONAL)
+                    && !currentMapValue.containsKey(StringUtils.fromString(fieldName))) {
+                throw DataUtils.getXmlError("Required field '" + fieldName + "' not present in XML");
             }
         }
+
+        Map<String, Field> attributes = analyzerData.attributeHierarchy.peek();
+        for (String key : attributes.keySet()) {
+            Field field = attributes.get(key);
+            String fieldName = field.getFieldName();
+            if (!SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.OPTIONAL)) {
+                throw DataUtils.getXmlError("Required attribute '" + fieldName + "' not present in XML");
+            }
+        }
+    }
+
+    public static boolean isArrayValueAssignable(int typeTag) {
+        return typeTag == TypeTags.ARRAY_TAG || typeTag == TypeTags.ANYDATA_TAG || typeTag == TypeTags.JSON_TAG;
+    }
+
+    public static boolean isStringValueAssignable(int typeTag) {
+        return typeTag == TypeTags.STRING_TAG || typeTag == TypeTags.ANYDATA_TAG || typeTag == TypeTags.JSON_TAG;
     }
 
     /**

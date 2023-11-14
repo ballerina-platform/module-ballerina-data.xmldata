@@ -40,17 +40,19 @@ import io.ballerina.stdlib.data.utils.DataUtils;
 import io.ballerina.stdlib.data.utils.DataUtils.XmlAnalyzerData;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.xml.namespace.QName;
 
 import static io.ballerina.runtime.api.utils.StringUtils.fromString;
 
 /**
- * XML traversal.
+ * Convert Xml value to a ballerina record.
  *
- * @since 1.0.0
+ * @since 0.1.0
  */
 
 public class XmlTraversal {
@@ -72,15 +74,15 @@ public class XmlTraversal {
                 case TypeTags.RECORD_TYPE_TAG:
                     RecordType recordType = (RecordType) referredType;
                     currentNode = ValueCreator.createRecordValue(recordType);
-                    xml = validateRootElement(xml, recordType, analyzerData);
-                    Object resultRecordValue = traverseXml(xml, recordType, analyzerData);
+                    BXml nextXml = validateRootElement(xml, recordType, analyzerData);
+                    Object resultRecordValue = traverseXml(nextXml, recordType, analyzerData);
                     DataUtils.validateRequiredFields((BMap<BString, Object>) resultRecordValue, analyzerData);
                     return resultRecordValue;
                 case TypeTags.MAP_TAG:
                     // TODO: Need to handle this.
-                    return DataUtils.getXmlError("handle this: " + type.getName());
+                    return DataUtils.getXmlError("handle this: '" + type.getName() + "'");
                 default:
-                    return DataUtils.getXmlError("unsupported type: " + type.getName());
+                    return DataUtils.getXmlError("unsupported type: '" + type.getName() + "'");
             }
         }
 
@@ -120,8 +122,17 @@ public class XmlTraversal {
 
             Object convertedValue = DataUtils.convertStringToExpType(fromString(text), fieldType);
             if (mapValue.containsKey(fieldName)) {
+                if (!DataUtils.isArrayValueAssignable(fieldType.getTag())) {
+                    throw DataUtils.getXmlError("Expected an '" + fieldType + "' value for the field '" + fieldName
+                            + "' found 'array' value");
+                }
+
                 Object value = mapValue.get(fieldName);
+                int arraySize = ((ArrayType) fieldType).getSize();
                 if (value instanceof BArray) {
+                    if (arraySize != -1 && arraySize <= ((BArray) value).getLength()) {
+                        return;
+                    }
                     ((BArray) value).append(convertedValue);
                 } else {
                     BArray array = DataUtils.createNewAnydataList();
@@ -148,11 +159,13 @@ public class XmlTraversal {
             }
 
             BMap<BString, Object> mapValue = (BMap<BString, Object>) currentNode;
-            Type currentFieldType = currentField.getFieldType();
+            Type currentFieldType = TypeUtils.getReferredType(currentField.getFieldType());
             String fieldName = currentField.getFieldName();
+            BString bCurrentFieldName = fromString(fieldName);
+
             if (type instanceof RecordType) {
                 DataUtils.validateFieldNamespace(xmlItem.getQName().getPrefix(), xmlItem.getQName().getNamespaceURI(),
-                        fieldName, (RecordType) type, analyzerData);
+                        fieldName, (RecordType) type);
             }
 
             if (currentFieldType.getTag() == TypeTags.RECORD_TYPE_TAG) {
@@ -165,12 +178,12 @@ public class XmlTraversal {
                 currentNode = analyzerData.nodesStack.pop();
                 return;
             } else if (currentFieldType.getTag() == TypeTags.ARRAY_TAG) {
-                BString bCurrentFieldName = fromString(fieldName);
+
                 if (!mapValue.containsKey(bCurrentFieldName)) {
                     BArray array = DataUtils.createNewAnydataList();
                     mapValue.put(bCurrentFieldName, array);
                 }
-                Type elementType = ((ArrayType) currentFieldType).getElementType();
+                Type elementType = TypeUtils.getReferredType(((ArrayType) currentFieldType).getElementType());
                 if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
                     currentNode = updateNextRecord(xmlItem, (RecordType) elementType, fieldName,
                             currentFieldType, mapValue, analyzerData);
@@ -188,14 +201,14 @@ public class XmlTraversal {
         private BMap<BString, Object> updateNextRecord(BXmlItem xmlItem, RecordType recordType, String fieldName,
                                                        Type fieldType, BMap<BString, Object> currentMapValue,
                                                        XmlAnalyzerData analyzerData) {
-            analyzerData.fieldHierarchy.push(DataUtils.getAllFieldsInRecordType(recordType, analyzerData));
             analyzerData.attributeHierarchy.push(DataUtils.getAllAttributesInRecordType(recordType));
+            analyzerData.fieldHierarchy.push(DataUtils.getAllFieldsInRecordType(recordType, analyzerData));
             analyzerData.restTypes.push(recordType.getRestFieldType());
             BMap<BString, Object> nextValue =
                     updateNextValue(recordType, fieldName, fieldType, currentMapValue, analyzerData);
             QName qName = xmlItem.getQName();
             DataUtils.validateTypeNamespace(qName.getPrefix(), qName.getNamespaceURI(), recordType);
-            DataUtils.handleAttributes(xmlItem, nextValue, analyzerData);
+            handleAttributes(xmlItem, nextValue, recordType, analyzerData);
             return nextValue;
         }
 
@@ -224,12 +237,15 @@ public class XmlTraversal {
 
             if (restType.getTag() == TypeTags.RECORD_TYPE_TAG) {
                 RecordType recordType = (RecordType) restType;
-                currentNode = updateNextValue(recordType, xmlItem.getQName().getLocalPart(),
+                BMap<BString, Object> nextValue = updateNextValue(recordType, xmlItem.getQName().getLocalPart(),
                         restType, mapValue, analyzerData);
-                analyzerData.fieldHierarchy.push(DataUtils.getAllFieldsInRecordType(recordType, analyzerData));
+                currentNode = nextValue;
                 analyzerData.attributeHierarchy.push(DataUtils.getAllAttributesInRecordType(recordType));
+                analyzerData.fieldHierarchy.push(DataUtils.getAllFieldsInRecordType(recordType, analyzerData));
                 analyzerData.restTypes.push(recordType.getRestFieldType());
+                handleAttributes(xmlItem, nextValue, recordType, analyzerData);
                 traverseXml(xmlItem.getChildrenSeq(), restType, analyzerData);
+                DataUtils.validateRequiredFields(nextValue, analyzerData);
                 analyzerData.fieldHierarchy.pop();
                 analyzerData.attributeHierarchy.pop();
                 analyzerData.restTypes.pop();
@@ -244,11 +260,15 @@ public class XmlTraversal {
                 Type elementType = ((ArrayType) restType).getElementType();
                 if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
                     RecordType recordType = (RecordType) elementType;
-                    currentNode = updateNextValue(recordType, elemName, restType, mapValue, analyzerData);
-                    analyzerData.fieldHierarchy.push(DataUtils.getAllFieldsInRecordType(recordType, analyzerData));
+                    BMap<BString, Object> nextValue = updateNextValue(recordType, elemName, restType, mapValue,
+                            analyzerData);
+                    currentNode = nextValue;
                     analyzerData.attributeHierarchy.push(DataUtils.getAllAttributesInRecordType(recordType));
+                    analyzerData.fieldHierarchy.push(DataUtils.getAllFieldsInRecordType(recordType, analyzerData));
                     analyzerData.restTypes.push(recordType.getRestFieldType());
+                    handleAttributes(xmlItem, nextValue, recordType, analyzerData);
                     traverseXml(xmlItem.getChildrenSeq(), elementType, analyzerData);
+                    DataUtils.validateRequiredFields(nextValue, analyzerData);
                     analyzerData.fieldHierarchy.pop();
                     analyzerData.attributeHierarchy.pop();
                     analyzerData.restTypes.pop();
@@ -289,7 +309,7 @@ public class XmlTraversal {
         }
 
         private boolean isNextElementContent(BXmlItem xml) {
-            List<BXml> newSequence = filterEmptyValues(xml.getChildrenSeq().getChildrenList());
+            List<BXml> newSequence = filterEmptyValuesOrCommentOrPi(xml.getChildrenSeq().getChildrenList());
             for (BXml bXml : newSequence) {
                 if (bXml.getNodeType() == XmlNodeType.TEXT) {
                     return true;
@@ -298,9 +318,13 @@ public class XmlTraversal {
             return false;
         }
 
-        private List<BXml> filterEmptyValues(List<BXml> sequence) {
+        private List<BXml> filterEmptyValuesOrCommentOrPi(List<BXml> sequence) {
             List<BXml> newSequence = new ArrayList<>();
             for (BXml value: sequence) {
+                if (isCommentOrPi(value)) {
+                    continue;
+                }
+
                 String textValue = value.toString();
                 if (textValue.isEmpty() || !textValue.trim().isEmpty()) {
                     newSequence.add(value);
@@ -310,7 +334,7 @@ public class XmlTraversal {
         }
 
         private void convertSequence(BXmlSequence xmlSequence, Type type, XmlAnalyzerData analyzerData) {
-            List<BXml> newSequence = filterEmptyValues(xmlSequence.getChildrenList());
+            List<BXml> newSequence = filterEmptyValuesOrCommentOrPi(xmlSequence.getChildrenList());
 
             if (newSequence.isEmpty()) {
                 return;
@@ -340,7 +364,7 @@ public class XmlTraversal {
 
         private BXml validateRootElement(BXml xml, RecordType recordType, XmlAnalyzerData analyzerData) {
             if (xml.getNodeType() == XmlNodeType.SEQUENCE) {
-                List<BXml> newSequence = filterEmptyValues(((BXmlSequence) xml).getChildrenList());
+                List<BXml> newSequence = filterEmptyValuesOrCommentOrPi(((BXmlSequence) xml).getChildrenList());
                 if (newSequence.size() == 1) {
                     return validateRootElement(newSequence.get(0), recordType, analyzerData);
                 }
@@ -350,18 +374,94 @@ public class XmlTraversal {
             }
             BXmlItem xmlItem = (BXmlItem) xml;
             analyzerData.rootRecord = recordType;
-            String elementName = xml.getElementName();
+            QName qName = xmlItem.getQName();
+            String elementName = qName.getLocalPart();
             analyzerData.rootElement =
                     DataUtils.validateAndGetXmlNameFromRecordAnnotation(recordType, recordType.getName(), elementName);
-            QName qName = xmlItem.getQName();
             DataUtils.validateTypeNamespace(qName.getPrefix(), qName.getNamespaceURI(), recordType);
 
             // Keep track of fields and attributes
+            analyzerData.attributeHierarchy.push(DataUtils.getAllAttributesInRecordType(recordType));
             analyzerData.fieldHierarchy.push(DataUtils.getAllFieldsInRecordType(recordType, analyzerData));
             analyzerData.restTypes.push(recordType.getRestFieldType());
-            analyzerData.attributeHierarchy.push(DataUtils.getAllAttributesInRecordType(recordType));
-            DataUtils.handleAttributes(xmlItem, (BMap<BString, Object>) currentNode, analyzerData);
+            handleAttributes(xmlItem, (BMap<BString, Object>) currentNode, recordType, analyzerData);
             return xmlItem.getChildrenSeq();
+        }
+
+        private void handleAttributes(BXmlItem xmlItem, BMap<BString, Object> currentNode, RecordType recordType,
+                                      XmlAnalyzerData analyzerData) {
+            HashSet<String> innerElements = findAllInnerElement(xmlItem);
+            BMap<BString, BString> attributeMap = xmlItem.getAttributesMap();
+            Map<String, String> nsPrefixMap = getNamespacePrefixes(attributeMap);
+            for (Map.Entry<BString, BString> entry : attributeMap.entrySet()) {
+                if (isNamespacePrefixEntry(entry)) {
+                    continue;
+                }
+                BString key = entry.getKey();
+                QName attribute = getAttributePreservingNamespace(nsPrefixMap, key.getValue());
+                String attributeName = attribute.getLocalPart();
+                Field field = analyzerData.attributeHierarchy.peek().remove(attributeName);
+                if (field == null) {
+                    if (innerElements.contains(attributeName)) {
+                        // Element and Attribute have same name. Priority given to element.
+                        return;
+                    }
+                    field = analyzerData.fieldHierarchy.peek().get(attributeName);
+                }
+
+                if (field == null) {
+                    continue;
+                }
+
+                DataUtils.validateFieldNamespace(attribute.getPrefix(), attribute.getNamespaceURI(),
+                        field.getFieldName(), recordType);
+
+                try {
+                    currentNode.put(StringUtils.fromString(field.getFieldName()),
+                            DataUtils.convertStringToExpType(attributeMap.get(key), field.getFieldType()));
+                } catch (Exception e) {
+                    // Ignore: Expected type will mismatch when element and attribute having same name.
+                }
+            }
+        }
+
+        private ConcurrentHashMap<String, String> getNamespacePrefixes(BMap<BString, BString> xmlAttributeMap) {
+            ConcurrentHashMap<String, String> nsPrefixMap = new ConcurrentHashMap<>();
+            for (Map.Entry<BString, BString> entry : xmlAttributeMap.entrySet()) {
+                if (isNamespacePrefixEntry(entry)) {
+                    String prefix = entry.getKey().getValue().substring(Constants.NS_PREFIX_BEGIN_INDEX);
+                    String ns = entry.getValue().getValue();
+                    nsPrefixMap.put(ns, prefix);
+                }
+            }
+            return nsPrefixMap;
+        }
+
+        private boolean isNamespacePrefixEntry(Map.Entry<BString, BString> entry) {
+            return entry.getKey().getValue().startsWith(BXmlItem.XMLNS_NS_URI_PREFIX);
+        }
+
+        private QName getAttributePreservingNamespace(Map<String, String> nsPrefixMap, String attributeKey) {
+            int nsEndIndex = attributeKey.lastIndexOf('}');
+            if (nsEndIndex > 0) {
+                String ns = attributeKey.substring(1, nsEndIndex);
+                String local = attributeKey.substring(nsEndIndex + 1);
+                String nsPrefix = nsPrefixMap.get(ns);
+                // `!nsPrefix.equals("xmlns")` because attributes does not belong to default namespace.
+                if (nsPrefix == null) {
+                    nsPrefix = "";
+                }
+                return new QName(ns, local, nsPrefix);
+            }
+            return new QName(attributeKey);
+        }
+
+        private HashSet<String> findAllInnerElement(BXmlItem xmlItem) {
+            HashSet<String> elements = new HashSet<>();
+            for (BXml xmlElem : xmlItem.getChildrenSeq().getChildrenList()) {
+                elements.add(xmlElem.getElementName());
+            }
+            return elements;
         }
     }
 }
