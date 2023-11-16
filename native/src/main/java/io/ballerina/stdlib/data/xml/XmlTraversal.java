@@ -188,7 +188,7 @@ public class XmlTraversal {
         private BMap<BString, Object> updateNextRecord(BXmlItem xmlItem, RecordType recordType, String fieldName,
                                                        Type fieldType, BMap<BString, Object> currentMapValue,
                                                        XmlAnalyzerData analyzerData) {
-            analyzerData.fieldHierarchy.push(DataUtils.getAllFieldsInRecordType(recordType, analyzerData));
+            analyzerData.fieldHierarchy.push(DataUtils.getAllFieldsInRecordType(recordType));
             analyzerData.attributeHierarchy.push(DataUtils.getAllAttributesInRecordType(recordType));
             analyzerData.restTypes.push(recordType.getRestFieldType());
             BMap<BString, Object> nextValue =
@@ -226,7 +226,7 @@ public class XmlTraversal {
                 RecordType recordType = (RecordType) restType;
                 currentNode = updateNextValue(recordType, xmlItem.getQName().getLocalPart(),
                         restType, mapValue, analyzerData);
-                analyzerData.fieldHierarchy.push(DataUtils.getAllFieldsInRecordType(recordType, analyzerData));
+                analyzerData.fieldHierarchy.push(DataUtils.getAllFieldsInRecordType(recordType));
                 analyzerData.attributeHierarchy.push(DataUtils.getAllAttributesInRecordType(recordType));
                 analyzerData.restTypes.push(recordType.getRestFieldType());
                 traverseXml(xmlItem.getChildrenSeq(), restType, analyzerData);
@@ -245,7 +245,7 @@ public class XmlTraversal {
                 if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
                     RecordType recordType = (RecordType) elementType;
                     currentNode = updateNextValue(recordType, elemName, restType, mapValue, analyzerData);
-                    analyzerData.fieldHierarchy.push(DataUtils.getAllFieldsInRecordType(recordType, analyzerData));
+                    analyzerData.fieldHierarchy.push(DataUtils.getAllFieldsInRecordType(recordType));
                     analyzerData.attributeHierarchy.push(DataUtils.getAllAttributesInRecordType(recordType));
                     analyzerData.restTypes.push(recordType.getRestFieldType());
                     traverseXml(xmlItem.getChildrenSeq(), elementType, analyzerData);
@@ -357,7 +357,7 @@ public class XmlTraversal {
             DataUtils.validateTypeNamespace(qName.getPrefix(), qName.getNamespaceURI(), recordType);
 
             // Keep track of fields and attributes
-            analyzerData.fieldHierarchy.push(DataUtils.getAllFieldsInRecordType(recordType, analyzerData));
+            analyzerData.fieldHierarchy.push(DataUtils.getAllFieldsInRecordType(recordType));
             analyzerData.restTypes.push(recordType.getRestFieldType());
             analyzerData.attributeHierarchy.push(DataUtils.getAllAttributesInRecordType(recordType));
             DataUtils.handleAttributes(xmlItem, (BMap<BString, Object>) currentNode, analyzerData);

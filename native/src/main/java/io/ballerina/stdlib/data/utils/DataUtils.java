@@ -23,13 +23,28 @@ import io.ballerina.runtime.api.TypeTags;
 import io.ballerina.runtime.api.creators.ErrorCreator;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
-import io.ballerina.runtime.api.types.*;
+import io.ballerina.runtime.api.types.ArrayType;
+import io.ballerina.runtime.api.types.Field;
+import io.ballerina.runtime.api.types.RecordType;
+import io.ballerina.runtime.api.types.Type;
+import io.ballerina.runtime.api.types.UnionType;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.utils.TypeUtils;
-import io.ballerina.runtime.api.values.*;
+import io.ballerina.runtime.api.values.BArray;
+import io.ballerina.runtime.api.values.BError;
+import io.ballerina.runtime.api.values.BMap;
+import io.ballerina.runtime.api.values.BString;
+import io.ballerina.runtime.api.values.BTypedesc;
+import io.ballerina.runtime.api.values.BXmlItem;
 import io.ballerina.stdlib.data.FromString;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Stack;
 
 import javax.xml.namespace.QName;
 
@@ -148,7 +163,7 @@ public class DataUtils {
         return namespace;
     }
 
-    public static Map<String, Field> getAllFieldsInRecordType(RecordType recordType, XmlAnalyzerData analyzerData) {
+    public static Map<String, Field> getAllFieldsInRecordType(RecordType recordType) {
         BMap<BString, Object> annotations = recordType.getAnnotations();
         HashMap<String, String> modifiedNames = new LinkedHashMap<>();
         for (BString annotationKey : annotations.getKeys()) {
@@ -216,17 +231,6 @@ public class DataUtils {
             }
         }
         return attributeName;
-    }
-
-    public static BMap<BString, Object> createMapValue(Type type) {
-        if (type != null) {
-            if (type.getTag() == TypeTags.MAP_TAG) {
-                return ValueCreator.createMapValue((MapType) type);
-            } else if (type.getTag() == TypeTags.RECORD_TYPE_TAG) {
-                return ValueCreator.createRecordValue((RecordType) type);
-            }
-        }
-        return ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
     }
 
     public static BArray createNewAnydataList() {
@@ -376,14 +380,16 @@ public class DataUtils {
         return key;
     }
 
-    private static BMap<BString, Object> getFieldNamespaceAnnotations(String key, BMap<BString, Object> parentAnnotations) {
+    private static BMap<BString, Object> getFieldNamespaceAndNameAnnotations(String key,
+                                                                             BMap<BString, Object> parentAnnotations) {
         BMap<BString, Object> nsFieldAnnotation = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         BString annotationKey =
                 StringUtils.fromString((Constants.FIELD + key).replace(Constants.COLON, "\\:"));
         if (parentAnnotations.containsKey(annotationKey)) {
             BMap<BString, Object> annotationValue = (BMap<BString, Object>) parentAnnotations.get(annotationKey);
             for (BString fieldKey : annotationValue.getKeys()) {
-                if (fieldKey.toString().endsWith(Constants.NAME_SPACE)) {
+                String keyName = fieldKey.getValue();
+                if (keyName.endsWith(Constants.NAME_SPACE) || keyName.endsWith(Constants.NAME)) {
                     nsFieldAnnotation.put(fieldKey, annotationValue.get(fieldKey));
                     break;
                 }
@@ -398,7 +404,7 @@ public class DataUtils {
         BMap<BString, Object>  parentRecordAnnotations = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         BMap<BString, Object> annotation = ((RecordType) childType).getAnnotations();
         if (parentAnnotations.size() > 0) {
-            annotation.merge(getFieldNamespaceAnnotations(key, parentAnnotations), true);
+            annotation.merge(getFieldNamespaceAndNameAnnotations(key, parentAnnotations), true);
             processSubRecordAnnotation(parentAnnotations, parentRecordAnnotations);
         }
         BMap<BString, Object> subRecord = addFields(((BMap<BString, Object>) value), childType);
