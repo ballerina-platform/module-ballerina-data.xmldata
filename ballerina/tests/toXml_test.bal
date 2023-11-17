@@ -162,8 +162,12 @@ type Customer record {
     @Name {
         value: "employeeName"
     }
+    @Namespace {
+        prefix: "ns",
+        uri: "http://sdf.com"
+    }
     @Attribute
-    string ns\:name;
+    string name;
 
     int age;
 };
@@ -172,7 +176,7 @@ type Customer record {
     groups: ["toXml"]
 }
 isolated function testRecordWithAnnotationToXml1() returns error? {
-    Customer data = {ns\:name: "Asha", age: 10};
+    Customer data = {name: "Asha", age: 10};
     xml result = check toXml(data);
     test:assertEquals(result,
                     xml `<ns:Customers xmlns:ns="http://sdf.com" ns:employeeName="Asha"><age>10</age></ns:Customers>`,
@@ -191,8 +195,12 @@ type Customer2 record {
     @Name {
         value: "employeeName"
     }
+    @Namespace {
+        prefix: "ns",
+        uri: "http://sdf.com"
+    }
     @Attribute
-    string ns\:name;
+    string name;
 
     int age;
 };
@@ -201,7 +209,7 @@ type Customer2 record {
     groups: ["toXml"]
 }
 isolated function testRecordWithAnnotationToXml2() returns error? {
-    Customer2 data = {ns\:name: "Asha", age: 10};
+    Customer2 data = {name: "Asha", age: 10};
     xml result = check toXml(data);
     test:assertEquals(result,
                     xml `<ns:Customers xmlns:ns="http://sdf.com" ns:employeeName="Asha"><age>10</age></ns:Customers>`,
@@ -217,11 +225,15 @@ isolated function testRecordWithAnnotationToXml2() returns error? {
 }
 type Customer3 record {
 
+    @Namespace {
+        prefix: "ns",
+        uri: "http://sdf.com"
+    }
     @Attribute
     @Name {
         value: "employeeName"
     }
-    string ns\:name;
+    string name;
 
     int age;
 };
@@ -230,7 +242,7 @@ type Customer3 record {
     groups: ["toXml"]
 }
 isolated function testRecordWithAnnotationToXml3() returns error? {
-    Customer3 data = {ns\:name: "Asha", age: 10};
+    Customer3 data = {name: "Asha", age: 10};
     xml result = check toXml(data);
     test:assertEquals(result,
                     xml `<ns:Customers xmlns:ns="http://sdf.com" ns:employeeName="Asha"><age>10</age></ns:Customers>`,
@@ -247,10 +259,14 @@ isolated function testRecordWithAnnotationToXml3() returns error? {
 type Customer4 record {
 
     @Attribute
+    @Namespace {
+        prefix: "ns",
+        uri: "http://sdf.com"
+    }
     @Name {
         value: "employeeName"
     }
-    string ns\:name;
+    string name;
 
     int age;
 };
@@ -259,7 +275,7 @@ type Customer4 record {
     groups: ["toXml"]
 }
 isolated function testRecordWithAnnotationToXml4() returns error? {
-    Customer4 data = {ns\:name: "Asha", age: 10};
+    Customer4 data = {name: "Asha", age: 10};
     xml result = check toXml(data);
     test:assertEquals(result,
                     xml `<ns:Customers xmlns:ns="http://sdf.com" ns:employeeName="Asha"><age>10</age></ns:Customers>`,
@@ -512,7 +528,7 @@ isolated function testMapXmlArrayToXml1() returns error? {
     groups: ["toXml"]
 }
 isolated function testRecordArrayToXml1() returns error? {
-    Customer[] customers = [{ns\:name: "Asha", age: 10}, {ns\:name: "Kalai", age: 10}];
+    Customer[] customers = [{name: "Asha", age: 10}, {name: "Kalai", age: 10}];
     map<Customer[]> data = {customers: customers};
     string expected = "<root>" +
                         "<customers xmlns:ns=\"http://sdf.com\" ns:employeeName=\"Asha\">" +
@@ -530,7 +546,7 @@ isolated function testRecordArrayToXml1() returns error? {
     groups: ["toXml"]
 }
 isolated function testRecordArrayToXml2() returns error? {
-    Customer[] customers = [{ns\:name: "Asha", age: 10}, {ns\:name: "Kalai", age: 10}];
+    Customer[] customers = [{name: "Asha", age: 10}, {name: "Kalai", age: 10}];
     map<Customer[]> data = {customer1: customers, customer2: customers};
     string expected = "<root>" +
                         "<customer1 xmlns:ns=\"http://sdf.com\" ns:employeeName=\"Asha\">" +
@@ -699,11 +715,11 @@ type Purchased_Bill record {
     Purchased_Items PurchasedItems;
     Purchased_Address Address;
     @Attribute
-    string 'xmlns\:ns?;
-    @Attribute
+    @Namespace {
+        prefix: "ns",
+        uri: "ns.com"
+    }
     string attr?;
-    @Attribute
-    string ns\:attr?;
 };
 
 type Purchased_Items record {
@@ -752,12 +768,10 @@ isolated function testRecordWithNamespaceAnnotationToXml() returns error? {
             Zip: 300,
             Country: "LK"
         },
-        'xmlns\:ns: "ns.com",
-        attr: "attr-val",
-        ns\:attr: "ns-attr-val"
+        attr: "attr-val"
     };
     string expected =
-        "<Purchased_Bill xmlns=\"example.com\" xmlns:ns=\"ns.com\" attr=\"attr-val\" ns:attr=\"ns-attr-val\">" +
+        "<Purchased_Bill xmlns=\"example.com\" xmlns:ns=\"ns.com\" ns:attr=\"attr-val\">" +
             "<PurchasedItems>" +
                 "<PLine>" +
                     "<ItemCode>223345</ItemCode>" +
@@ -792,11 +806,11 @@ type Purchased_Bill1 record {
     }
     Purchased_Items1 PurchasedItem;
     @Attribute
-    string 'xmlns\:ns?;
-    @Attribute
+    @Namespace {
+        prefix: "ns",
+        uri: "ns.com"
+    }
     string attr?;
-    @Attribute
-    string ns\:attr?;
 };
 
 @Namespace {
@@ -837,12 +851,10 @@ isolated function testRecordWithNamaspaceAnnotationToXml1() returns error? {
                         }
                     ]
             },
-            'xmlns\:ns: "ns.com",
-            attr: "attr-val",
-            ns\:attr: "ns-attr-val"
+            attr: "attr-val"
         };
     string expected =
-        "<Purchased_Bill1 xmlns=\"example.com\" xmlns:ns=\"ns.com\" attr=\"attr-val\" ns:attr=\"ns-attr-val\">" +
+        "<Purchased_Bill1 xmlns=\"example.com\" xmlns:ns=\"ns.com\" ns:attr=\"attr-val\">" +
             "<ns0:PurchasedItems xmlns:ns0=\"example.com\">" +
                 "<PLine>" +
                     "<ItemCode>223345</ItemCode>" +
@@ -869,11 +881,11 @@ isolated function testRecordWithNamaspaceAnnotationToXml1() returns error? {
 type Purchased_Bill2 record {
     Purchased_Items2 PurchasedItems;
     @Attribute
-    string 'xmlns\:ns?;
-    @Attribute
+    @Namespace {
+        prefix: "ns",
+        uri: "ns.com"
+    }
     string attr?;
-    @Attribute
-    string ns\:attr?;
 };
 
 @Namespace {
@@ -917,12 +929,10 @@ isolated function testRecordWithNamaspaceAnnotationToXml2() returns error? {
                         }
                     ]
             },
-            'xmlns\:ns: "ns.com",
-            attr: "attr-val",
-            ns\:attr: "ns-attr-val"
+            attr: "attr-val"
         };
     string expected =
-        "<ns0:Purchased_Bill2 xmlns:ns0=\"example.com\" xmlns:ns=\"ns.com\" attr=\"attr-val\" ns:attr=\"ns-attr-val\">" +
+        "<ns0:Purchased_Bill2 xmlns:ns0=\"example.com\" xmlns:ns=\"ns.com\" ns:attr=\"attr-val\">" +
             "<ns1:PurchasedItems xmlns:ns1=\"example1.com\">" +
                 "<ns2:pLine xmlns:ns2=\"example2.com\">" +
                     "<itemCode>223345</itemCode>" +
@@ -942,35 +952,6 @@ isolated function testRecordWithNamaspaceAnnotationToXml2() returns error? {
     test:assertEquals(result.toString(), expected, msg = "testRecordWithNamaspaceAnnotationToXml2 result incorrect");
 }
 
-@Name {
-    value: "Customers"
-}
-@Namespace {
-    prefix: "ns",
-    uri: "http://sdf.com"
-}
-type CustomerDetails record {
-
-    @Name {
-        value: "employeeName"
-    }
-    @Attribute
-    string ns\:name;
-
-    int age;
-};
-
-@test:Config {
-    groups: ["toXml"]
-}
-isolated function testRecordWithAnnotationToXml5() returns error? {
-    CustomerDetails data = {ns\:name: "Asha", age: 10};
-    xml result = check toXml(data);
-    test:assertEquals(result,
-                    xml `<ns:Customers xmlns:ns="http://sdf.com" ns:employeeName="Asha"><age>10</age></ns:Customers>`,
-                    msg = "testRecordWithAnnotationToXml5 result incorrect");
-}
-
 @Namespace {
     prefix: "ns",
     uri: "http://sdf.com"
@@ -978,12 +959,11 @@ isolated function testRecordWithAnnotationToXml5() returns error? {
 type Invoices record {
     int id;
     string PurchasedItem;
-    @Attribute
-    string 'xmlns?;
+    @Namespace {
+        uri: "example2.com"
+    }
     @Attribute
     string attr?;
-    @Attribute
-    string ns\:attr?;
 };
 
 @test:Config {
@@ -993,12 +973,10 @@ isolated function testRecordWithAnnotationToXml6() returns error? {
     Invoices data = {
         id: 1,
         PurchasedItem: "soap",
-        attr: "attr-val",
-        'xmlns: "example2.com",
-        ns\:attr: "example1.com"
+        attr: "attr-val"
     };
     string expected =
-        "<ns:Invoices xmlns=\"example2.com\" xmlns:ns=\"http://sdf.com\" attr=\"attr-val\" ns:attr=\"example1.com\">" +
+        "<ns:Invoices xmlns=\"example2.com\" xmlns:ns=\"http://sdf.com\" attr=\"attr-val\">" +
             "<id>1</id>" +
             "<PurchasedItem>soap</PurchasedItem>" +
         "</ns:Invoices>";
@@ -1013,12 +991,11 @@ isolated function testRecordWithAnnotationToXml6() returns error? {
 type Invoices1 record {
     Items[] items;
     int id;
-    @Attribute
-    string 'xmlns?;
+    @Namespace {
+        uri: "example2.com"
+    }
     @Attribute
     string attr?;
-    @Attribute
-    string ns\:attr?;
 };
 
 type Items record {
@@ -1036,12 +1013,10 @@ isolated function testRecordWithAnnotationToXml7() returns error? {
                    {itemCode: "223300", count: 7}
                ],
         id: 1,
-        attr: "attr-val",
-        'xmlns: "example2.com",
-        ns\:attr: "example1.com"
+        attr: "attr-val"
     };
     string expected =
-        "<ns:Invoices1 xmlns=\"example2.com\" xmlns:ns=\"http://sdf.com\" attr=\"attr-val\" ns:attr=\"example1.com\">" +
+        "<ns:Invoices1 xmlns=\"example2.com\" xmlns:ns=\"http://sdf.com\" attr=\"attr-val\">" +
             "<items>" +
                 "<itemCode>223345</itemCode>" +
                 "<count>1</count>" +
@@ -1066,12 +1041,12 @@ isolated function testRecordWithAnnotationToXml7() returns error? {
 type Example record {
     PurchasedItems PurchasedItems;
     PurchasedAddress Address;
-    @Attribute
-    string 'xmlns\:ns?;
+    @Namespace {
+        prefix: "ns",
+        uri: "ns.com"
+    }
     @Attribute
     string attr?;
-    @Attribute
-    string ns\:attr?;
 };
 
 @Namespace {
@@ -1137,12 +1112,10 @@ isolated function testRecordWithNamespaceAnnotationToXml1() returns error? {
             Zip: 300,
             Country: "LK"
         },
-        'xmlns\:ns: "ns.com",
-        attr: "attr-val",
-        ns\:attr: "ns-attr-val"
+        attr: "attr-val"
     };
     string expected =
-        "<nso:PurchasedBill xmlns:nso=\"example.com\" xmlns:ns=\"ns.com\" attr=\"attr-val\" ns:attr=\"ns-attr-val\">" +
+        "<nso:PurchasedBill xmlns:nso=\"example.com\" xmlns:ns=\"ns.com\" ns:attr=\"attr-val\">" +
          	"<ns1:PurchasedPurchase xmlns:ns1=\"example1.com\">" +
          		"<ns1:PLine xmlns:ns2=\"example1.com\" attr=\"1\">" +
          			"<ItemCode>223345</ItemCode>" +
