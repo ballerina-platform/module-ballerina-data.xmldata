@@ -42,3 +42,4 @@ public type Options record {
     typedesc<float|decimal> numericPreference = decimal;
 };
 
+public type Error distinct error;

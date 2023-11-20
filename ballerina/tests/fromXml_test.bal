@@ -601,6 +601,9 @@ function testXmlToRecord32() returns error? {
     prefix: "x",
     uri: "example.com"
 }
+@Name {
+    value: "foo"
+}
 type NSRec1 record {|
     string \#content;
 |};
@@ -648,6 +651,9 @@ function testXmlToRecord34() returns error? {
 @Namespace {
     prefix: "x",
     uri: "example.com"
+}
+@Name {
+    value: "foo"
 }
 type NSRec3 record {|
     @Namespace {
