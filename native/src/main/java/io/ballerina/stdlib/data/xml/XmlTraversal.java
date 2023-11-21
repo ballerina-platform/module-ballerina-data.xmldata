@@ -105,15 +105,16 @@ public class XmlTraversal {
             return currentNode;
         }
 
+        @SuppressWarnings("unchecked")
         private void convertText(String text, XmlAnalyzerData analyzerData) {
             Field currentField = analyzerData.currentField;
 
             BMap<BString, Object> mapValue = (BMap<BString, Object>) currentNode;
 
             if (currentField == null) {
-                Map<String, Field> currentFieldMap = analyzerData.fieldHierarchy.peek();
-                if (currentFieldMap.containsKey(Constants.CONTENT)) {
-                    currentField = currentFieldMap.remove(Constants.CONTENT);
+                Map<QualifiedName, Field> currentFieldMap = analyzerData.fieldHierarchy.peek();
+                if (currentFieldMap.containsKey(Constants.CONTENT_QNAME)) {
+                    currentField = currentFieldMap.remove(Constants.CONTENT_QNAME);
                 } else if (analyzerData.restTypes.peek() != null) {
                     currentField = Constants.CONTENT_FIELD;
                 } else {
@@ -148,8 +149,9 @@ public class XmlTraversal {
             }
         }
 
+        @SuppressWarnings("unchecked")
         private void convertElement(BXmlItem xmlItem, Type type, XmlAnalyzerData analyzerData) {
-            String elementName = DataUtils.getElementName(xmlItem.getQName());
+            QualifiedName elementName = DataUtils.getElementName(xmlItem.getQName());
             Field currentField = analyzerData.fieldHierarchy.peek().get(elementName);
             analyzerData.currentField = currentField;
 
@@ -167,12 +169,6 @@ public class XmlTraversal {
             String fieldName = currentField.getFieldName();
             BString bCurrentFieldName = fromString(fieldName);
             int currentFieldTag = currentFieldType.getTag();
-
-            if (type instanceof RecordType) {
-                DataUtils.validateFieldNamespace(xmlItem.getQName().getPrefix(), xmlItem.getQName().getNamespaceURI(),
-                        fieldName, (RecordType) type);
-            }
-
             if (currentFieldTag == TypeTags.RECORD_TYPE_TAG) {
                 currentNode = updateNextRecord(xmlItem, (RecordType) currentFieldType, fieldName,
                         currentFieldType, mapValue, analyzerData);
@@ -344,9 +340,7 @@ public class XmlTraversal {
 
         private Object convertHeterogeneousSequence(List<BXml> sequence, Type type, XmlAnalyzerData analyzerData) {
             for (BXml bXml: sequence) {
-                if (isCommentOrPi(bXml)) {
-                    continue;
-                } else {
+                if (!isCommentOrPi(bXml)) {
                     traverseXml(bXml, type, analyzerData);
                 }
             }
@@ -357,6 +351,7 @@ public class XmlTraversal {
             return bxml.getNodeType() == XmlNodeType.COMMENT || bxml.getNodeType() == XmlNodeType.PI;
         }
 
+        @SuppressWarnings("unchecked")
         private BXml validateRootElement(BXml xml, RecordType recordType, XmlAnalyzerData analyzerData) {
             if (xml.getNodeType() == XmlNodeType.SEQUENCE) {
                 List<BXml> newSequence = filterEmptyValuesOrCommentOrPi(((BXmlSequence) xml).getChildrenList());
@@ -369,11 +364,10 @@ public class XmlTraversal {
             }
             BXmlItem xmlItem = (BXmlItem) xml;
             analyzerData.rootRecord = recordType;
-            QName qName = xmlItem.getQName();
-            String elementName = qName.getLocalPart();
+            QualifiedName elementQName = DataUtils.getElementName(xmlItem.getQName());
             analyzerData.rootElement =
-                    DataUtils.validateAndGetXmlNameFromRecordAnnotation(recordType, recordType.getName(), elementName);
-            DataUtils.validateTypeNamespace(qName.getPrefix(), qName.getNamespaceURI(), recordType);
+                    DataUtils.validateAndGetXmlNameFromRecordAnnotation(recordType, recordType.getName(), elementQName);
+            DataUtils.validateTypeNamespace(elementQName.getPrefix(), elementQName.getNamespaceURI(), recordType);
 
             // Keep track of fields and attributes
             DataUtils.updateExpectedTypeStacks(recordType, analyzerData);
@@ -391,23 +385,19 @@ public class XmlTraversal {
                     continue;
                 }
                 BString key = entry.getKey();
-                QName attribute = getAttributePreservingNamespace(nsPrefixMap, key.getValue());
-                String attributeName = attribute.getLocalPart();
-                Field field = analyzerData.attributeHierarchy.peek().remove(attributeName);
+                QualifiedName attribute = getAttributePreservingNamespace(nsPrefixMap, key.getValue());
+                Field field = analyzerData.attributeHierarchy.peek().remove(attribute);
                 if (field == null) {
-                    if (innerElements.contains(attributeName)) {
+                    if (innerElements.contains(attribute.getLocalPart())) {
                         // Element and Attribute have same name. Priority given to element.
                         return;
                     }
-                    field = analyzerData.fieldHierarchy.peek().get(attributeName);
+                    field = analyzerData.fieldHierarchy.peek().get(attribute);
                 }
 
                 if (field == null) {
                     continue;
                 }
-
-                DataUtils.validateFieldNamespace(attribute.getPrefix(), attribute.getNamespaceURI(),
-                        field.getFieldName(), recordType);
 
                 try {
                     currentNode.put(StringUtils.fromString(field.getFieldName()),
@@ -434,7 +424,7 @@ public class XmlTraversal {
             return entry.getKey().getValue().startsWith(BXmlItem.XMLNS_NS_URI_PREFIX);
         }
 
-        private QName getAttributePreservingNamespace(Map<String, String> nsPrefixMap, String attributeKey) {
+        private QualifiedName getAttributePreservingNamespace(Map<String, String> nsPrefixMap, String attributeKey) {
             int nsEndIndex = attributeKey.lastIndexOf('}');
             if (nsEndIndex > 0) {
                 String ns = attributeKey.substring(1, nsEndIndex);
@@ -444,9 +434,9 @@ public class XmlTraversal {
                 if (nsPrefix == null) {
                     nsPrefix = "";
                 }
-                return new QName(ns, local, nsPrefix);
+                return new QualifiedName(ns, local, nsPrefix);
             }
-            return new QName(attributeKey);
+            return new QualifiedName(attributeKey);
         }
 
         private HashSet<String> findAllInnerElement(BXmlItem xmlItem) {

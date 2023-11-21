@@ -1108,6 +1108,47 @@ function testOptionalFieldInXmlConversion() returns error? {
     test:assertEquals(rec2.B, "2");
 }
 
+type RecNs2 record {|
+    @Namespace {
+        prefix: "x",
+        uri: "example.com"
+    }
+    string bar;
+    @Name {
+        value: "bar"
+    }
+    @Namespace {
+        prefix: "y",
+        uri: "example2.com"
+    }
+    string baz;
+|};
+
+@test:Config{}
+function testSameElementWithDifferentNameSpace() returns error? {
+    string xmlStr = string `<x:foo xmlns:x="example.com" xmlns:y="example2.com" ><x:bar>1</x:bar><y:bar>2</y:bar></x:foo>`;
+    RecNs2 rec = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec.bar, "1");
+    test:assertEquals(rec.baz, "2");
+
+    xml xmlVal = xml `<x:foo xmlns:x="example.com" xmlns:y="example2.com" ><x:bar>1</x:bar><y:bar>2</y:bar></x:foo>`;
+    RecNs2 rec2 = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec2.bar, "1");
+    test:assertEquals(rec2.baz, "2");
+}
+
+@test:Config{}
+function testSameAttributeWithDifferentNameSpace() returns error? {
+    string xmlStr = string `<x:foo xmlns:x="example.com" xmlns:y="example2.com" x:bar="1" y:bar="2"></x:foo>`;
+    RecNs2 rec = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec.bar, "1");
+    test:assertEquals(rec.baz, "2");
+
+    xml xmlVal = xml `<x:foo xmlns:x="example.com" xmlns:y="example2.com" x:bar="1" y:bar="2"></x:foo>`;
+    RecNs2 rec2 = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec2.bar, "1");
+    test:assertEquals(rec2.baz, "2");
+}
 
 // Negative cases
 type DataN1 record {|
