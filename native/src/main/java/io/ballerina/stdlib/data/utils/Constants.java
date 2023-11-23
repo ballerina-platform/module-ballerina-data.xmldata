@@ -55,8 +55,8 @@ public class Constants {
     public static final String CONTENT = "#content";
     public static final QualifiedName CONTENT_QNAME = new QualifiedName("", CONTENT, "");
     public static final String XMLNS = "xmlns";
+    public static final String FIELD_REGEX = "\\$field\\$\\.";
     public static final Field CONTENT_FIELD =
             TypeCreator.createField(PredefinedTypes.TYPE_ANYDATA, Constants.CONTENT, SymbolFlags.REQUIRED);
     public static final int NS_PREFIX_BEGIN_INDEX = BXmlItem.XMLNS_NS_URI_PREFIX.length();
-    public static final String NS_ANNOT_NOT_DEFINED = "$$ns_annot_not_defined$$";
 }

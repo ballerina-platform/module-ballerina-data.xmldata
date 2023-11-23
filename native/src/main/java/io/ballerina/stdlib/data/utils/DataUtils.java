@@ -100,7 +100,7 @@ public class DataUtils {
                         prefix == null ? "" : prefix.getValue());
             }
         }
-        return new QualifiedName(Constants.NS_ANNOT_NOT_DEFINED, recordName, "");
+        return new QualifiedName(QualifiedName.NS_ANNOT_NOT_DEFINED, recordName, "");
     }
 
     public static void validateTypeNamespace(String prefix, String uri, RecordType recordType) {
@@ -160,7 +160,8 @@ public class DataUtils {
         Map<String, Field> recordFields = recordType.getFields();
         for (String key : recordFields.keySet()) {
             QualifiedName modifiedQName =
-                    modifiedNames.getOrDefault(key, new QualifiedName(Constants.NS_ANNOT_NOT_DEFINED, key, ""));
+                    modifiedNames.getOrDefault(key,
+                            new QualifiedName(QualifiedName.NS_ANNOT_NOT_DEFINED, key, ""));
             if (fields.containsKey(modifiedQName)) {
                 throw DataUtils.getXmlError("Duplicate field '" + modifiedQName.getLocalPart() + "'");
             } else if (analyzerData.attributeHierarchy.peek().containsKey(modifiedQName)) {
@@ -199,7 +200,7 @@ public class DataUtils {
                         prefix == null ? "" : prefix.getValue());
             }
         }
-        return new QualifiedName(Constants.NS_ANNOT_NOT_DEFINED, fieldName, "");
+        return new QualifiedName(QualifiedName.NS_ANNOT_NOT_DEFINED, fieldName, "");
     }
 
     @SuppressWarnings("unchecked")

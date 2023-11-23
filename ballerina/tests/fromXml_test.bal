@@ -26,7 +26,19 @@ type Data record {|
 
 @test:Config{}
 function testXmlStringToRecord1() returns error? {
-    string xmlStr = "<Data><A><B>1</B><B>2</B><C>6</C></A><D>5</D><A><B>3</B><B>4</B><C>5</C></A></Data>";
+    string xmlStr = string `<Data>
+        <A>
+            <B>1</B>
+            <B>2</B>
+            <C>6</C>
+        </A>
+        <D>5</D>
+        <A>
+            <B>3</B>
+            <B>4</B>
+            <C>5</C>
+        </A>
+    </Data>`;
     Data rec1 = check fromXmlStringWithType(xmlStr);
 
     test:assertEquals(rec1.A.length(), 2);
@@ -1302,14 +1314,14 @@ type DataN7 record {|
 function testXmlStringToRecordNegative9() {
     string xmlStr1 = string `<Data xmlns:ns1="www.test.com"><ns1:A>1</ns1:A></Data>`;
     DataN7|error rec1 = fromXmlStringWithType(xmlStr1);
-    test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: A");
+    test:assertEquals((<error>rec1).message(), "Required field 'A' not present in XML");
 }
 
 @test:Config{}
 function testXmlToRecordNegative9() {
     xml xmlVal1 = xml `<Data xmlns:ns1="www.test.com"><ns1:A>1</ns1:A></Data>`;
     DataN7|error rec1 = fromXmlWithType(xmlVal1);
-    test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: A");
+    test:assertEquals((<error>rec1).message(), "Required field 'A' not present in XML");
 }
 
 @Namespace {
@@ -1327,14 +1339,14 @@ type DataN8 record {|
 function testXmlStringToRecordNegative10() {
     string xmlStr1 = string `<x:foo xmlns:x="example.com"><x:bar>1</x:bar></x:foo>`;
     DataN8|error rec1 = fromXmlStringWithType(xmlStr1);
-    test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: bar");
+    test:assertEquals((<error>rec1).message(), "Required field 'bar' not present in XML");
 }
 
 @test:Config{}
 function testXmlToRecordNegative10() {
     xml xmlVal1 = xml `<x:foo xmlns:x="example.com"><x:bar>1</x:bar></x:foo>`;
     DataN8|error rec1 = fromXmlWithType(xmlVal1);
-    test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: bar");
+    test:assertEquals((<error>rec1).message(), "Required field 'bar' not present in XML");
 }
 
 @Namespace {
@@ -1358,14 +1370,14 @@ type DataN9 record {|
 function testXmlStringToRecordNegative11() {
     string xmlStr1 = string `<x:foo xmlns:x="example.com" xmlns="example2.com"><x:bar><baz>2</baz></x:bar></x:foo>`;
     DataN9|error rec1 = fromXmlStringWithType(xmlStr1);
-    test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: baz");
+    test:assertEquals((<error>rec1).message(), "Required field 'baz' not present in XML");
 }
 
 @test:Config{}
 function testXmlToRecordNegative11() {
     xml xmlVal1 = xml `<x:foo xmlns:x="example.com" xmlns="example2.com"><x:bar><baz>2</baz></x:bar></x:foo>`;
     DataN9|error rec1 = fromXmlWithType(xmlVal1);
-    test:assertEquals((<error>rec1).message(), "namespace mismatched for the field: baz");
+    test:assertEquals((<error>rec1).message(), "Required field 'baz' not present in XML");
 }
 
 @test:Config{}

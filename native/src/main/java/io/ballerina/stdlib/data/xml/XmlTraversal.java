@@ -93,7 +93,7 @@ public class XmlTraversal {
         private Object traverseXml(BXml xml, Type type, XmlAnalyzerData analyzerData) {
             switch (xml.getNodeType()) {
                 case ELEMENT:
-                    convertElement((BXmlItem) xml, type, analyzerData);
+                    convertElement((BXmlItem) xml, analyzerData);
                     break;
                 case SEQUENCE:
                     convertSequence((BXmlSequence) xml, type, analyzerData);
@@ -150,7 +150,7 @@ public class XmlTraversal {
         }
 
         @SuppressWarnings("unchecked")
-        private void convertElement(BXmlItem xmlItem, Type type, XmlAnalyzerData analyzerData) {
+        private void convertElement(BXmlItem xmlItem, XmlAnalyzerData analyzerData) {
             QualifiedName elementName = DataUtils.getElementName(xmlItem.getQName());
             Field currentField = analyzerData.fieldHierarchy.peek().get(elementName);
             analyzerData.currentField = currentField;
