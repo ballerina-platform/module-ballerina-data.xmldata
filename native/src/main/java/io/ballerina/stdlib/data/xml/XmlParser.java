@@ -328,7 +328,7 @@ public class XmlParser {
     private Object convertStringToRestExpType(BString value, Type expType) {
         switch (expType.getTag()) {
             case TypeTags.ARRAY_TAG:
-                return convertStringToExpType(value, ((ArrayType) expType).getElementType());
+                return convertStringToRestExpType(value, ((ArrayType) expType).getElementType());
             case TypeTags.INT_TAG:
             case TypeTags.FLOAT_TAG:
             case TypeTags.DECIMAL_TAG:
@@ -558,6 +558,7 @@ public class XmlParser {
             temp.put(currentFieldName, ValueCreator.createMapValue(Constants.ANYDATA_MAP_TYPE));
             xmlParserData.nodesStack.add(currentNode);
             currentNode = temp;
+            handleAttributesRest(xmlStreamReader, restType, currentNode);
             return currentFieldName;
         } else if (!xmlParserData.siblings.containsKey(elemQName)) {
             xmlParserData.siblings.put(elemQName, false);
@@ -565,7 +566,10 @@ public class XmlParser {
                 BArray tempArray = ValueCreator.createArrayValue(definedAnyDataArrayType);
                 currentNode.put(currentFieldName, tempArray);
             } else {
-                currentNode.put(currentFieldName, ValueCreator.createMapValue(Constants.ANYDATA_MAP_TYPE));
+                BMap<BString, Object> next = ValueCreator.createMapValue(Constants.ANYDATA_MAP_TYPE);
+                currentNode.put(currentFieldName, next);
+                currentNode = next;
+                handleAttributesRest(xmlStreamReader, restType, next);
             }
             return currentFieldName;
         }
@@ -576,6 +580,10 @@ public class XmlParser {
         xmlParserData.nodesStack.add(currentNode);
 
         if (currentElement instanceof BArray) {
+            BMap<BString, Object> temp = ValueCreator.createMapValue(Constants.ANYDATA_MAP_TYPE);
+            ((BArray) currentElement).append(temp);
+            currentNode = temp;
+            handleAttributesRest(xmlStreamReader, restType, currentNode);
             return currentFieldName;
         }
 
@@ -586,12 +594,10 @@ public class XmlParser {
         BArray tempArray = ValueCreator.createArrayValue(definedAnyDataArrayType);
         tempArray.append(currentElement);
         currentNode.put(currentFieldName, tempArray);
-        if (!(currentElement instanceof BMap)) {
-            return currentFieldName;
-        }
         BMap<BString, Object> temp = ValueCreator.createMapValue(Constants.ANYDATA_MAP_TYPE);
         tempArray.append(temp);
         currentNode = temp;
+        handleAttributesRest(xmlStreamReader, restType, currentNode);
         return currentFieldName;
     }
 
@@ -615,6 +621,7 @@ public class XmlParser {
         xmlParserData.siblings.put(elemQName, true);
     }
 
+    @SuppressWarnings("unchecked")
     private void readTextRest(XMLStreamReader xmlStreamReader, BString currentFieldName, XmlParserData xmlParserData) {
         String text = xmlStreamReader.getText();
         if (text.strip().isBlank()) {
@@ -624,9 +631,26 @@ public class XmlParser {
         BString bText = StringUtils.fromString(text);
         Type restType = TypeUtils.getReferredType(xmlParserData.restTypes.peek());
         // TODO: <name>James <!-- FirstName --> Clark</name>
-        if (currentNode.get(currentFieldName) instanceof BArray) {
-            ((BArray) currentNode.get(currentFieldName)).append(
-                    convertStringToRestExpType(bText, restType));
+        Object currentElement = currentNode.get(currentFieldName);
+        BMap<BString, Object> parent = (BMap<BString, Object>) xmlParserData.nodesStack.peek();
+
+        if (currentElement == null && !currentNode.isEmpty()) { // Add text to the #content field
+            currentNode.put(StringUtils.fromString(Constants.CONTENT), convertStringToRestExpType(bText, restType));
+            currentNode = parent;
+        } else if (currentElement == null) {
+            currentElement = parent.get(currentFieldName);
+            if (currentElement instanceof BArray) {
+                BArray tempArray = (BArray) parent.get(currentFieldName);
+                BMap<BString, Object> temp = (BMap<BString, Object>) tempArray.get(tempArray.getLength() - 1);
+                if (temp.isEmpty()) {
+                    tempArray.add(tempArray.getLength() - 1, convertStringToRestExpType(bText, restType));
+                } else {
+                    temp.put(StringUtils.fromString(Constants.CONTENT), convertStringToRestExpType(bText, restType));
+                }
+            } else {
+                parent.put(currentFieldName, convertStringToRestExpType(bText, restType));
+                currentNode = parent;
+            }
         } else {
             currentNode.put(currentFieldName, convertStringToRestExpType(bText, restType));
         }
@@ -718,6 +742,21 @@ public class XmlParser {
             try {
                 currentNode.put(StringUtils.fromString(field.getFieldName()), convertStringToExpType(
                         StringUtils.fromString(xmlStreamReader.getAttributeValue(i)), field.getFieldType()));
+            } catch (Exception e) {
+                // Ignore: Expected type will mismatch when element and attribute having same name.
+            }
+        }
+    }
+
+    private void handleAttributesRest(XMLStreamReader xmlStreamReader, Type restType, BMap<BString, Object> mapNode) {
+        for (int i = 0; i < xmlStreamReader.getAttributeCount(); i++) {
+            QName attributeQName = xmlStreamReader.getAttributeName(i);
+            QualifiedName attQName = new QualifiedName(attributeQName.getNamespaceURI(),
+                    attributeQName.getLocalPart(), attributeQName.getPrefix());
+
+            try {
+                mapNode.put(StringUtils.fromString(attQName.getLocalPart()), convertStringToRestExpType(
+                        StringUtils.fromString(xmlStreamReader.getAttributeValue(i)), restType));
             } catch (Exception e) {
                 // Ignore: Expected type will mismatch when element and attribute having same name.
             }

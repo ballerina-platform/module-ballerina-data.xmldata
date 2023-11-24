@@ -282,6 +282,18 @@ public class DataUtils {
         return typeTag == TypeTags.STRING_TAG || typeTag == TypeTags.ANYDATA_TAG || typeTag == TypeTags.JSON_TAG;
     }
 
+    public static ArrayType getValidArrayType(Type type) {
+        switch (type.getTag()) {
+            case TypeTags.ARRAY_TAG:
+                return (ArrayType) type;
+            case TypeTags.ANYDATA_TAG:
+                return PredefinedTypes.TYPE_ANYDATA_ARRAY;
+            case TypeTags.JSON_TAG:
+                return PredefinedTypes.TYPE_JSON_ARRAY;
+        }
+        return null;
+    }
+
     public static void updateExpectedTypeStacks(RecordType recordType, XmlAnalyzerData analyzerData) {
         analyzerData.attributeHierarchy.push(new HashMap<>(getAllAttributesInRecordType(recordType)));
         analyzerData.fieldHierarchy.push(new HashMap<>(getAllFieldsInRecordType(recordType, analyzerData)));
