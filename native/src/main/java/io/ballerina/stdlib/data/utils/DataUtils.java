@@ -52,7 +52,7 @@ import javax.xml.namespace.QName;
 /**
  * A util class for the Data package's native implementation.
  *
- * @since 0.1.0
+ * @since 0.0.1
  */
 public class DataUtils {
 
@@ -61,11 +61,6 @@ public class DataUtils {
     private static final String VALUE = "value";
 
     public static BError getError(String message) {
-        return ErrorCreator.createError(ModuleUtils.getModule(), ERROR, StringUtils.fromString(message),
-                null, null);
-    }
-
-    public static BError getXmlError(String message) {
         return ErrorCreator.createError(ModuleUtils.getModule(), ERROR, StringUtils.fromString(message),
                 null, null);
     }
@@ -80,8 +75,7 @@ public class DataUtils {
                 String name = ((BMap<BString, Object>) annotations.get(annotationsKey)).get(Constants.VALUE).toString();
                 String localPart = elementName.getLocalPart();
                 if (!name.equals(localPart)) {
-                    throw DataUtils.getXmlError("the record type name `" + name +
-                            "` mismatch with given XML name `" + localPart + "`");
+                    throw DiagnosticLog.error(DiagnosticErrorCode.TYPE_NAME_MISMATCH_WITH_XML_ELEMENT, name, localPart);
                 }
                 recordName = name;
                 break;
@@ -113,7 +107,7 @@ public class DataUtils {
         if (prefix.equals(namespace.get(0)) && uri.equals(namespace.get(1))) {
             return;
         }
-        throw DataUtils.getXmlError("namespace mismatched for the type: " + recordType.getName());
+        throw DiagnosticLog.error(DiagnosticErrorCode.NAMESPACE_MISMATCH, recordType.getName());
     }
 
     @SuppressWarnings("unchecked")
@@ -148,7 +142,7 @@ public class DataUtils {
             String keyStr = annotationKey.getValue();
             if (keyStr.contains(Constants.FIELD)) {
                 // Capture namespace and name from the field annotation.
-                String fieldName = keyStr.split("\\$field\\$\\.")[1].replaceAll("\\\\", "");
+                String fieldName = keyStr.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
                 Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
                 QualifiedName fieldQName = DataUtils.getFieldNameFromRecord(fieldAnnotation, fieldName);
                 fieldQName.setLocalPart(getModifiedName(fieldAnnotation, fieldName));
@@ -163,7 +157,7 @@ public class DataUtils {
                     modifiedNames.getOrDefault(key,
                             new QualifiedName(QualifiedName.NS_ANNOT_NOT_DEFINED, key, ""));
             if (fields.containsKey(modifiedQName)) {
-                throw DataUtils.getXmlError("Duplicate field '" + modifiedQName.getLocalPart() + "'");
+                throw DiagnosticLog.error(DiagnosticErrorCode.DUPLICATE_FIELD, modifiedQName.getLocalPart());
             } else if (analyzerData.attributeHierarchy.peek().containsKey(modifiedQName)) {
                 continue;
             }
@@ -179,7 +173,7 @@ public class DataUtils {
         for (BString annotationKey : annotations.getKeys()) {
             String keyStr = annotationKey.getValue();
             if (keyStr.contains(Constants.FIELD) && DataUtils.isAttributeField(annotationKey, annotations)) {
-                String attributeName = keyStr.split("\\$field\\$\\.")[1].replaceAll("\\\\", "");
+                String attributeName = keyStr.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
                 Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
                 QualifiedName fieldQName = getFieldNameFromRecord(fieldAnnotation, attributeName);
                 fieldQName.setLocalPart(getModifiedName(fieldAnnotation, attributeName));
@@ -254,13 +248,13 @@ public class DataUtils {
                 if (arrayType.getSize() != -1
                         && arrayType.getSize() != ((BArray) currentMapValue.get(
                         StringUtils.fromString(fieldName))).getLength()) {
-                    throw DataUtils.getXmlError("Array size is not compatible with the expected size");
+                    throw DiagnosticLog.error(DiagnosticErrorCode.ARRAY_SIZE_MISMATCH);
                 }
             }
 
             if (!SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.OPTIONAL)
                     && !currentMapValue.containsKey(StringUtils.fromString(fieldName))) {
-                throw DataUtils.getXmlError("Required field '" + fieldName + "' not present in XML");
+                throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_FIELD_NOT_PRESENT, fieldName);
             }
         }
 
@@ -269,7 +263,7 @@ public class DataUtils {
             Field field = attributes.get(key);
             String fieldName = field.getFieldName();
             if (!SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.OPTIONAL)) {
-                throw DataUtils.getXmlError("Required attribute '" + fieldName + "' not present in XML");
+                throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_ATTRIBUTE_NOT_PRESENT, fieldName);
             }
         }
     }

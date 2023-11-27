@@ -30,6 +30,7 @@ import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTypedesc;
 import io.ballerina.runtime.api.values.BXml;
 import io.ballerina.stdlib.data.utils.DataUtils;
+import io.ballerina.stdlib.data.utils.DiagnosticLog;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
@@ -39,7 +40,7 @@ import java.util.function.Consumer;
 /**
  * Xml conversion.
  *
- * @since 0.1.0
+ * @since 0.0.1
  */
 public class Native {
 
@@ -50,7 +51,7 @@ public class Native {
         try {
             return XmlTraversal.traverse(xml, typed.getDescribingType());
         } catch (Exception e) {
-            return DataUtils.getXmlError(e.getMessage());
+            return DiagnosticLog.getXmlError(e.getMessage());
         }
     }
 

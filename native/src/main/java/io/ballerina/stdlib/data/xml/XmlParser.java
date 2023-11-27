@@ -36,6 +36,8 @@ import io.ballerina.runtime.api.values.BString;
 import io.ballerina.stdlib.data.FromString;
 import io.ballerina.stdlib.data.utils.Constants;
 import io.ballerina.stdlib.data.utils.DataUtils;
+import io.ballerina.stdlib.data.utils.DiagnosticErrorCode;
+import io.ballerina.stdlib.data.utils.DiagnosticLog;
 
 import java.io.Reader;
 import java.util.HashMap;
@@ -61,7 +63,7 @@ import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 /**
  * Convert Xml string to a ballerina record.
  *
- * @since 0.1.0
+ * @since 0.0.1
  */
 public class XmlParser {
 
@@ -95,14 +97,11 @@ public class XmlParser {
         } catch (BError e) {
             throw e;
         } catch (Throwable e) {
-            throw DataUtils.getXmlError(PARSE_ERROR_PREFIX + e.getMessage());
+            throw DiagnosticLog.getXmlError(PARSE_ERROR_PREFIX + e.getMessage());
         }
     }
 
     private static void initRootObject(Type recordType, XmlParserData xmlParserData) {
-        if (recordType == null) {
-            throw DataUtils.getXmlError("expected 'record' type for input type");
-        }
         currentNode = ValueCreator.createRecordValue((RecordType) recordType);
         xmlParserData.nodesStack.push(currentNode);
     }
@@ -110,14 +109,14 @@ public class XmlParser {
     private void handleXMLStreamException(Exception e) {
         String reason = e.getCause() == null ? e.getMessage() : e.getCause().getMessage();
         if (reason == null) {
-            throw DataUtils.getXmlError(PARSE_ERROR);
+            throw DiagnosticLog.getXmlError(PARSE_ERROR);
         }
-        throw DataUtils.getXmlError(PARSE_ERROR_PREFIX + reason);
+        throw DiagnosticLog.getXmlError(PARSE_ERROR_PREFIX + reason);
     }
 
     public Object parse(Type type, XmlParserData xmlParserData) {
         if (type.getTag() != TypeTags.RECORD_TYPE_TAG) {
-            throw DataUtils.getXmlError("unsupported type expected record type but found '" + type.getName() + "'");
+            throw DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE, Constants.RECORD, type.getName());
         }
         xmlParserData.rootRecord = (RecordType) type;
         return parse(xmlParserData);
@@ -152,7 +151,7 @@ public class XmlParser {
                 }
             }
         } catch (NumberFormatException e) {
-            throw DataUtils.getXmlError(PARSE_ERROR_PREFIX + e);
+            throw DiagnosticLog.getXmlError(PARSE_ERROR_PREFIX + e);
         } catch (BError e) {
             throw e;
         } catch (Exception e) {
@@ -217,7 +216,7 @@ public class XmlParser {
                     parseRootElement(xmlStreamReader, xmlParserData);
                     return;
                 } else if (next != START_ELEMENT) {
-                    throw DataUtils.getXmlError("XML root element is missing");
+                    throw DiagnosticLog.error(DiagnosticErrorCode.XML_ROOT_MISSING);
                 }
             }
 
@@ -269,8 +268,7 @@ public class XmlParser {
             }
 
             if (!DataUtils.isArrayValueAssignable(fieldType.getTag())) {
-                throw DataUtils.getXmlError("Expected an '" + fieldType + "' value for the field '" + fieldName
-                        + "' found 'array' value");
+                throw DiagnosticLog.error(DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, fieldType, fieldName);
             }
 
             int arraySize = ((ArrayType) fieldType).getSize();
@@ -342,7 +340,7 @@ public class XmlParser {
             case TypeTags.TYPE_REFERENCED_TYPE_TAG:
                 return convertStringToExpType(value, TypeUtils.getReferredType(expType));
         }
-        throw DataUtils.getXmlError("Invalid rest type '" + expType.getName() + "'");
+        throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_REST_TYPE, expType.getName());
     }
 
     private Object buildDocument(XmlParserData xmlParserData) {
@@ -379,13 +377,13 @@ public class XmlParser {
                 if (arrayType.getSize() != -1
                         && arrayType.getSize() != ((BArray) currentMapValue.get(
                                 StringUtils.fromString(fieldName))).getLength()) {
-                    throw DataUtils.getXmlError("Array size is not compatible with the expected size");
+                    throw DiagnosticLog.error(DiagnosticErrorCode.ARRAY_SIZE_MISMATCH);
                 }
             }
 
             if (!SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.OPTIONAL)
                     && !currentMapValue.containsKey(StringUtils.fromString(fieldName))) {
-                throw DataUtils.getXmlError("Required field '" + fieldName + "' not present in XML");
+                throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_FIELD_NOT_PRESENT, fieldName);
             }
         }
 
@@ -393,7 +391,7 @@ public class XmlParser {
         for (QualifiedName key : attributes.keySet()) {
             Field field = attributes.get(key);
             if (!SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.OPTIONAL)) {
-                throw DataUtils.getXmlError("Required attribute '" + field.getFieldName() + "' not present in XML");
+                throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_ATTRIBUTE_NOT_PRESENT, field.getFieldName());
             }
         }
     }
@@ -437,7 +435,7 @@ public class XmlParser {
             }
             updateNextRecord(xmlStreamReader, xmlParserData, fieldName, fieldType, (RecordType) referredType);
         } else if (fieldType.getTag() == TypeTags.MAP_TAG) {
-            RecordType recordType = TypeCreator.createRecordType("$anonType$", fieldType.getPackage(), 0,
+            RecordType recordType = TypeCreator.createRecordType(Constants.ANON_TYPE, fieldType.getPackage(), 0,
                     new HashMap<>(), ((MapType) fieldType).getConstrainedType(), false, 0);
             updateNextRecord(xmlStreamReader, xmlParserData, fieldName, fieldType, recordType);
         }
@@ -588,8 +586,8 @@ public class XmlParser {
         }
 
         if (!DataUtils.isArrayValueAssignable(restType.getTag())) {
-            throw DataUtils.getXmlError("Expected an '" + restType + "' value for the field '" +
-                    elemQName.getLocalPart() + "' found 'array' value");
+            throw DiagnosticLog.error(
+                    DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, restType, elemQName.getLocalPart());
         }
         BArray tempArray = ValueCreator.createArrayValue(definedAnyDataArrayType);
         tempArray.append(currentElement);
@@ -687,7 +685,7 @@ public class XmlParser {
             QualifiedName modifiedQName =
                     modifiedNames.getOrDefault(key, new QualifiedName(QualifiedName.NS_ANNOT_NOT_DEFINED, key, ""));
             if (fields.containsKey(modifiedQName)) {
-                throw DataUtils.getXmlError("Duplicate field '" + modifiedQName.getLocalPart() + "'");
+                throw DiagnosticLog.error(DiagnosticErrorCode.DUPLICATE_FIELD, modifiedQName.getLocalPart());
             } else if (xmlParserData.attributeHierarchy.peek().containsKey(modifiedQName)) {
                 continue;
             }

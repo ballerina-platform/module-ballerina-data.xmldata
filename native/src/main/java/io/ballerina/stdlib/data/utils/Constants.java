@@ -20,9 +20,7 @@ package io.ballerina.stdlib.data.utils;
 
 import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.creators.TypeCreator;
-import io.ballerina.runtime.api.flags.SymbolFlags;
 import io.ballerina.runtime.api.types.ArrayType;
-import io.ballerina.runtime.api.types.Field;
 import io.ballerina.runtime.api.types.MapType;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BString;
@@ -32,7 +30,7 @@ import io.ballerina.stdlib.data.xml.QualifiedName;
 /**
  * Constants used in Ballerina XmlData library.
  *
- * @since 0.1.0
+ * @since 0.0.1
  */
 public class Constants {
 
@@ -56,7 +54,8 @@ public class Constants {
     public static final QualifiedName CONTENT_QNAME = new QualifiedName("", CONTENT, "");
     public static final String XMLNS = "xmlns";
     public static final String FIELD_REGEX = "\\$field\\$\\.";
-    public static final Field CONTENT_FIELD =
-            TypeCreator.createField(PredefinedTypes.TYPE_ANYDATA, Constants.CONTENT, SymbolFlags.REQUIRED);
     public static final int NS_PREFIX_BEGIN_INDEX = BXmlItem.XMLNS_NS_URI_PREFIX.length();
+    public static final String RECORD = "record";
+    public static final String RECORD_OR_MAP = "record or map";
+    public static final String ANON_TYPE = "$anonType$";
 }

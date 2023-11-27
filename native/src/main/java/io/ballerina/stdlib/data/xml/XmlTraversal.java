@@ -38,6 +38,8 @@ import io.ballerina.runtime.api.values.BXmlSequence;
 import io.ballerina.stdlib.data.utils.Constants;
 import io.ballerina.stdlib.data.utils.DataUtils;
 import io.ballerina.stdlib.data.utils.DataUtils.XmlAnalyzerData;
+import io.ballerina.stdlib.data.utils.DiagnosticErrorCode;
+import io.ballerina.stdlib.data.utils.DiagnosticLog;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,7 +55,7 @@ import static io.ballerina.runtime.api.utils.StringUtils.fromString;
 /**
  * Convert Xml value to a ballerina record.
  *
- * @since 0.1.0
+ * @since 0.0.1
  */
 
 public class XmlTraversal {
@@ -82,11 +84,12 @@ public class XmlTraversal {
                     return resultRecordValue;
                 case TypeTags.MAP_TAG:
                     MapType mapType = (MapType) referredType;
-                    RecordType anonRecType = TypeCreator.createRecordType("$anonType$", mapType.getPackage(), 0,
+                    RecordType anonRecType = TypeCreator.createRecordType(Constants.ANON_TYPE, mapType.getPackage(), 0,
                             new HashMap<>(), mapType.getConstrainedType(), false, 0);
                     return traverseXml(xml, anonRecType);
                 default:
-                    return DataUtils.getXmlError("unsupported type: '" + type.getName() + "'");
+                    return DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE, Constants.RECORD_OR_MAP,
+                            type.getName());
             }
         }
 
@@ -128,8 +131,7 @@ public class XmlTraversal {
             Object convertedValue = DataUtils.convertStringToExpType(fromString(text), fieldType);
             if (mapValue.containsKey(fieldName)) {
                 if (!DataUtils.isArrayValueAssignable(fieldType.getTag())) {
-                    throw DataUtils.getXmlError("Expected an '" + fieldType + "' value for the field '" + fieldName
-                            + "' found 'array' value");
+                    throw DiagnosticLog.error(DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, fieldType, fieldName);
                 }
 
                 Object value = mapValue.get(fieldName);
@@ -331,7 +333,7 @@ public class XmlTraversal {
                 traverseXml(xmlItem.getChildrenSeq(), restType, analyzerData);
                 return;
             } else if (restType.getTag() != TypeTags.ANYDATA_TAG && restType.getTag() != TypeTags.JSON_TAG) {
-                throw DataUtils.getXmlError("Incompatible type expected anydata or json");
+                throw DiagnosticLog.error(DiagnosticErrorCode.EXPECTED_ANYDATA_OR_JSON);
             }
             BMap<BString, Object> nextValue = ValueCreator.createMapValue(Constants.ANYDATA_MAP_TYPE);
             mapValue.put(bElementName, nextValue);
@@ -404,9 +406,9 @@ public class XmlTraversal {
                 if (newSequence.size() == 1) {
                     return validateRootElement(newSequence.get(0), recordType, analyzerData);
                 }
-                throw DataUtils.getXmlError("XML root element is missing");
+                throw DiagnosticLog.error(DiagnosticErrorCode.XML_ROOT_MISSING);
             } else if (xml.getNodeType() == XmlNodeType.TEXT) {
-                throw DataUtils.getXmlError("XML root element is missing");
+                throw DiagnosticLog.error(DiagnosticErrorCode.XML_ROOT_MISSING);
             }
             BXmlItem xmlItem = (BXmlItem) xml;
             analyzerData.rootRecord = recordType;
