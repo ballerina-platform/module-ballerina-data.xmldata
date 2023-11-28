@@ -1459,6 +1459,22 @@ function testXmlWithAttributesAgainstOpenRecord3() returns error? {
     ]);
 }
 
+@test:Config{}
+function testCommentMiddleInContent() returns error? {
+    string xmlStr = string `<Data>
+                                <A>John<!-- firstname --> Doe<!-- lastname --></A>
+                            </Data>`;
+    record {} rec = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec.length(), 1);
+    test:assertEquals(rec.get("A"), "John Doe");
+
+    record {|
+        string A;
+    |} rec2 = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec2.length(), 1);
+    test:assertEquals(rec2.A, "John Doe");
+}
+
 // Negative cases
 type DataN1 record {|
     int A;

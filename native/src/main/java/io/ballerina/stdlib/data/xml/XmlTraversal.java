@@ -141,6 +141,7 @@ public class XmlTraversal {
                     ((BArray) value).append(convertedValue);
                 } else {
                     BArray array = DataUtils.createNewAnydataList(fieldType);
+                    array.append(value);
                     array.append(convertedValue);
                     mapValue.put(fieldName, array);
                 }
