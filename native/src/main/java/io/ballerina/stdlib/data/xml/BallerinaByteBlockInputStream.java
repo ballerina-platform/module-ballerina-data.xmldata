@@ -40,7 +40,7 @@ import java.util.function.Consumer;
 /**
  * Java Input Stream based on Ballerina byte block stream. <code>stream<byte[], error?></code>
  *
- * @since 0.1.0
+ * @since 0.0.1
  */
 public class BallerinaByteBlockInputStream extends InputStream {
 
