@@ -411,23 +411,23 @@ public class XmlParser {
         String fieldName = currentField.getFieldName();
         Object temp = currentNode.get(StringUtils.fromString(fieldName));
         BString bFieldName = StringUtils.fromString(fieldName);
+        Type fieldType = TypeUtils.getReferredType(currentField.getFieldType());
         if (!xmlParserData.siblings.containsKey(elemQName)) {
             xmlParserData.siblings.put(elemQName, false);
             currentNode.remove(bFieldName); // This handles attribute and element with same name. Removes attribute.
         } else if (!(temp instanceof BArray)) {
-            BArray tempArray = ValueCreator.createArrayValue(definedAnyDataArrayType);
+            BArray tempArray = ValueCreator.createArrayValue(DataUtils.getArrayTypeFromElementType(fieldType));
             tempArray.append(temp);
             currentNode.put(bFieldName, tempArray);
         }
 
-        Type fieldType = TypeUtils.getReferredType(currentField.getFieldType());
         if (fieldType.getTag() == TypeTags.RECORD_TYPE_TAG) {
             updateNextRecord(xmlStreamReader, xmlParserData, fieldName, fieldType, (RecordType) fieldType);
         } else if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
             Type referredType = TypeUtils.getReferredType(((ArrayType) fieldType).getElementType());
             if (!currentNode.containsKey(bFieldName)) {
                 currentNode.put(StringUtils.fromString(fieldName),
-                        ValueCreator.createArrayValue(definedAnyDataArrayType));
+                        ValueCreator.createArrayValue(DataUtils.getArrayTypeFromElementType(referredType)));
             }
 
             if (referredType.getTag() != TypeTags.RECORD_TYPE_TAG) {
@@ -553,20 +553,22 @@ public class XmlParser {
             xmlParserData.siblings.put(elemQName, false);
             BMap<BString, Object> temp =
                     (BMap<BString, Object>) currentNode.get(StringUtils.fromString(lastElement.getLocalPart()));
-            temp.put(currentFieldName, ValueCreator.createMapValue(Constants.ANYDATA_MAP_TYPE));
+            BMap<BString, Object> next =
+                    ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
+            temp.put(currentFieldName, next);
             xmlParserData.nodesStack.add(currentNode);
             currentNode = temp;
-            handleAttributesRest(xmlStreamReader, restType, currentNode);
+            handleAttributesRest(xmlStreamReader, restType, next);
             return currentFieldName;
         } else if (!xmlParserData.siblings.containsKey(elemQName)) {
             xmlParserData.siblings.put(elemQName, false);
             if (restType.getTag() == TypeTags.ARRAY_TAG) {
-                BArray tempArray = ValueCreator.createArrayValue(definedAnyDataArrayType);
+                BArray tempArray = ValueCreator.createArrayValue(DataUtils.getArrayTypeFromElementType(restType));
                 currentNode.put(currentFieldName, tempArray);
             } else {
-                BMap<BString, Object> next = ValueCreator.createMapValue(Constants.ANYDATA_MAP_TYPE);
+                BMap<BString, Object> next =
+                        ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
                 currentNode.put(currentFieldName, next);
-                currentNode = next;
                 handleAttributesRest(xmlStreamReader, restType, next);
             }
             return currentFieldName;
@@ -578,10 +580,10 @@ public class XmlParser {
         xmlParserData.nodesStack.add(currentNode);
 
         if (currentElement instanceof BArray) {
-            BMap<BString, Object> temp = ValueCreator.createMapValue(Constants.ANYDATA_MAP_TYPE);
-            ((BArray) currentElement).append(temp);
-            currentNode = temp;
-            handleAttributesRest(xmlStreamReader, restType, currentNode);
+            int elemTypeTag = ((BArray) currentElement).getElementType().getTag();
+            if (elemTypeTag == TypeTags.ANYDATA_TAG || elemTypeTag == TypeTags.JSON_TAG) {
+                currentNode = updateNextArrayMemberForRestType((BArray) currentElement, restType);
+            }
             return currentFieldName;
         }
 
@@ -589,14 +591,22 @@ public class XmlParser {
             throw DiagnosticLog.error(
                     DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, restType, elemQName.getLocalPart());
         }
-        BArray tempArray = ValueCreator.createArrayValue(definedAnyDataArrayType);
+        BArray tempArray = ValueCreator.createArrayValue(DataUtils.getArrayTypeFromElementType(restType));
         tempArray.append(currentElement);
         currentNode.put(currentFieldName, tempArray);
-        BMap<BString, Object> temp = ValueCreator.createMapValue(Constants.ANYDATA_MAP_TYPE);
-        tempArray.append(temp);
-        currentNode = temp;
-        handleAttributesRest(xmlStreamReader, restType, currentNode);
+
+        int elemTypeTag = tempArray.getElementType().getTag();
+        if (elemTypeTag == TypeTags.ANYDATA_TAG || elemTypeTag == TypeTags.JSON_TAG) {
+            currentNode = updateNextArrayMemberForRestType(tempArray, restType);
+        }
         return currentFieldName;
+    }
+
+    private BMap<BString, Object> updateNextArrayMemberForRestType(BArray tempArray, Type restType) {
+        BMap<BString, Object> temp = ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
+        tempArray.append(temp);
+        handleAttributesRest(xmlStreamReader, restType, temp);
+        return temp;
     }
 
     @SuppressWarnings("unchecked")
@@ -631,26 +641,17 @@ public class XmlParser {
         // TODO: <name>James <!-- FirstName --> Clark</name>
         Object currentElement = currentNode.get(currentFieldName);
         BMap<BString, Object> parent = (BMap<BString, Object>) xmlParserData.nodesStack.peek();
+        Object result = convertStringToRestExpType(bText, restType);
 
         if (currentElement == null && !currentNode.isEmpty()) { // Add text to the #content field
-            currentNode.put(StringUtils.fromString(Constants.CONTENT), convertStringToRestExpType(bText, restType));
+            currentNode.put(StringUtils.fromString(Constants.CONTENT), result);
             currentNode = parent;
-        } else if (currentElement == null) {
-            currentElement = parent.get(currentFieldName);
-            if (currentElement instanceof BArray) {
-                BArray tempArray = (BArray) parent.get(currentFieldName);
-                BMap<BString, Object> temp = (BMap<BString, Object>) tempArray.get(tempArray.getLength() - 1);
-                if (temp.isEmpty()) {
-                    tempArray.add(tempArray.getLength() - 1, convertStringToRestExpType(bText, restType));
-                } else {
-                    temp.put(StringUtils.fromString(Constants.CONTENT), convertStringToRestExpType(bText, restType));
-                }
-            } else {
-                parent.put(currentFieldName, convertStringToRestExpType(bText, restType));
-                currentNode = parent;
-            }
+        } else if (currentElement instanceof BArray) {
+            ((BArray) currentElement).append(result);
+        } else if (currentElement instanceof BMap && !((BMap<BString, Object>) currentElement).isEmpty()) {
+            ((BMap<BString, Object>) currentElement).put(StringUtils.fromString(Constants.CONTENT), result);
         } else {
-            currentNode.put(currentFieldName, convertStringToRestExpType(bText, restType));
+            currentNode.put(currentFieldName, result);
         }
     }
 
@@ -781,7 +782,7 @@ public class XmlParser {
                 // Create an array value since expected type is an array.
                 if (!currentNode.containsKey(StringUtils.fromString(fieldName))) {
                     currentNode.put(StringUtils.fromString(fieldName),
-                            ValueCreator.createArrayValue(definedAnyDataArrayType));
+                            ValueCreator.createArrayValue(DataUtils.getArrayTypeFromElementType(elemType)));
                 }
                 currentNode = updateNextValue((RecordType) elemType, fieldName, arrayType, xmlParserData);
                 handleAttributes(xmlStreamReader, xmlParserData);

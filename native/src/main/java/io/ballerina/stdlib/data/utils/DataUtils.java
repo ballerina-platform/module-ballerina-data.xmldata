@@ -26,6 +26,7 @@ import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.flags.SymbolFlags;
 import io.ballerina.runtime.api.types.ArrayType;
 import io.ballerina.runtime.api.types.Field;
+import io.ballerina.runtime.api.types.MapType;
 import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.types.UnionType;
@@ -207,8 +208,8 @@ public class DataUtils {
         return attributeName;
     }
 
-    public static BArray createNewAnydataList() {
-        return ValueCreator.createArrayValue(Constants.ANYDATA_ARRAY_TYPE);
+    public static BArray createNewAnydataList(Type type) {
+        return ValueCreator.createArrayValue(getArrayTypeFromElementType(type));
     }
 
     public static QualifiedName getElementName(QName qName) {
@@ -286,6 +287,58 @@ public class DataUtils {
                 return PredefinedTypes.TYPE_JSON_ARRAY;
         }
         return null;
+    }
+
+    public static ArrayType getArrayTypeFromElementType(Type type) {
+        switch (type.getTag()) {
+            case TypeTags.ARRAY_TAG:
+                return TypeCreator.createArrayType(((ArrayType) type).getElementType());
+            case TypeTags.JSON_TAG:
+                return PredefinedTypes.TYPE_JSON_ARRAY;
+            case TypeTags.INT_TAG:
+            case TypeTags.FLOAT_TAG:
+            case TypeTags.STRING_TAG:
+            case TypeTags.BOOLEAN_TAG:
+            case TypeTags.BYTE_TAG:
+            case TypeTags.DECIMAL_TAG:
+            case TypeTags.RECORD_TYPE_TAG:
+            case TypeTags.MAP_TAG:
+            case TypeTags.OBJECT_TYPE_TAG:
+            case TypeTags.XML_TAG:
+            case TypeTags.NULL_TAG:
+                return TypeCreator.createArrayType(type);
+            case TypeTags.TYPE_REFERENCED_TYPE_TAG:
+                return getArrayTypeFromElementType(TypeUtils.getReferredType(type));
+            case TypeTags.ANYDATA_TAG:
+            default:
+                return PredefinedTypes.TYPE_ANYDATA_ARRAY;
+        }
+    }
+
+    public static MapType getMapTypeFromConstraintType(Type constraintType) {
+        switch (constraintType.getTag()) {
+            case TypeTags.MAP_TAG:
+                return (MapType) constraintType;
+            case TypeTags.INT_TAG:
+            case TypeTags.FLOAT_TAG:
+            case TypeTags.STRING_TAG:
+            case TypeTags.BOOLEAN_TAG:
+            case TypeTags.BYTE_TAG:
+            case TypeTags.DECIMAL_TAG:
+            case TypeTags.JSON_TAG:
+            case TypeTags.RECORD_TYPE_TAG:
+            case TypeTags.OBJECT_TYPE_TAG:
+            case TypeTags.XML_TAG:
+            case TypeTags.NULL_TAG:
+                return TypeCreator.createMapType(constraintType);
+            case TypeTags.ARRAY_TAG:
+                return TypeCreator.createMapType(((ArrayType) constraintType).getElementType());
+            case TypeTags.TYPE_REFERENCED_TYPE_TAG:
+                return getMapTypeFromConstraintType(TypeUtils.getReferredType(constraintType));
+            case TypeTags.ANYDATA_TAG:
+            default:
+                return TypeCreator.createMapType(PredefinedTypes.TYPE_ANYDATA);
+        }
     }
 
     public static void updateExpectedTypeStacks(RecordType recordType, XmlAnalyzerData analyzerData) {

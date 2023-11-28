@@ -50,8 +50,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.xml.namespace.QName;
 
-import static io.ballerina.runtime.api.utils.StringUtils.fromString;
-
 /**
  * Convert Xml value to a ballerina record.
  *
@@ -125,10 +123,10 @@ public class XmlTraversal {
                 }
             }
 
-            BString fieldName = fromString(currentField.getFieldName());
+            BString fieldName = StringUtils.fromString(currentField.getFieldName());
             Type fieldType = currentField.getFieldType();
 
-            Object convertedValue = DataUtils.convertStringToExpType(fromString(text), fieldType);
+            Object convertedValue = DataUtils.convertStringToExpType(StringUtils.fromString(text), fieldType);
             if (mapValue.containsKey(fieldName)) {
                 if (!DataUtils.isArrayValueAssignable(fieldType.getTag())) {
                     throw DiagnosticLog.error(DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, fieldType, fieldName);
@@ -142,7 +140,7 @@ public class XmlTraversal {
                     }
                     ((BArray) value).append(convertedValue);
                 } else {
-                    BArray array = DataUtils.createNewAnydataList();
+                    BArray array = DataUtils.createNewAnydataList(fieldType);
                     array.append(convertedValue);
                     mapValue.put(fieldName, array);
                 }
@@ -169,7 +167,7 @@ public class XmlTraversal {
             BMap<BString, Object> mapValue = (BMap<BString, Object>) currentNode;
             Type currentFieldType = TypeUtils.getReferredType(currentField.getFieldType());
             String fieldName = currentField.getFieldName();
-            BString bCurrentFieldName = fromString(fieldName);
+            BString bCurrentFieldName = StringUtils.fromString(fieldName);
             int currentFieldTag = currentFieldType.getTag();
             if (currentFieldTag == TypeTags.RECORD_TYPE_TAG) {
                 currentNode = updateNextRecord(xmlItem, (RecordType) currentFieldType, fieldName,
@@ -181,7 +179,7 @@ public class XmlTraversal {
                 return;
             } else if (currentFieldTag == TypeTags.ARRAY_TAG) {
                 if (!mapValue.containsKey(bCurrentFieldName)) {
-                    BArray array = DataUtils.createNewAnydataList();
+                    BArray array = DataUtils.createNewAnydataList(currentFieldType);
                     mapValue.put(bCurrentFieldName, array);
                 }
                 Type elementType = TypeUtils.getReferredType(((ArrayType) currentFieldType).getElementType());
@@ -252,9 +250,9 @@ public class XmlTraversal {
                 currentNode = analyzerData.nodesStack.pop();
                 return;
             } else if (restType.getTag() == TypeTags.ARRAY_TAG) {
-                BString bElementName = fromString(elemName);
+                BString bElementName = StringUtils.fromString(elemName);
                 if (!mapValue.containsKey(bElementName)) {
-                    BArray array = DataUtils.createNewAnydataList();
+                    BArray array = DataUtils.createNewAnydataList(restType);
                     mapValue.put(bElementName, array);
                 }
                 Type elementType = ((ArrayType) restType).getElementType();
@@ -269,12 +267,12 @@ public class XmlTraversal {
                 }
             }
 
-            BString bElementName = fromString(elemName);
+            BString bElementName = StringUtils.fromString(elemName);
             BArray arrayValue;
             if (mapValue.containsKey(bElementName)) {
                 Object currentElement = mapValue.get(bElementName);
                 if (!(currentElement instanceof BArray)) {
-                    arrayValue = DataUtils.createNewAnydataList();
+                    arrayValue = DataUtils.createNewAnydataList(restType);
                     arrayValue.append(currentElement);
                     mapValue.put(bElementName, arrayValue);
                 } else {
@@ -283,7 +281,8 @@ public class XmlTraversal {
 
                 if (isNextElementContent(xmlItem)) {
                     if (isElementHasAttributes(xmlItem)) {
-                        BMap<BString, Object> nextValue = ValueCreator.createMapValue(Constants.ANYDATA_MAP_TYPE);
+                        BMap<BString, Object> nextValue =
+                                ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
                         handleAttributesRest(xmlItem, nextValue, restType);
                         if (currentElement instanceof BArray) {
                             arrayValue.append(nextValue);
@@ -304,7 +303,8 @@ public class XmlTraversal {
                     traverseXml(xmlItem.getChildrenSeq(), restType, analyzerData);
                     return;
                 }
-                BMap<BString, Object> nextValue = ValueCreator.createMapValue(Constants.ANYDATA_MAP_TYPE);
+                BMap<BString, Object> nextValue =
+                        ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
                 arrayValue.append(nextValue);
                 analyzerData.nodesStack.push(currentNode);
                 currentNode = nextValue;
@@ -316,7 +316,8 @@ public class XmlTraversal {
 
             if (isNextElementContent(xmlItem)) {
                 if (isElementHasAttributes(xmlItem)) {
-                    BMap<BString, Object> nextValue = ValueCreator.createMapValue(Constants.ANYDATA_MAP_TYPE);
+                    BMap<BString, Object> nextValue =
+                            ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
                     handleAttributesRest(xmlItem, nextValue, restType);
                     mapValue.put(bElementName, nextValue);
 
@@ -335,7 +336,8 @@ public class XmlTraversal {
             } else if (restType.getTag() != TypeTags.ANYDATA_TAG && restType.getTag() != TypeTags.JSON_TAG) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.EXPECTED_ANYDATA_OR_JSON);
             }
-            BMap<BString, Object> nextValue = ValueCreator.createMapValue(Constants.ANYDATA_MAP_TYPE);
+            BMap<BString, Object> nextValue =
+                    ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
             mapValue.put(bElementName, nextValue);
             analyzerData.nodesStack.push(currentNode);
             currentNode = nextValue;
@@ -350,6 +352,11 @@ public class XmlTraversal {
 
         private boolean isNextElementContent(BXmlItem xml) {
             for (BXml bXml : xml.getChildrenSeq().getChildrenList()) {
+                String textValue = bXml.toString();
+                if (isCommentOrPi(bXml) || textValue.trim().isEmpty()) {
+                    continue;
+                }
+
                 if (bXml.getNodeType() == XmlNodeType.TEXT) {
                     return true;
                 }
