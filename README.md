@@ -399,3 +399,57 @@ This behavior extends to arrays as well.
 
 The process of projecting XML data into a record supports various use cases, including the filtering out of unnecessary elements. This functionality is anticipated to be enhanced in the future to accommodate more complex scenarios, such as filtering values based on regular expressions, among others.
 
+## Issues and projects
+
+Issues and Projects tabs are disabled for this repository as this is part of the Ballerina standard library. To report bugs, request new features, start new discussions, view project boards, etc. please visit Ballerina standard library [parent repository](https://github.com/ballerina-platform/ballerina-standard-library).
+
+This repository only contains the source code for the package.
+
+## Building from the source
+
+### Set up the prerequisites
+
+1. Download and install Java SE Development Kit (JDK) version 17 (from one of the following locations).
+   * [Oracle](https://www.oracle.com/java/technologies/downloads/)
+   * [OpenJDK](https://adoptium.net/)
+
+2. Export your GitHub personal access token with the read package permissions as follows.
+
+        export packageUser=<Username>
+        export packagePAT=<Personal access token>
+
+### Building the source
+
+Execute the commands below to build from source.
+
+1. To build the library:
+
+        ./gradlew clean build
+
+2. Publish ZIP artifact to the local `.m2` repository:
+
+        ./gradlew clean build publishToMavenLocal
+
+3. Publish the generated artifacts to the local Ballerina central repository:
+
+        ./gradlew clean build -PpublishToLocalCentral=true
+
+4. Publish the generated artifacts to the Ballerina central repository:
+
+        ./gradlew clean build -PpublishToCentral=true
+
+## Contributing to Ballerina
+
+As an open source project, Ballerina welcomes contributions from the community.
+
+For more information, go to the [contribution guidelines](https://github.com/ballerina-platform/ballerina-lang/blob/master/CONTRIBUTING.md).
+
+## Code of conduct
+
+All contributors are encouraged to read the [Ballerina code of conduct](https://ballerina.io/code-of-conduct).
+
+## Useful links
+
+[//]: # (* For more information go to the [`xmldata` library]&#40;https://lib.ballerina.io/ballerina/data.xmldata/latest&#41;.)
+* Chat live with us via our [Discord server](https://discord.gg/ballerinalang).
+* Post all technical questions on Stack Overflow with the [#ballerina](https://stackoverflow.com/questions/tagged/ballerina) tag.

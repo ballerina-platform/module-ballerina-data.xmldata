@@ -20,14 +20,14 @@ plugins {
     id "com.gradle.enterprise" version "3.2"
 }
 
-rootProject.name = 'data.xml'
+rootProject.name = 'data.xmldata'
 include(':checkstyle')
-include(':data-xml-native')
-include(':data-xml-ballerina')
+include(':data.xmldata-native')
+include(':data.xmldata-ballerina')
 
 project(':checkstyle').projectDir = file("build-config${File.separator}checkstyle")
-project(':data-xml-native').projectDir = file('native')
-project(':data-xml-ballerina').projectDir = file('ballerina')
+project(':data.xmldata-native').projectDir = file('native')
+project(':data.xmldata-ballerina').projectDir = file('ballerina')
 
 gradleEnterprise {
     buildScan {

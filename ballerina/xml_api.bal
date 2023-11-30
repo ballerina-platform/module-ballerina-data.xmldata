@@ -30,7 +30,7 @@ public type NameConfig record {|
 
 # The annotation is used to specify the new name of the existing record name or field name according to the XML format.
 # In the XML string-record conversion, this annotation can be used to override the default XML element name using the
-# `xml:toXML` API and validate the overridden XML element name with record field using the `xml:fromXmlString` API.
+# `xmldata:toXML` API and validate the overridden XML element name with record field using the `xml:fromXmlString` API.
 public annotation NameConfig Name on type, record field;
 
 # Defines the namespace of the XML element
@@ -43,12 +43,12 @@ public type NamespaceConfig record {|
 |};
 
 # The annotation is used to specify the namespace's prefix and URI of the XML element.
-# In the XML string-record conversion, this annotation can be used to add XML namespace using the `xml:toXML` API and
+# In the XML string-record conversion, this annotation can be used to add XML namespace using the `xmldata:toXML` API and
 # validate the the XML namespace with record in the `xml:fromXmlString` API.
 public annotation NamespaceConfig Namespace on type, record field;
 
 # The annotation is used to denote the field that is considered an attribute.
-# In the XML string-record conversion, this annotation can be used to add XML attribute using the `xml:toXML` API and
+# In the XML string-record conversion, this annotation can be used to add XML attribute using the `xmldata:toXML` API and
 # validate the XML attribute with record fields in the `xml:fromXmlString` API.
 public annotation Attribute on record field;
 
@@ -57,16 +57,16 @@ public annotation Attribute on record field;
 # + v - Source XML value 
 # + options - Options to be used for filtering in the projection
 # + t - Target type to be used for filtering in the projection
-# + return - On success, returns the given target type value, else returns an `xml:Error` 
+# + return - On success, returns the given target type value, else returns an `xmldata:Error`
 public isolated function fromXmlWithType(xml v, Options options = {}, typedesc<anydata> t = <>)
         returns t|ConversionError = @java:Method {'class: "io.ballerina.stdlib.data.xml.Native"} external;
 
 # A Parser a xml string value with projection
 #
-# + s - Source XML string value or byte[] or bytestrem
+# + s - Source XML string value or byte[] or byte-stream
 # + options - Options to be used for filtering in the projection 
 # + t - Target type to be used for filtering in the projection
-# + return - On success, returns the given target type value, else returns an `xml:Error` 
+# + return - On success, returns the given target type value, else returns an `xmldata:Error`
 public isolated function fromXmlStringWithType(string|byte[]|stream<byte[], error?> s, Options options = {}, typedesc<anydata> t = <>)
         returns t|ConversionError = @java:Method {'class: "io.ballerina.stdlib.data.xml.Native"} external;
 

@@ -1,16 +1,16 @@
 [package]
 org = "ballerina"
-name = "data.xml"
+name = "data.xmldata"
 version = "@toml.version@"
 authors = ["Ballerina"]
 keywords = ["xml"]
-repository = "https://github.com/ballerina-platform/module-ballerina-data.xml"
+repository = "https://github.com/ballerina-platform/module-ballerina-data-xmldata"
 license = ["Apache-2.0"]
 distribution = "2201.8.1"
-export = ["data.xml"]
+export = ["data.xmldata"]
 
 [[platform.java17.dependency]]
 groupId = "io.ballerina.stdlib"
 artifactId = "data-native"
 version = "@toml.version@"
-path = "../native/build/libs/data-xml-native-@project.version@.jar"
+path = "../native/build/libs/data.xmldata-native-@project.version@.jar"

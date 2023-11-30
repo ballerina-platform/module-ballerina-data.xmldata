@@ -34,7 +34,7 @@ buildscript {
 
 description = 'Ballerina - Data XML Module'
 
-def packageName = "data-xml"
+def packageName = "data.xmldata"
 def packageOrg = "ballerina"
 
 def tomlVersion = stripBallerinaExtensionVersion("${project.version}")
