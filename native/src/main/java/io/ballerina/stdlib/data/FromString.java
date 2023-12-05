@@ -18,6 +18,7 @@
 
 package io.ballerina.stdlib.data;
 
+import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.TypeTags;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.types.ReferenceType;
@@ -27,13 +28,14 @@ import io.ballerina.runtime.api.values.BDecimal;
 import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTypedesc;
-import io.ballerina.stdlib.data.utils.DataUtils;
+import io.ballerina.stdlib.data.utils.DiagnosticErrorCode;
+import io.ballerina.stdlib.data.utils.DiagnosticLog;
 
 import java.util.Comparator;
 import java.util.List;
 
 /**
- *  Native implementation of data:fromStringWithType(string).
+ * Native implementation of data:fromStringWithType(string).
  * 
  * @since 0.1.0
  */
@@ -99,7 +101,9 @@ public class FromString {
     private static Object stringToBoolean(String value) throws NumberFormatException {
         if ("true".equalsIgnoreCase(value) || "1".equalsIgnoreCase(value)) {
             return true;
-        } else if ("false".equalsIgnoreCase(value) || "0".equalsIgnoreCase(value)) {
+        }
+
+        if ("false".equalsIgnoreCase(value) || "0".equalsIgnoreCase(value)) {
             return false;
         }
         return returnError(value, "boolean");
@@ -155,6 +159,7 @@ public class FromString {
     }
 
     private static BError returnError(String string, String expType) {
-        return DataUtils.getError("'string' value '" + string + "' cannot be converted to '" + expType + "'");
+        return DiagnosticLog.error(DiagnosticErrorCode.CANNOT_CONVERT_TO_EXPECTED_TYPE,
+                PredefinedTypes.TYPE_STRING.getName(), string, expType);
     }
 }

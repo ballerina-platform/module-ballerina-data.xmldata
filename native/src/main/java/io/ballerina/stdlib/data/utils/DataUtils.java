@@ -20,7 +20,6 @@ package io.ballerina.stdlib.data.utils;
 
 import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.TypeTags;
-import io.ballerina.runtime.api.creators.ErrorCreator;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.flags.SymbolFlags;
@@ -53,18 +52,11 @@ import javax.xml.namespace.QName;
 /**
  * A util class for the Data package's native implementation.
  *
- * @since 0.0.1
+ * @since 0.1.0
  */
 public class DataUtils {
-
-    private static final String ERROR = "ConversionError";
     private static final String ATTRIBUTE_PREFIX = "attribute_";
     private static final String VALUE = "value";
-
-    public static BError getError(String message) {
-        return ErrorCreator.createError(ModuleUtils.getModule(), ERROR, StringUtils.fromString(message),
-                null, null);
-    }
 
     @SuppressWarnings("unchecked")
     public static QualifiedName validateAndGetXmlNameFromRecordAnnotation(RecordType recordType, String recordName,
@@ -154,8 +146,7 @@ public class DataUtils {
         Map<QualifiedName, Field> fields = new HashMap<>();
         Map<String, Field> recordFields = recordType.getFields();
         for (String key : recordFields.keySet()) {
-            QualifiedName modifiedQName =
-                    modifiedNames.getOrDefault(key,
+            QualifiedName modifiedQName = modifiedNames.getOrDefault(key,
                             new QualifiedName(QualifiedName.NS_ANNOT_NOT_DEFINED, key, ""));
             if (fields.containsKey(modifiedQName)) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.DUPLICATE_FIELD, modifiedQName.getLocalPart());
@@ -730,7 +721,7 @@ public class DataUtils {
     /**
      * Holds data required for the parsing and traversing.
      *
-     * @since 1.0.0
+     * @since 0.1.0
      */
     public static class XmlAnalyzerData {
         public final Stack<Object> nodesStack = new Stack<>();

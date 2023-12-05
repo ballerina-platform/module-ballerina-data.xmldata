@@ -15,12 +15,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package io.ballerina.stdlib.data.xml;
 
 /**
  * Represents a qualified name.
  *
- * @since 0.0.1
+ * @since 0.1.0
  */
 public class QualifiedName {
     public static final String NS_ANNOT_NOT_DEFINED = "$$ns_annot_not_defined$$";

@@ -30,7 +30,7 @@ import io.ballerina.stdlib.data.xml.QualifiedName;
 /**
  * Constants used in Ballerina XmlData library.
  *
- * @since 0.0.1
+ * @since 0.1.0
  */
 public class Constants {
 
@@ -52,7 +52,6 @@ public class Constants {
     public static final BString VALUE = StringUtils.fromString("value");
     public static final String CONTENT = "#content";
     public static final QualifiedName CONTENT_QNAME = new QualifiedName("", CONTENT, "");
-    public static final String XMLNS = "xmlns";
     public static final String FIELD_REGEX = "\\$field\\$\\.";
     public static final int NS_PREFIX_BEGIN_INDEX = BXmlItem.XMLNS_NS_URI_PREFIX.length();
     public static final String RECORD = "record";

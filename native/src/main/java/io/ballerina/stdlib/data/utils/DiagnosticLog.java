@@ -15,6 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package io.ballerina.stdlib.data.utils;
 
 import io.ballerina.runtime.api.creators.ErrorCreator;
@@ -28,11 +29,11 @@ import java.util.ResourceBundle;
 /**
  * Diagnostic log for data module.
  *
- * @since 0.0.1
+ * @since 0.1.0
  */
 public class DiagnosticLog {
     private static final String ERROR_PREFIX = "error";
-    private static final String ERROR = "ConversionError";
+    private static final String ERROR = "Error";
     private static final ResourceBundle MESSAGES = ResourceBundle.getBundle("error", Locale.getDefault());
 
     public static BError error(DiagnosticErrorCode code, Object... args) {

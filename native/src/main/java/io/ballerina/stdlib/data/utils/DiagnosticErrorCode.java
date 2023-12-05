@@ -15,12 +15,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package io.ballerina.stdlib.data.utils;
 
 /**
  * Represents a diagnostic error code.
  *
- * @since 0.0.1
+ * @since 0.1.0
  */
 public enum DiagnosticErrorCode {
 
@@ -34,7 +35,12 @@ public enum DiagnosticErrorCode {
     FOUND_ARRAY_FOR_NON_ARRAY_TYPE("BDE_0008", "found.array.for.non.array.type"),
     EXPECTED_ANYDATA_OR_JSON("BDE_0009", "expected.anydata.or.json"),
     NAMESPACE_MISMATCH("BDE_0010", "namespace.mismatch"),
-    TYPE_NAME_MISMATCH_WITH_XML_ELEMENT("BDE_0011", "type.name.mismatch.with.xml.element");
+    TYPE_NAME_MISMATCH_WITH_XML_ELEMENT("BDE_0011", "type.name.mismatch.with.xml.element"),
+    CAN_NOT_READ_STREAM("BDE_0012", "error.cannot.read.stream"),
+    CANNOT_CONVERT_TO_EXPECTED_TYPE("BDE_0013", "cannot.convert.to.expected.type"),
+    INVALID_TYPE("BDE_0014", "invalid.type"),
+    STREAM_BROKEN("BDE_0015", "stream.broken"),
+    XML_PARSE_ERROR("BDE_0016", "xml.parse.error");
 
     String diagnosticId;
     String messageKey;

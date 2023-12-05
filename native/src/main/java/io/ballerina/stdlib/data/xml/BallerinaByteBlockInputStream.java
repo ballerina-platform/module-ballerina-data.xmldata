@@ -15,6 +15,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 package io.ballerina.stdlib.data.xml;
 
 import io.ballerina.runtime.api.Environment;
@@ -27,7 +28,8 @@ import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BObject;
 import io.ballerina.runtime.api.values.BString;
-import io.ballerina.stdlib.data.utils.DataUtils;
+import io.ballerina.stdlib.data.utils.DiagnosticErrorCode;
+import io.ballerina.stdlib.data.utils.DiagnosticLog;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,7 +42,7 @@ import java.util.function.Consumer;
 /**
  * Java Input Stream based on Ballerina byte block stream. <code>stream<byte[], error?></code>
  *
- * @since 0.0.1
+ * @since 0.1.0
  */
 public class BallerinaByteBlockInputStream extends InputStream {
 
@@ -86,7 +88,7 @@ public class BallerinaByteBlockInputStream extends InputStream {
                 return read();
             }
         } catch (InterruptedException e) {
-            BError error = DataUtils.getError("Cannot read the stream, interrupted error");
+            BError error = DiagnosticLog.error(DiagnosticErrorCode.CAN_NOT_READ_STREAM);
             futureResultConsumer.accept(error);
             return -1;
         }

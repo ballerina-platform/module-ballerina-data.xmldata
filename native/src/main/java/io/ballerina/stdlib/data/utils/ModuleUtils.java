@@ -24,7 +24,7 @@ import io.ballerina.runtime.api.Module;
 /**
  * This class will hold module related utility functions.
  *
- * @since 0.0.1
+ * @since 0.1.0
  */
 public class ModuleUtils {
 

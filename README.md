@@ -17,7 +17,7 @@ This library is the refined successor of the `ballerina/xmldata` module, incorpo
 To convert an XML value to a Record value, you can utilize the `fromXmlWithType` function provided by the library. The example below showcases the transformation of an XML value into a Record value.
 
 ```ballerina
-import ballerina/data.xml as xmldata;
+import ballerina/data.xmldata;
 import ballerina/io;
 
 public function main() returns error? {
@@ -27,15 +27,15 @@ public function main() returns error? {
         <author>string</author>
     </book>`;
 
-    Book book = check xmldata:fromXmlWithType(data, Book);
+    Book book = check xmldata:fromXmlWithType(data);
     io:println(book);
 }
 
-type Book record {
+type Book record {|
     int id;
     string title;
     string author;
-};
+|};
 ```
 
 ### Converting an external XML document to a Record value
@@ -43,20 +43,20 @@ type Book record {
 For transforming XML content from an external source into a Record value, the `fromXmlStringWithType` function can be used. This external source can be in the form of a string or a byte array/byte stream that houses the XML data. This is commonly extracted from files or network sockets. The example below demonstrates the conversion of an XML value from an external source into a Record value.
 
 ```ballerina
-import ballerina/data.xml as xmldata;
+import ballerina/data.xmldata;
 import ballerina/io;
 
 public function main() returns error? {
     string xmlContent = check io:fileReadString("path/to/file.xml");
-    Book book = check xmldata:fromXmlStringWithType(xmlContent, Book);
+    Book book = check xmldata:fromXmlStringWithType(xmlContent);
     io:println(book);
 }
 
-type Book record {
+type Book record {|
     int id;
     string title;
     string author;
-};
+|};
 ```
 
 Make sure to handle possible errors that may arise during the file reading or XML to record conversion process. The `check` keyword is utilized to handle these errors, but more sophisticated error handling can be implemented as per your requirements.
@@ -80,11 +80,11 @@ XML data is inherently hierarchical, forming a tree structure. In the given exam
 A straightforward record representation of the above XML data is:
 
 ```ballerina
-type Book record {
+type Book record {|
     int id;
     string title;
     string author;
-};
+|};
 ```
 
 In this representation, the XML data is efficiently translated into a record value. The `book` element is mapped to a record of type `Book`, and the child elements `id`, `title`, and `author` are converted into record fields of types `int` and `string` correspondingly.
@@ -108,11 +108,11 @@ Consider the XML snippet:
 The canonical representation of the above XML as a Ballerina record is:
 
 ```ballerina
-type Book record {
+type Book record {|
     int id;
     string 'title\-name';
     string 'author\-name';
-};
+|};
 ```
 
 Observe how the XML element names `title-name` and `author-name` are represented using delimited identifiers in Ballerina; the `-` characters in the XML element names are escaped using the `\` character.
@@ -120,15 +120,15 @@ Observe how the XML element names `title-name` and `author-name` are represented
 Moreover, the `@Name` annotation can be utilized to explicitly specify the name of the record field, providing control over the translation process:
 
 ```ballerina
-import ballerina/data.xml as xmldata;
+import ballerina/data.xmldata;
 
-type Book record {
+type Book record {|
     int id;
     @xmldata:Name { value: "title-name" }
     string title;
     @xmldata:Name { value: "author-name" }
     string author;
-};
+|};
 ```
 
 ### XML Attributes
@@ -148,13 +148,13 @@ Consider the following XML snippet:
 The canonical representation of the above XML as a Ballerina record is:
 
 ```ballerina
-type Book record {
+type Book record {|
     string lang;
     decimal price;
     int id;
     string title;
     string author;
-};
+|};
 ```
 
 Additionally the `@Attribute` annotation can be utilized to explicitly specify the name of the record field, providing control over the translation process.
@@ -179,16 +179,16 @@ Examine the XML snippet below:
 The canonical representation of the above XML as a Ballerina record is:
 
 ```ballerina
-type Book record {
+type Book record {|
     int id;
     string title;
     Author author;
-};
+|};
 
-type Author record {
+type Author record {|
     string name;
     string country;
-};
+|};
 ```
 
 In this transformation, child elements, like the `author` element containing its own sub-elements, are converted into nested records. This maintains the hierarchical structure of the XML data within the Ballerina type system, enabling intuitive and type-safe data manipulation.
@@ -198,14 +198,14 @@ Alternatively, inline type definitions offer a compact method for representing c
 Consider the subsequent Ballerina record definition, which employs inline type definition for the `author` field:
 
 ```ballerina
-type Book record {
+type Book record {|
     int id;
     string title;
-    record {
+    record {|
         string name;
         string country;
-    } author;
-};
+    |} author;
+|};
 ```
 
 ### XML Text Content
@@ -227,13 +227,13 @@ Consider the XML snippet below:
 The translation into a Ballerina record would be as follows:
 
 ```ballerina
-type Book record {
+type Book record {|
     int id;
     string title;
     string author;
     boolean available;
     decimal price;
-};
+|};
 ```
 
 In scenarios where the parent XML element of text content also includes attributes, the XML text content can be represented by a `string` type field named `#content` within a record type, with the attributes being mapped to their respective fields.
@@ -251,16 +251,16 @@ For instance, examine this XML:
 The canonical translation of XML to a Ballerina record is as such:
 
 ```ballerina
-type Book record {
+type Book record {|
     int id;
     Title title;
     decimal price;
-};
+|};
 
-type Title record {
+type Title record {|
     string \#content;
     string lang;
-};
+|};
 ```
 
 Modifications to the default behavior for converting numerical values can be achieved by providing `Options` mappings to the respective functions. This enables developers to choose specific data types and exert finer control over the conversion process.
@@ -284,26 +284,26 @@ Examine the XML snippet below with default namespaces:
 The translation into a Ballerina record would be:
 
 ```ballerina
-type Book record {
+type Book record {|
     int id;
     string title;
     string author;
-};
+|};
 ```
 
 Incorporating namespace validation yields:
 
 ```ballerina
-import ballerina/data.xml as xmldata;
+import ballerina/data.xmldata;
 
 @xmldata:Namespace {
     uri: "http://example.com/book"
 }
-type Book record {
+type Book record {|
     int id;
     string title;
     string author;
-};
+|};
 ```
 
 Here is the same XML snippet with a namespace prefix:
@@ -319,17 +319,17 @@ Here is the same XML snippet with a namespace prefix:
 The translation into a Ballerina record would be:
 
 ```ballerina
-import ballerina/data.xml as xmldata;
+import ballerina/data.xmldata;
 
 @xmldata:Namespace {
     uri: "http://example.com/book",
     prefix: "bk"
 }
-type Book record {
+type Book record {|
     int id;
     string title;
     string author;
-};
+|};
 ```
 
 In these examples, the XML namespaces are appropriately acknowledged, ensuring the integrity of the XML structure within the Ballerina records.
@@ -353,11 +353,11 @@ Take the following XML snippet as an example:
 The canonical representation of this XML as a Ballerina record is:
 
 ```ballerina
-type Book record {
+type Book record {|
     int id;
     string title;
     string[] author;
-};
+|};
 ```
 
 ### Controlling Which Elements to Convert
@@ -387,10 +387,10 @@ type Book record {|
 However, if the rest field is utilized (or if the record type is defined as an open record), all elements in the XML data will be transformed into record fields:
 
 ```ballerina
-type Book record {
+type Book record {|
     int id;
     string title;
-};
+|};
 ```
 
 In this instance, all other elements in the XML data, such as `author` and `price` along with their attributes, will be transformed into `string` type fields with the corresponding element name as the key.

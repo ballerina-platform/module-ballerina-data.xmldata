@@ -13,6 +13,7 @@
 // KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 import ballerina/io;
 import ballerina/test;
 
@@ -56,9 +57,7 @@ const LARGE_XML_FILE = "build//resources//large_data.xml";
 
 # Test reading large xml file with namespaces.
 # + return - return error on failure, else nil.
-@test:Config {
-    enable: true
-}
+@test:Config
 function testLargeFileStreamWithNamespace() returns error? {
     stream<byte[], error?> dataStream = check io:fileReadBlocksAsStream(LARGE_XML_FILE);
     SimpleInvoiceNS invoice = check fromXmlStringWithType(dataStream);
@@ -92,9 +91,7 @@ type SimpleCustomer record {|
 
 # Test reading large xml file without considering namespaces.
 # + return - return error on failure, else nil.
-@test:Config {
-    enable: true
-}
+@test:Config
 function testLargeFileStream() returns error? {
     stream<byte[], error?> dataStream = check io:fileReadBlocksAsStream(LARGE_XML_FILE);
     SimpleInvoice invoice = check fromXmlStringWithType(dataStream);

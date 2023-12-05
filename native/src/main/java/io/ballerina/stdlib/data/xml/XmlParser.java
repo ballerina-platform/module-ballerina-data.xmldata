@@ -15,6 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package io.ballerina.stdlib.data.xml;
 
 import io.ballerina.runtime.api.PredefinedTypes;
@@ -63,7 +64,7 @@ import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 /**
  * Convert Xml string to a ballerina record.
  *
- * @since 0.0.1
+ * @since 0.1.0
  */
 public class XmlParser {
 
@@ -77,7 +78,6 @@ public class XmlParser {
 
     private XMLStreamReader xmlStreamReader;
     private static BMap<BString, Object> currentNode;
-    private final ArrayType definedAnyDataArrayType = TypeCreator.createArrayType(PredefinedTypes.TYPE_ANYDATA);
     public static final String PARSE_ERROR = "failed to parse xml";
     public static final String PARSE_ERROR_PREFIX = PARSE_ERROR + ": ";
 
@@ -95,15 +95,10 @@ public class XmlParser {
             XmlParser xmlParser = new XmlParser(reader);
             return xmlParser.parse(type, xmlParserData);
         } catch (BError e) {
-            throw e;
+            return e;
         } catch (Throwable e) {
-            throw DiagnosticLog.getXmlError(PARSE_ERROR_PREFIX + e.getMessage());
+            return DiagnosticLog.error(DiagnosticErrorCode.XML_PARSE_ERROR, e.getMessage());
         }
-    }
-
-    private static void initRootObject(Type recordType, XmlParserData xmlParserData) {
-        currentNode = ValueCreator.createRecordValue((RecordType) recordType);
-        xmlParserData.nodesStack.push(currentNode);
     }
 
     private void handleXMLStreamException(Exception e) {
@@ -119,7 +114,20 @@ public class XmlParser {
             throw DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE, Constants.RECORD, type.getName());
         }
         xmlParserData.rootRecord = (RecordType) type;
-        return parse(xmlParserData);
+        Object result = parse(xmlParserData);
+        reset(xmlParserData);
+        return result;
+    }
+
+    private void reset(XmlParserData xmlParserData) {
+        xmlParserData.fieldHierarchy.clear();
+        xmlParserData.attributeHierarchy.clear();
+        xmlParserData.restTypes.clear();
+        xmlParserData.nodesStack.clear();
+        xmlParserData.parents.clear();
+        xmlParserData.siblings.clear();
+        xmlParserData.recordTypeStack.clear();
+        xmlParserData.restFieldsPoints.clear();
     }
 
     public Object parse(XmlParserData xmlParserData) {
@@ -242,7 +250,7 @@ public class XmlParser {
         }
 
         RecordType rootRecord = xmlParserData.rootRecord;
-        initRootObject(rootRecord, xmlParserData);
+        currentNode = ValueCreator.createRecordValue(rootRecord);
 
         QualifiedName elementQName = getElementName(xmlStreamReader);
         xmlParserData.rootElement =
@@ -500,7 +508,6 @@ public class XmlParser {
     private void popStacks(XmlParserData xmlParserData) {
         xmlParserData.fieldHierarchy.pop();
         xmlParserData.restTypes.pop();
-        xmlParserData.modifiedNamesHierarchy.pop();
         xmlParserData.attributeHierarchy.pop();
         xmlParserData.siblings = xmlParserData.parents.pop();
         xmlParserData.rootRecord = xmlParserData.recordTypeStack.pop();
@@ -725,7 +732,6 @@ public class XmlParser {
 
             fields.put(modifiedQName, recordFields.get(key));
         }
-        xmlParserData.modifiedNamesHierarchy.add(modifiedNames);
         return fields;
     }
 
@@ -835,7 +841,6 @@ public class XmlParser {
         private final Stack<Object> nodesStack = new Stack<>();
         private final Stack<Map<QualifiedName, Field>> fieldHierarchy = new Stack<>();
         private final Stack<Map<QualifiedName, Field>> attributeHierarchy = new Stack<>();
-        private final Stack<Map<String, QualifiedName>> modifiedNamesHierarchy = new Stack<>();
         private final Stack<Type> restTypes = new Stack<>();
         private final Stack<QualifiedName> restFieldsPoints = new Stack<>();
         private final Stack<RecordType> recordTypeStack = new Stack<>();

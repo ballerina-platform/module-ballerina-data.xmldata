@@ -15,6 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package io.ballerina.stdlib.data.xml;
 
 import io.ballerina.runtime.api.Environment;
@@ -29,7 +30,7 @@ import io.ballerina.runtime.api.values.BStream;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTypedesc;
 import io.ballerina.runtime.api.values.BXml;
-import io.ballerina.stdlib.data.utils.DataUtils;
+import io.ballerina.stdlib.data.utils.DiagnosticErrorCode;
 import io.ballerina.stdlib.data.utils.DiagnosticLog;
 
 import java.io.ByteArrayInputStream;
@@ -40,7 +41,7 @@ import java.util.function.Consumer;
 /**
  * Xml conversion.
  *
- * @since 0.0.1
+ * @since 0.1.0
  */
 public class Native {
 
@@ -76,14 +77,14 @@ public class Native {
                     future.complete(result);
                     return null;
                 } catch (Exception e) {
-                    future.complete(DataUtils.getError("Error occurred while reading the stream: " + e.getMessage()));
+                    future.complete(DiagnosticLog.error(DiagnosticErrorCode.STREAM_BROKEN, e.getMessage()));
                     return null;
                 }
             } else {
-                return DataUtils.getError("invalid input type");
+                return DiagnosticLog.error(DiagnosticErrorCode.INVALID_TYPE);
             }
         } catch (Exception e) {
-            return DataUtils.getError(e.getMessage());
+            return DiagnosticLog.error(DiagnosticErrorCode.XML_PARSE_ERROR, e.getMessage());
         }
     }
 
