@@ -24,10 +24,14 @@ rootProject.name = 'data.xmldata'
 include(':checkstyle')
 include(':data.xmldata-native')
 include(':data.xmldata-ballerina')
+include(':data.xmldata-compiler-plugin')
+include ':data.xmldata-compiler-plugin-tests'
 
 project(':checkstyle').projectDir = file("build-config${File.separator}checkstyle")
 project(':data.xmldata-native').projectDir = file('native')
 project(':data.xmldata-ballerina').projectDir = file('ballerina')
+project(':data.xmldata-compiler-plugin').projectDir = file('compiler-plugin')
+project(':data.xmldata-compiler-plugin-tests').projectDir = file('compiler-plugin-test')
 
 gradleEnterprise {
     buildScan {
@@ -35,3 +39,5 @@ gradleEnterprise {
         termsOfServiceAgree = 'yes'
     }
 }
+include 'compiler-plugin-test'
+
