@@ -18,6 +18,7 @@
 
 package io.ballerina.stdlib.data.xmldata.compiler;
 
+import io.ballerina.compiler.api.SemanticModel;
 import io.ballerina.compiler.api.symbols.AnnotationAttachmentSymbol;
 import io.ballerina.compiler.api.symbols.AnnotationSymbol;
 import io.ballerina.compiler.api.symbols.ArrayTypeSymbol;
@@ -44,11 +45,10 @@ import io.ballerina.compiler.syntax.tree.Node;
 import io.ballerina.compiler.syntax.tree.SyntaxKind;
 import io.ballerina.compiler.syntax.tree.TypeDefinitionNode;
 import io.ballerina.compiler.syntax.tree.VariableDeclarationNode;
-import io.ballerina.compiler.api.SemanticModel;
 import io.ballerina.projects.Document;
 import io.ballerina.projects.plugins.AnalysisTask;
 import io.ballerina.projects.plugins.SyntaxNodeAnalysisContext;
-import io.ballerina.stdlib.data.xmldata.compiler.Objects.QualifiedName;
+import io.ballerina.stdlib.data.xmldata.compiler.objects.QualifiedName;
 import io.ballerina.tools.diagnostics.Diagnostic;
 import io.ballerina.tools.diagnostics.DiagnosticFactory;
 import io.ballerina.tools.diagnostics.DiagnosticInfo;
@@ -56,6 +56,7 @@ import io.ballerina.tools.diagnostics.DiagnosticSeverity;
 import io.ballerina.tools.diagnostics.Location;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +66,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
 
     private SemanticModel semanticModel;
     private Document srcFile;
-    private final List<DiagnosticInfo> allDiagnosticInfo = new ArrayList<>();
+    private final HashMap<Location, DiagnosticInfo> allDiagnosticInfo = new HashMap<>();
 
     @Override
     public void perform(SyntaxNodeAnalysisContext ctx) {
@@ -103,32 +104,40 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             }
             VariableDeclarationNode variableDeclarationNode = (VariableDeclarationNode) node;
             Optional<ExpressionNode> initializer = variableDeclarationNode.initializer();
-            if (initializer.isPresent() && isFunctionFromXmldata(initializer.get())) {
-                Optional<Symbol> symbol = semanticModel.symbol(variableDeclarationNode.typedBindingPattern());
-                if (symbol.isEmpty()) {
-                    continue;
-                }
-                TypeSymbol typeSymbol = ((VariableSymbol) symbol.get()).typeDescriptor();
-                if (typeSymbol.typeKind() == TypeDescKind.TYPE_REFERENCE) {
-                    typeSymbol = ((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor();
-
-                    if (typeSymbol.typeKind() == TypeDescKind.RECORD) {
-                        processRecordFieldsType((RecordTypeSymbol) typeSymbol, ctx);
-                    }
-                    continue;
-                }
-
-                if (typeSymbol.typeKind() != TypeDescKind.RECORD) {
-                    continue;
-                }
-                validateRecordFields((RecordTypeSymbol) typeSymbol, ctx);
-                processRecordFieldsType((RecordTypeSymbol) typeSymbol, ctx);
+            if (initializer.isEmpty() || !isFunctionFromXmldata(initializer.get())) {
+                continue;
             }
+
+            Optional<Symbol> symbol = semanticModel.symbol(variableDeclarationNode.typedBindingPattern());
+            if (symbol.isEmpty()) {
+                continue;
+            }
+            TypeSymbol typeSymbol = ((VariableSymbol) symbol.get()).typeDescriptor();
+            if (typeSymbol.typeKind() == TypeDescKind.TYPE_REFERENCE) {
+                typeSymbol = ((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor();
+                if (typeSymbol.typeKind() != TypeDescKind.RECORD) {
+                    reportDiagnosticInfo(ctx, symbol.get().getLocation(),
+                            XmldataDiagnosticCodes.EXPECTED_RECORD_TYPE);
+                    continue;
+                }
+                processRecordFieldsType((RecordTypeSymbol) typeSymbol, ctx);
+            } else if (typeSymbol.typeKind() != TypeDescKind.RECORD) {
+                reportDiagnosticInfo(ctx, symbol.get().getLocation(), XmldataDiagnosticCodes.EXPECTED_RECORD_TYPE);
+                continue;
+            }
+            RecordTypeSymbol recordSymbol = (RecordTypeSymbol) typeSymbol;
+            validateRecordFields(recordSymbol, ctx);
+            processRecordFieldsType(recordSymbol, ctx);
         }
     }
 
     private void processModuleVariableDeclarationNode(ModuleVariableDeclarationNode moduleVariableDeclarationNode,
                                                       SyntaxNodeAnalysisContext ctx) {
+        Optional<ExpressionNode> initializer = moduleVariableDeclarationNode.initializer();
+        if (initializer.isEmpty() || !isFunctionFromXmldata(initializer.get())) {
+            return;
+        }
+
         Optional<Symbol> symbol = semanticModel.symbol(moduleVariableDeclarationNode.typedBindingPattern());
         if (symbol.isEmpty()) {
             return;
@@ -136,14 +145,14 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         TypeSymbol typeSymbol = ((VariableSymbol) symbol.get()).typeDescriptor();
         if (typeSymbol.typeKind() == TypeDescKind.TYPE_REFERENCE) {
             typeSymbol = ((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor();
-
-            if (typeSymbol.typeKind() == TypeDescKind.RECORD) {
-                processRecordFieldsType((RecordTypeSymbol) typeSymbol, ctx);
+            if (typeSymbol.typeKind() != TypeDescKind.RECORD) {
+                reportDiagnosticInfo(ctx, symbol.get().getLocation(),
+                        XmldataDiagnosticCodes.EXPECTED_RECORD_TYPE);
+                return;
             }
-            return;
-        }
-
-        if (typeSymbol.typeKind() != TypeDescKind.RECORD) {
+            processRecordFieldsType((RecordTypeSymbol) typeSymbol, ctx);
+        } else if (typeSymbol.typeKind() != TypeDescKind.RECORD) {
+            reportDiagnosticInfo(ctx, symbol.get().getLocation(), XmldataDiagnosticCodes.EXPECTED_RECORD_TYPE);
             return;
         }
         validateRecordFields((RecordTypeSymbol) typeSymbol, ctx);
@@ -180,11 +189,10 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
     }
 
     private void detectDuplicateFields(String fieldName, RecordFieldSymbol fieldSymbol,
-                                       List<QualifiedName> fieldMembers,SyntaxNodeAnalysisContext ctx) {
+                                       List<QualifiedName> fieldMembers, SyntaxNodeAnalysisContext ctx) {
         QualifiedName fieldQName = getQNameFromAnnotation(fieldName, fieldSymbol.annotAttachments());
-        Optional<Location> location = fieldSymbol.getLocation();
-        if (fieldMembers.contains(fieldQName) && location.isPresent()) {
-            reportDiagnosticInfo(ctx, location.get(), XmldataDiagnosticCodes.DUPLICATE_FIELD);
+        if (fieldMembers.contains(fieldQName)) {
+            reportDiagnosticInfo(ctx, fieldSymbol.getLocation(), XmldataDiagnosticCodes.DUPLICATE_FIELD);
             return;
         }
         fieldMembers.add(fieldQName);
@@ -211,8 +219,8 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             }
             Optional<String> annotName = annotationSymbol.getName();
             if (annotName.isPresent() && annotName.get().equals(Constants.NAME)) {
-                fieldSymbol.getLocation().ifPresent(value -> reportDiagnosticInfo(ctx, value,
-                        XmldataDiagnosticCodes.NAME_ANNOTATION_NOT_ALLOWED));
+                reportDiagnosticInfo(ctx, typeDefinitionSymbol.getLocation(),
+                        XmldataDiagnosticCodes.NAME_ANNOTATION_NOT_ALLOWED);
             }
         });
     }
@@ -221,18 +229,15 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         for (Map.Entry<String, RecordFieldSymbol> entry : recordTypeSymbol.fieldDescriptors().entrySet()) {
             RecordFieldSymbol fieldSymbol = entry.getValue();
             TypeSymbol typeSymbol = fieldSymbol.typeDescriptor();
-            Optional<Location> location = fieldSymbol.getLocation();
-            if (location.isEmpty()) {
-                continue;
-            }
-            validateRecordFieldType(typeSymbol, location.get(), ctx);
+            validateRecordFieldType(typeSymbol, fieldSymbol.getLocation(), ctx);
         }
     }
 
-    private void validateRecordFieldType(TypeSymbol typeSymbol, Location location, SyntaxNodeAnalysisContext ctx) {
+    private void validateRecordFieldType(TypeSymbol typeSymbol, Optional<Location> location,
+                                         SyntaxNodeAnalysisContext ctx) {
         switch (typeSymbol.typeKind()) {
             case UNION:
-                processUnionType((UnionTypeSymbol) typeSymbol, location, ctx);
+                validateUnionType((UnionTypeSymbol) typeSymbol, location, ctx);
                 break;
             case NIL:
             case TUPLE:
@@ -247,16 +252,23 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         }
     }
 
-    private void processUnionType(UnionTypeSymbol unionTypeSymbol, Location location, SyntaxNodeAnalysisContext ctx) {
+    private void validateUnionType(UnionTypeSymbol unionTypeSymbol, Optional<Location> location,
+                                   SyntaxNodeAnalysisContext ctx) {
         int nonPrimitiveMemberCount = 0;
-        for (TypeSymbol memberTypeSymbol : unionTypeSymbol.memberTypeDescriptors()) {
+        boolean isNilPresent = false;
+        List<TypeSymbol> memberTypeSymbols = unionTypeSymbol.memberTypeDescriptors();
+        for (TypeSymbol memberTypeSymbol : memberTypeSymbols) {
             if (isPrimitiveType(memberTypeSymbol)) {
                 continue;
+            }
+
+            if (memberTypeSymbol.typeKind() == TypeDescKind.NIL) {
+                isNilPresent = true;
             }
             nonPrimitiveMemberCount++;
         }
 
-        if (nonPrimitiveMemberCount > 1) {
+        if (nonPrimitiveMemberCount > 1 || (memberTypeSymbols.size() > 1 && isNilPresent)) {
             reportDiagnosticInfo(ctx, location, XmldataDiagnosticCodes.UNSUPPORTED_UNION_TYPE);
         }
     }
@@ -268,16 +280,20 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         }
 
         return kind == TypeDescKind.INT || kind == TypeDescKind.FLOAT || kind == TypeDescKind.DECIMAL
-                || kind == TypeDescKind.STRING || kind == TypeDescKind.BOOLEAN || kind == TypeDescKind.BYTE
-                || kind == TypeDescKind.NIL;
+                || kind == TypeDescKind.STRING || kind == TypeDescKind.BOOLEAN || kind == TypeDescKind.BYTE;
     }
 
     private boolean isAnnotFromXmldata(AnnotationSymbol annotationSymbol) {
         Optional<ModuleSymbol> moduleSymbol = annotationSymbol.getModule();
-        return moduleSymbol.map(symbol -> symbol.getName().get().contains(Constants.XMLDATA)).orElse(false);
+        if (moduleSymbol.isEmpty()) {
+            return false;
+        }
+        Optional<String> moduleName = moduleSymbol.get().getName();
+        return moduleName.map(val -> val.contains(Constants.XMLDATA)).orElse(false);
     }
 
-    private QualifiedName getQNameFromAnnotation(String fieldName, List<AnnotationAttachmentSymbol> annotationAttachments) {
+    private QualifiedName getQNameFromAnnotation(String fieldName,
+                                                 List<AnnotationAttachmentSymbol> annotationAttachments) {
         String uri = "";
         String name = fieldName;
         String prefix = "";
@@ -310,17 +326,21 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         }
         String functionName = ((FunctionCallExpressionNode) expressionNode).functionName().toSourceCode().trim();
         return functionName.contains(Constants.FROM_XML_STRING_WITH_TYPE)
-                || functionName.contains(Constants.FROM_XML_WITH_TYPE) || functionName.contains(Constants.TO_XML);
+                || functionName.contains(Constants.FROM_XML_WITH_TYPE);
     }
 
-    private void reportDiagnosticInfo(SyntaxNodeAnalysisContext ctx, Location location,
+    private void reportDiagnosticInfo(SyntaxNodeAnalysisContext ctx, Optional<Location> location,
                                       XmldataDiagnosticCodes diagnosticsCodes) {
-        DiagnosticInfo diagnosticInfo = new DiagnosticInfo(diagnosticsCodes.getCode(),
-                diagnosticsCodes.getMessage(), diagnosticsCodes.getSeverity());
-        if (allDiagnosticInfo.contains(diagnosticInfo)) {
+        if (location.isEmpty()) {
             return;
         }
-        allDiagnosticInfo.add(diagnosticInfo);
-        ctx.reportDiagnostic(DiagnosticFactory.createDiagnostic(diagnosticInfo, location));
+        Location pos = location.get();
+        DiagnosticInfo diagnosticInfo = new DiagnosticInfo(diagnosticsCodes.getCode(),
+                diagnosticsCodes.getMessage(), diagnosticsCodes.getSeverity());
+        if (allDiagnosticInfo.containsKey(pos) && allDiagnosticInfo.get(pos).equals(diagnosticInfo)) {
+            return;
+        }
+        allDiagnosticInfo.put(pos, diagnosticInfo);
+        ctx.reportDiagnostic(DiagnosticFactory.createDiagnostic(diagnosticInfo, pos));
     }
 }

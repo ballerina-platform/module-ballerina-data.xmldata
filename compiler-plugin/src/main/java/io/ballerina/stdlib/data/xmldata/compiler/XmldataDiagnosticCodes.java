@@ -32,7 +32,8 @@ public enum XmldataDiagnosticCodes {
     UNSUPPORTED_UNION_TYPE("BDE202",
             "unsupported union type: union type does not support multiple non-primitive record types", ERROR),
     UNSUPPORTED_TYPE("BDE203", "unsupported type: the record field does not support the expected type", ERROR),
-    NAME_ANNOTATION_NOT_ALLOWED("BDE203",
+    EXPECTED_RECORD_TYPE("BDE204", "invalid type: expected a record type", ERROR),
+    NAME_ANNOTATION_NOT_ALLOWED("BDE204",
             "invalid annotation attachment: child record does not allow name annotation", WARNING);
 
     private final String code;

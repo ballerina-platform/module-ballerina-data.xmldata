@@ -18,8 +18,160 @@
 
 package io.ballerina.stdlib.data.xmldata.compiler;
 
+import io.ballerina.projects.DiagnosticResult;
+import io.ballerina.tools.diagnostics.Diagnostic;
+import io.ballerina.tools.diagnostics.DiagnosticSeverity;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
- * Tests the custom xmldata compiler plugin.
+ * This class includes tests for Ballerina Xmldata compiler plugin.
  */
 public class CompilerPluginTest {
+    @Test
+    public void testDuplicateFieldNegative1() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_1").getCompilation().diagnosticResult();
+        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
+                .collect(Collectors.toList());
+        Assert.assertEquals(errorDiagnosticsList.size(), 1);
+        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "invalid field: duplicate field found");
+    }
+
+    @Test
+    public void testDuplicateFieldNegative2() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_2").getCompilation().diagnosticResult();
+        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
+                .collect(Collectors.toList());
+        Assert.assertEquals(errorDiagnosticsList.size(), 1);
+        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "invalid field: duplicate field found");
+    }
+
+    @Test
+    public void testUnsupportedUnionTypeNegative1() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_3").getCompilation().diagnosticResult();
+        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
+                .collect(Collectors.toList());
+        Assert.assertEquals(errorDiagnosticsList.size(), 2);
+        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "unsupported union type: union type does not support multiple non-primitive record types");
+        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
+                "unsupported union type: union type does not support multiple non-primitive record types");
+    }
+
+    @Test
+    public void testUnsupportedUnionTypeNegative2() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_4").getCompilation().diagnosticResult();
+        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
+                .collect(Collectors.toList());
+        Assert.assertEquals(errorDiagnosticsList.size(), 2);
+        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "unsupported union type: union type does not support multiple non-primitive record types");
+        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
+                "unsupported union type: union type does not support multiple non-primitive record types");
+    }
+
+    @Test
+    public void testUnsupportedTypeNegative1() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_5").getCompilation().diagnosticResult();
+        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
+                .collect(Collectors.toList());
+        Assert.assertEquals(errorDiagnosticsList.size(), 4);
+        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "unsupported union type: union type does not support multiple non-primitive record types");
+        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
+                "unsupported type: the record field does not support the expected type");
+        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
+                "unsupported type: the record field does not support the expected type");
+        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
+                "unsupported union type: union type does not support multiple non-primitive record types");
+    }
+
+    @Test
+    public void testUnsupportedTypeNegative2() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_8").getCompilation().diagnosticResult();
+        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
+                .collect(Collectors.toList());
+        Assert.assertEquals(errorDiagnosticsList.size(), 8);
+        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "unsupported union type: union type does not support multiple non-primitive record types");
+        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
+                "unsupported type: the record field does not support the expected type");
+        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
+                "unsupported type: the record field does not support the expected type");
+        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
+                "unsupported union type: union type does not support multiple non-primitive record types");
+        Assert.assertEquals(errorDiagnosticsList.get(4).diagnosticInfo().messageFormat(),
+                "unsupported union type: union type does not support multiple non-primitive record types");
+        Assert.assertEquals(errorDiagnosticsList.get(5).diagnosticInfo().messageFormat(),
+                "unsupported type: the record field does not support the expected type");
+        Assert.assertEquals(errorDiagnosticsList.get(6).diagnosticInfo().messageFormat(),
+                "unsupported type: the record field does not support the expected type");
+        Assert.assertEquals(errorDiagnosticsList.get(7).diagnosticInfo().messageFormat(),
+                "unsupported union type: union type does not support multiple non-primitive record types");
+    }
+
+    @Test
+    public void testChildRecordWithNameAnnotNegative() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_6").getCompilation().diagnosticResult();
+        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.WARNING))
+                .collect(Collectors.toList());
+        Assert.assertEquals(errorDiagnosticsList.size(), 1);
+        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "invalid annotation attachment: child record does not allow name annotation");
+    }
+
+    @Test
+    public void testExpectedTypeNegative1() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_7").getCompilation().diagnosticResult();
+        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
+                .collect(Collectors.toList());
+        Assert.assertEquals(errorDiagnosticsList.size(), 4);
+        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "invalid type: expected a record type");
+        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
+                "invalid type: expected a record type");
+        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
+                "invalid type: expected a record type");
+        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
+                "invalid type: expected a record type");
+    }
+
+    @Test
+    public void testExpectedTypeNegative2() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_9").getCompilation().diagnosticResult();
+        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
+                .collect(Collectors.toList());
+        Assert.assertEquals(errorDiagnosticsList.size(), 4);
+        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "invalid type: expected a record type");
+        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
+                "invalid type: expected a record type");
+        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
+                "invalid type: expected a record type");
+        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
+                "invalid type: expected a record type");
+    }
 }

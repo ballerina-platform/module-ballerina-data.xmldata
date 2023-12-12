@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package io.ballerina.stdlib.data.xmldata.compiler.Objects;
+package io.ballerina.stdlib.data.xmldata.compiler.objects;
 
 public class QualifiedName {
     private final String localPart;
