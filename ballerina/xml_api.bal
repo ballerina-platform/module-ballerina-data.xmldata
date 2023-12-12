@@ -31,7 +31,7 @@ public type NameConfig record {|
 # The annotation is used to specify the new name of the existing record name or field name according to the XML format.
 # When using `fromXmlStringWithType` or `fromXmlWithType`, this annotation can be used to validate the name of the XML element with the record field or type.
 # When using `toXml`, this annotation can be used to override the name of field or type.
-public annotation NameConfig Name on type, record field;
+public const annotation NameConfig Name on type, record field;
 
 # Defines the namespace of the XML element
 #
@@ -46,13 +46,13 @@ public type NamespaceConfig record {|
 # When using `fromXmlStringWithType` or `fromXmlWithType`, this annotation can be used to 
 # validate the namespace of the XML element with the record field or type.
 # When using `toXml`, this annotation can be used to add the namespace to the XML element.
-public annotation NamespaceConfig Namespace on type, record field;
+public const annotation NamespaceConfig Namespace on type, record field;
 
 # The annotation is used to denote the field that is considered an attribute.
 # When using `fromXmlStringWithType` or `fromXmlWithType`, this annotation can be used to 
 # indicate the record field as an attribute.
 # When using `toXml`, this annotation can be used to add the attribute to the XML element.
-public annotation Attribute on record field;
+public const annotation Attribute on record field;
 
 # Represent the options that can be used for filtering in the projection.
 #

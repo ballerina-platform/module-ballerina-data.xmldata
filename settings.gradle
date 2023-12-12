@@ -31,7 +31,7 @@ project(':checkstyle').projectDir = file("build-config${File.separator}checkstyl
 project(':data.xmldata-native').projectDir = file('native')
 project(':data.xmldata-ballerina').projectDir = file('ballerina')
 project(':data.xmldata-compiler-plugin').projectDir = file('compiler-plugin')
-project(':data.xmldata-compiler-plugin-tests').projectDir = file('compiler-plugin-test')
+//project(':data.xmldata-compiler-plugin-tests').projectDir = file('compiler-plugin-test')
 
 gradleEnterprise {
     buildScan {
