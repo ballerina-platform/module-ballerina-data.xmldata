@@ -62,6 +62,7 @@ public class DataUtils {
     public static QualifiedName validateAndGetXmlNameFromRecordAnnotation(RecordType recordType, String recordName,
                                                                           QualifiedName elementName) {
         BMap<BString, Object> annotations = recordType.getAnnotations();
+        String localName = recordName;
         for (BString annotationsKey : annotations.getKeys()) {
             String key = annotationsKey.getValue();
             if (!key.contains(Constants.FIELD) && key.endsWith(Constants.NAME)) {
@@ -70,7 +71,7 @@ public class DataUtils {
                 if (!name.equals(localPart)) {
                     throw DiagnosticLog.error(DiagnosticErrorCode.TYPE_NAME_MISMATCH_WITH_XML_ELEMENT, name, localPart);
                 }
-                recordName = name;
+                localName = name;
                 break;
             }
         }
@@ -83,21 +84,16 @@ public class DataUtils {
                         ((Map<BString, Object>) annotations.get(StringUtils.fromString(key)));
                 BString uri = (BString) namespaceAnnotation.get(Constants.URI);
                 BString prefix = (BString) namespaceAnnotation.get(Constants.PREFIX);
-                return new QualifiedName(uri == null ? "" : uri.getValue(), recordName,
+                return new QualifiedName(uri == null ? "" : uri.getValue(), localName,
                         prefix == null ? "" : prefix.getValue());
             }
         }
-        return new QualifiedName(QualifiedName.NS_ANNOT_NOT_DEFINED, recordName, "");
+        return new QualifiedName(QualifiedName.NS_ANNOT_NOT_DEFINED, localName, "");
     }
 
     public static void validateTypeNamespace(String prefix, String uri, RecordType recordType) {
         ArrayList<String> namespace = getNamespace(recordType);
-
-        if (namespace.isEmpty()) {
-            return;
-        }
-
-        if (prefix.equals(namespace.get(0)) && uri.equals(namespace.get(1))) {
+        if (namespace.isEmpty() || prefix.equals(namespace.get(0)) && uri.equals(namespace.get(1))) {
             return;
         }
         throw DiagnosticLog.error(DiagnosticErrorCode.NAMESPACE_MISMATCH, recordType.getName());
@@ -106,22 +102,16 @@ public class DataUtils {
     @SuppressWarnings("unchecked")
     private static ArrayList<String> getNamespace(RecordType recordType) {
         BMap<BString, Object> annotations = recordType.getAnnotations();
-        String namespacePrefix = null;
-        String namespaceUri = null;
+        ArrayList<String> namespace = new ArrayList<>();
         for (BString annotationsKey : annotations.getKeys()) {
             String key = annotationsKey.getValue();
             if (!key.contains(Constants.FIELD) && key.endsWith(Constants.NAMESPACE)) {
                 BMap<BString, Object> namespaceAnnotation = (BMap<BString, Object>) annotations.get(annotationsKey);
-                namespacePrefix = namespaceAnnotation.containsKey(Constants.PREFIX) ?
-                        ((BString) namespaceAnnotation.get(Constants.PREFIX)).getValue() : "";
-                namespaceUri = ((BString) namespaceAnnotation.get(Constants.URI)).getValue();
+                namespace.add(namespaceAnnotation.containsKey(Constants.PREFIX) ?
+                        ((BString) namespaceAnnotation.get(Constants.PREFIX)).getValue() : "");
+                namespace.add(((BString) namespaceAnnotation.get(Constants.URI)).getValue());
                 break;
             }
-        }
-        ArrayList<String> namespace = new ArrayList<>();
-        if (namespacePrefix != null && namespaceUri != null) {
-            namespace.add(namespacePrefix);
-            namespace.add(namespaceUri);
         }
         return namespace;
     }
@@ -210,17 +200,10 @@ public class DataUtils {
     public static Object convertStringToExpType(BString value, Type expType) {
         Object result;
         switch (expType.getTag()) {
-            case TypeTags.ANYDATA_TAG:
-            case TypeTags.ANY_TAG:
-            case TypeTags.JSON_TAG:
-                result = FromString.fromStringWithTypeInternal(value, PredefinedTypes.TYPE_STRING);
-                break;
-            case TypeTags.ARRAY_TAG:
-                expType = ((ArrayType) expType).getElementType();
-                result = convertStringToExpType(value, expType);
-                break;
-            default:
-                result = FromString.fromStringWithTypeInternal(value, expType);
+            case TypeTags.ANYDATA_TAG, TypeTags.ANY_TAG, TypeTags.JSON_TAG ->
+                    result = FromString.fromStringWithTypeInternal(value, PredefinedTypes.TYPE_STRING);
+            case TypeTags.ARRAY_TAG -> result = convertStringToExpType(value, ((ArrayType) expType).getElementType());
+            default -> result = FromString.fromStringWithTypeInternal(value, expType);
         }
 
         if (result instanceof BError) {
@@ -264,72 +247,38 @@ public class DataUtils {
         return typeTag == TypeTags.ARRAY_TAG || typeTag == TypeTags.ANYDATA_TAG || typeTag == TypeTags.JSON_TAG;
     }
 
-    public static boolean isStringValueAssignable(int typeTag) {
-        return typeTag == TypeTags.STRING_TAG || typeTag == TypeTags.ANYDATA_TAG || typeTag == TypeTags.JSON_TAG;
-    }
-
     public static ArrayType getValidArrayType(Type type) {
-        switch (type.getTag()) {
-            case TypeTags.ARRAY_TAG:
-                return (ArrayType) type;
-            case TypeTags.ANYDATA_TAG:
-                return PredefinedTypes.TYPE_ANYDATA_ARRAY;
-            case TypeTags.JSON_TAG:
-                return PredefinedTypes.TYPE_JSON_ARRAY;
-        }
-        return null;
+        return switch (type.getTag()) {
+            case TypeTags.ARRAY_TAG -> (ArrayType) type;
+            case TypeTags.ANYDATA_TAG -> PredefinedTypes.TYPE_ANYDATA_ARRAY;
+            case TypeTags.JSON_TAG -> PredefinedTypes.TYPE_JSON_ARRAY;
+            default -> null;
+        };
     }
 
     public static ArrayType getArrayTypeFromElementType(Type type) {
-        switch (type.getTag()) {
-            case TypeTags.ARRAY_TAG:
-                return TypeCreator.createArrayType(((ArrayType) type).getElementType());
-            case TypeTags.JSON_TAG:
-                return PredefinedTypes.TYPE_JSON_ARRAY;
-            case TypeTags.INT_TAG:
-            case TypeTags.FLOAT_TAG:
-            case TypeTags.STRING_TAG:
-            case TypeTags.BOOLEAN_TAG:
-            case TypeTags.BYTE_TAG:
-            case TypeTags.DECIMAL_TAG:
-            case TypeTags.RECORD_TYPE_TAG:
-            case TypeTags.MAP_TAG:
-            case TypeTags.OBJECT_TYPE_TAG:
-            case TypeTags.XML_TAG:
-            case TypeTags.NULL_TAG:
-                return TypeCreator.createArrayType(type);
-            case TypeTags.TYPE_REFERENCED_TYPE_TAG:
-                return getArrayTypeFromElementType(TypeUtils.getReferredType(type));
-            case TypeTags.ANYDATA_TAG:
-            default:
-                return PredefinedTypes.TYPE_ANYDATA_ARRAY;
-        }
+        return switch (type.getTag()) {
+            case TypeTags.ARRAY_TAG -> TypeCreator.createArrayType(((ArrayType) type).getElementType());
+            case TypeTags.JSON_TAG -> PredefinedTypes.TYPE_JSON_ARRAY;
+            case TypeTags.INT_TAG, TypeTags.FLOAT_TAG, TypeTags.STRING_TAG, TypeTags.BOOLEAN_TAG, TypeTags.BYTE_TAG,
+                    TypeTags.DECIMAL_TAG, TypeTags.RECORD_TYPE_TAG, TypeTags.MAP_TAG, TypeTags.OBJECT_TYPE_TAG,
+                    TypeTags.XML_TAG, TypeTags.NULL_TAG -> TypeCreator.createArrayType(type);
+            case TypeTags.TYPE_REFERENCED_TYPE_TAG -> getArrayTypeFromElementType(TypeUtils.getReferredType(type));
+            default -> PredefinedTypes.TYPE_ANYDATA_ARRAY;
+        };
     }
 
     public static MapType getMapTypeFromConstraintType(Type constraintType) {
-        switch (constraintType.getTag()) {
-            case TypeTags.MAP_TAG:
-                return (MapType) constraintType;
-            case TypeTags.INT_TAG:
-            case TypeTags.FLOAT_TAG:
-            case TypeTags.STRING_TAG:
-            case TypeTags.BOOLEAN_TAG:
-            case TypeTags.BYTE_TAG:
-            case TypeTags.DECIMAL_TAG:
-            case TypeTags.JSON_TAG:
-            case TypeTags.RECORD_TYPE_TAG:
-            case TypeTags.OBJECT_TYPE_TAG:
-            case TypeTags.XML_TAG:
-            case TypeTags.NULL_TAG:
-                return TypeCreator.createMapType(constraintType);
-            case TypeTags.ARRAY_TAG:
-                return TypeCreator.createMapType(((ArrayType) constraintType).getElementType());
-            case TypeTags.TYPE_REFERENCED_TYPE_TAG:
-                return getMapTypeFromConstraintType(TypeUtils.getReferredType(constraintType));
-            case TypeTags.ANYDATA_TAG:
-            default:
-                return TypeCreator.createMapType(PredefinedTypes.TYPE_ANYDATA);
-        }
+        return switch (constraintType.getTag()) {
+            case TypeTags.MAP_TAG -> (MapType) constraintType;
+            case TypeTags.INT_TAG, TypeTags.FLOAT_TAG, TypeTags.STRING_TAG, TypeTags.BOOLEAN_TAG, TypeTags.BYTE_TAG,
+                    TypeTags.DECIMAL_TAG, TypeTags.JSON_TAG, TypeTags.RECORD_TYPE_TAG, TypeTags.OBJECT_TYPE_TAG,
+                    TypeTags.XML_TAG, TypeTags.NULL_TAG -> TypeCreator.createMapType(constraintType);
+            case TypeTags.ARRAY_TAG -> TypeCreator.createMapType(((ArrayType) constraintType).getElementType());
+            case TypeTags.TYPE_REFERENCED_TYPE_TAG ->
+                    getMapTypeFromConstraintType(TypeUtils.getReferredType(constraintType));
+            default -> TypeCreator.createMapType(PredefinedTypes.TYPE_ANYDATA);
+        };
     }
 
     public static void updateExpectedTypeStacks(RecordType recordType, XmlAnalyzerData analyzerData) {
@@ -348,8 +297,7 @@ public class DataUtils {
     public static Object getModifiedRecord(BMap<BString, Object> input, BTypedesc type) {
         Type describingType = type.getDescribingType();
         Object value = input.get(input.getKeys()[0]);
-        if (describingType.getTag() == TypeTags.MAP_TAG && value instanceof BArray) {
-            BArray objectArray = (BArray) value;
+        if (describingType.getTag() == TypeTags.MAP_TAG && value instanceof BArray objectArray) {
             Type elementType = TypeUtils.getReferredType(((ArrayType) objectArray.getType()).getElementType());
             if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
                 BMap<BString, Object> jsonMap = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
@@ -443,12 +391,14 @@ public class DataUtils {
 
     @SuppressWarnings("unchecked")
     public static boolean isAttributeField(BString annotationKey, BMap<BString, Object> annotations) {
-        if (annotations.containsKey(annotationKey)) {
-            BMap<BString, Object> annotationValue = (BMap<BString, Object>) annotations.get(annotationKey);
-            for (BString fieldKey : annotationValue.getKeys()) {
-                if (fieldKey.toString().endsWith(Constants.ATTRIBUTE)) {
-                    return true;
-                }
+        if (!annotations.containsKey(annotationKey)) {
+            return false;
+        }
+
+        BMap<BString, Object> annotationValue = (BMap<BString, Object>) annotations.get(annotationKey);
+        for (BString fieldKey : annotationValue.getKeys()) {
+            if (fieldKey.toString().endsWith(Constants.ATTRIBUTE)) {
+                return true;
             }
         }
         return false;
@@ -460,14 +410,16 @@ public class DataUtils {
         BMap<BString, Object> nsFieldAnnotation = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         BString annotationKey =
                 StringUtils.fromString((Constants.FIELD + key).replace(Constants.COLON, "\\:"));
-        if (parentAnnotations.containsKey(annotationKey)) {
-            BMap<BString, Object> annotationValue = (BMap<BString, Object>) parentAnnotations.get(annotationKey);
-            for (BString fieldKey : annotationValue.getKeys()) {
-                String keyName = fieldKey.getValue();
-                if (keyName.endsWith(Constants.NAMESPACE) || keyName.endsWith(Constants.NAME)) {
-                    nsFieldAnnotation.put(fieldKey, annotationValue.get(fieldKey));
-                    break;
-                }
+        if (!parentAnnotations.containsKey(annotationKey)) {
+            return nsFieldAnnotation;
+        }
+
+        BMap<BString, Object> annotationValue = (BMap<BString, Object>) parentAnnotations.get(annotationKey);
+        for (BString fieldKey : annotationValue.getKeys()) {
+            String keyName = fieldKey.getValue();
+            if (keyName.endsWith(Constants.NAMESPACE) || keyName.endsWith(Constants.NAME)) {
+                nsFieldAnnotation.put(fieldKey, annotationValue.get(fieldKey));
+                break;
             }
         }
         return nsFieldAnnotation;
@@ -567,8 +519,7 @@ public class DataUtils {
     }
 
     public static Type getTypeFromUnionType(Type childType, Object value) {
-        if (childType instanceof UnionType) {
-            UnionType bUnionType = ((UnionType) childType);
+        if (childType instanceof UnionType bUnionType) {
             for (Type memberType : bUnionType.getMemberTypes()) {
                 if (value.getClass().getName().toUpperCase(Locale.ROOT).contains(
                         memberType.getName().toUpperCase(Locale.ROOT))) {
@@ -633,8 +584,7 @@ public class DataUtils {
         return StringUtils.fromString(key);
     }
 
-    private static void processSubRecordAnnotation(BMap<BString, Object> annotation,
-                                                   BMap<BString, Object>  subRecord) {
+    private static void processSubRecordAnnotation(BMap<BString, Object> annotation, BMap<BString, Object>  subRecord) {
         BString[] keys = annotation.getKeys();
         for (BString value : keys) {
             if (value.getValue().endsWith(Constants.NAMESPACE)) {
@@ -711,11 +661,10 @@ public class DataUtils {
                                                BMap<BString, Object> subRecord) {
         if (prefix ==  null) {
             subRecord.put(StringUtils.fromString(ATTRIBUTE_PREFIX + "xmlns"), uri);
-        } else {
-            subRecord.put(StringUtils.fromString(ATTRIBUTE_PREFIX + "xmlns:" + prefix), uri);
-            key = prefix.getValue().concat(Constants.COLON).concat(key);
+            return key;
         }
-        return key;
+        subRecord.put(StringUtils.fromString(ATTRIBUTE_PREFIX + "xmlns:" + prefix), uri);
+        return prefix.getValue().concat(Constants.COLON).concat(key);
     }
 
     /**

@@ -82,15 +82,10 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         ModulePartNode rootNode = (ModulePartNode) ctx.node();
         for (ModuleMemberDeclarationNode member : rootNode.members()) {
             switch (member.kind()) {
-                case FUNCTION_DEFINITION:
-                    processFunctionDefinitionNode((FunctionDefinitionNode) member, ctx);
-                    break;
-                case MODULE_VAR_DECL:
-                    processModuleVariableDeclarationNode((ModuleVariableDeclarationNode) member, ctx);
-                    break;
-                case TYPE_DEFINITION:
-                    processTypeDefinitionNode((TypeDefinitionNode) member, ctx);
-                    break;
+                case FUNCTION_DEFINITION -> processFunctionDefinitionNode((FunctionDefinitionNode) member, ctx);
+                case MODULE_VAR_DECL ->
+                        processModuleVariableDeclarationNode((ModuleVariableDeclarationNode) member, ctx);
+                case TYPE_DEFINITION -> processTypeDefinitionNode((TypeDefinitionNode) member, ctx);
             }
         }
     }
@@ -116,8 +111,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             if (typeSymbol.typeKind() == TypeDescKind.TYPE_REFERENCE) {
                 typeSymbol = ((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor();
                 if (typeSymbol.typeKind() != TypeDescKind.RECORD) {
-                    reportDiagnosticInfo(ctx, symbol.get().getLocation(),
-                            XmldataDiagnosticCodes.EXPECTED_RECORD_TYPE);
+                    reportDiagnosticInfo(ctx, symbol.get().getLocation(), XmldataDiagnosticCodes.EXPECTED_RECORD_TYPE);
                     continue;
                 }
                 processRecordFieldsType((RecordTypeSymbol) typeSymbol, ctx);
@@ -236,19 +230,11 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
     private void validateRecordFieldType(TypeSymbol typeSymbol, Optional<Location> location,
                                          SyntaxNodeAnalysisContext ctx) {
         switch (typeSymbol.typeKind()) {
-            case UNION:
-                validateUnionType((UnionTypeSymbol) typeSymbol, location, ctx);
-                break;
-            case NIL:
-            case TUPLE:
-                reportDiagnosticInfo(ctx, location, XmldataDiagnosticCodes.UNSUPPORTED_TYPE);
-                break;
-            case ARRAY:
-                validateRecordFieldType(((ArrayTypeSymbol) typeSymbol).memberTypeDescriptor(), location, ctx);
-                break;
-            case TYPE_REFERENCE:
-                validateRecordFieldType(((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor(), location, ctx);
-                break;
+            case UNION -> validateUnionType((UnionTypeSymbol) typeSymbol, location, ctx);
+            case NIL, TUPLE -> reportDiagnosticInfo(ctx, location, XmldataDiagnosticCodes.UNSUPPORTED_TYPE);
+            case ARRAY -> validateRecordFieldType(((ArrayTypeSymbol) typeSymbol).memberTypeDescriptor(), location, ctx);
+            case TYPE_REFERENCE ->
+                    validateRecordFieldType(((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor(), location, ctx);
         }
     }
 

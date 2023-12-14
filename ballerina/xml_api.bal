@@ -110,11 +110,9 @@ isolated function convertMapXml(map<xml>|map<xml[]> mapValue) returns xml {
     foreach [string, xml|xml[]] [key, xmlVal] in mapValue.entries() {
         xml|xml[] values = xmlVal;
         if values is xml[] {
-            xml childNode = xml ``;
             foreach xml value in values {
-                childNode += value;
+                xNode += xml:createElement(key, {}, value);
             }
-            xNode += xml:createElement(key, {}, childNode);
         } else {
             xNode += xml:createElement(key, {}, values);
         }

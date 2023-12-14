@@ -40,8 +40,6 @@ public class Constants {
     public static final String COLON = ":";
     public static final MapType JSON_MAP_TYPE = TypeCreator.createMapType(PredefinedTypes.TYPE_JSON);
     public static final ArrayType JSON_ARRAY_TYPE = TypeCreator.createArrayType(PredefinedTypes.TYPE_JSON);
-    public static final ArrayType ANYDATA_ARRAY_TYPE = TypeCreator.createArrayType(PredefinedTypes.TYPE_ANYDATA);
-    public static final MapType ANYDATA_MAP_TYPE = TypeCreator.createMapType(PredefinedTypes.TYPE_ANYDATA);
     public static final String FIELD = "$field$.";
     public static final String NAMESPACE = "Namespace";
     public static final BString URI = StringUtils.fromString("uri");

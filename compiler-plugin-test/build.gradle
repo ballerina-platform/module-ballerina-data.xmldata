@@ -82,6 +82,15 @@ compileJava {
 test {
     systemProperty "ballerina.offline.flag", "true"
     useTestNG()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+    }
+    sourceSets project(':data.xmldata-compiler-plugin').sourceSets.main
 }
 
 test.dependsOn ":data.xmldata-ballerina:build"

@@ -138,36 +138,11 @@ public class XmlParser {
             int next;
             while (xmlStreamReader.hasNext()) {
                 if (readNext) {
-                    readNext = false;
                     next = xmlStreamReader.getEventType();
                 } else {
                     next = xmlStreamReader.next();
                 }
-
-                switch (next) {
-                    case START_ELEMENT:
-                        readElement(xmlStreamReader, xmlParserData);
-                        break;
-                    case END_ELEMENT:
-                        endElement(xmlStreamReader, xmlParserData);
-                        break;
-                    case CDATA:
-                        readText(xmlStreamReader, true, xmlParserData);
-                        break;
-                    case CHARACTERS:
-                        readText(xmlStreamReader, false, xmlParserData);
-                        readNext = true;
-                        break;
-                    case END_DOCUMENT:
-                        return buildDocument(xmlParserData);
-                    case PROCESSING_INSTRUCTION:
-                    case COMMENT:
-                    case DTD:
-                        // Ignore
-                        break;
-                    default:
-                        assert false;
-                }
+                readNext = parseXmlElements(next, xmlParserData);
             }
         } catch (NumberFormatException e) {
             throw DiagnosticLog.getXmlError(PARSE_ERROR_PREFIX + e);
@@ -180,13 +155,30 @@ public class XmlParser {
         return currentNode;
     }
 
+    private boolean parseXmlElements(int next, XmlParserData xmlParserData) throws XMLStreamException {
+        switch (next) {
+            case START_ELEMENT -> readElement(xmlStreamReader, xmlParserData);
+            case END_ELEMENT -> endElement(xmlStreamReader, xmlParserData);
+            case CDATA -> readText(xmlStreamReader, true, xmlParserData);
+            case CHARACTERS -> {
+                readText(xmlStreamReader, false, xmlParserData);
+                return true;
+            }
+            case END_DOCUMENT -> buildDocument(xmlParserData);
+            case PROCESSING_INSTRUCTION, COMMENT, DTD -> { } // Ignore
+            default -> {
+                assert false;
+            }
+        }
+        return false;
+    }
+
     public void parseRecordRest(String startElementName, XmlParserData xmlParserData) {
         try {
             boolean readNext = false;
             int next;
             while (xmlStreamReader.hasNext()) {
                 if (readNext) {
-                    readNext = false;
                     next = xmlStreamReader.getEventType();
                 } else {
                     next = xmlStreamReader.next();
@@ -203,32 +195,7 @@ public class XmlParser {
                         break;
                     }
                 }
-
-                switch (next) {
-                    case START_ELEMENT:
-                        readElement(xmlStreamReader, xmlParserData);
-                        break;
-                    case END_ELEMENT:
-                        endElement(xmlStreamReader, xmlParserData);
-                        break;
-                    case CDATA:
-                        readText(xmlStreamReader, true, xmlParserData);
-                        break;
-                    case CHARACTERS:
-                        readText(xmlStreamReader, false, xmlParserData);
-                        readNext = true;
-                        break;
-                    case END_DOCUMENT:
-                        buildDocument(xmlParserData);
-                        break;
-                    case PROCESSING_INSTRUCTION:
-                    case COMMENT:
-                    case DTD:
-                        // Ignore
-                        break;
-                    default:
-                        assert false;
-                }
+                readNext = parseXmlElements(next, xmlParserData);
             }
         } catch (BError e) {
             throw e;
@@ -251,7 +218,6 @@ public class XmlParser {
 
         RecordType rootRecord = xmlParserData.rootRecord;
         currentNode = ValueCreator.createRecordValue(rootRecord);
-
         QualifiedName elementQName = getElementName(xmlStreamReader);
         xmlParserData.rootElement =
                 DataUtils.validateAndGetXmlNameFromRecordAnnotation(rootRecord, rootRecord.getName(), elementQName);
@@ -300,13 +266,12 @@ public class XmlParser {
 
         if (fieldType.getTag() == TypeTags.RECORD_TYPE_TAG) {
             handleContentFieldInRecordType((RecordType) fieldType, bText, xmlParserData);
-            return;
         } else if (fieldType.getTag() == TypeTags.ARRAY_TAG
                 && ((ArrayType) fieldType).getElementType().getTag() == TypeTags.RECORD_TYPE_TAG) {
             handleContentFieldInRecordType((RecordType) ((ArrayType) fieldType).getElementType(), bText, xmlParserData);
-            return;
+        } else {
+            currentNode.put(bFieldName, convertStringToRestExpType(bText, fieldType));
         }
-        currentNode.put(bFieldName, convertStringToRestExpType(bText, fieldType));
     }
 
     private String handleTruncatedCharacters(XMLStreamReader xmlStreamReader) throws XMLStreamException {
@@ -354,20 +319,19 @@ public class XmlParser {
 
     private Object convertStringToRestExpType(BString value, Type expType) {
         switch (expType.getTag()) {
-            case TypeTags.ARRAY_TAG:
+            case TypeTags.ARRAY_TAG -> {
                 return convertStringToRestExpType(value, ((ArrayType) expType).getElementType());
-            case TypeTags.INT_TAG:
-            case TypeTags.FLOAT_TAG:
-            case TypeTags.DECIMAL_TAG:
-            case TypeTags.STRING_TAG:
-            case TypeTags.BOOLEAN_TAG:
-            case TypeTags.UNION_TAG:
+            }
+            case TypeTags.INT_TAG, TypeTags.FLOAT_TAG, TypeTags.DECIMAL_TAG, TypeTags.STRING_TAG,
+                    TypeTags.BOOLEAN_TAG, TypeTags.UNION_TAG -> {
                 return convertStringToExpType(value, expType);
-            case TypeTags.ANYDATA_TAG:
-            case TypeTags.JSON_TAG:
+            }
+            case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG -> {
                 return convertStringToExpType(value, PredefinedTypes.TYPE_STRING);
-            case TypeTags.TYPE_REFERENCED_TYPE_TAG:
+            }
+            case TypeTags.TYPE_REFERENCED_TYPE_TAG -> {
                 return convertStringToExpType(value, TypeUtils.getReferredType(expType));
+            }
         }
         throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_REST_TYPE, expType.getName());
     }
@@ -430,10 +394,9 @@ public class XmlParser {
         Field currentField = xmlParserData.fieldHierarchy.peek().get(elemQName);
         xmlParserData.currentField = currentField;
         if (xmlParserData.currentField == null) {
-            if (xmlParserData.restTypes.peek() == null) {
-                return;
+            if (xmlParserData.restTypes.peek() != null) {
+                currentNode = handleRestField(xmlParserData);
             }
-            currentNode = handleRestField(xmlParserData);
             return;
         }
 
@@ -450,23 +413,25 @@ public class XmlParser {
             currentNode.put(bFieldName, tempArray);
         }
 
-        if (fieldType.getTag() == TypeTags.RECORD_TYPE_TAG) {
-            updateNextRecord(xmlStreamReader, xmlParserData, fieldName, fieldType, (RecordType) fieldType);
-        } else if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
-            Type referredType = TypeUtils.getReferredType(((ArrayType) fieldType).getElementType());
-            if (!currentNode.containsKey(bFieldName)) {
-                currentNode.put(StringUtils.fromString(fieldName),
-                        ValueCreator.createArrayValue(DataUtils.getArrayTypeFromElementType(referredType)));
-            }
+        switch (fieldType.getTag()) {
+            case TypeTags.RECORD_TYPE_TAG ->
+                    updateNextRecord(xmlStreamReader, xmlParserData, fieldName, fieldType, (RecordType) fieldType);
+            case TypeTags.ARRAY_TAG -> {
+                Type referredType = TypeUtils.getReferredType(((ArrayType) fieldType).getElementType());
+                if (!currentNode.containsKey(bFieldName)) {
+                    currentNode.put(StringUtils.fromString(fieldName),
+                            ValueCreator.createArrayValue(DataUtils.getArrayTypeFromElementType(referredType)));
+                }
 
-            if (referredType.getTag() != TypeTags.RECORD_TYPE_TAG) {
-                return;
+                if (referredType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                    updateNextRecord(xmlStreamReader, xmlParserData, fieldName, fieldType, (RecordType) referredType);
+                }
             }
-            updateNextRecord(xmlStreamReader, xmlParserData, fieldName, fieldType, (RecordType) referredType);
-        } else if (fieldType.getTag() == TypeTags.MAP_TAG) {
-            RecordType recordType = TypeCreator.createRecordType(Constants.ANON_TYPE, fieldType.getPackage(), 0,
-                    new HashMap<>(), ((MapType) fieldType).getConstrainedType(), false, 0);
-            updateNextRecord(xmlStreamReader, xmlParserData, fieldName, fieldType, recordType);
+            case TypeTags.MAP_TAG -> {
+                RecordType recordType = TypeCreator.createRecordType(Constants.ANON_TYPE, fieldType.getPackage(), 0,
+                        new HashMap<>(), ((MapType) fieldType).getConstrainedType(), false, 0);
+                updateNextRecord(xmlStreamReader, xmlParserData, fieldName, fieldType, recordType);
+            }
         }
     }
 
@@ -515,12 +480,8 @@ public class XmlParser {
 
     @SuppressWarnings("unchecked")
     private BMap<BString, Object> handleRestField(XmlParserData xmlParserData) {
-        QualifiedName restStartPoint;
-        if (xmlParserData.parents.isEmpty()) {
-            restStartPoint = xmlParserData.rootElement;
-        } else {
-            restStartPoint = getLastElementInSiblings(xmlParserData.parents.peek());
-        }
+        QualifiedName restStartPoint = xmlParserData.parents.isEmpty() ?
+                xmlParserData.rootElement : getLastElementInSiblings(xmlParserData.parents.peek());
         xmlParserData.restFieldsPoints.push(restStartPoint);
         xmlParserData.nodesStack.push(currentNode);
         return (BMap<BString, Object>) parseRestField(xmlParserData);
@@ -538,24 +499,13 @@ public class XmlParser {
             boolean readNext = false;
             while (!xmlParserData.restFieldsPoints.isEmpty()) {
                 switch (next) {
-                    case START_ELEMENT:
-                        currentFieldName = readElementRest(xmlStreamReader, xmlParserData);
-                        break;
-                    case END_ELEMENT:
-                        endElementRest(xmlStreamReader, xmlParserData);
-                        break;
-                    case CDATA:
-                        readTextRest(xmlStreamReader, currentFieldName, true, xmlParserData);
-                        break;
-                    case CHARACTERS:
+                    case START_ELEMENT -> currentFieldName = readElementRest(xmlStreamReader, xmlParserData);
+                    case END_ELEMENT -> endElementRest(xmlStreamReader, xmlParserData);
+                    case CDATA -> readTextRest(xmlStreamReader, currentFieldName, true, xmlParserData);
+                    case CHARACTERS -> {
                         readTextRest(xmlStreamReader, currentFieldName, false, xmlParserData);
                         readNext = true;
-                        break;
-                    case PROCESSING_INSTRUCTION:
-                    case COMMENT:
-                    case DTD:
-                        // Ignore
-                        break;
+                    }
                 }
 
                 if (xmlStreamReader.hasNext() && !xmlParserData.restFieldsPoints.isEmpty()) {
@@ -597,7 +547,9 @@ public class XmlParser {
             currentNode = temp;
             handleAttributesRest(xmlStreamReader, restType, next);
             return currentFieldName;
-        } else if (!xmlParserData.siblings.containsKey(elemQName)) {
+        }
+
+        if (!xmlParserData.siblings.containsKey(elemQName)) {
             xmlParserData.siblings.put(elemQName, false);
             if (restType.getTag() == TypeTags.ARRAY_TAG) {
                 BArray tempArray = ValueCreator.createArrayValue(DataUtils.getArrayTypeFromElementType(restType));
@@ -726,11 +678,9 @@ public class XmlParser {
                     modifiedNames.getOrDefault(key, new QualifiedName(QualifiedName.NS_ANNOT_NOT_DEFINED, key, ""));
             if (fields.containsKey(modifiedQName)) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.DUPLICATE_FIELD, modifiedQName.getLocalPart());
-            } else if (xmlParserData.attributeHierarchy.peek().containsKey(modifiedQName)) {
-                continue;
+            } else if (!xmlParserData.attributeHierarchy.peek().containsKey(modifiedQName)) {
+                fields.put(modifiedQName, recordFields.get(key));
             }
-
-            fields.put(modifiedQName, recordFields.get(key));
         }
         return fields;
     }
@@ -770,10 +720,9 @@ public class XmlParser {
             Field field = xmlParserData.attributeHierarchy.peek().remove(attQName);
             if (field == null) {
                 field = xmlParserData.fieldHierarchy.peek().get(attQName);
-            }
-
-            if (field == null) {
-                return;
+                if (field == null) {
+                    return;
+                }
             }
 
             try {
@@ -803,30 +752,32 @@ public class XmlParser {
     private Optional<Object> handleRecordRestType(XmlParserData xmlParserData, XMLStreamReader xmlStreamReader) {
         xmlParserData.currentField = null;
         Type restType = TypeUtils.getReferredType(xmlParserData.restTypes.peek());
-        int restTypeTag = restType.getTag();
         QualifiedName elementQName = getElementName(xmlStreamReader);
         String fieldName = elementQName.getLocalPart(); // Since local part equals to field name.
-        if (restTypeTag == TypeTags.RECORD_TYPE_TAG) {
-            RecordType recordType = (RecordType) restType;
-            currentNode = updateNextValue(recordType, fieldName, restType, xmlParserData);
-            handleAttributes(xmlStreamReader, xmlParserData);
-            parseRecordRest(fieldName, xmlParserData);
-            xmlParserData.siblings.clear();
-            return Optional.ofNullable(xmlParserData.nodesStack.pop());
-        } else if (restTypeTag == TypeTags.ARRAY_TAG) {
-            ArrayType arrayType = (ArrayType) restType;
-            Type elemType = TypeUtils.getReferredType(arrayType.getElementType());
-            if (elemType.getTag() == TypeTags.RECORD_TYPE_TAG) {
-                // Create an array value since expected type is an array.
-                if (!currentNode.containsKey(StringUtils.fromString(fieldName))) {
-                    currentNode.put(StringUtils.fromString(fieldName),
-                            ValueCreator.createArrayValue(DataUtils.getArrayTypeFromElementType(elemType)));
-                }
-                currentNode = updateNextValue((RecordType) elemType, fieldName, arrayType, xmlParserData);
+        switch (restType.getTag()) {
+            case TypeTags.RECORD_TYPE_TAG -> {
+                RecordType recordType = (RecordType) restType;
+                currentNode = updateNextValue(recordType, fieldName, restType, xmlParserData);
                 handleAttributes(xmlStreamReader, xmlParserData);
                 parseRecordRest(fieldName, xmlParserData);
                 xmlParserData.siblings.clear();
                 return Optional.ofNullable(xmlParserData.nodesStack.pop());
+            }
+            case TypeTags.ARRAY_TAG -> {
+                ArrayType arrayType = (ArrayType) restType;
+                Type elemType = TypeUtils.getReferredType(arrayType.getElementType());
+                if (elemType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                    // Create an array value since expected type is an array.
+                    if (!currentNode.containsKey(StringUtils.fromString(fieldName))) {
+                        currentNode.put(StringUtils.fromString(fieldName),
+                                ValueCreator.createArrayValue(DataUtils.getArrayTypeFromElementType(elemType)));
+                    }
+                    currentNode = updateNextValue((RecordType) elemType, fieldName, arrayType, xmlParserData);
+                    handleAttributes(xmlStreamReader, xmlParserData);
+                    parseRecordRest(fieldName, xmlParserData);
+                    xmlParserData.siblings.clear();
+                    return Optional.ofNullable(xmlParserData.nodesStack.pop());
+                }
             }
         }
         return Optional.empty();
