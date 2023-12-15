@@ -92,13 +92,12 @@ public isolated function fromXmlStringWithType(string|byte[]|stream<byte[], erro
 # + return - XML representation of the given source if the source is
 # successfully converted or else an `xmldata:Error`
 public isolated function toXml(map<anydata> mapValue) returns xml|Error {
-    if mapValue is map<xml>|map<xml[]> {
-        return convertMapXml(mapValue);
-    }
     JsonOptions jsonOptions = {attributePrefix: ATTRIBUTE_PREFIX, arrayEntryTag : ""};
     typedesc<(map<anydata>)> inputType = typeof mapValue;
     json|record{} jsonValue = check getModifiedRecord(mapValue, inputType);
-    if jsonValue is json[] {
+    if jsonValue is map<xml>|map<xml[]> {
+        return convertMapXml(jsonValue);
+    } else if jsonValue is json[] {
         jsonOptions.rootTag = jsonValue[1].toString();
         return fromJson(jsonValue[0], jsonOptions);
     }

@@ -503,41 +503,49 @@ isolated function testMapJsonArrayToXml1() returns error? {
 }
 isolated function testMapXmlArrayToXml1() returns error? {
     map<xml[]> data = {
-        customers:
+        customer:
         [
-            xml `<customer><name>Asha</name><age>10</age></customer>`,
-            xml `<customer><name>Kalai</name><age>13</age></customer>`
+            xml `<name>Asha</name><age>10</age>`,
+            xml `<name>Kalai</name><age>13</age>`
         ],
-        employees:
+        employee:
         [
-            xml `<employee><name>Asha</name><age>10</age></employee>`,
-            xml `<employee><name>Kalai</name><age>13</age></employee>`
+            xml `<name>Asha</name><age>10</age>`,
+            xml `<name>Kalai</name><age>13</age>`
         ]
     };
     string expected = "<root>" +
-                        "<customers>" +
-                            "<customer>" +
-                                "<name>Asha</name>" +
-                                "<age>10</age>" +
-                            "</customer>" +
-                            "<customer>" +
-                                "<name>Kalai</name>" +
-                                "<age>13</age>" +
-                            "</customer>" +
-                        "</customers>" +
-                        "<employees>" +
-                            "<employee>" +
-                                "<name>Asha</name>" +
-                                "<age>10</age>" +
-                            "</employee>" +
-                            "<employee>" +
-                                "<name>Kalai</name>" +
-                                "<age>13</age>" +
-                            "</employee>" +
-                        "</employees>" +
+                        "<customer>" +
+                            "<name>Asha</name>" +
+                            "<age>10</age>" +
+                        "</customer>" +
+                        "<customer>" +
+                            "<name>Kalai</name>" +
+                            "<age>13</age>" +
+                        "</customer>" +
+                        "<employee>" +
+                            "<name>Asha</name>" +
+                            "<age>10</age>" +
+                        "</employee>" +
+                        "<employee>" +
+                            "<name>Kalai</name>" +
+                            "<age>13</age>" +
+                        "</employee>" +
                     "</root>";
     xml result = check toXml(data);
     test:assertEquals(result.toString(), expected, msg = "testMapXmlArrayToXml1 result incorrect");
+}
+
+@test:Config {
+    groups: ["toXml"]
+}
+function testMapXmlArrayToXml2() returns error? {
+    map<xml[]> m2 = {
+        emplyee: [xml `Kanth`, xml `Kevin`]
+    };
+    xml x2 = check toXml(m2);
+    test:assertEquals(x2, xml `<root><emplyee>Kanth</emplyee><emplyee>Kevin</emplyee></root>`,
+                    msg = "testMapXmlArrayToXml2 result incorrect");
 }
 
 @test:Config {
@@ -1155,4 +1163,16 @@ isolated function testRecordWithNamespaceAnnotationToXml1() returns error? {
          	"</nso:PurchasedBill>";
     xml result = check toXml(input);
     test:assertEquals(result.toString(), expected, msg = "testComplexRecordToXml result incorrect");
+}
+
+@test:Config {
+    groups: ["toXml"]
+}
+function testMapXmltoXmlNegative() {
+    map<xml|int> data = {
+        "value": xml `<text>1</text>`,
+        "value1": 2
+    };
+    xml|Error result = toXml(data);
+    test:assertEquals((<Error> result).message(), "unsupported input type");
 }

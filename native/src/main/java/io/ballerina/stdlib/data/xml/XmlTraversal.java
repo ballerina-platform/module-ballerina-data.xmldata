@@ -88,7 +88,7 @@ public class XmlTraversal {
                     return traverseXml(xml, anonRecType);
                 }
                 default -> {
-                    return DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE, Constants.RECORD_OR_MAP,
+                    return DiagnosticLog.error(DiagnosticErrorCode.INVALID_TYPE, Constants.RECORD_OR_MAP,
                             type.getName());
                 }
             }

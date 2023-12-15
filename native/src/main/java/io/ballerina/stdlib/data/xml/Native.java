@@ -81,7 +81,7 @@ public class Native {
                     return null;
                 }
             } else {
-                return DiagnosticLog.error(DiagnosticErrorCode.INVALID_TYPE);
+                return DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE);
             }
         } catch (Exception e) {
             return DiagnosticLog.error(DiagnosticErrorCode.XML_PARSE_ERROR, e.getMessage());

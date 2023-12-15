@@ -99,7 +99,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             }
             VariableDeclarationNode variableDeclarationNode = (VariableDeclarationNode) node;
             Optional<ExpressionNode> initializer = variableDeclarationNode.initializer();
-            if (initializer.isEmpty() || !isFunctionFromXmldata(initializer.get())) {
+            if (initializer.isEmpty() || !isFromXmlFunctionFromXmldata(initializer.get())) {
                 continue;
             }
 
@@ -128,7 +128,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
     private void processModuleVariableDeclarationNode(ModuleVariableDeclarationNode moduleVariableDeclarationNode,
                                                       SyntaxNodeAnalysisContext ctx) {
         Optional<ExpressionNode> initializer = moduleVariableDeclarationNode.initializer();
-        if (initializer.isEmpty() || !isFunctionFromXmldata(initializer.get())) {
+        if (initializer.isEmpty() || !isFromXmlFunctionFromXmldata(initializer.get())) {
             return;
         }
 
@@ -302,7 +302,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         return new QualifiedName(uri, name, prefix);
     }
 
-    private boolean isFunctionFromXmldata(ExpressionNode expressionNode) {
+    private boolean isFromXmlFunctionFromXmldata(ExpressionNode expressionNode) {
         if (expressionNode.kind() == SyntaxKind.CHECK_EXPRESSION) {
             expressionNode = ((CheckExpressionNode) expressionNode).expression();
         }

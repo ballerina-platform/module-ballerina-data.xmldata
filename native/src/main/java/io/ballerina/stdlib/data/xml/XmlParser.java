@@ -111,7 +111,7 @@ public class XmlParser {
 
     public Object parse(Type type, XmlParserData xmlParserData) {
         if (type.getTag() != TypeTags.RECORD_TYPE_TAG) {
-            throw DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE, Constants.RECORD, type.getName());
+            throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_TYPE, Constants.RECORD, type.getName());
         }
         xmlParserData.rootRecord = (RecordType) type;
         Object result = parse(xmlParserData);

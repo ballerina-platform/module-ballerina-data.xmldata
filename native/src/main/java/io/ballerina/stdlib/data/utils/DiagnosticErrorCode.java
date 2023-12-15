@@ -25,7 +25,7 @@ package io.ballerina.stdlib.data.utils;
  */
 public enum DiagnosticErrorCode {
 
-    UNSUPPORTED_TYPE("BDE_0001", "unsupported.type"),
+    INVALID_TYPE("BDE_0001", "invalid.type"),
     XML_ROOT_MISSING("BDE_0002", "xml.root.missing"),
     INVALID_REST_TYPE("BDE_0003", "invalid.rest.type"),
     ARRAY_SIZE_MISMATCH("BDE_0004", "array.size.mismatch"),
@@ -38,7 +38,7 @@ public enum DiagnosticErrorCode {
     TYPE_NAME_MISMATCH_WITH_XML_ELEMENT("BDE_0011", "type.name.mismatch.with.xml.element"),
     CAN_NOT_READ_STREAM("BDE_0012", "error.cannot.read.stream"),
     CANNOT_CONVERT_TO_EXPECTED_TYPE("BDE_0013", "cannot.convert.to.expected.type"),
-    INVALID_TYPE("BDE_0014", "invalid.type"),
+    UNSUPPORTED_TYPE("BDE_0014", "unsupported.type"),
     STREAM_BROKEN("BDE_0015", "stream.broken"),
     XML_PARSE_ERROR("BDE_0016", "xml.parse.error");
 

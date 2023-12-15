@@ -137,7 +137,7 @@ public class DataUtils {
         Map<String, Field> recordFields = recordType.getFields();
         for (String key : recordFields.keySet()) {
             QualifiedName modifiedQName = modifiedNames.getOrDefault(key,
-                            new QualifiedName(QualifiedName.NS_ANNOT_NOT_DEFINED, key, ""));
+                    new QualifiedName(QualifiedName.NS_ANNOT_NOT_DEFINED, key, ""));
             if (fields.containsKey(modifiedQName)) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.DUPLICATE_FIELD, modifiedQName.getLocalPart());
             } else if (analyzerData.attributeHierarchy.peek().containsKey(modifiedQName)) {
@@ -296,10 +296,43 @@ public class DataUtils {
     @SuppressWarnings("unchecked")
     public static Object getModifiedRecord(BMap<BString, Object> input, BTypedesc type) {
         Type describingType = type.getDescribingType();
-        Object value = input.get(input.getKeys()[0]);
-        if (describingType.getTag() == TypeTags.MAP_TAG && value instanceof BArray objectArray) {
-            Type elementType = TypeUtils.getReferredType(((ArrayType) objectArray.getType()).getElementType());
-            if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+        if (describingType.getTag() == TypeTags.MAP_TAG) {
+            Type constraintType = TypeUtils.getReferredType(((MapType) describingType).getConstrainedType());
+            switch (constraintType.getTag()) {
+                case TypeTags.ARRAY_TAG -> {
+                    return processArrayValue(input, (ArrayType) constraintType);
+                }
+                case TypeTags.MAP_TAG -> {
+                    BMap<BString, Object> jsonMap =
+                            ValueCreator.createMapValue(TypeCreator.createMapType(PredefinedTypes.TYPE_XML));
+                    for (Map.Entry<BString, Object> entry : input.entrySet()) {
+                        jsonMap.put(entry.getKey(), entry.getValue());
+                    }
+                    return jsonMap;
+                }
+                case TypeTags.UNION_TAG -> {
+                    return DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE);
+                }
+            }
+        }
+        if (describingType.getTag() == TypeTags.RECORD_TYPE_TAG &&
+                describingType.getFlags() != Constants.DEFAULT_TYPE_FLAG) {
+            BArray jsonArray = ValueCreator.createArrayValue(PredefinedTypes.TYPE_JSON_ARRAY);
+            BMap<BString, Object> recordField =  addFields(input, type.getDescribingType());
+            BMap<BString, Object> processedRecord = processParentAnnotation(type.getDescribingType(), recordField);
+            BString rootTagName = processedRecord.getKeys()[0];
+            jsonArray.append(processedRecord.get(rootTagName));
+            jsonArray.append(rootTagName);
+            return jsonArray;
+        }
+        return input;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static BMap<BString, Object> processArrayValue(BMap<BString, Object> input, ArrayType arrayType) {
+        Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
+        switch (elementType.getTag()) {
+            case TypeTags.RECORD_TYPE_TAG -> {
                 BMap<BString, Object> jsonMap = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
                 for (Map.Entry<BString, Object> entry : input.entrySet()) {
                     List<BMap<BString, Object>> records = new ArrayList<>();
@@ -316,18 +349,24 @@ public class DataUtils {
                 }
                 return jsonMap;
             }
+            case TypeTags.XML_TAG -> {
+                ArrayType xmlArrayType = TypeCreator.createArrayType(PredefinedTypes.TYPE_XML);
+                BMap<BString, Object> jsonMap =
+                        ValueCreator.createMapValue(TypeCreator.createMapType(xmlArrayType));
+                for (Map.Entry<BString, Object> entry : input.entrySet()) {
+                    BArray arrayValue = (BArray) entry.getValue();
+                    BArray xmlArrayValue = ValueCreator.createArrayValue(xmlArrayType);
+                    for (int i = 0; i < arrayValue.getLength(); i++) {
+                        xmlArrayValue.append(arrayValue.get(i));
+                    }
+                    jsonMap.put(entry.getKey(), xmlArrayValue);
+                }
+                return jsonMap;
+            }
+            default -> {
+                return input;
+            }
         }
-        if (describingType.getTag() == TypeTags.RECORD_TYPE_TAG &&
-                describingType.getFlags() != Constants.DEFAULT_TYPE_FLAG) {
-            BArray jsonArray = ValueCreator.createArrayValue(PredefinedTypes.TYPE_JSON_ARRAY);
-            BMap<BString, Object> recordField =  addFields(input, type.getDescribingType());
-            BMap<BString, Object> processedRecord = processParentAnnotation(type.getDescribingType(), recordField);
-            BString rootTagName = processedRecord.getKeys()[0];
-            jsonArray.append(processedRecord.get(rootTagName));
-            jsonArray.append(rootTagName);
-            return jsonArray;
-        }
-        return input;
     }
 
     @SuppressWarnings("unchecked")
@@ -373,7 +412,7 @@ public class DataUtils {
 
     @SuppressWarnings("unchecked")
     private static QName addFieldNamespaceAnnotation(String key, BMap<BString, Object> annotations,
-                                                    BMap<BString, Object> recordValue) {
+                                                     BMap<BString, Object> recordValue) {
         BString annotationKey =
                 StringUtils.fromString((Constants.FIELD + key).replace(Constants.COLON, "\\:"));
         boolean isAttributeField = isAttributeField(annotationKey, annotations);
@@ -642,7 +681,7 @@ public class DataUtils {
 
     @SuppressWarnings("unchecked")
     private static QName processFieldNamespaceAnnotation(BMap<BString, Object> annotation, String key, BString value,
-                                                          BMap<BString, Object>  subRecord, boolean isAttributeField) {
+                                                         BMap<BString, Object>  subRecord, boolean isAttributeField) {
         BMap<BString, Object> namespaceAnnotation = (BMap<BString, Object>) annotation.get(value);
         BString uri = (BString) namespaceAnnotation.get(Constants.URI);
         BString prefix = (BString) namespaceAnnotation.get(Constants.PREFIX);
