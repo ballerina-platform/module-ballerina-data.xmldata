@@ -1645,26 +1645,6 @@ function testXmlToRecordNegative2() {
     test:assertEquals((<error>rec1).message(), "'string' value '1.0' cannot be converted to 'int'");
 }
 
-type DataN2 int;
-
-@test:Config {
-    groups: ["fromXmlString"]
-}
-function testXmlStringToRecordNegative3() {
-    string xmlStr1 = "<Data><A>1.0</A></Data>";
-    DataN2|error rec1 = fromXmlStringWithType(xmlStr1);
-    test:assertEquals((<error>rec1).message(), "invalid type expected 'record' but found 'DataN2'");
-}
-
-@test:Config {
-    groups: ["fromXml"]
-}
-function testXmlToRecordNegative3() {
-    xml xmlVal1 = xml `<Data><A>1.0</A></Data>`;
-    DataN2|error rec1 = fromXmlWithType(xmlVal1);
-    test:assertEquals((<error>rec1).message(), "invalid type expected 'record or map' but found 'DataN2'");
-}
-
 @test:Config {
     groups: ["fromXmlString"]
 }

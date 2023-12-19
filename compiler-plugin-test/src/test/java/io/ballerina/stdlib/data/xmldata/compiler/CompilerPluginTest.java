@@ -138,40 +138,4 @@ public class CompilerPluginTest {
         Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
                 "invalid annotation attachment: child record does not allow name annotation");
     }
-
-    @Test
-    public void testExpectedTypeNegative1() {
-        DiagnosticResult diagnosticResult =
-                CompilerPluginTestUtils.loadPackage("sample_package_7").getCompilation().diagnosticResult();
-        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
-                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
-                .collect(Collectors.toList());
-        Assert.assertEquals(errorDiagnosticsList.size(), 4);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
-                "invalid type: expected a record type");
-        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
-                "invalid type: expected a record type");
-        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
-                "invalid type: expected a record type");
-        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
-                "invalid type: expected a record type");
-    }
-
-    @Test
-    public void testExpectedTypeNegative2() {
-        DiagnosticResult diagnosticResult =
-                CompilerPluginTestUtils.loadPackage("sample_package_9").getCompilation().diagnosticResult();
-        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
-                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
-                .collect(Collectors.toList());
-        Assert.assertEquals(errorDiagnosticsList.size(), 4);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
-                "invalid type: expected a record type");
-        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
-                "invalid type: expected a record type");
-        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
-                "invalid type: expected a record type");
-        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
-                "invalid type: expected a record type");
-    }
 }

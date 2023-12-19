@@ -71,7 +71,7 @@ public type Error distinct error;
 # + options - Options to be used for filtering in the projection
 # + t - Target type to be used for filtering in the projection
 # + return - On success, returns the given target type value, else returns an `xmldata:Error`
-public isolated function fromXmlWithType(xml v, Options options = {}, typedesc<anydata> t = <>)
+public isolated function fromXmlWithType(xml v, Options options = {}, typedesc<record {}> t = <>)
         returns t|Error = @java:Method {'class: "io.ballerina.stdlib.data.xml.Native"} external;
 
 # Converts XML string, byte[] or byte-stream to record type with projection
@@ -80,7 +80,7 @@ public isolated function fromXmlWithType(xml v, Options options = {}, typedesc<a
 # + options - Options to be used for filtering in the projection 
 # + t - Target type to be used for filtering in the projection
 # + return - On success, returns the given target type value, else returns an `xmldata:Error`
-public isolated function fromXmlStringWithType(string|byte[]|stream<byte[], error?> s, Options options = {}, typedesc<anydata> t = <>)
+public isolated function fromXmlStringWithType(string|byte[]|stream<byte[], error?> s, Options options = {}, typedesc<record {}> t = <>)
         returns t|Error = @java:Method {'class: "io.ballerina.stdlib.data.xml.Native"} external;
 
 
