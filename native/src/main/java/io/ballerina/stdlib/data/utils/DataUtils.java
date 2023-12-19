@@ -247,6 +247,10 @@ public class DataUtils {
         return typeTag == TypeTags.ARRAY_TAG || typeTag == TypeTags.ANYDATA_TAG || typeTag == TypeTags.JSON_TAG;
     }
 
+    public static boolean isStringValueAssignable(int typeTag) {
+        return typeTag == TypeTags.STRING_TAG || typeTag == TypeTags.ANYDATA_TAG || typeTag == TypeTags.JSON_TAG;
+    }
+
     public static ArrayType getValidArrayType(Type type) {
         return switch (type.getTag()) {
             case TypeTags.ARRAY_TAG -> (ArrayType) type;
@@ -707,7 +711,7 @@ public class DataUtils {
     }
 
     /**
-     * Holds data required for the parsing and traversing.
+     * Holds data required for the traversing.
      *
      * @since 0.1.0
      */

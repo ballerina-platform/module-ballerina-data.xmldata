@@ -18,6 +18,7 @@
 
 package io.ballerina.stdlib.data.xml;
 
+import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.TypeTags;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
@@ -397,11 +398,37 @@ public class XmlTraversal {
         }
 
         private Object convertHeterogeneousSequence(List<BXml> sequence, Type type, XmlAnalyzerData analyzerData) {
+            if (isAllChildrenText(sequence)) {
+                return handleCommentInMiddleOfText(sequence, type, analyzerData);
+            }
+
             for (BXml bXml: sequence) {
                 if (!isCommentOrPi(bXml)) {
                     traverseXml(bXml, type, analyzerData);
                 }
             }
+            return currentNode;
+        }
+
+        private boolean isAllChildrenText(List<BXml> sequence) {
+            for (BXml bXml: sequence) {
+                if (bXml.getNodeType() != XmlNodeType.TEXT) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private Object handleCommentInMiddleOfText(List<BXml> sequence, Type type, XmlAnalyzerData analyzerData) {
+            if (!DataUtils.isStringValueAssignable(type.getTag())) {
+                throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_TYPE, type, PredefinedTypes.TYPE_STRING);
+            }
+
+            StringBuilder textBuilder = new StringBuilder();
+            for (BXml bXml: sequence) {
+                textBuilder.append(bXml.toString());
+            }
+            convertText(textBuilder.toString(), analyzerData);
             return currentNode;
         }
 

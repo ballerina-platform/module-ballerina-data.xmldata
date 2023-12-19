@@ -1589,7 +1589,7 @@ function testXmlWithAttributesAgainstOpenRecord3() returns error? {
 }
 
 @test:Config
-function testCommentMiddleInContent() returns error? {
+function testCommentMiddleInContent1() returns error? {
     string xmlStr = string `<Data>
                                 <A>John<!-- firstname --> Doe<!-- lastname --></A>
                             </Data>`;
@@ -1600,6 +1600,22 @@ function testCommentMiddleInContent() returns error? {
     record {|
         string A;
     |} rec2 = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec2.length(), 1);
+    test:assertEquals(rec2.A, "John Doe");
+}
+
+@test:Config
+function testCommentMiddleInContent2() returns error? {
+    xml xmlVal = xml `<Data>
+                        <A>John<!-- firstname --> Doe<!-- lastname --></A>
+                    </Data>`;
+    record {} rec = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec.length(), 1);
+    test:assertEquals(rec.get("A"), "John Doe");
+
+    record {|
+        string A;
+    |} rec2 = check fromXmlWithType(xmlVal);
     test:assertEquals(rec2.length(), 1);
     test:assertEquals(rec2.A, "John Doe");
 }
@@ -1870,4 +1886,36 @@ function testXmlToRecordNegative12() {
 
     RecAtt6|error rec = fromXmlWithType(xmlVal);
     test:assertEquals((<error>rec).message(), "required attribute 'data' not present in XML");
+}
+
+@test:Config {
+    groups: ["fromXmlString"]
+}
+function testCommentMiddleInContentNegative1() {
+    string xmlStr = string `<Data><A>1<!-- cmt -->2</A></Data>`;
+    record {|
+        int A;
+    |}|error rec1 = fromXmlStringWithType(xmlStr);
+    test:assertEquals((<error>rec1).message(), "invalid type expected 'int' but found 'string'");
+
+    record {|
+        int...;
+    |}|error rec2 = fromXmlStringWithType(xmlStr);
+    test:assertEquals((<error>rec2).message(), "invalid type expected 'int' but found 'string'");
+}
+
+@test:Config {
+    groups: ["fromXml"]
+}
+function testCommentMiddleInContentNegative2() {
+    xml xmlVal = xml `<Data><A>1<!-- cmt -->2</A></Data>`;
+    record {|
+        int A;
+    |}|error rec1 = fromXmlWithType(xmlVal);
+    test:assertEquals((<error>rec1).message(), "invalid type expected 'int' but found 'string'");
+
+    record {|
+        int...;
+    |}|error rec2 = fromXmlWithType(xmlVal);
+    test:assertEquals((<error>rec2).message(), "invalid type expected 'int' but found 'string'");
 }

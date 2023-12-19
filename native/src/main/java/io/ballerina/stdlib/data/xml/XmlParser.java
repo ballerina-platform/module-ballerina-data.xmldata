@@ -232,7 +232,15 @@ public class XmlParser {
                           boolean isCData,
                           XmlParserData xmlParserData) throws XMLStreamException {
         Field currentField = xmlParserData.currentField;
-        String text = isCData ? xmlStreamReader.getText() : handleTruncatedCharacters(xmlStreamReader);
+        TextValue textValue = new TextValue();
+        String text;
+        if (isCData) {
+            text = xmlStreamReader.getText();
+        } else {
+            handleTruncatedCharacters(xmlStreamReader, textValue);
+            text = textValue.text;
+        }
+
         if (text.strip().isBlank()) {
             return;
         }
@@ -250,6 +258,11 @@ public class XmlParser {
         String fieldName = currentField.getFieldName();
         BString bFieldName = StringUtils.fromString(fieldName);
         Type fieldType = TypeUtils.getReferredType(currentField.getFieldType());
+
+        if (textValue.isCommentInTheMiddle && !DataUtils.isStringValueAssignable(fieldType.getTag())) {
+            throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_TYPE, fieldType, PredefinedTypes.TYPE_STRING);
+        }
+
         if (currentNode.containsKey(bFieldName)) {
             if (!DataUtils.isArrayValueAssignable(fieldType.getTag())) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, fieldType, fieldName);
@@ -274,15 +287,17 @@ public class XmlParser {
         }
     }
 
-    private String handleTruncatedCharacters(XMLStreamReader xmlStreamReader) throws XMLStreamException {
+    private void handleTruncatedCharacters(XMLStreamReader xmlStreamReader, TextValue textValue)
+            throws XMLStreamException {
         StringBuilder textBuilder = new StringBuilder();
         while (xmlStreamReader.getEventType() == CHARACTERS) {
             textBuilder.append(xmlStreamReader.getText());
             if (xmlStreamReader.next() == COMMENT) {
+                textValue.isCommentInTheMiddle = true;
                 xmlStreamReader.next();
             }
         }
-        return textBuilder.toString();
+        textValue.text = textBuilder.toString();
     }
 
     @SuppressWarnings("unchecked")
@@ -623,13 +638,26 @@ public class XmlParser {
                               BString currentFieldName,
                               boolean isCData,
                               XmlParserData xmlParserData) throws XMLStreamException {
-        String text = isCData ? xmlStreamReader.getText() : handleTruncatedCharacters(xmlStreamReader);
+        TextValue textValue = new TextValue();
+        String text;
+        if (isCData) {
+            text = xmlStreamReader.getText();
+        } else {
+            handleTruncatedCharacters(xmlStreamReader, textValue);
+            text = textValue.text;
+        }
+
         if (text.strip().isBlank()) {
             return;
         }
 
         BString bText = StringUtils.fromString(text);
         Type restType = TypeUtils.getReferredType(xmlParserData.restTypes.peek());
+
+        if (textValue.isCommentInTheMiddle && !DataUtils.isStringValueAssignable(restType.getTag())) {
+            throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_TYPE, restType, PredefinedTypes.TYPE_STRING);
+        }
+
         Object currentElement = currentNode.get(currentFieldName);
         BMap<BString, Object> parent = (BMap<BString, Object>) xmlParserData.nodesStack.peek();
         Object result = convertStringToRestExpType(bText, restType);
@@ -788,6 +816,21 @@ public class XmlParser {
         return new QualifiedName(qName.getNamespaceURI(), qName.getLocalPart(), qName.getPrefix());
     }
 
+    /**
+     * Represents the content of an XML element.
+     *
+     * @since 0.1.0
+     */
+    static class TextValue {
+        String text;
+        boolean isCommentInTheMiddle = false;
+    }
+
+    /**
+     * Holds data required for the parsing.
+     *
+     * @since 0.1.0
+     */
     public static class XmlParserData {
         private final Stack<Object> nodesStack = new Stack<>();
         private final Stack<Map<QualifiedName, Field>> fieldHierarchy = new Stack<>();
