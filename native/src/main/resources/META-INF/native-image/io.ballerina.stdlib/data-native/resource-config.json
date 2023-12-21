@@ -1,10 +1,4 @@
 {
-  "resources":{
-  "includes":[ {
-    "pattern":"\\QMETA-INF/services/javax.xml.stream.XMLInputFactory\\E"
-  }, {
-    "pattern":"\\QMETA-INF/services/javax.xml.stream.XMLOutputFactory\\E"
-  }]},
   "bundles":[{
     "name":"error",
     "locales":[""]
