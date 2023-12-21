@@ -16,7 +16,7 @@
  *  under the License.
  */
 
-package io.ballerina.stdlib.data.xml;
+package io.ballerina.stdlib.data.xmldata.xml;
 
 import io.ballerina.runtime.api.Environment;
 import io.ballerina.runtime.api.async.Callback;
@@ -28,8 +28,8 @@ import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BObject;
 import io.ballerina.runtime.api.values.BString;
-import io.ballerina.stdlib.data.utils.DiagnosticErrorCode;
-import io.ballerina.stdlib.data.utils.DiagnosticLog;
+import io.ballerina.stdlib.data.xmldata.utils.DiagnosticErrorCode;
+import io.ballerina.stdlib.data.xmldata.utils.DiagnosticLog;
 
 import java.io.IOException;
 import java.io.InputStream;

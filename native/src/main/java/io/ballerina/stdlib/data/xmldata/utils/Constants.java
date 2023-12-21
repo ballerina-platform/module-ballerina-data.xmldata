@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package io.ballerina.stdlib.data.utils;
+package io.ballerina.stdlib.data.xmldata.utils;
 
 import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.creators.TypeCreator;
@@ -25,7 +25,7 @@ import io.ballerina.runtime.api.types.MapType;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BXmlItem;
-import io.ballerina.stdlib.data.xml.QualifiedName;
+import io.ballerina.stdlib.data.xmldata.xml.QualifiedName;
 
 /**
  * Constants used in Ballerina XmlData library.

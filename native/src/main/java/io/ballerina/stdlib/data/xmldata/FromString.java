@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package io.ballerina.stdlib.data;
+package io.ballerina.stdlib.data.xmldata;
 
 import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.TypeTags;
@@ -28,8 +28,8 @@ import io.ballerina.runtime.api.values.BDecimal;
 import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTypedesc;
-import io.ballerina.stdlib.data.utils.DiagnosticErrorCode;
-import io.ballerina.stdlib.data.utils.DiagnosticLog;
+import io.ballerina.stdlib.data.xmldata.utils.DiagnosticErrorCode;
+import io.ballerina.stdlib.data.xmldata.utils.DiagnosticLog;
 
 import java.util.Comparator;
 import java.util.List;
