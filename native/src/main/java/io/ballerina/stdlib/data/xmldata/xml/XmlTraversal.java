@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package io.ballerina.stdlib.data.xml;
+package io.ballerina.stdlib.data.xmldata.xml;
 
 import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.TypeTags;
@@ -37,11 +37,11 @@ import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BXml;
 import io.ballerina.runtime.api.values.BXmlItem;
 import io.ballerina.runtime.api.values.BXmlSequence;
-import io.ballerina.stdlib.data.utils.Constants;
-import io.ballerina.stdlib.data.utils.DataUtils;
-import io.ballerina.stdlib.data.utils.DataUtils.XmlAnalyzerData;
-import io.ballerina.stdlib.data.utils.DiagnosticErrorCode;
-import io.ballerina.stdlib.data.utils.DiagnosticLog;
+import io.ballerina.stdlib.data.xmldata.utils.Constants;
+import io.ballerina.stdlib.data.xmldata.utils.DataUtils;
+import io.ballerina.stdlib.data.xmldata.utils.DataUtils.XmlAnalyzerData;
+import io.ballerina.stdlib.data.xmldata.utils.DiagnosticErrorCode;
+import io.ballerina.stdlib.data.xmldata.utils.DiagnosticLog;
 
 import java.util.ArrayList;
 import java.util.HashMap;

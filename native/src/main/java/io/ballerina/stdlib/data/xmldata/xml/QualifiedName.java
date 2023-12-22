@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package io.ballerina.stdlib.data.xml;
+package io.ballerina.stdlib.data.xmldata.xml;
 
 /**
  * Represents a qualified name.

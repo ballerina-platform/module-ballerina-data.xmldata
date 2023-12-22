@@ -72,7 +72,7 @@ public type Error distinct error;
 # + t - Target type to be used for filtering in the projection
 # + return - On success, returns the given target type value, else returns an `xmldata:Error`
 public isolated function fromXmlWithType(xml v, Options options = {}, typedesc<record {}> t = <>)
-        returns t|Error = @java:Method {'class: "io.ballerina.stdlib.data.xml.Native"} external;
+        returns t|Error = @java:Method {'class: "io.ballerina.stdlib.data.xmldata.xml.Native"} external;
 
 # Converts XML string, byte[] or byte-stream to record type with projection
 #
@@ -81,7 +81,7 @@ public isolated function fromXmlWithType(xml v, Options options = {}, typedesc<r
 # + t - Target type to be used for filtering in the projection
 # + return - On success, returns the given target type value, else returns an `xmldata:Error`
 public isolated function fromXmlStringWithType(string|byte[]|stream<byte[], error?> s, Options options = {}, typedesc<record {}> t = <>)
-        returns t|Error = @java:Method {'class: "io.ballerina.stdlib.data.xml.Native"} external;
+        returns t|Error = @java:Method {'class: "io.ballerina.stdlib.data.xmldata.xml.Native"} external;
 
 
 # Converts a `Map` or `Record` representation to its XML representation.
@@ -120,7 +120,7 @@ isolated function convertMapXml(map<xml>|map<xml[]> mapValue) returns xml {
 }
 
 isolated function getModifiedRecord(map<anydata> mapValue, typedesc<(map<anydata>|json)> inputType) 
-    returns json|record{}|Error = @java:Method {'class: "io.ballerina.stdlib.data.utils.DataUtils"} external;
+    returns json|record{}|Error = @java:Method {'class: "io.ballerina.stdlib.data.xmldata.utils.DataUtils"} external;
 
 # Provides configurations for converting JSON to XML.
 #

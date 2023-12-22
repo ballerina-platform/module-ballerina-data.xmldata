@@ -1,16 +1,12 @@
 <invoice>
     <products xmlns="http://www.example.com/products">
         <product id="1" name="Product 1" xmlns="http://www.example.com/products">
-            <description xmlns="http://www.example.com/products">This is the description for
-                Product 1.
-            </description>
+            <description xmlns="http://www.example.com/products">This is the description for Product 1.</description>
             <price currency="USD" xmlns="http://www.example.com/products">57.70</price>
             <category xmlns="http://www.example.com/products">Home and Garden</category>
         </product>
         <product id="2" name="Product 2" xmlns="http://www.example.com/products">
-            <description xmlns="http://www.example.com/products">This is the description for
-                Product 2.
-            </description>
+            <description xmlns="http://www.example.com/products">This is the description for Product 2.</description>
             <price currency="LKR" xmlns="http://www.example.com/products">6312.36</price>
             <category xmlns="http://www.example.com/products">Books</category>
         </product>

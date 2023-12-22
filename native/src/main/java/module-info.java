@@ -22,5 +22,5 @@ module io.ballerina.stdlib.data {
     requires java.xml;
     requires junit;
     requires org.apache.commons.lang3;
-    exports io.ballerina.stdlib.data.xml;
+    exports io.ballerina.stdlib.data.xmldata.xml;
 }

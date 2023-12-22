@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package io.ballerina.stdlib.data.xml;
+package io.ballerina.stdlib.data.xmldata.xml;
 
 import io.ballerina.runtime.api.Environment;
 import io.ballerina.runtime.api.Future;
@@ -30,8 +30,8 @@ import io.ballerina.runtime.api.values.BStream;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTypedesc;
 import io.ballerina.runtime.api.values.BXml;
-import io.ballerina.stdlib.data.utils.DiagnosticErrorCode;
-import io.ballerina.stdlib.data.utils.DiagnosticLog;
+import io.ballerina.stdlib.data.xmldata.utils.DiagnosticErrorCode;
+import io.ballerina.stdlib.data.xmldata.utils.DiagnosticLog;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;

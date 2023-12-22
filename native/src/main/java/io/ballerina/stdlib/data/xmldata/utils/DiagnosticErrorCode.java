@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package io.ballerina.stdlib.data.utils;
+package io.ballerina.stdlib.data.xmldata.utils;
 
 /**
  * Represents a diagnostic error code.

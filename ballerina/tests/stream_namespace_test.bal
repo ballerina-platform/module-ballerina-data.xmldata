@@ -199,9 +199,7 @@ function testNamespaceInvoiceFullPlain() returns error? {
     test:assertEquals(invoice.products.product[0].length(), 5, "Product 1 field count mismatched");
     test:assertEquals(invoice.products.product[0].id, 1);
     test:assertEquals(invoice.products.product[0].name, "Product 1");
-    test:assertEquals(invoice.products.product[0].description, string `This is the description for
-                Product 1.
-            `);
+    test:assertEquals(invoice.products.product[0].description, "This is the description for Product 1.");
     test:assertEquals(invoice.products.product[0].price.length(), 2, "Price 1 price field count mismatched");
     test:assertEquals(invoice.products.product[0].price.\#content, 57.70d);
     test:assertEquals(invoice.products.product[0].price.currency, "USD");
@@ -210,9 +208,7 @@ function testNamespaceInvoiceFullPlain() returns error? {
     test:assertEquals(invoice.products.product[1].length(), 5, "Product 2 field count mismatched");
     test:assertEquals(invoice.products.product[1].id, 2);
     test:assertEquals(invoice.products.product[1].name, "Product 2");
-    test:assertEquals(invoice.products.product[1].description, string `This is the description for
-                Product 2.
-            `);
+    test:assertEquals(invoice.products.product[1].description, "This is the description for Product 2.");
     test:assertEquals(invoice.products.product[0].price.length(), 2, "Price 1 price field count mismatched");
     test:assertEquals(invoice.products.product[1].price.\#content, 6312.36d);
     test:assertEquals(invoice.products.product[1].price.currency, "LKR");
