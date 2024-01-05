@@ -65,12 +65,12 @@ public class DataReaderTask implements Runnable {
         return getMethodType(iterator, METHOD_NAME_CLOSE);
     }
 
-    private static MethodType getMethodType(BObject iterator, String methodNameClose) {
+    private static MethodType getMethodType(BObject iterator, String methodName) {
         ObjectType objectType = (ObjectType) TypeUtils.getReferredType(iterator.getOriginalType());
         MethodType[] methods = objectType.getMethods();
         // Assumes compile-time validation of the iterator object
         for (MethodType method : methods) {
-            if (method.getName().equals(methodNameClose)) {
+            if (method.getName().equals(methodName)) {
                 return method;
             }
         }
