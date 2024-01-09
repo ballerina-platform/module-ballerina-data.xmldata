@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 public class DataReaderThreadPool {
 
     // TODO : Make this configurable, in Ballerina Library.
-    public static final ExecutorService EXECUTOR_SERVICE = new ThreadPoolExecutor(0, 20, 60L, TimeUnit.SECONDS,
+    public static final ExecutorService EXECUTOR_SERVICE = new ThreadPoolExecutor(0, 50, 60L, TimeUnit.SECONDS,
                                                                                   new SynchronousQueue<>(),
                                                                                   new DataThreadFactory());
 
