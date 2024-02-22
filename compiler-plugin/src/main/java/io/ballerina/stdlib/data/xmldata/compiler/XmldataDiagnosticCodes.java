@@ -25,6 +25,8 @@ import static io.ballerina.tools.diagnostics.DiagnosticSeverity.WARNING;
 
 /**
  * Enum class to hold xmldata module diagnostic codes.
+ *
+ * @since 0.1.0
  */
 public enum XmldataDiagnosticCodes {
 

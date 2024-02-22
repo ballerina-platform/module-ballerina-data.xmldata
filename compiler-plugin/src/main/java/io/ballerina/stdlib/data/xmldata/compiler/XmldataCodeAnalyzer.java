@@ -26,6 +26,8 @@ import java.util.List;
 
 /**
  * Xmldata Code Analyzer.
+ *
+ * @since 0.1.0
  */
 public class XmldataCodeAnalyzer extends CodeAnalyzer {
 

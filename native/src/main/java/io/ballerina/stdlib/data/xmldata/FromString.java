@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com).
+ * Copyright (c) 2024, WSO2 LLC. (https://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -20,10 +20,12 @@ package io.ballerina.stdlib.data.xmldata;
 
 import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.TypeTags;
+import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.types.ReferenceType;
 import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.types.UnionType;
+import io.ballerina.runtime.api.utils.TypeUtils;
 import io.ballerina.runtime.api.values.BDecimal;
 import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BString;
@@ -31,15 +33,36 @@ import io.ballerina.runtime.api.values.BTypedesc;
 import io.ballerina.stdlib.data.xmldata.utils.DiagnosticErrorCode;
 import io.ballerina.stdlib.data.xmldata.utils.DiagnosticLog;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 /**
  * Native implementation of data:fromStringWithType(string).
- * 
+ *
  * @since 0.1.0
  */
 public class FromString {
+
+    private static final List<Integer> TYPE_PRIORITY_ORDER = List.of(
+            TypeTags.INT_TAG,
+            TypeTags.FLOAT_TAG,
+            TypeTags.DECIMAL_TAG,
+            TypeTags.NULL_TAG,
+            TypeTags.BOOLEAN_TAG,
+            TypeTags.JSON_TAG,
+            TypeTags.STRING_TAG
+    );
+
+    private static final List<Type> BASIC_JSON_MEMBER_TYPES = List.of(
+            PredefinedTypes.TYPE_NULL,
+            PredefinedTypes.TYPE_BOOLEAN,
+            PredefinedTypes.TYPE_INT,
+            PredefinedTypes.TYPE_FLOAT,
+            PredefinedTypes.TYPE_DECIMAL,
+            PredefinedTypes.TYPE_STRING
+    );
+    private static final UnionType JSON_TYPE_WITH_BASIC_TYPES = TypeCreator.createUnionType(BASIC_JSON_MEMBER_TYPES);
 
     public static Object fromStringWithType(BString string, BTypedesc typed) {
         Type expType = typed.getDescribingType();
@@ -51,11 +74,7 @@ public class FromString {
         }
     }
 
-    public static Object fromStringWithTypeInternal(BString string, Type expType) {
-        return fromStringWithType(string, expType);
-    }
-
-    private static Object fromStringWithType(BString string, Type expType) {
+    public static Object fromStringWithType(BString string, Type expType) {
         String value = string.getValue();
         try {
             switch (expType.getTag()) {
@@ -73,6 +92,8 @@ public class FromString {
                     return stringToNull(value);
                 case TypeTags.UNION_TAG:
                     return stringToUnion(string, (UnionType) expType);
+                case TypeTags.JSON_TAG:
+                    return stringToUnion(string, JSON_TYPE_WITH_BASIC_TYPES);
                 case TypeTags.TYPE_REFERENCED_TYPE_TAG:
                     return fromStringWithType(string, ((ReferenceType) expType).getReferredType());
                 default:
@@ -97,7 +118,7 @@ public class FromString {
     private static BDecimal stringToDecimal(String value) throws NumberFormatException {
         return ValueCreator.createDecimalValue(value);
     }
-    
+
     private static Object stringToBoolean(String value) throws NumberFormatException {
         if ("true".equalsIgnoreCase(value) || "1".equalsIgnoreCase(value)) {
             return true;
@@ -117,26 +138,19 @@ public class FromString {
     }
 
     private static Object stringToUnion(BString string, UnionType expType) throws NumberFormatException {
-        List<Type> memberTypes = expType.getMemberTypes();
-        memberTypes.sort(Comparator.comparingInt(t -> t.getTag()));
-        boolean isStringExpType = false;
+        List<Type> memberTypes = new ArrayList<>(expType.getMemberTypes());
+        memberTypes.sort(Comparator.comparingInt(t -> TYPE_PRIORITY_ORDER.indexOf(
+                TypeUtils.getReferredType(t).getTag())));
         for (Type memberType : memberTypes) {
             try {
                 Object result = fromStringWithType(string, memberType);
-                if (result instanceof BString) {
-                    isStringExpType = true;
-                    continue;
-                } else if (result instanceof BError) {
+                if (result instanceof BError) {
                     continue;
                 }
                 return result;
             } catch (Exception e) {
                 // Skip
             }
-        }
-        
-        if (isStringExpType) {
-            return string;
         }
         return returnError(string.getValue(), expType.toString());
     }

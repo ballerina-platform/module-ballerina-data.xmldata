@@ -62,6 +62,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Xmldata Record Field Validator.
+ *
+ * @since 0.1.0
+ */
 public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnalysisContext> {
 
     private SemanticModel semanticModel;
@@ -99,15 +104,22 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             }
             VariableDeclarationNode variableDeclarationNode = (VariableDeclarationNode) node;
             Optional<ExpressionNode> initializer = variableDeclarationNode.initializer();
-            if (initializer.isEmpty() || !isFromXmlFunctionFromXmldata(initializer.get())) {
+            if (initializer.isEmpty()) {
                 continue;
             }
-
             Optional<Symbol> symbol = semanticModel.symbol(variableDeclarationNode.typedBindingPattern());
             if (symbol.isEmpty()) {
                 continue;
             }
+
             TypeSymbol typeSymbol = ((VariableSymbol) symbol.get()).typeDescriptor();
+            if (!isFromXmlFunctionFromXmldata(initializer.get())) {
+                if (typeSymbol.typeKind() == TypeDescKind.RECORD) {
+                    validateRecordFields((RecordTypeSymbol) typeSymbol, ctx);
+                }
+                continue;
+            }
+
             if (typeSymbol.typeKind() == TypeDescKind.TYPE_REFERENCE) {
                 typeSymbol = ((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor();
                 if (typeSymbol.typeKind() != TypeDescKind.RECORD) {
@@ -173,8 +185,8 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
     private void validateRecordFields(RecordTypeSymbol recordTypeSymbol, SyntaxNodeAnalysisContext ctx) {
         List<QualifiedName> fieldMembers = new ArrayList<>();
         for (Map.Entry<String, RecordFieldSymbol> entry : recordTypeSymbol.fieldDescriptors().entrySet()) {
-            detectDuplicateFields(entry.getKey(), entry.getValue(), fieldMembers, ctx);
             RecordFieldSymbol fieldSymbol = entry.getValue();
+            detectDuplicateFields(entry.getKey(), fieldSymbol, fieldMembers, ctx);
             if (fieldSymbol.typeDescriptor().typeKind() != TypeDescKind.TYPE_REFERENCE) {
                 continue;
             }

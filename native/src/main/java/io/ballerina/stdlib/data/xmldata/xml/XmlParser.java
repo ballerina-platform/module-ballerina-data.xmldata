@@ -338,7 +338,7 @@ public class XmlParser {
         if (expType.getTag() == TypeTags.ARRAY_TAG) {
             expType = ((ArrayType) expType).getElementType();
         }
-        Object result = FromString.fromStringWithTypeInternal(value, expType);
+        Object result = FromString.fromStringWithType(value, expType);
         if (result instanceof BError) {
             throw (BError) result;
         }
@@ -420,6 +420,14 @@ public class XmlParser {
 
     private void readElement(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
         QualifiedName elemQName = getElementName(xmlStreamReader);
+        // Assume type of record field `name` is `string[]` and
+        // relevant source position is `<ns1:name>1<ns1:name><ns2:name>1<ns2:name>`
+        for (QualifiedName key : xmlParserData.fieldHierarchy.peek().keySet()) {
+            if (key.equals(elemQName)) {
+                elemQName = key;
+                break;
+            }
+        }
         Field currentField = xmlParserData.fieldHierarchy.peek().get(elemQName);
         xmlParserData.currentField = currentField;
         if (xmlParserData.currentField == null) {
