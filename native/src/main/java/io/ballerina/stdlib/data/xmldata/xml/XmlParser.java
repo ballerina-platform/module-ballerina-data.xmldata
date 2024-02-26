@@ -280,20 +280,25 @@ public class XmlParser {
             case TypeTags.RECORD_TYPE_TAG -> handleContentFieldInRecordType((RecordType) fieldType, bText,
                     xmlParserData);
             case TypeTags.ARRAY_TAG -> {
-                int elementTypeTag = ((ArrayType) fieldType).getElementType().getTag();
-                if (elementTypeTag == TypeTags.RECORD_TYPE_TAG) {
-                    handleContentFieldInRecordType((RecordType) ((ArrayType) fieldType).getElementType(), bText,
-                            xmlParserData);
-                } else if (elementTypeTag == TypeTags.ANYDATA_TAG || elementTypeTag == TypeTags.JSON_TAG) {
-                    BArray tempArr = (BArray) ((BMap<BString, Object>) xmlParserData.nodesStack.peek()).get(bFieldName);
-                    tempArr.add(tempArr.getLength() - 1, convertStringToRestExpType(bText, fieldType));
-                } else {
-                    xmlParserData.currentNode.put(bFieldName, convertStringToRestExpType(bText, fieldType));
-                }
+                addTextToCurrentNodeIfExpTypeIsArray((ArrayType) fieldType, bFieldName, bText, xmlParserData);
             }
             case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG -> {
                 xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.peek();
                 xmlParserData.currentNode.put(bFieldName, convertStringToRestExpType(bText, fieldType));
+            }
+            default -> xmlParserData.currentNode.put(bFieldName, convertStringToRestExpType(bText, fieldType));
+        }
+    }
+
+    private void addTextToCurrentNodeIfExpTypeIsArray(ArrayType fieldType, BString bFieldName, BString bText,
+                                                      XmlParserData xmlParserData) {
+        int elementTypeTag = fieldType.getElementType().getTag();
+        switch (elementTypeTag) {
+            case TypeTags.RECORD_TYPE_TAG -> handleContentFieldInRecordType((RecordType) fieldType.getElementType(),
+                    bText, xmlParserData);
+            case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG -> {
+                BArray tempArr = (BArray) ((BMap<BString, Object>) xmlParserData.nodesStack.peek()).get(bFieldName);
+                tempArr.add(tempArr.getLength() - 1, convertStringToRestExpType(bText, fieldType));
             }
             default -> xmlParserData.currentNode.put(bFieldName, convertStringToRestExpType(bText, fieldType));
         }
@@ -461,15 +466,20 @@ public class XmlParser {
                             ValueCreator.createArrayValue(DataUtils.getArrayTypeFromElementType(referredType)));
                 }
 
-                switch (referredType.getTag()) {
-                    case TypeTags.RECORD_TYPE_TAG -> updateNextRecord(xmlStreamReader, xmlParserData, fieldName,
-                            fieldType, (RecordType) referredType);
-                    case TypeTags.MAP_TAG, TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG ->
-                            updateNextMap(xmlParserData, fieldName, referredType);
-                }
+                updateNextArrayMember(xmlStreamReader, xmlParserData, fieldName, fieldType, referredType);
             }
             case TypeTags.MAP_TAG, TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG ->
                     updateNextMap(xmlParserData, fieldName, fieldType);
+        }
+    }
+
+    private void updateNextArrayMember(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData,
+                                       String fieldName, Type fieldType, Type type) {
+        switch (type.getTag()) {
+            case TypeTags.RECORD_TYPE_TAG -> updateNextRecord(xmlStreamReader, xmlParserData, fieldName,
+                    fieldType, (RecordType) type);
+            case TypeTags.MAP_TAG, TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG ->
+                    updateNextMap(xmlParserData, fieldName, type);
         }
     }
 
