@@ -251,8 +251,8 @@ public class XmlParser {
             return;
         }
 
+        String textFieldName = xmlParserData.textFieldName;
         if (currentField == null) {
-            String textFieldName = xmlParserData.textFieldName;
             QualifiedName contentQName = new QualifiedName("", textFieldName, "");
             Map<QualifiedName, Field> currentFieldMap = xmlParserData.fieldHierarchy.peek();
             if (!currentFieldMap.containsKey(contentQName)) {
@@ -276,6 +276,11 @@ public class XmlParser {
         }
 
         if (xmlParserData.currentNode.containsKey(bFieldName)) {
+            if (fieldName.equals(textFieldName)) {
+                xmlParserData.currentNode.put(bFieldName, convertStringToRestExpType(bText, fieldType));
+                return;
+            }
+
             if (!DataUtils.isArrayValueAssignable(fieldType.getTag())) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, fieldType, fieldName);
             }

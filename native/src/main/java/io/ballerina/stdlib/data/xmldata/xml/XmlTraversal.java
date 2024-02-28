@@ -110,8 +110,8 @@ public class XmlTraversal {
             Field currentField = analyzerData.currentField;
             BMap<BString, Object> mapValue = (BMap<BString, Object>) currentNode;
 
+            String textFieldName = analyzerData.textFieldName;
             if (currentField == null) {
-                String textFieldName = analyzerData.textFieldName;
                 QualifiedName contentQName = new QualifiedName("", textFieldName, "");
                 Map<QualifiedName, Field> currentFieldMap = analyzerData.fieldHierarchy.peek();
                 if (currentFieldMap.containsKey(contentQName)) {
@@ -132,6 +132,10 @@ public class XmlTraversal {
 
             Object convertedValue = DataUtils.convertStringToExpType(StringUtils.fromString(text), fieldType);
             if (mapValue.containsKey(fieldName)) {
+                if (fieldName.getValue().equals(textFieldName)) {
+                    mapValue.put(fieldName, convertedValue);
+                    return;
+                }
                 if (!DataUtils.isArrayValueAssignable(fieldType.getTag())) {
                     throw DiagnosticLog.error(DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, fieldType, fieldName);
                 }

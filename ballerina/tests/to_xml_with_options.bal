@@ -16,6 +16,12 @@
 
 import ballerina/test;
 
+type Person record {|
+    string \#content;
+    @Attribute
+    int age;
+|};
+
 @test:Config
 function testTextFieldNameForToXml() returns error? {
     Options options1 = {textFieldName: "value"};
@@ -32,17 +38,12 @@ function testTextFieldNameForToXml() returns error? {
     xml xmlBook = check toXml(book, options1);
     test:assertEquals(xmlBook, xml`<Book><title>Clean Code</title><year>2008</year><author age="55">Robert C. Martin</author></Book>`);
 
-    // TODO: Fix this
-    // record {|
-    //     string \#content;
-    //     @Attribute
-    //     int age;
-    // |} person = {
-    //     \#content: "Kanth",
-    //     age: 26
-    // };
-    // xml xmlPerson = check toXml(person);
-    // test:assertEquals(xmlPerson, xml`<person age="26">Kanth</person>`);
+    Person person = {
+        \#content: "Kanth",
+        age: 26
+    };
+    xml xmlPerson = check toXml(person);
+    test:assertEquals(xmlPerson, xml`<Person age="26">Kanth</Person>`);
 }
 
 type EmployeeNew record {|

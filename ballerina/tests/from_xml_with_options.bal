@@ -100,12 +100,11 @@ function testTextFieldNameWithFromXmlStringWithtype() returns error? {
     xml bXml = check toXml(b, {textFieldName: sOptions2.textFieldName});
     test:assertEquals(bXml, xml `<Book><title>Clean Code</title><year>2008</year><author age="55">Robert C. Martin</author></Book>`);
 
-    // TODO: What shoulbe the behaviour here?
-    // string xmlStr2 = string `<author value="55">Robert C. Martin</author>`;
-    // record {|
-    //     string value;
-    // |} author = check fromXmlStringWithType(xmlStr2, option2);
-    // test:assertEquals(author.value, "Robert C. Martin");
+    string xmlStr2 = string `<author value="55">Robert C. Martin</author>`;
+    record {|
+        string value;
+    |} author = check fromXmlStringWithType(xmlStr2, sOptions2);
+    test:assertEquals(author.value, "Robert C. Martin");
 }
 
 @test:Config
@@ -123,6 +122,12 @@ function testTextFieldNameWithFromXmlWithtype() returns error? {
 
     xml bXml = check toXml(b, {textFieldName: sOptions2.textFieldName});
     test:assertEquals(bXml, xml `<Book><title>Clean Code</title><year>2008</year><author age="55">Robert C. Martin</author></Book>`);
+
+    xml xmlVal2 = xml `<author value="55">Robert C. Martin</author>`;
+    record {|
+        string value;
+    |} author = check fromXmlWithType(xmlVal2, sOptions2);
+    test:assertEquals(author.value, "Robert C. Martin");
 }
 
 SourceOptions sOptions3 = {allowDataProjection: false};
