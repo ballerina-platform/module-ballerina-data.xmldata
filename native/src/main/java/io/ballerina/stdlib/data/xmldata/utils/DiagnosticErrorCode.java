@@ -40,7 +40,8 @@ public enum DiagnosticErrorCode {
     CANNOT_CONVERT_TO_EXPECTED_TYPE("BDE_0013", "cannot.convert.to.expected.type"),
     UNSUPPORTED_TYPE("BDE_0014", "unsupported.type"),
     STREAM_BROKEN("BDE_0015", "stream.broken"),
-    XML_PARSE_ERROR("BDE_0016", "xml.parse.error");
+    XML_PARSE_ERROR("BDE_0016", "xml.parse.error"),
+    UNDEFINED_FIELD("BDE_0017", "undefined.field");
 
     String diagnosticId;
     String messageKey;

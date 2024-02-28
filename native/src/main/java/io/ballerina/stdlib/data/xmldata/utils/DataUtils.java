@@ -57,6 +57,7 @@ import javax.xml.namespace.QName;
 public class DataUtils {
     private static final String ATTRIBUTE_PREFIX = "attribute_";
     private static final String VALUE = "value";
+    private static String contentFieldName = Constants.CONTENT;
 
     @SuppressWarnings("unchecked")
     public static QualifiedName validateAndGetXmlNameFromRecordAnnotation(RecordType recordType, String recordName,
@@ -297,9 +298,23 @@ public class DataUtils {
         analyzerData.restTypes.pop();
     }
 
+    public static void updateOptions(BMap<BString, Object> options, XmlAnalyzerData analyzerData) {
+        analyzerData.attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
+        analyzerData.textFieldName = options.get(Constants.TEXT_FIELD_NAME).toString();
+        analyzerData.allowDataProjection = (boolean) options.get(Constants.ALLOW_DATA_PROJECTION);
+    }
+
+    public static void logArrayMismatchErrorIfProjectionNotAllowed(boolean allowDataProjection) {
+        if (allowDataProjection) {
+            return;
+        }
+        throw DiagnosticLog.error(DiagnosticErrorCode.ARRAY_SIZE_MISMATCH);
+    }
+
     @SuppressWarnings("unchecked")
-    public static Object getModifiedRecord(BMap<BString, Object> input, BTypedesc type) {
+    public static Object getModifiedRecord(BMap<BString, Object> input, BString textFieldName, BTypedesc type) {
         Type describingType = type.getDescribingType();
+        contentFieldName = textFieldName.getValue();
         if (describingType.getTag() == TypeTags.MAP_TAG) {
             Type constraintType = TypeUtils.getReferredType(((MapType) describingType).getConstrainedType());
             switch (constraintType.getTag()) {
@@ -417,8 +432,8 @@ public class DataUtils {
     @SuppressWarnings("unchecked")
     private static QName addFieldNamespaceAnnotation(String key, BMap<BString, Object> annotations,
                                                      BMap<BString, Object> recordValue) {
-        BString annotationKey =
-                StringUtils.fromString((Constants.FIELD + key).replace(Constants.COLON, "\\:"));
+        BString annotationKey = StringUtils.fromString(Constants.FIELD
+                + (key.replaceAll(Constants.NON_NUMERIC_STRING_REGEX, "\\\\$0")));
         boolean isAttributeField = isAttributeField(annotationKey, annotations);
         if (annotations.containsKey(annotationKey)) {
             BMap<BString, Object> annotationValue = (BMap<BString, Object>) annotations.get(annotationKey);
@@ -452,7 +467,8 @@ public class DataUtils {
                                                                              BMap<BString, Object> parentAnnotations) {
         BMap<BString, Object> nsFieldAnnotation = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         BString annotationKey =
-                StringUtils.fromString((Constants.FIELD + key).replace(Constants.COLON, "\\:"));
+                StringUtils.fromString((Constants.FIELD
+                        + (key.replaceAll(Constants.NON_NUMERIC_STRING_REGEX, "\\\\$0"))));
         if (!parentAnnotations.containsKey(annotationKey)) {
             return nsFieldAnnotation;
         }
@@ -495,12 +511,12 @@ public class DataUtils {
         BString localPart = StringUtils.fromString(qName.getLocalPart());
         BString key = qName.getPrefix().isBlank() ?
                 localPart : StringUtils.fromString(qName.getPrefix() + ":" + localPart);
-        BString annotationKey =
-                StringUtils.fromString((Constants.FIELD + localPart).replace(Constants.COLON, "\\:"));
+        BString annotationKey = StringUtils.fromString(Constants.FIELD
+                        + (localPart.getValue().replaceAll(Constants.NON_NUMERIC_STRING_REGEX, "\\\\$0")));
         BMap<BString, Object> currentValue;
         if (record.containsKey(key)) {
             currentValue = (BMap<BString, Object>) record.get(key);
-            key = StringUtils.fromString(Constants.CONTENT);
+            key = StringUtils.fromString(contentFieldName);
         } else {
             currentValue = record;
         }
@@ -552,8 +568,8 @@ public class DataUtils {
 
     @SuppressWarnings("unchecked")
     private static String getKeyNameFromAnnotation(BMap<BString, Object> annotations, String keyName) {
-        BString annotationKey = StringUtils.fromString((Constants.FIELD + keyName).
-                replace(Constants.COLON, "\\:"));
+        BString annotationKey = StringUtils.fromString(Constants.FIELD
+                + (keyName.replaceAll(Constants.NON_NUMERIC_STRING_REGEX, "\\\\$0")));
         if (annotations.containsKey(annotationKey)) {
             BMap<BString, Object> annotationValue = (BMap<BString, Object>) annotations.get(annotationKey);
             return processFieldAnnotation(annotationValue, keyName);
@@ -723,5 +739,8 @@ public class DataUtils {
         public RecordType rootRecord;
         public Field currentField;
         public QualifiedName rootElement;
+        public String attributePrefix;
+        public String textFieldName;
+        public boolean allowDataProjection;
     }
 }

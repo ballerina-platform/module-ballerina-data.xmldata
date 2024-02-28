@@ -50,21 +50,22 @@ public class Native {
 
     public static Object fromXmlWithType(BXml xml, BMap<BString, Object> options, BTypedesc typed) {
         try {
-            return XmlTraversal.traverse(xml, typed.getDescribingType());
+            return XmlTraversal.traverse(xml, options, typed.getDescribingType());
         } catch (Exception e) {
             return DiagnosticLog.getXmlError(e.getMessage());
         }
     }
 
-    public static Object fromXmlStringWithType(Environment env, Object xml, BMap<BString, Object> map,
+    public static Object fromXmlStringWithType(Environment env, Object xml, BMap<BString, Object> options,
                                                BTypedesc typed) {
         try {
             if (xml instanceof BString) {
-                return XmlParser.parse(new StringReader(((BString) xml).getValue()), typed.getDescribingType());
+                return XmlParser.parse(new StringReader(((BString) xml).getValue()), options,
+                        typed.getDescribingType());
             } else if (xml instanceof BArray) {
                 byte[] bytes = ((BArray) xml).getBytes();
-                return XmlParser.parse(new InputStreamReader(new ByteArrayInputStream(bytes)),
-                                       typed.getDescribingType());
+                return XmlParser.parse(new InputStreamReader(new ByteArrayInputStream(bytes)), options,
+                        typed.getDescribingType());
             } else if (xml instanceof BStream) {
                 final BObject iteratorObj = ((BStream) xml).getIteratorObj();
                 final Future future = env.markAsync();
@@ -73,7 +74,8 @@ public class Native {
                                                                             resolveNextMethod(iteratorObj),
                                                                             resolveCloseMethod(iteratorObj),
                                                                             resultConsumer)) {
-                    Object result = XmlParser.parse(new InputStreamReader(byteBlockSteam), typed.getDescribingType());
+                    Object result = XmlParser.parse(new InputStreamReader(byteBlockSteam), options,
+                            typed.getDescribingType());
                     future.complete(result);
                     return null;
                 } catch (Exception e) {

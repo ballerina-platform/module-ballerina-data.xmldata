@@ -25,7 +25,6 @@ import io.ballerina.runtime.api.types.MapType;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BXmlItem;
-import io.ballerina.stdlib.data.xmldata.xml.QualifiedName;
 
 /**
  * Constants used in Ballerina XmlData library.
@@ -49,10 +48,13 @@ public class Constants {
     public static final String NAME = "Name";
     public static final BString VALUE = StringUtils.fromString("value");
     public static final String CONTENT = "#content";
-    public static final QualifiedName CONTENT_QNAME = new QualifiedName("", CONTENT, "");
     public static final String FIELD_REGEX = "\\$field\\$\\.";
     public static final int NS_PREFIX_BEGIN_INDEX = BXmlItem.XMLNS_NS_URI_PREFIX.length();
     public static final String RECORD = "record";
     public static final String RECORD_OR_MAP = "record or map";
     public static final String ANON_TYPE = "$anonType$";
+    public static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attributePrefix");
+    public static final BString TEXT_FIELD_NAME = StringUtils.fromString("textFieldName");
+    public static final BString ALLOW_DATA_PROJECTION = StringUtils.fromString("allowDataProjection");
+    public static final String NON_NUMERIC_STRING_REGEX = "[^a-zA-Z\\d\s]";
 }

@@ -88,9 +88,10 @@ public class XmlParser {
         }
     }
 
-    public static Object parse(Reader reader, Type type) {
+    public static Object parse(Reader reader, BMap<BString, Object> options, Type type) {
         try {
             XmlParserData xmlParserData = new XmlParserData();
+            updateOptions(options, xmlParserData);
             XmlParser xmlParser = new XmlParser(reader);
             return xmlParser.parse(type, xmlParserData);
         } catch (BError e) {
@@ -98,6 +99,12 @@ public class XmlParser {
         } catch (Throwable e) {
             return DiagnosticLog.error(DiagnosticErrorCode.XML_PARSE_ERROR, e.getMessage());
         }
+    }
+
+    private static void updateOptions(BMap<BString, Object> options, XmlParserData xmlParserData) {
+        xmlParserData.attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
+        xmlParserData.textFieldName = options.get(Constants.TEXT_FIELD_NAME).toString();
+        xmlParserData.allowDataProjection = (boolean) options.get(Constants.ALLOW_DATA_PROJECTION);
     }
 
     private void handleXMLStreamException(Exception e) {
@@ -245,11 +252,17 @@ public class XmlParser {
         }
 
         if (currentField == null) {
+            String textFieldName = xmlParserData.textFieldName;
+            QualifiedName contentQName = new QualifiedName("", textFieldName, "");
             Map<QualifiedName, Field> currentFieldMap = xmlParserData.fieldHierarchy.peek();
-            if (!currentFieldMap.containsKey(Constants.CONTENT_QNAME)) {
+            if (!currentFieldMap.containsKey(contentQName)) {
+                if (!xmlParserData.allowDataProjection) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, textFieldName,
+                            xmlParserData.rootRecord);
+                }
                 return;
             } else {
-                currentField = currentFieldMap.remove(Constants.CONTENT_QNAME);
+                currentField = currentFieldMap.remove(contentQName);
             }
         }
 
@@ -269,6 +282,7 @@ public class XmlParser {
 
             int arraySize = ((ArrayType) fieldType).getSize();
             if (arraySize != -1 && arraySize <= ((BArray) xmlParserData.currentNode.get(bFieldName)).getLength()) {
+                DataUtils.logArrayMismatchErrorIfProjectionNotAllowed(xmlParserData.allowDataProjection);
                 return;
             }
 
@@ -279,9 +293,9 @@ public class XmlParser {
         switch (fieldType.getTag()) {
             case TypeTags.RECORD_TYPE_TAG -> handleContentFieldInRecordType((RecordType) fieldType, bText,
                     xmlParserData);
-            case TypeTags.ARRAY_TAG -> {
+            case TypeTags.ARRAY_TAG ->
                 addTextToCurrentNodeIfExpTypeIsArray((ArrayType) fieldType, bFieldName, bText, xmlParserData);
-            }
+
             case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG -> {
                 xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.peek();
                 xmlParserData.currentNode.put(bFieldName, convertStringToRestExpType(bText, fieldType));
@@ -321,7 +335,7 @@ public class XmlParser {
     private void handleContentFieldInRecordType(RecordType recordType, BString text, XmlParserData xmlParserData) {
         popStacks(xmlParserData);
         for (String key : recordType.getFields().keySet()) {
-            if (key.contains(Constants.CONTENT)) {
+            if (key.contains(xmlParserData.textFieldName)) {
                 xmlParserData.currentNode.put(StringUtils.fromString(key),
                         convertStringToExpType(text, recordType.getFields().get(key).getFieldType()));
                 xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.pop();
@@ -334,7 +348,7 @@ public class XmlParser {
             return;
         }
 
-        xmlParserData.currentNode.put(StringUtils.fromString(Constants.CONTENT),
+        xmlParserData.currentNode.put(StringUtils.fromString(xmlParserData.textFieldName),
                 convertStringToRestExpType(text, restType));
         xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.pop();
     }
@@ -369,9 +383,8 @@ public class XmlParser {
         throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_REST_TYPE, expType.getName());
     }
 
-    private Object buildDocument(XmlParserData xmlParserData) {
+    private void buildDocument(XmlParserData xmlParserData) {
         validateRequiredFields(xmlParserData);
-        return xmlParserData.currentNode;
     }
 
     @SuppressWarnings("unchecked")
@@ -438,6 +451,9 @@ public class XmlParser {
         if (xmlParserData.currentField == null) {
             if (xmlParserData.restTypes.peek() != null) {
                 xmlParserData.currentNode = handleRestField(xmlParserData);
+            } else if (!xmlParserData.allowDataProjection) {
+                throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, elemQName.getLocalPart(),
+                        xmlParserData.rootRecord);
             }
             return;
         }
@@ -487,7 +503,7 @@ public class XmlParser {
         xmlParserData.parents.push(xmlParserData.siblings);
         xmlParserData.siblings = new LinkedHashMap<>();
         xmlParserData.currentNode = updateNextMapValue(xmlParserData, fieldName, fieldType);
-        handleAttributes(xmlStreamReader, xmlParserData);
+        handleAttributesRest(xmlStreamReader, xmlParserData.restTypes.peek(), xmlParserData.currentNode);
     }
 
     private BMap<BString, Object> updateNextMapValue(XmlParserData xmlParserData, String fieldName, Type fieldType) {
@@ -509,6 +525,8 @@ public class XmlParser {
             int arraySize = ((ArrayType) TypeUtils.getType(temp)).getSize();
             if (arraySize > ((BArray) temp).getLength() || arraySize == -1) {
                 ((BArray) temp).append(nextValue);
+            } else {
+                DataUtils.logArrayMismatchErrorIfProjectionNotAllowed(xmlParserData.allowDataProjection);
             }
         } else {
             currentNode.put(StringUtils.fromString(fieldName), nextValue);
@@ -539,6 +557,8 @@ public class XmlParser {
             int arraySize = ((ArrayType) fieldType).getSize();
             if (arraySize > ((BArray) temp).getLength() || arraySize == -1) {
                 ((BArray) temp).append(nextValue);
+            } else {
+                DataUtils.logArrayMismatchErrorIfProjectionNotAllowed(xmlParserData.allowDataProjection);
             }
         } else {
             currentNode.put(StringUtils.fromString(fieldName), nextValue);
@@ -732,12 +752,12 @@ public class XmlParser {
         Object result = convertStringToRestExpType(bText, restType);
 
         if (currentElement == null && !xmlParserData.currentNode.isEmpty()) { // Add text to the #content field
-            xmlParserData.currentNode.put(StringUtils.fromString(Constants.CONTENT), result);
+            xmlParserData.currentNode.put(StringUtils.fromString(xmlParserData.textFieldName), result);
             xmlParserData.currentNode = parent;
         } else if (currentElement instanceof BArray) {
             ((BArray) currentElement).append(result);
         } else if (currentElement instanceof BMap && !((BMap<BString, Object>) currentElement).isEmpty()) {
-            ((BMap<BString, Object>) currentElement).put(StringUtils.fromString(Constants.CONTENT), result);
+            ((BMap<BString, Object>) currentElement).put(StringUtils.fromString(xmlParserData.textFieldName), result);
         } else {
             xmlParserData.currentNode.put(currentFieldName, result);
         }
@@ -813,13 +833,14 @@ public class XmlParser {
         for (int i = 0; i < xmlStreamReader.getAttributeCount(); i++) {
             QName attributeQName = xmlStreamReader.getAttributeName(i);
             QualifiedName attQName = new QualifiedName(attributeQName.getNamespaceURI(),
-                    attributeQName.getLocalPart(), attributeQName.getPrefix());
+                    xmlParserData.attributePrefix + attributeQName.getLocalPart(), attributeQName.getPrefix());
             Field field = xmlParserData.attributeHierarchy.peek().remove(attQName);
             if (field == null) {
-                field = xmlParserData.fieldHierarchy.peek().get(attQName);
-                if (field == null) {
-                    return;
+                Optional<Field> f = getFieldFromFieldHierarchy(attQName, xmlParserData);
+                if (f.isEmpty()) {
+                    continue;
                 }
+                field = f.get();
             }
 
             try {
@@ -829,6 +850,19 @@ public class XmlParser {
                 // Ignore: Expected type will mismatch when element and attribute having same name.
             }
         }
+    }
+
+    private Optional<Field> getFieldFromFieldHierarchy(QualifiedName attQName, XmlParserData xmlParserData) {
+        Field field = xmlParserData.fieldHierarchy.peek().get(attQName);
+        if (field != null) {
+            return Optional.of(field);
+        }
+
+        if (xmlParserData.allowDataProjection) {
+            return Optional.empty();
+        }
+        throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, attQName.getLocalPart(),
+                xmlParserData.rootRecord);
     }
 
     private void handleAttributesRest(XMLStreamReader xmlStreamReader, Type restType, BMap<BString, Object> mapNode) {
@@ -914,5 +948,8 @@ public class XmlParser {
         private final Stack<LinkedHashMap<QualifiedName, Boolean>> parents = new Stack<>();
         private LinkedHashMap<QualifiedName, Boolean> siblings = new LinkedHashMap<>();
         private BMap<BString, Object> currentNode;
+        private String attributePrefix;
+        private String textFieldName;
+        private boolean allowDataProjection;
     }
 }
