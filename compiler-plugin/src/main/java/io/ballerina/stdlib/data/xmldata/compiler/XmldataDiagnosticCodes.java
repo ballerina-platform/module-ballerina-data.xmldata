@@ -30,12 +30,12 @@ import static io.ballerina.tools.diagnostics.DiagnosticSeverity.WARNING;
  */
 public enum XmldataDiagnosticCodes {
 
-    DUPLICATE_FIELD("BDE201", "invalid field: duplicate field found", ERROR),
-    UNSUPPORTED_UNION_TYPE("BDE202",
+    DUPLICATE_FIELD("XML_ERROR_201", "invalid field: duplicate field found", ERROR),
+    UNSUPPORTED_UNION_TYPE("XML_ERROR_202",
             "unsupported union type: union type does not support multiple non-primitive record types", ERROR),
-    UNSUPPORTED_TYPE("BDE203", "unsupported type: the record field does not support the expected type", ERROR),
-    EXPECTED_RECORD_TYPE("BDE204", "invalid type: expected a record type", ERROR),
-    NAME_ANNOTATION_NOT_ALLOWED("BDE204",
+    UNSUPPORTED_TYPE("XML_ERROR_203", "unsupported type: the record field does not support the expected type", ERROR),
+    EXPECTED_RECORD_TYPE("XML_ERROR_204", "invalid type: expected a record type", ERROR),
+    NAME_ANNOTATION_NOT_ALLOWED("XML_ERROR_205",
             "invalid annotation attachment: child record does not allow name annotation", WARNING);
 
     private final String code;

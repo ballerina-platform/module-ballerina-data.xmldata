@@ -201,7 +201,7 @@ public class DataUtils {
         Object result;
         switch (expType.getTag()) {
             case TypeTags.ANYDATA_TAG, TypeTags.ANY_TAG, TypeTags.JSON_TAG ->
-                    result = FromString.fromStringWithType(value, PredefinedTypes.TYPE_STRING);
+                    result = FromString.fromStringWithType(value, PredefinedTypes.TYPE_JSON);
             case TypeTags.ARRAY_TAG -> result = convertStringToExpType(value, ((ArrayType) expType).getElementType());
             default -> result = FromString.fromStringWithType(value, expType);
         }

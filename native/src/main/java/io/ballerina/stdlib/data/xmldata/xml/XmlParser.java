@@ -360,7 +360,7 @@ public class XmlParser {
                 return convertStringToExpType(value, expType);
             }
             case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG -> {
-                return convertStringToExpType(value, PredefinedTypes.TYPE_STRING);
+                return convertStringToExpType(value, PredefinedTypes.TYPE_JSON);
             }
             case TypeTags.TYPE_REFERENCED_TYPE_TAG -> {
                 return convertStringToExpType(value, TypeUtils.getReferredType(expType));

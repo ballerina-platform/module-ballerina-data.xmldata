@@ -113,34 +113,83 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             }
 
             TypeSymbol typeSymbol = ((VariableSymbol) symbol.get()).typeDescriptor();
-            if (!isFromXmlFunctionFromXmldata(initializer.get())) {
-                if (typeSymbol.typeKind() == TypeDescKind.RECORD) {
-                    validateRecordFields((RecordTypeSymbol) typeSymbol, ctx);
-                }
+            if (!isNotFromXmlFunctionFromXmldata(initializer.get())) {
+                validateAnnotationUsageInAllInlineExpectedTypes(typeSymbol, ctx);
                 continue;
             }
-
-            if (typeSymbol.typeKind() == TypeDescKind.TYPE_REFERENCE) {
-                typeSymbol = ((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor();
-                if (typeSymbol.typeKind() != TypeDescKind.RECORD) {
-                    reportDiagnosticInfo(ctx, symbol.get().getLocation(), XmldataDiagnosticCodes.EXPECTED_RECORD_TYPE);
-                    continue;
-                }
-                processRecordFieldsType((RecordTypeSymbol) typeSymbol, ctx);
-            } else if (typeSymbol.typeKind() != TypeDescKind.RECORD) {
-                reportDiagnosticInfo(ctx, symbol.get().getLocation(), XmldataDiagnosticCodes.EXPECTED_RECORD_TYPE);
-                continue;
-            }
-            RecordTypeSymbol recordSymbol = (RecordTypeSymbol) typeSymbol;
-            validateRecordFields(recordSymbol, ctx);
-            processRecordFieldsType(recordSymbol, ctx);
+            validateExpectedType(typeSymbol, symbol.get().getLocation(), ctx);
         }
+    }
+
+    private void validateAnnotationUsageInAllInlineExpectedTypes(TypeSymbol typeSymbol, SyntaxNodeAnalysisContext ctx) {
+        switch (typeSymbol.typeKind()) {
+            case RECORD -> validateRecordFieldNames((RecordTypeSymbol) typeSymbol, ctx);
+            case UNION -> {
+                for (TypeSymbol memberTSymbol : ((UnionTypeSymbol) typeSymbol).memberTypeDescriptors()) {
+                    validateAnnotationUsageInAllInlineExpectedTypes(memberTSymbol, ctx);
+                }
+            }
+        }
+    }
+
+    private void validateExpectedType(TypeSymbol typeSymbol, Optional<Location> location,
+                                      SyntaxNodeAnalysisContext ctx) {
+        if (isNotValidExpectedType(typeSymbol)) {
+            reportDiagnosticInfo(ctx, location, XmldataDiagnosticCodes.EXPECTED_RECORD_TYPE);
+        }
+
+        switch (typeSymbol.typeKind()) {
+            case RECORD -> {
+                RecordTypeSymbol recordSymbol = (RecordTypeSymbol) typeSymbol;
+                validateRecordFieldNames(recordSymbol, ctx);
+                processRecordFieldsType(recordSymbol, ctx);
+            }
+            case TYPE_REFERENCE -> validateExpectedType(((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor(),
+                    location, ctx);
+            case UNION -> {
+                int nonErrorTypeCount = 0;
+                for (TypeSymbol memberTSymbol : ((UnionTypeSymbol) typeSymbol).memberTypeDescriptors()) {
+                    if (memberTSymbol.typeKind() == TypeDescKind.ERROR) {
+                        continue;
+                    }
+                    nonErrorTypeCount++;
+                    validateExpectedType(memberTSymbol, location, ctx);
+                }
+                if (nonErrorTypeCount > 1) {
+                    reportDiagnosticInfo(ctx, location, XmldataDiagnosticCodes.EXPECTED_RECORD_TYPE);
+                }
+            }
+        }
+    }
+
+    private boolean isNotValidExpectedType(TypeSymbol typeSymbol) {
+        switch (typeSymbol.typeKind()) {
+            case RECORD -> {
+                return false;
+            }
+            case TYPE_REFERENCE -> {
+                return isNotValidExpectedType(((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor());
+            }
+            case UNION -> {
+                for (TypeSymbol memberTSymbol : ((UnionTypeSymbol) typeSymbol).memberTypeDescriptors()) {
+                    if (memberTSymbol.typeKind() == TypeDescKind.ERROR) {
+                        continue;
+                    }
+
+                    if (isNotValidExpectedType(memberTSymbol)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+        return true;
     }
 
     private void processModuleVariableDeclarationNode(ModuleVariableDeclarationNode moduleVariableDeclarationNode,
                                                       SyntaxNodeAnalysisContext ctx) {
         Optional<ExpressionNode> initializer = moduleVariableDeclarationNode.initializer();
-        if (initializer.isEmpty() || !isFromXmlFunctionFromXmldata(initializer.get())) {
+        if (initializer.isEmpty()) {
             return;
         }
 
@@ -149,20 +198,12 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             return;
         }
         TypeSymbol typeSymbol = ((VariableSymbol) symbol.get()).typeDescriptor();
-        if (typeSymbol.typeKind() == TypeDescKind.TYPE_REFERENCE) {
-            typeSymbol = ((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor();
-            if (typeSymbol.typeKind() != TypeDescKind.RECORD) {
-                reportDiagnosticInfo(ctx, symbol.get().getLocation(),
-                        XmldataDiagnosticCodes.EXPECTED_RECORD_TYPE);
-                return;
-            }
-            processRecordFieldsType((RecordTypeSymbol) typeSymbol, ctx);
-        } else if (typeSymbol.typeKind() != TypeDescKind.RECORD) {
-            reportDiagnosticInfo(ctx, symbol.get().getLocation(), XmldataDiagnosticCodes.EXPECTED_RECORD_TYPE);
+
+        if (!isNotFromXmlFunctionFromXmldata(initializer.get())) {
+            validateAnnotationUsageInAllInlineExpectedTypes(typeSymbol, ctx);
             return;
         }
-        validateRecordFields((RecordTypeSymbol) typeSymbol, ctx);
-        processRecordFieldsType((RecordTypeSymbol) typeSymbol, ctx);
+        validateExpectedType(typeSymbol, symbol.get().getLocation(), ctx);
     }
 
     private void processTypeDefinitionNode(TypeDefinitionNode typeDefinitionNode, SyntaxNodeAnalysisContext ctx) {
@@ -179,10 +220,10 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             return;
         }
         TypeDefinitionSymbol typeDefinitionSymbol = (TypeDefinitionSymbol) symbol.get();
-        validateRecordFields((RecordTypeSymbol) typeDefinitionSymbol.typeDescriptor(), ctx);
+        validateRecordFieldNames((RecordTypeSymbol) typeDefinitionSymbol.typeDescriptor(), ctx);
     }
 
-    private void validateRecordFields(RecordTypeSymbol recordTypeSymbol, SyntaxNodeAnalysisContext ctx) {
+    private void validateRecordFieldNames(RecordTypeSymbol recordTypeSymbol, SyntaxNodeAnalysisContext ctx) {
         List<QualifiedName> fieldMembers = new ArrayList<>();
         for (Map.Entry<String, RecordFieldSymbol> entry : recordTypeSymbol.fieldDescriptors().entrySet()) {
             RecordFieldSymbol fieldSymbol = entry.getValue();
@@ -296,7 +337,11 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         String name = fieldName;
         String prefix = "";
         for (AnnotationAttachmentSymbol annotAttSymbol : annotationAttachments) {
-            Optional<String> nameAnnot = annotAttSymbol.typeDescriptor().getName();
+            AnnotationSymbol annotation = annotAttSymbol.typeDescriptor();
+            if (!getAnnotModuleName(annotation).contains(Constants.XMLDATA)) {
+                continue;
+            }
+            Optional<String> nameAnnot = annotation.getName();
             if (nameAnnot.isEmpty()) {
                 continue;
             }
@@ -314,7 +359,16 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         return new QualifiedName(uri, name, prefix);
     }
 
-    private boolean isFromXmlFunctionFromXmldata(ExpressionNode expressionNode) {
+    private String getAnnotModuleName(AnnotationSymbol annotation) {
+        Optional<ModuleSymbol> moduleSymbol = annotation.getModule();
+        if (moduleSymbol.isEmpty()) {
+            return "";
+        }
+        Optional<String> moduleName = moduleSymbol.get().getName();
+        return moduleName.orElse("");
+    }
+
+    private boolean isNotFromXmlFunctionFromXmldata(ExpressionNode expressionNode) {
         if (expressionNode.kind() == SyntaxKind.CHECK_EXPRESSION) {
             expressionNode = ((CheckExpressionNode) expressionNode).expression();
         }

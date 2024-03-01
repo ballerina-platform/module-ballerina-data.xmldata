@@ -193,7 +193,7 @@ public class XmlTraversal {
                         return;
                     } else if (elementTypeTag == TypeTags.MAP_TAG) {
                         updateNextMap(elementType, analyzerData);
-                        currentNode = updateNextValue(currentFieldType, fieldName, currentFieldType, mapValue,
+                        currentNode = updateNextValue(elementType, fieldName, currentFieldType, mapValue,
                                 analyzerData);
                         traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
                         DataUtils.validateRequiredFields((BMap<BString, Object>) currentNode, analyzerData);

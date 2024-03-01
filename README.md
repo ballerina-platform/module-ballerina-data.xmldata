@@ -69,7 +69,7 @@ Take for instance the following XML snippet:
 
 ```xml
 <book>
-    <id>0</id>
+    <id>601970</id>
     <title>string</title>
     <author>string</author>
 </book>
@@ -99,7 +99,7 @@ Consider the XML snippet:
 
 ```xml
 <book>
-    <id>0</id>
+    <id>601970</id>
     <title-name>string</title-name>
     <author-name>string</author-name>
 </book>
@@ -139,7 +139,7 @@ Consider the following XML snippet:
 
 ```xml
 <book lang="en" price="10.5">
-    <id>0</id>
+    <id>601970</id>
     <title>string</title>
     <author>string</author>
 </book>
@@ -167,7 +167,7 @@ Examine the XML snippet below:
 
 ```xml
 <book>
-    <id>0</id>
+    <id>601970</id>
     <title>string</title>
     <author>
         <name>string</name>
@@ -216,7 +216,7 @@ Consider the XML snippet below:
 
 ```xml
 <book>
-    <id>0</id>
+    <id>601970</id>
     <title>string</title>
     <author>string</author>
     <available>true</available>
@@ -242,7 +242,7 @@ For instance, examine this XML:
 
 ```xml
 <book>
-    <id>0</id>
+    <id>601970</id>
     <title lang="en">string</title>
     <price>10.5</price>
 </book>
@@ -273,7 +273,7 @@ Examine the XML snippet below with default namespaces:
 
 ```xml
 <book xmlns="http://example.com/book">
-    <id>0</id>
+    <id>601970</id>
     <title>string</title>
     <author>string</author>
 </book>
@@ -308,7 +308,7 @@ Here is the same XML snippet with a namespace prefix:
 
 ```xml
 <bk:book xmlns:bk="http://example.com/book">
-    <bk:id>0</bk:id>
+    <bk:id>601970</bk:id>
     <bk:title>string</bk:title>
     <bk:author>string</bk:author>
 </bk:book>
@@ -342,7 +342,7 @@ Here is the same XML snippet with a namespace prefix:
 
 ```xml
 <bk:book xmlns:bk="http://example.com/book" xmlns:au="http://example.com/author">
-    <bk:id>0</bk:id>
+    <bk:id>601970</bk:id>
     <bk:title>string</bk:title>
     <au:author>string</au:author>
 </bk:book>
@@ -386,7 +386,7 @@ Take the following XML snippet as an example:
 
 ```xml
 <book>
-    <id>0</id>
+    <id>601970</id>
     <title>string</title>
     <author>string</author>
     <author>string</author>
@@ -412,7 +412,7 @@ Take this XML snippet as an example:
 
 ```xml
 <book lang="en">
-    <id>0</id>
+    <id>601970</id>
     <title lang="en">string</title>
     <author>string</author>
     <price>10.5</price>
