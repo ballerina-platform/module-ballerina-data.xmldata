@@ -327,11 +327,7 @@ public class XmlTraversal {
                         BMap<BString, Object> nextValue =
                                 ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
                         handleAttributesRest(xmlItem, nextValue, restType);
-                        if (currentElement instanceof BArray) {
-                            arrayValue.append(nextValue);
-                        } else {
-                            mapValue.put(bElementName, nextValue);
-                        }
+                        arrayValue.append(nextValue);
 
                         if (!nextValue.isEmpty()) {
                             analyzerData.currentField =
@@ -352,7 +348,18 @@ public class XmlTraversal {
                 analyzerData.nodesStack.push(currentNode);
                 currentNode = nextValue;
                 handleAttributesRest(xmlItem, nextValue, restType);
-                traverseXml(xmlItem.getChildrenSeq(), restType, analyzerData);
+
+                analyzerData.fieldHierarchy.push(new HashMap<>());
+                if (restType.getTag() == TypeTags.ARRAY_TAG) {
+                    Type memberType = ((ArrayType) restType).getElementType();
+                    analyzerData.restTypes.push(memberType);
+                    traverseXml(xmlItem.getChildrenSeq(), memberType, analyzerData);
+                } else {
+                    analyzerData.restTypes.push(restType);
+                    traverseXml(xmlItem.getChildrenSeq(), restType, analyzerData);
+                }
+                analyzerData.fieldHierarchy.pop();
+                analyzerData.restTypes.pop();
                 currentNode = analyzerData.nodesStack.pop();
                 return;
             }

@@ -297,6 +297,17 @@ public class DataUtils {
         analyzerData.restTypes.pop();
     }
 
+    public static boolean isAnydataOrJson(int typeTag) {
+        return typeTag == TypeTags.ANYDATA_TAG || typeTag == TypeTags.JSON_TAG;
+    }
+
+    public static boolean isAnydataOrJsonArray(Type type) {
+        if (type.getTag() != TypeTags.ARRAY_TAG) {
+            return false;
+        }
+        return isAnydataOrJson(((ArrayType) type).getElementType().getTag());
+    }
+
     @SuppressWarnings("unchecked")
     public static Object getModifiedRecord(BMap<BString, Object> input, BTypedesc type) {
         Type describingType = type.getDescribingType();
