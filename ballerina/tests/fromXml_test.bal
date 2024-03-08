@@ -2631,6 +2631,50 @@ function testAnydataArrayAsRestTypeWithFromJsonWithType() returns error? {
     ]);
 }
 
+@test:Config
+function testRecordAsRestTypeForFromXmlStringWithType() returns error? {
+    string xmlStr = string `<Data>
+                    <A><C>A_C_1</C></A>
+                    <B><C>B_C_1</C></B>
+                </Data>`;
+    record {|
+        record {}...;
+    |} rec = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec.length(), 2);
+    test:assertEquals(rec.get("A"), {C: "A_C_1"});
+    test:assertEquals(rec.get("B"), {C: "B_C_1"});
+}
+
+@test:Config
+function testRecordArrayAsRestTypeForFromXmlStringWithType() returns error? {
+    string xmlStr = string `<Data>
+                    <A>
+                        <C>A_C_1</C>
+                        <D>A_D_1</D>
+                    </A>
+                    <A>
+                        <C>A_C_2</C>
+                        <D>A_D_2</D>
+                    </A>
+                    <B>
+                        <C>B_C_1</C>
+                        <D>B_D_1</D>
+                    </B>
+                    <B>
+                        <C>B_C_2</C>
+                        <D>B_D_2</D>
+                    </B>
+                </Data>`;
+    record {|
+        record {
+            string C;
+        }[]...;
+    |} rec = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec.length(), 2);
+    test:assertEquals(rec.get("A"), [{C:"A_C_1", D:"A_D_1"},{C:"A_C_2", D:"A_D_2"}]);
+    test:assertEquals(rec.get("B"), [{C:"B_C_1", D:"B_D_1"},{C:"B_C_2", D:"B_D_2"}]);
+}
+
 // Negative cases
 type DataN1 record {|
     int A;

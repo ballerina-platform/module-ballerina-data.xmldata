@@ -609,6 +609,11 @@ public class XmlParser {
         try {
             boolean readNext = false;
             while (!xmlParserData.restFieldsPoints.isEmpty()) {
+                if (xmlParserData.restFieldsPoints.peek() == Constants.EXIT_REST_POINT) {
+                    xmlParserData.restFieldsPoints.pop();
+                    break;
+                }
+
                 switch (next) {
                     case START_ELEMENT -> currentFieldName = readElementRest(xmlStreamReader, xmlParserData);
                     case END_ELEMENT -> endElementRest(xmlStreamReader, xmlParserData);
@@ -921,6 +926,7 @@ public class XmlParser {
         switch (restType.getTag()) {
             case TypeTags.RECORD_TYPE_TAG -> {
                 RecordType recordType = (RecordType) restType;
+                updateStacksWhenRecordAsRestType(elementQName, xmlParserData);
                 xmlParserData.currentNode = updateNextValue(recordType, fieldName, restType, xmlParserData);
                 handleAttributes(xmlStreamReader, xmlParserData);
                 parseRecordRest(fieldName, xmlParserData);
@@ -931,6 +937,7 @@ public class XmlParser {
                 ArrayType arrayType = (ArrayType) restType;
                 Type elemType = TypeUtils.getReferredType(arrayType.getElementType());
                 if (elemType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                    updateStacksWhenRecordAsRestType(elementQName, xmlParserData);
                     // Create an array value since expected type is an array.
                     if (!xmlParserData.currentNode.containsKey(StringUtils.fromString(fieldName))) {
                         xmlParserData.currentNode.put(StringUtils.fromString(fieldName),
@@ -946,6 +953,15 @@ public class XmlParser {
             }
         }
         return Optional.empty();
+    }
+
+    private void updateStacksWhenRecordAsRestType(QualifiedName elementQName, XmlParserData xmlParserData) {
+        if (!xmlParserData.siblings.containsKey(elementQName)) {
+            xmlParserData.siblings.put(elementQName, false);
+        }
+        xmlParserData.restFieldsPoints.push(Constants.EXIT_REST_POINT);
+        xmlParserData.parents.push(xmlParserData.siblings);
+        xmlParserData.siblings = new LinkedHashMap<>();
     }
 
     private QualifiedName getElementName(XMLStreamReader xmlStreamReader) {
