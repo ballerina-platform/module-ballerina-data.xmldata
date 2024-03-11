@@ -350,8 +350,11 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
                 name = ((LinkedHashMap<?, ?>) annotAttSymbol.attachmentValue().orElseThrow().value())
                         .get("value").toString();
             } else if (value.equals(Constants.NAMESPACE)) {
-                prefix = ((LinkedHashMap<?, ?>) annotAttSymbol.attachmentValue().orElseThrow().value())
-                            .get("prefix").toString();
+                Object temp = ((LinkedHashMap<String, Object>) annotAttSymbol.attachmentValue().orElseThrow().value())
+                            .get("prefix");
+                if (temp != null) {
+                    prefix = temp.toString();
+                }
                 uri = ((LinkedHashMap<?, ?>) annotAttSymbol.attachmentValue().orElseThrow().value())
                         .get("uri").toString();
             }
