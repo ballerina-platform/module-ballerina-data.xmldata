@@ -128,25 +128,18 @@ isolated function getModifiedRecord(map<anydata> mapValue, typedesc<(map<anydata
 # + arrayEntryTag - The name of the XML elements that represent a converted JSON array entry
 # + rootTag- The name of the root element of the XML that will be created. If its value is (), and the converted XML
 #            is not in the valid format, it will create a root tag as `root`
-public type JsonOptions record {|
+type JsonOptions record {|
     string attributePrefix = "@";
     string arrayEntryTag = "item";
     string? rootTag = ();
 |};
 
 # Converts a JSON object to an XML representation.
-# ```ballerina
-# json data = {
-#     name: "John",
-#     age: 30
-# };
-# xml xmlValue = check xmldata:fromJson(data);
-# ```
 #
 # + jsonValue - The JSON source to be converted to XML
 # + options - The `xmldata:JsonOptions` record for JSON to XML conversion properties
 # + return - XML representation of the given JSON if the JSON is successfully converted or else an `xmldata:Error`.
-public isolated function fromJson(json jsonValue, JsonOptions options = {}) returns xml|Error {
+isolated function fromJson(json jsonValue, JsonOptions options = {}) returns xml|Error {
     string? rootTag = options.rootTag;
     map<string> allNamespaces = {};
     if !isSingleNode(jsonValue) {

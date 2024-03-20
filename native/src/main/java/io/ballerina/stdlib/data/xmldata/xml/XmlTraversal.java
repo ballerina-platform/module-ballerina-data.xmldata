@@ -164,6 +164,10 @@ public class XmlTraversal {
 
             BMap<BString, Object> mapValue = (BMap<BString, Object>) currentNode;
             Type currentFieldType = TypeUtils.getReferredType(currentField.getFieldType());
+            if (!DataUtils.isSupportedType(currentFieldType)) {
+                throw DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE, currentFieldType);
+            }
+
             String fieldName = currentField.getFieldName();
             BString bCurrentFieldName = StringUtils.fromString(fieldName);
             switch (currentFieldType.getTag()) {
@@ -182,7 +186,8 @@ public class XmlTraversal {
                         mapValue.put(bCurrentFieldName, array);
                     }
                     Type elementType = TypeUtils.getReferredType(((ArrayType) currentFieldType).getElementType());
-                    if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                    int elementTypeTag = elementType.getTag();
+                    if (elementTypeTag == TypeTags.RECORD_TYPE_TAG) {
                         currentNode = updateNextRecord(xmlItem, (RecordType) elementType, fieldName,
                                 currentFieldType, mapValue, analyzerData);
                         traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
@@ -190,20 +195,50 @@ public class XmlTraversal {
                         DataUtils.removeExpectedTypeStacks(analyzerData);
                         currentNode = analyzerData.nodesStack.pop();
                         return;
+                    } else if (elementTypeTag == TypeTags.MAP_TAG) {
+                        updateNextMap(elementType, analyzerData);
+                        currentNode = updateNextValue(elementType, fieldName, currentFieldType, mapValue,
+                                analyzerData);
+                        traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
+                        DataUtils.validateRequiredFields((BMap<BString, Object>) currentNode, analyzerData);
+                        DataUtils.removeExpectedTypeStacks(analyzerData);
+                        currentNode = analyzerData.nodesStack.pop();
+                        return;
+                    } else if (elementTypeTag == TypeTags.JSON_TAG || elementTypeTag == TypeTags.ANYDATA_TAG) {
+                        updateNextMap(elementType, analyzerData);
+                        convertWithRestType(xmlItem, elementType, analyzerData);
+                        DataUtils.removeExpectedTypeStacks(analyzerData);
+                        return;
                     }
                 }
                 case TypeTags.MAP_TAG -> {
-                    RecordType recordType = TypeCreator.createRecordType("$anonType$", currentFieldType.getPackage(), 0,
-                            new HashMap<>(), ((MapType) currentFieldType).getConstrainedType(), false, 0);
-                    currentNode = updateNextRecord(xmlItem, recordType, fieldName,
-                            currentFieldType, mapValue, analyzerData);
-                    traverseXml(xmlItem.getChildrenSeq(), recordType, analyzerData);
+                    updateNextMap(currentFieldType, analyzerData);
+                    currentNode = updateNextValue(currentFieldType, fieldName, currentFieldType, mapValue,
+                            analyzerData);
+                    traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
                     DataUtils.validateRequiredFields((BMap<BString, Object>) currentNode, analyzerData);
                     DataUtils.removeExpectedTypeStacks(analyzerData);
                     currentNode = analyzerData.nodesStack.pop();
+                    return;
+                }
+                case TypeTags.JSON_TAG, TypeTags.ANYDATA_TAG -> {
+                    updateNextMap(currentFieldType, analyzerData);
+                    convertWithRestType(xmlItem, currentFieldType, analyzerData);
+                    DataUtils.removeExpectedTypeStacks(analyzerData);
+                    return;
                 }
             }
             traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
+        }
+
+        private void updateNextMap(Type fieldType, XmlAnalyzerData analyzerData) {
+            if (fieldType.getTag() == TypeTags.MAP_TAG) {
+                analyzerData.restTypes.push(((MapType) fieldType).getConstrainedType());
+            } else {
+                analyzerData.restTypes.push(fieldType);
+            }
+            analyzerData.fieldHierarchy.push(new HashMap<>());
+            analyzerData.attributeHierarchy.push(new HashMap<>());
         }
 
         private BMap<BString, Object> updateNextRecord(BXmlItem xmlItem, RecordType recordType, String fieldName,
@@ -214,14 +249,22 @@ public class XmlTraversal {
                     updateNextValue(recordType, fieldName, fieldType, currentMapValue, analyzerData);
             QName qName = xmlItem.getQName();
             DataUtils.validateTypeNamespace(qName.getPrefix(), qName.getNamespaceURI(), recordType);
-            handleAttributes(xmlItem, nextValue, recordType, analyzerData);
+            handleAttributes(xmlItem, nextValue, analyzerData);
             return nextValue;
         }
 
-        private BMap<BString, Object> updateNextValue(RecordType recordType, String fieldName, Type fieldType,
+        private BMap<BString, Object> updateNextValue(Type type, String fieldName, Type fieldType,
                                        BMap<BString, Object> currentMapValue, XmlAnalyzerData analyzerData) {
             analyzerData.currentField = null;
-            BMap<BString, Object> nextValue = ValueCreator.createRecordValue(recordType);
+
+            BMap<BString, Object> nextValue;
+            switch (type.getTag()) {
+                case TypeTags.RECORD_TYPE_TAG -> nextValue = ValueCreator.createRecordValue((RecordType) type);
+                case TypeTags.MAP_TAG -> nextValue = ValueCreator.createMapValue((MapType) type);
+                case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG ->
+                        nextValue = ValueCreator.createMapValue(TypeCreator.createMapType(type));
+                default -> throw DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE, type);
+            }
 
             Object temp = currentMapValue.get(StringUtils.fromString(fieldName));
             if (temp instanceof BArray) {
@@ -288,11 +331,7 @@ public class XmlTraversal {
                         BMap<BString, Object> nextValue =
                                 ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
                         handleAttributesRest(xmlItem, nextValue, restType);
-                        if (currentElement instanceof BArray) {
-                            arrayValue.append(nextValue);
-                        } else {
-                            mapValue.put(bElementName, nextValue);
-                        }
+                        arrayValue.append(nextValue);
 
                         if (!nextValue.isEmpty()) {
                             analyzerData.currentField =
@@ -313,7 +352,18 @@ public class XmlTraversal {
                 analyzerData.nodesStack.push(currentNode);
                 currentNode = nextValue;
                 handleAttributesRest(xmlItem, nextValue, restType);
-                traverseXml(xmlItem.getChildrenSeq(), restType, analyzerData);
+
+                analyzerData.fieldHierarchy.push(new HashMap<>());
+                if (restType.getTag() == TypeTags.ARRAY_TAG) {
+                    Type memberType = ((ArrayType) restType).getElementType();
+                    analyzerData.restTypes.push(memberType);
+                    traverseXml(xmlItem.getChildrenSeq(), memberType, analyzerData);
+                } else {
+                    analyzerData.restTypes.push(restType);
+                    traverseXml(xmlItem.getChildrenSeq(), restType, analyzerData);
+                }
+                analyzerData.fieldHierarchy.pop();
+                analyzerData.restTypes.pop();
                 currentNode = analyzerData.nodesStack.pop();
                 return;
             }
@@ -456,11 +506,11 @@ public class XmlTraversal {
 
             // Keep track of fields and attributes
             DataUtils.updateExpectedTypeStacks(recordType, analyzerData);
-            handleAttributes(xmlItem, (BMap<BString, Object>) currentNode, recordType, analyzerData);
+            handleAttributes(xmlItem, (BMap<BString, Object>) currentNode, analyzerData);
             return xmlItem.getChildrenSeq();
         }
 
-        private void handleAttributes(BXmlItem xmlItem, BMap<BString, Object> currentNode, RecordType recordType,
+        private void handleAttributes(BXmlItem xmlItem, BMap<BString, Object> currentNode,
                                       XmlAnalyzerData analyzerData) {
             HashSet<String> innerElements = findAllInnerElement(xmlItem);
             BMap<BString, BString> attributeMap = xmlItem.getAttributesMap();

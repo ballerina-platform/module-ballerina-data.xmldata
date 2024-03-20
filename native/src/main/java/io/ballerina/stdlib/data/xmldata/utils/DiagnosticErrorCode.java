@@ -25,22 +25,22 @@ package io.ballerina.stdlib.data.xmldata.utils;
  */
 public enum DiagnosticErrorCode {
 
-    INVALID_TYPE("BDE_0001", "invalid.type"),
-    XML_ROOT_MISSING("BDE_0002", "xml.root.missing"),
-    INVALID_REST_TYPE("BDE_0003", "invalid.rest.type"),
-    ARRAY_SIZE_MISMATCH("BDE_0004", "array.size.mismatch"),
-    REQUIRED_FIELD_NOT_PRESENT("BDE_0005", "required.field.not.present"),
-    REQUIRED_ATTRIBUTE_NOT_PRESENT("BDE_0006", "required.attribute.not.present"),
-    DUPLICATE_FIELD("BDE_0007", "duplicate.field"),
-    FOUND_ARRAY_FOR_NON_ARRAY_TYPE("BDE_0008", "found.array.for.non.array.type"),
-    EXPECTED_ANYDATA_OR_JSON("BDE_0009", "expected.anydata.or.json"),
-    NAMESPACE_MISMATCH("BDE_0010", "namespace.mismatch"),
-    TYPE_NAME_MISMATCH_WITH_XML_ELEMENT("BDE_0011", "type.name.mismatch.with.xml.element"),
-    CAN_NOT_READ_STREAM("BDE_0012", "error.cannot.read.stream"),
-    CANNOT_CONVERT_TO_EXPECTED_TYPE("BDE_0013", "cannot.convert.to.expected.type"),
-    UNSUPPORTED_TYPE("BDE_0014", "unsupported.type"),
-    STREAM_BROKEN("BDE_0015", "stream.broken"),
-    XML_PARSE_ERROR("BDE_0016", "xml.parse.error");
+    INVALID_TYPE("XML_ERROR_001", "invalid.type"),
+    XML_ROOT_MISSING("XML_ERROR_002", "xml.root.missing"),
+    INVALID_REST_TYPE("XML_ERROR_003", "invalid.rest.type"),
+    ARRAY_SIZE_MISMATCH("XML_ERROR_004", "array.size.mismatch"),
+    REQUIRED_FIELD_NOT_PRESENT("XML_ERROR_005", "required.field.not.present"),
+    REQUIRED_ATTRIBUTE_NOT_PRESENT("XML_ERROR_006", "required.attribute.not.present"),
+    DUPLICATE_FIELD("XML_ERROR_007", "duplicate.field"),
+    FOUND_ARRAY_FOR_NON_ARRAY_TYPE("XML_ERROR_008", "found.array.for.non.array.type"),
+    EXPECTED_ANYDATA_OR_JSON("XML_ERROR_009", "expected.anydata.or.json"),
+    NAMESPACE_MISMATCH("XML_ERROR_010", "namespace.mismatch"),
+    TYPE_NAME_MISMATCH_WITH_XML_ELEMENT("XML_ERROR_011", "type.name.mismatch.with.xml.element"),
+    CAN_NOT_READ_STREAM("XML_ERROR_012", "error.cannot.read.stream"),
+    CANNOT_CONVERT_TO_EXPECTED_TYPE("XML_ERROR_013", "cannot.convert.to.expected.type"),
+    UNSUPPORTED_TYPE("XML_ERROR_014", "unsupported.type"),
+    STREAM_BROKEN("XML_ERROR_015", "stream.broken"),
+    XML_PARSE_ERROR("XML_ERROR_016", "xml.parse.error");
 
     String diagnosticId;
     String messageKey;

@@ -201,9 +201,9 @@ public class DataUtils {
         Object result;
         switch (expType.getTag()) {
             case TypeTags.ANYDATA_TAG, TypeTags.ANY_TAG, TypeTags.JSON_TAG ->
-                    result = FromString.fromStringWithTypeInternal(value, PredefinedTypes.TYPE_STRING);
+                    result = FromString.fromStringWithType(value, PredefinedTypes.TYPE_JSON);
             case TypeTags.ARRAY_TAG -> result = convertStringToExpType(value, ((ArrayType) expType).getElementType());
-            default -> result = FromString.fromStringWithTypeInternal(value, expType);
+            default -> result = FromString.fromStringWithType(value, expType);
         }
 
         if (result instanceof BError) {
@@ -295,6 +295,45 @@ public class DataUtils {
         analyzerData.attributeHierarchy.pop();
         analyzerData.fieldHierarchy.pop();
         analyzerData.restTypes.pop();
+    }
+
+    public static boolean isAnydataOrJson(int typeTag) {
+        return typeTag == TypeTags.ANYDATA_TAG || typeTag == TypeTags.JSON_TAG;
+    }
+
+    public static boolean isSupportedType(Type type) {
+        switch (type.getTag()) {
+            case TypeTags.NULL_TAG, TypeTags.INT_TAG, TypeTags.BYTE_TAG, TypeTags.FLOAT_TAG, TypeTags.DECIMAL_TAG,
+                    TypeTags.BOOLEAN_TAG, TypeTags.STRING_TAG, TypeTags.RECORD_TYPE_TAG, TypeTags.MAP_TAG,
+                    TypeTags.JSON_TAG, TypeTags.ANYDATA_TAG -> {
+                return true;
+            }
+            case TypeTags.ARRAY_TAG -> {
+                return isSupportedType(((ArrayType) type).getElementType());
+            }
+            case TypeTags.UNION_TAG -> {
+                return isSupportedUnionType((UnionType) type);
+            }
+            case TypeTags.TYPE_REFERENCED_TYPE_TAG -> {
+                return isSupportedType(TypeUtils.getReferredType(type));
+            }
+        }
+        return false;
+    }
+
+    private static boolean isSupportedUnionType(UnionType type) {
+        for (Type memberType : type.getMemberTypes()) {
+            switch (memberType.getTag()) {
+                case TypeTags.RECORD_TYPE_TAG, TypeTags.OBJECT_TYPE_TAG, TypeTags.MAP_TAG, TypeTags.JSON_TAG,
+                        TypeTags.ANYDATA_TAG, TypeTags.XML_TAG -> {
+                    return false;
+                }
+                case TypeTags.UNION_TAG -> {
+                    return !isSupportedUnionType(type);
+                }
+            }
+        }
+        return true;
     }
 
     @SuppressWarnings("unchecked")
