@@ -13,7 +13,6 @@
 // KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import ballerina/test;
 
 type Data record {|
@@ -154,9 +153,9 @@ function testXmlStringToRecord3() returns error? {
     string xmlStr3 = "<Data5><A><B>1</B></A><A><B>2</B></A><A><B>3</B></A></Data5>";
     Data5 rec3 = check fromXmlStringWithType(xmlStr3);
     test:assertEquals(rec3.A.length(), 3);
-    test:assertEquals(rec3.A[0].B.get("#content"), "1");
-    test:assertEquals(rec3.A[1].B.get("#content"), "2");
-    test:assertEquals(rec3.A[2].B.get("#content"), "3");
+    test:assertEquals(rec3.A[0].B.get("#content"), 1);
+    test:assertEquals(rec3.A[1].B.get("#content"), 2);
+    test:assertEquals(rec3.A[2].B.get("#content"), 3);
 }
 
 @test:Config {
@@ -176,9 +175,9 @@ function testXmlToRecord3() returns error? {
     xml xmlVal3 = xml `<Data5><A><B>1</B></A><A><B>2</B></A><A><B>3</B></A></Data5>`;
     Data5 rec3 = check fromXmlWithType(xmlVal3);
     test:assertEquals(rec3.A.length(), 3);
-    test:assertEquals(rec3.A[0].B.get("#content"), "1");
-    test:assertEquals(rec3.A[1].B.get("#content"), "2");
-    test:assertEquals(rec3.A[2].B.get("#content"), "3");
+    test:assertEquals(rec3.A[0].B.get("#content"), 1);
+    test:assertEquals(rec3.A[1].B.get("#content"), 2);
+    test:assertEquals(rec3.A[2].B.get("#content"), 3);
 }
 
 type Data6 record {|
@@ -326,7 +325,7 @@ function testXmlStringToRecord6() returns error? {
         <B>2.0</B>
     </Data7>`;
     Rec1 rec1 = check fromXmlStringWithType(xmlStr1);
-    test:assertEquals(rec1.A.get("#content"), "1");
+    test:assertEquals(rec1.A.get("#content"), 1);
     test:assertEquals(rec1.B.length(), 2);
     test:assertEquals(rec1.B[0].get("#content"), 1.0);
     test:assertEquals(rec1.B[1].get("#content"), 2.0);
@@ -342,7 +341,7 @@ function testXmlToRecord6() returns error? {
         <B>2.0</B>
     </Data7>`;
     Rec1 rec1 = check fromXmlWithType(xmlVal1);
-    test:assertEquals(rec1.A.get("#content"), "1");
+    test:assertEquals(rec1.A.get("#content"), 1);
     test:assertEquals(rec1.B.length(), 2);
     test:assertEquals(rec1.B[0].get("#content"), 1.0);
     test:assertEquals(rec1.B[1].get("#content"), 2.0);
@@ -419,7 +418,7 @@ function testXmlStringToRecord21() returns error? {
     string xmlStr1 = "<RecRest1><A><C>1</C><D>3</D></A><B>2</B></RecRest1>";
     RecRest1 rec1 = check fromXmlStringWithType(xmlStr1);
     test:assertEquals(rec1.A.C, 1);
-    test:assertEquals(rec1.A.get("D"), "3");
+    test:assertEquals(rec1.A.get("D"), 3);
     test:assertEquals(rec1.B, 2);
 }
 
@@ -430,7 +429,7 @@ function testXmlToRecord21() returns error? {
     xml xmlVal1 = xml `<RecRest1><A><C>1</C><D>3</D></A><B>2</B></RecRest1>`;
     RecRest1 rec1 = check fromXmlWithType(xmlVal1);
     test:assertEquals(rec1.A.C, 1);
-    test:assertEquals(rec1.A.get("D"), "3");
+    test:assertEquals(rec1.A.get("D"), 3);
     test:assertEquals(rec1.B, 2);
 }
 
@@ -452,7 +451,7 @@ function testXmlStringToRecord22() returns error? {
     RecRest2 rec1 = check fromXmlStringWithType(xmlStr1);
     test:assertEquals(rec1.A.C, 1);
     test:assertEquals(rec1.A.D.E, 3);
-    test:assertEquals(rec1.A.D.get("F"), "4");
+    test:assertEquals(rec1.A.D.get("F"), 4);
     test:assertEquals(rec1.B, 2);
 }
 
@@ -464,7 +463,7 @@ function testXmlToRecord22() returns error? {
     RecRest2 rec1 = check fromXmlWithType(xmlVal1);
     test:assertEquals(rec1.A.C, 1);
     test:assertEquals(rec1.A.D.E, 3);
-    test:assertEquals(rec1.A.D.get("F"), "4");
+    test:assertEquals(rec1.A.D.get("F"), 4);
     test:assertEquals(rec1.B, 2);
 }
 
@@ -487,9 +486,9 @@ function testXmlStringToRecord23() returns error? {
     test:assertEquals(rec1.A.C, 1);
     test:assertEquals(rec1.A.D.length(), 2);
     test:assertEquals(rec1.A.D[0].E, 3);
-    test:assertEquals(rec1.A.D[0].get("F"), "4");
+    test:assertEquals(rec1.A.D[0].get("F"), 4);
     test:assertEquals(rec1.A.D[1].E, 5);
-    test:assertEquals(rec1.A.D[1].get("F"), "6");
+    test:assertEquals(rec1.A.D[1].get("F"), 6);
     test:assertEquals(rec1.B, 2);
 }
 
@@ -502,9 +501,9 @@ function testXmlToRecord23() returns error? {
     test:assertEquals(rec1.A.C, 1);
     test:assertEquals(rec1.A.D.length(), 2);
     test:assertEquals(rec1.A.D[0].E, 3);
-    test:assertEquals(rec1.A.D[0].get("F"), "4");
+    test:assertEquals(rec1.A.D[0].get("F"), 4);
     test:assertEquals(rec1.A.D[1].E, 5);
-    test:assertEquals(rec1.A.D[1].get("F"), "6");
+    test:assertEquals(rec1.A.D[1].get("F"), 6);
     test:assertEquals(rec1.B, 2);
 }
 
@@ -663,9 +662,9 @@ function testXmlStringToRecord28() returns error? {
     `;
 
     record {} rec = check fromXmlStringWithType(xmlStr);
-    test:assertEquals(rec.get("D"), "4");
-    test:assertEquals(rec.get("A"), [{B: "1"}, {B: "2"}, {B: "3"}]);
-    test:assertEquals(rec.get("C"), {B: "4"});
+    test:assertEquals(rec.get("D"), 4);
+    test:assertEquals(rec.get("A"), [{B: 1}, {B: 2}, {B: 3}]);
+    test:assertEquals(rec.get("C"), {B: 4});
 }
 
 @test:Config {
@@ -683,9 +682,9 @@ function testXmlToRecord28() returns error? {
     `;
 
     record {} rec = check fromXmlWithType(xmlVal);
-    test:assertEquals(rec.get("D"), "4");
-    test:assertEquals(rec.get("A"), [{B: "1"}, {B: "2"}, {B: "3"}]);
-    test:assertEquals(rec.get("C"), {B: "4"});
+    test:assertEquals(rec.get("D"), 4);
+    test:assertEquals(rec.get("A"), [{B: 1}, {B: 2}, {B: 3}]);
+    test:assertEquals(rec.get("C"), {B: 4});
 }
 
 // test namespace and attributes annotations
@@ -1002,7 +1001,7 @@ function testXmlStringToRecord38() returns error? {
     test:assertEquals(rec.A, "1");
 
     RecAtt4 rec2 = check fromXmlStringWithType(xmlStr);
-    test:assertEquals(rec2.A.get("#content"), "1");
+    test:assertEquals(rec2.A.get("#content"), 1);
 
     RecAtt5 rec3 = check fromXmlStringWithType(xmlStr);
     test:assertEquals(rec3.A, "name");
@@ -1017,7 +1016,7 @@ function testXmlToRecord38() returns error? {
     test:assertEquals(rec.A, "1");
 
     RecAtt4 rec2 = check fromXmlWithType(xmlVal);
-    test:assertEquals(rec2.A.get("#content"), "1");
+    test:assertEquals(rec2.A.get("#content"), 1);
 
     RecAtt5 rec3 = check fromXmlWithType(xmlVal);
     test:assertEquals(rec3.A, "name");
@@ -1492,7 +1491,7 @@ function testXmlWithAttributesAgainstOpenRecord2() returns error? {
             },
             "price": {
                 "currency": "USD",
-                "#content": "19.99"
+                "#content": 19.99
             }
         },
         {
@@ -1504,7 +1503,7 @@ function testXmlWithAttributesAgainstOpenRecord2() returns error? {
             },
             "price": {
                 "currency": "EUR",
-                "#content": "29.95"
+                "#content": 29.95
             }
         }
     ]);
@@ -1541,7 +1540,7 @@ function testXmlWithAttributesAgainstOpenRecord2() returns error? {
             },
             "price": {
                 "currency": "USD",
-                "#content": "19.99"
+                "#content": 19.99
             }
         },
         {
@@ -1553,7 +1552,7 @@ function testXmlWithAttributesAgainstOpenRecord2() returns error? {
             },
             "price": {
                 "currency": "EUR",
-                "#content": "29.95"
+                "#content": 29.95
             }
         }
     ]);
@@ -1569,9 +1568,9 @@ function testXmlWithAttributesAgainstOpenRecord3() returns error? {
     record {} rec5 = check fromXmlStringWithType(xmlStr3);
     test:assertEquals(rec5.length(), 1);
     test:assertEquals(rec5.get("A"), [
-        {"B": {"value": "name", "#content": "1"}},
-        {"B": {"value": "name", "#content": "2"}},
-        {"B": {"value": "name", "#content": "3"}}
+        {"B": {"value": "name", "#content": 1}},
+        {"B": {"value": "name", "#content": 2}},
+        {"B": {"value": "name", "#content": 3}}
     ]);
 
     xml xmlVal3 = xml `<Data>
@@ -1582,9 +1581,9 @@ function testXmlWithAttributesAgainstOpenRecord3() returns error? {
     record {} rec6 = check fromXmlWithType(xmlVal3);
     test:assertEquals(rec6.length(), 1);
     test:assertEquals(rec6.get("A"), [
-        {"B": {"value": "name", "#content": "1"}},
-        {"B": {"value": "name", "#content": "2"}},
-        {"B": {"value": "name", "#content": "3"}}
+        {"B": {"value": "name", "#content": 1}},
+        {"B": {"value": "name", "#content": 2}},
+        {"B": {"value": "name", "#content": 3}}
     ]);
 }
 
@@ -1621,6 +1620,156 @@ function testCommentMiddleInContent2() returns error? {
 }
 
 @test:Config
+function testRegexAsFieldTypeWithFromXmlStringWithType() returns error? {
+    string xmlStr = string `<Data>
+                    <A>1</A>
+                    <A>2</A>
+                    <B>Code</B>
+                    <C>
+                        <name>Kanth</name>
+                    </C>
+                </Data>`;
+    record {|
+        string:RegExp[] A;
+        string B;
+        record {|
+            string name;
+        |} C;
+    |} rec1 = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec1.length(), 3);
+    test:assertEquals(rec1.A, [1, 2]);
+    test:assertEquals(rec1.B, "Code");
+    test:assertEquals(rec1.C.name, "Kanth");
+}
+
+@test:Config
+function testRegexAsFieldTypeWithFromXmlWithType() returns error? {
+    xml xmlVal = xml `<Data>
+                    <A>1</A>
+                    <A>2</A>
+                    <B>Code</B>
+                    <C>
+                        <name>Kanth</name>
+                    </C>
+                </Data>`;
+    record {|
+        string:RegExp[] A;
+        string B;
+        record {|
+            string name;
+        |} C;
+    |} rec1 = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec1.length(), 3);
+    test:assertEquals(rec1.A, [1, 2]);
+    test:assertEquals(rec1.B, "Code");
+    test:assertEquals(rec1.C.name, "Kanth");
+}
+
+@test:Config
+function testAnydataAsRestFieldWithFromXmlStringWithType() returns error? {
+    string xmlStr = string `<Data>
+                    <A>1</A>
+                    <A>2</A>
+                    <B>Code_1</B>
+                    <B>Code_2</B>
+                </Data>`;
+    record {|
+        anydata...;
+    |} rec = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec.length(), 2);
+    test:assertEquals(rec.get("A"), [1, 2]);
+    test:assertEquals(rec.get("B"), ["Code_1", "Code_2"]);
+
+    string xmlStr2 = string `<Data>
+                    <A><C>1</C></A>
+                    <A><C>2</C></A>
+                    <B><C>Code_1</C></B>
+                    <B><C>Code_2</C></B>
+                </Data>`;
+    record {|
+        anydata...;
+    |} rec2 = check fromXmlStringWithType(xmlStr2);
+    test:assertEquals(rec2.length(), 2);
+    test:assertEquals(rec2.get("A"), [{C: 1}, {C: 2}]);
+    test:assertEquals(rec2.get("B"), [{C: "Code_1"}, {C: "Code_2"}]);
+
+    string xmlStr3 = string `<Company>
+                        <Employee age="30">
+                            <Name>John Doe</Name>
+                        </Employee>
+                        <Employee age="26">
+                            <Name>Kanth Kevin</Name>
+                        </Employee>
+                    </Company>`;
+    record {|
+        anydata...;
+    |} rec3 = check fromXmlStringWithType(xmlStr3);
+    test:assertEquals(rec3.length(), 1);
+    test:assertEquals(rec3.get("Employee"), [
+        {
+            "Name": "John Doe",
+            "age": 30
+        },
+        {
+            "Name": "Kanth Kevin",
+            "age": 26
+        }
+    ]);
+}
+
+@test:Config
+function testAnydataAsRestFieldWithFromXmlWithType() returns error? {
+    xml xmlVal = xml `<Data>
+                    <A>1</A>
+                    <A>2</A>
+                    <B>Code_1</B>
+                    <B>Code_2</B>
+                </Data>`;
+    record {|
+        anydata...;
+    |} rec = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec.length(), 2);
+    test:assertEquals(rec.get("A"), [1, 2]);
+    test:assertEquals(rec.get("B"), ["Code_1", "Code_2"]);
+
+    xml xmlVal2 = xml `<Data>
+                    <A><C>1</C></A>
+                    <A><C>2</C></A>
+                    <B><C>Code_1</C></B>
+                    <B><C>Code_2</C></B>
+                </Data>`;
+    record {|
+        anydata...;
+    |} rec2 = check fromXmlWithType(xmlVal2);
+    test:assertEquals(rec2.length(), 2);
+    test:assertEquals(rec2.get("A"), [{C: 1}, {C: 2}]);
+    test:assertEquals(rec2.get("B"), [{C: "Code_1"}, {C: "Code_2"}]);
+
+    xml xmlVal3 = xml `<Company>
+                        <Employee age="30">
+                            <Name>John Doe</Name>
+                        </Employee>
+                        <Employee age="26">
+                            <Name>Kanth Kevin</Name>
+                        </Employee>
+                    </Company>`;
+    record {|
+        anydata...;
+    |} rec3 = check fromXmlWithType(xmlVal3);
+    test:assertEquals(rec3.length(), 1);
+    test:assertEquals(rec3.get("Employee"), [
+        {
+            "Name": "John Doe",
+            "age": 30
+        },
+        {
+            "Name": "Kanth Kevin",
+            "age": 26
+        }
+    ]);
+}
+
+@test:Config
 function testAnydataAsFieldTypeWiThFromXmlStringWithType() returns error? {
     string xmlStr = string `<Company>
                         <Employee>
@@ -1634,7 +1783,7 @@ function testAnydataAsFieldTypeWiThFromXmlStringWithType() returns error? {
     test:assertEquals(rec.length(), 1);
     test:assertEquals(rec.Employee, {
         "Name": "John Doe",
-        "Age": "30"
+        "Age": 30
     });
 
     string xmlStr2 = string `<Company>
@@ -1655,11 +1804,11 @@ function testAnydataAsFieldTypeWiThFromXmlStringWithType() returns error? {
         [
         {
             "Name": "John Doe",
-            "Age": "30"
+            "Age": 30
         },
         {
             "Name": "Kanth Kevin",
-            "Age": "26"
+            "Age": 26
         }
     ]
     );
@@ -1672,6 +1821,104 @@ function testAnydataAsFieldTypeWiThFromXmlStringWithType() returns error? {
     } rec3 = check fromXmlStringWithType(xmlStr3);
     test:assertEquals(rec3.length(), 1);
     test:assertEquals(rec3.name, "WSO2");
+
+    string xmlStr4 = string `<Company>
+                        <Employee age="30">
+                            <Name>John Doe</Name>
+                        </Employee>
+                        <Employee age="26">
+                            <Name>Kanth Kevin</Name>
+                        </Employee>
+                    </Company>`;
+    record {|
+        anydata Employee;
+    |} rec4 = check fromXmlStringWithType(xmlStr4);
+    test:assertEquals(rec4.length(), 1);
+    test:assertEquals(rec4.Employee,
+        [
+        {
+            "Name": "John Doe",
+            "age": 30
+        },
+        {
+            "Name": "Kanth Kevin",
+            "age": 26
+        }
+    ]
+    );
+
+    string xmlStr5 = string `<Company>
+                        <name>WSO2</name>
+                        <founder age="55">Sanjeeva</founder>
+                        <founder age="58">Paul Fremantle</founder>
+                    </Company>`;
+    record {
+        anydata name;
+        anydata founder;
+    } rec5 = check fromXmlStringWithType(xmlStr5);
+    test:assertEquals(rec5.length(), 2);
+    test:assertEquals(rec5.name, "WSO2");
+    test:assertEquals(rec5.founder, [
+        {
+            "age": 55,
+            "#content": "Sanjeeva"
+        },
+        {
+            "age": 58,
+            "#content": "Paul Fremantle"
+        }
+    ]);
+
+    string xmlStr6 = string `<Company>
+                        <Employee age="30">
+                            <Name>John Doe</Name>
+                        </Employee>
+                        <Employee age="26">
+                            <Name>Kanth Kevin</Name>
+                        </Employee>
+                    </Company>`;
+    record {|
+        anydata Employee;
+    |} rec6 = check fromXmlStringWithType(xmlStr6);
+    test:assertEquals(rec6.length(), 1);
+    test:assertEquals(rec6, {
+        Employee: [
+            {
+                "Name": "John Doe",
+                "age": 30
+            },
+            {
+                "Name": "Kanth Kevin",
+                "age": 26
+            }
+        ]
+    });
+
+    string xmlStr7 = string `<Data>
+                    <A>1</A>
+                    <B>Code_1</B>
+                </Data>`;
+    record {|
+        anydata A;
+        anydata B;
+    |} rec7 = check fromXmlStringWithType(xmlStr7);
+    test:assertEquals(rec7.length(), 2);
+    test:assertEquals(rec7.A, 1);
+    test:assertEquals(rec7.B, "Code_1");
+
+    string xmlStr8 = string `<Data>
+                    <A>1</A>
+                    <A>2</A>
+                    <B>Code_1</B>
+                    <B>Code_2</B>
+                </Data>`;
+    record {|
+        anydata A;
+        anydata B;
+    |} rec8 = check fromXmlStringWithType(xmlStr8);
+    test:assertEquals(rec8.length(), 2);
+    test:assertEquals(rec8.A, [1, 2]);
+    test:assertEquals(rec8.B, ["Code_1", "Code_2"]);
 }
 
 @test:Config
@@ -1688,7 +1935,7 @@ function testAnydataAsFieldTypeWiThFromXmlWithType() returns error? {
     test:assertEquals(rec.length(), 1);
     test:assertEquals(rec.Employee, {
         "Name": "John Doe",
-        "Age": "30"
+        "Age": 30
     });
 
     xml xmlVal2 = xml `<Company>
@@ -1709,11 +1956,11 @@ function testAnydataAsFieldTypeWiThFromXmlWithType() returns error? {
         [
         {
             "Name": "John Doe",
-            "Age": "30"
+            "Age": 30
         },
         {
             "Name": "Kanth Kevin",
-            "Age": "26"
+            "Age": 26
         }
     ]
     );
@@ -1726,6 +1973,104 @@ function testAnydataAsFieldTypeWiThFromXmlWithType() returns error? {
     } rec3 = check fromXmlWithType(xmlVal3);
     test:assertEquals(rec3.length(), 1);
     test:assertEquals(rec3.name, "WSO2");
+
+    xml xmlVal4 = xml `<Company>
+                        <Employee age="30">
+                            <Name>John Doe</Name>
+                        </Employee>
+                        <Employee age="26">
+                            <Name>Kanth Kevin</Name>
+                        </Employee>
+                    </Company>`;
+    record {|
+        anydata Employee;
+    |} rec4 = check fromXmlWithType(xmlVal4);
+    test:assertEquals(rec4.length(), 1);
+    test:assertEquals(rec4.Employee,
+        [
+        {
+            "Name": "John Doe",
+            "age": 30
+        },
+        {
+            "Name": "Kanth Kevin",
+            "age": 26
+        }
+    ]
+    );
+
+    xml xmlVal5 = xml `<Company>
+                        <name>WSO2</name>
+                        <founder age="55">Sanjeeva</founder>
+                        <founder age="58">Paul Fremantle</founder>
+                    </Company>`;
+    record {
+        anydata name;
+        anydata founder;
+    } rec5 = check fromXmlWithType(xmlVal5);
+    test:assertEquals(rec5.length(), 2);
+    test:assertEquals(rec5.name, "WSO2");
+    test:assertEquals(rec5.founder, [
+        {
+            "age": 55,
+            "#content": "Sanjeeva"
+        },
+        {
+            "age": 58,
+            "#content": "Paul Fremantle"
+        }
+    ]);
+
+    xml xmlVal6 = xml `<Company>
+                        <Employee age="30">
+                            <Name>John Doe</Name>
+                        </Employee>
+                        <Employee age="26">
+                            <Name>Kanth Kevin</Name>
+                        </Employee>
+                    </Company>`;
+    record {|
+        anydata Employee;
+    |} rec6 = check fromXmlWithType(xmlVal6);
+    test:assertEquals(rec6.length(), 1);
+    test:assertEquals(rec6, {
+        Employee: [
+            {
+                "Name": "John Doe",
+                "age": 30
+            },
+            {
+                "Name": "Kanth Kevin",
+                "age": 26
+            }
+        ]
+    });
+
+    xml xmlVal7 = xml `<Data>
+                    <A>1</A>
+                    <B>Code_1</B>
+                </Data>`;
+    record {|
+        anydata A;
+        anydata B;
+    |} rec7 = check fromXmlWithType(xmlVal7);
+    test:assertEquals(rec7.length(), 2);
+    test:assertEquals(rec7.A, 1);
+    test:assertEquals(rec7.B, "Code_1");
+
+    xml xmlVal8 = xml `<Data>
+                    <A>1</A>
+                    <A>2</A>
+                    <B>Code_1</B>
+                    <B>Code_2</B>
+                </Data>`;
+    record {|
+        anydata A;
+        anydata B;
+    |} rec8 = check fromXmlWithType(xmlVal8);
+    test:assertEquals(rec8.length(), 2);
+    test:assertEquals(rec8.A, [1, 2]);
+    test:assertEquals(rec8.B, ["Code_1", "Code_2"]);
 }
 
 @test:Config
@@ -1742,7 +2087,7 @@ function testJsonAsFieldTypeWiThFromXmlStringWithType() returns error? {
     test:assertEquals(rec.length(), 1);
     test:assertEquals(rec.Employee, {
         "Name": "John Doe",
-        "Age": "30"
+        "Age": 30
     });
 
     string xmlStr2 = string `<Company>
@@ -1763,11 +2108,11 @@ function testJsonAsFieldTypeWiThFromXmlStringWithType() returns error? {
         [
         {
             "Name": "John Doe",
-            "Age": "30"
+            "Age": 30
         },
         {
             "Name": "Kanth Kevin",
-            "Age": "26"
+            "Age": 26
         }
     ]
     );
@@ -1780,6 +2125,57 @@ function testJsonAsFieldTypeWiThFromXmlStringWithType() returns error? {
     } rec3 = check fromXmlStringWithType(xmlStr3);
     test:assertEquals(rec3.length(), 1);
     test:assertEquals(rec3.name, "WSO2");
+
+    string xmlStr6 = string `<Company>
+                        <Employee age="30">
+                            <Name>John Doe</Name>
+                        </Employee>
+                        <Employee age="26">
+                            <Name>Kanth Kevin</Name>
+                        </Employee>
+                    </Company>`;
+    record {|
+        json Employee;
+    |} rec6 = check fromXmlStringWithType(xmlStr6);
+    test:assertEquals(rec6.length(), 1);
+    test:assertEquals(rec6, {
+        Employee: [
+            {
+                "Name": "John Doe",
+                "age": 30
+            },
+            {
+                "Name": "Kanth Kevin",
+                "age": 26
+            }
+        ]
+    });
+
+    string xmlStr7 = string `<Data>
+                    <A>1</A>
+                    <B>Code_1</B>
+                </Data>`;
+    record {|
+        json A;
+        json B;
+    |} rec7 = check fromXmlStringWithType(xmlStr7);
+    test:assertEquals(rec7.length(), 2);
+    test:assertEquals(rec7.A, 1);
+    test:assertEquals(rec7.B, "Code_1");
+
+    string xmlStr8 = string `<Data>
+                    <A>1</A>
+                    <A>2</A>
+                    <B>Code_1</B>
+                    <B>Code_2</B>
+                </Data>`;
+    record {|
+        json A;
+        json B;
+    |} rec8 = check fromXmlStringWithType(xmlStr8);
+    test:assertEquals(rec8.length(), 2);
+    test:assertEquals(rec8.A, [1, 2]);
+    test:assertEquals(rec8.B, ["Code_1", "Code_2"]);
 }
 
 @test:Config
@@ -1796,7 +2192,7 @@ function testJsonAsFieldTypeWiThFromXmlWithType() returns error? {
     test:assertEquals(rec.length(), 1);
     test:assertEquals(rec.Employee, {
         "Name": "John Doe",
-        "Age": "30"
+        "Age": 30
     });
 
     xml xmlVal2 = xml `<Company>
@@ -1817,11 +2213,11 @@ function testJsonAsFieldTypeWiThFromXmlWithType() returns error? {
         [
         {
             "Name": "John Doe",
-            "Age": "30"
+            "Age": 30
         },
         {
             "Name": "Kanth Kevin",
-            "Age": "26"
+            "Age": 26
         }
     ]
     );
@@ -1834,6 +2230,104 @@ function testJsonAsFieldTypeWiThFromXmlWithType() returns error? {
     } rec3 = check fromXmlWithType(xmlVal3);
     test:assertEquals(rec3.length(), 1);
     test:assertEquals(rec3.name, "WSO2");
+
+      xml xmlVal4 = xml `<Company>
+                        <Employee age="30">
+                            <Name>John Doe</Name>
+                        </Employee>
+                        <Employee age="26">
+                            <Name>Kanth Kevin</Name>
+                        </Employee>
+                    </Company>`;
+    record {|
+        json Employee;
+    |} rec4 = check fromXmlWithType(xmlVal4);
+    test:assertEquals(rec4.length(), 1);
+    test:assertEquals(rec4.Employee,
+        [
+        {
+            "Name": "John Doe",
+            "age": 30
+        },
+        {
+            "Name": "Kanth Kevin",
+            "age": 26
+        }
+    ]
+    );
+
+    xml xmlVal5 = xml `<Company>
+                        <name>WSO2</name>
+                        <founder age="55">Sanjeeva</founder>
+                        <founder age="58">Paul Fremantle</founder>
+                    </Company>`;
+    record {
+        json name;
+        json founder;
+    } rec5 = check fromXmlWithType(xmlVal5);
+    test:assertEquals(rec5.length(), 2);
+    test:assertEquals(rec5.name, "WSO2");
+    test:assertEquals(rec5.founder, [
+        {
+            "age": 55,
+            "#content": "Sanjeeva"
+        },
+        {
+            "age": 58,
+            "#content": "Paul Fremantle"
+        }
+    ]);
+
+    xml xmlVal6 = xml `<Company>
+                        <Employee age="30">
+                            <Name>John Doe</Name>
+                        </Employee>
+                        <Employee age="26">
+                            <Name>Kanth Kevin</Name>
+                        </Employee>
+                    </Company>`;
+    record {|
+        json Employee;
+    |} rec6 = check fromXmlWithType(xmlVal6);
+    test:assertEquals(rec6.length(), 1);
+    test:assertEquals(rec6, {
+        Employee: [
+            {
+                "Name": "John Doe",
+                "age": 30
+            },
+            {
+                "Name": "Kanth Kevin",
+                "age": 26
+            }
+        ]
+    });
+
+    xml xmlVal7 = xml `<Data>
+                    <A>1</A>
+                    <B>Code_1</B>
+                </Data>`;
+    record {|
+        json A;
+        json B;
+    |} rec7 = check fromXmlWithType(xmlVal7);
+    test:assertEquals(rec7.length(), 2);
+    test:assertEquals(rec7.A, 1);
+    test:assertEquals(rec7.B, "Code_1");
+
+    xml xmlVal8 = xml `<Data>
+                    <A>1</A>
+                    <A>2</A>
+                    <B>Code_1</B>
+                    <B>Code_2</B>
+                </Data>`;
+    record {|
+        json A;
+        json B;
+    |} rec8 = check fromXmlWithType(xmlVal8);
+    test:assertEquals(rec8.length(), 2);
+    test:assertEquals(rec8.A, [1, 2]);
+    test:assertEquals(rec8.B, ["Code_1", "Code_2"]);
 }
 
 @test:Config
@@ -1855,23 +2349,27 @@ function testAnydataArrayAsFieldTypeWiThFromXmlStringWithType() returns error? {
     test:assertEquals(rec.Employee, [
         {
             "Name": "John Doe",
-            "Age": "30"
+            "Age": 30
         },
         {
             "Name": "Kanth Kevin",
-            "Age": "26"
+            "Age": 26
         }
     ]);
 
     string xmlStr2 = string `<Company>
                         <name>WSO2</name>
                         <name>Apple</name>
+                        <location>Sri Lanka</location>
+                        <location>India</location>
                     </Company>`;
     record {
         anydata[] name;
+        anydata[] location;
     } rec2 = check fromXmlStringWithType(xmlStr2);
-    test:assertEquals(rec2.length(), 1);
+    test:assertEquals(rec2.length(), 2);
     test:assertEquals(rec2.name, ["WSO2", "Apple"]);
+    test:assertEquals(rec2.location, ["Sri Lanka", "India"]);
 }
 
 @test:Config
@@ -1893,11 +2391,11 @@ function testJsonArrayAsFieldTypeWiThFromXmlStringWithType() returns error? {
     test:assertEquals(rec.Employee, [
         {
             "Name": "John Doe",
-            "Age": "30"
+            "Age": 30
         },
         {
             "Name": "Kanth Kevin",
-            "Age": "26"
+            "Age": 26
         }
     ]);
 
@@ -1931,23 +2429,27 @@ function testAnydataArrayAsFieldTypeWiThFromXmlWithType() returns error? {
     test:assertEquals(rec.Employee, [
         {
             "Name": "John Doe",
-            "Age": "30"
+            "Age": 30
         },
         {
             "Name": "Kanth Kevin",
-            "Age": "26"
+            "Age": 26
         }
     ]);
 
     xml xmlVal2 = xml `<Company>
                         <name>WSO2</name>
                         <name>Apple</name>
+                        <location>Sri Lanka</location>
+                        <location>India</location>
                     </Company>`;
     record {
         anydata[] name;
+        anydata[] location;
     } rec2 = check fromXmlWithType(xmlVal2);
-    test:assertEquals(rec2.length(), 1);
+    test:assertEquals(rec2.length(), 2);
     test:assertEquals(rec2.name, ["WSO2", "Apple"]);
+    test:assertEquals(rec2.location, ["Sri Lanka", "India"]);
 }
 
 @test:Config
@@ -1969,6 +2471,49 @@ function testJsonArrayAsFieldTypeWiThFromXmlWithType() returns error? {
     test:assertEquals(rec.Employee, [
         {
             "Name": "John Doe",
+            "Age": 30
+        },
+        {
+            "Name": "Kanth Kevin",
+            "Age": 26
+        }
+    ]);
+
+    xml xmlVal2 = xml `<Company>
+                        <name>WSO2</name>
+                        <name>Apple</name>
+                        <location>Sri Lanka</location>
+                        <location>India</location>
+                    </Company>`;
+    record {
+        json[] name;
+        json[] location;
+    } rec2 = check fromXmlWithType(xmlVal2);
+    test:assertEquals(rec2.length(), 2);
+    test:assertEquals(rec2.name, ["WSO2", "Apple"]);
+    test:assertEquals(rec2.location, ["Sri Lanka", "India"]);
+}
+
+@test:Config
+function testMapArrayAsFieldTypeWiThFromXmlStringWithType() returns error? {
+    string xmlStr = string `<Company>
+                        <Employee>
+                            <Name>John Doe</Name>
+                            <Age>30</Age>
+                        </Employee>
+                        <Employee>
+                            <Name>Kanth Kevin</Name>
+                            <Age>26</Age>
+                        </Employee>
+                    </Company>`;
+
+    record {|
+        map<string>[] Employee;
+    |} rec = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec.length(), 1);
+    test:assertEquals(rec.Employee, [
+        {
+            "Name": "John Doe",
             "Age": "30"
         },
         {
@@ -1976,16 +2521,236 @@ function testJsonArrayAsFieldTypeWiThFromXmlWithType() returns error? {
             "Age": "26"
         }
     ]);
+}
 
-    xml xmlVal2 = xml `<Org>
-                        <name>WSO2</name>
-                        <name>Apple</name>
-                    </Org>`;
-    record {
-        json[] name;
-    } rec2 = check fromXmlWithType(xmlVal2);
+@test:Config
+function testMapArrayAsFieldTypeWithFromXmlWithType() returns error? {
+    xml xmlVal = xml `<Company>
+                        <Employee>
+                            <Name>John Doe</Name>
+                            <Age>30</Age>
+                        </Employee>
+                        <Employee>
+                            <Name>Kanth Kevin</Name>
+                            <Age>26</Age>
+                        </Employee>
+                    </Company>`;
+    record {|
+        map<string>[] Employee;
+    |} rec = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec.length(), 1);
+    test:assertEquals(rec.Employee, [
+        {
+            "Name": "John Doe",
+            "Age": "30"
+        },
+        {
+            "Name": "Kanth Kevin",
+            "Age": "26"
+        }
+    ]);
+}
+
+@test:Config
+function testAnydataArrayAsRestTypeWithFromJsonStringWithType() returns error? {
+    string xmlStr = string `<Data>
+                    <A>1</A>
+                    <A>2</A>
+                    <B>Code_1</B>
+                    <B>Code_2</B>
+                </Data>`;
+    record {|
+        anydata[]...;
+    |} rec = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec.length(), 2);
+    test:assertEquals(rec.get("A"), [1, 2]);
+
+    string xmlStr2 = string `<Company>
+                        <Employee>
+                            <Name>John Doe</Name>
+                            <Age>30</Age>
+                        </Employee>
+                        <Employee>
+                            <Name>Kanth Kevin</Name>
+                            <Age>26</Age>
+                        </Employee>
+                    </Company>`;
+    record {|
+        anydata[]...;
+    |} rec2 = check fromXmlStringWithType(xmlStr2);
     test:assertEquals(rec2.length(), 1);
-    test:assertEquals(rec2.name, ["WSO2", "Apple"]);
+    test:assertEquals(rec2.get("Employee"), [
+        {
+            "Name": "John Doe",
+            "Age": 30
+        },
+        {
+            "Name": "Kanth Kevin",
+            "Age": 26
+        }
+    ]);
+}
+
+@test:Config
+function testAnydataArrayAsRestTypeWithFromJsonWithType() returns error? {
+    xml xmlVal = xml `<Data>
+                    <A>1</A>
+                    <A>2</A>
+                    <B>Code_1</B>
+                    <B>Code_2</B>
+                </Data>`;
+    record {|
+        anydata[]...;
+    |} rec = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec.length(), 2);
+    test:assertEquals(rec.get("A"), [1, 2]);
+
+    xml xmlVal2 = xml `<Company>
+                        <Employee>
+                            <Name>John Doe</Name>
+                            <Age>30</Age>
+                        </Employee>
+                        <Employee>
+                            <Name>Kanth Kevin</Name>
+                            <Age>26</Age>
+                        </Employee>
+                    </Company>`;
+    record {|
+        anydata[]...;
+    |} rec2 = check fromXmlWithType(xmlVal2);
+    test:assertEquals(rec2.length(), 1);
+    test:assertEquals(rec2.get("Employee"), [
+        {
+            "Name": "John Doe",
+            "Age": 30
+        },
+        {
+            "Name": "Kanth Kevin",
+            "Age": 26
+        }
+    ]);
+}
+
+@test:Config
+function testRecordAsRestTypeForFromXmlStringWithType() returns error? {
+    string xmlStr = string `<Data>
+                    <A><C>A_C_1</C></A>
+                    <B><C>B_C_1</C></B>
+                </Data>`;
+    record {|
+        record {}...;
+    |} rec = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec.length(), 2);
+    test:assertEquals(rec.get("A"), {C: "A_C_1"});
+    test:assertEquals(rec.get("B"), {C: "B_C_1"});
+}
+
+@test:Config
+function testRecordArrayAsRestTypeForFromXmlStringWithType() returns error? {
+    string xmlStr1 = string `<Data>
+                    <A>
+                        <C>A_C_1</C>
+                        <D>A_D_1</D>
+                    </A>
+                    <A>
+                        <C>A_C_2</C>
+                        <D>A_D_2</D>
+                    </A>
+                    <B>
+                        <C>B_C_1</C>
+                        <D>B_D_1</D>
+                    </B>
+                    <B>
+                        <C>B_C_2</C>
+                        <D>B_D_2</D>
+                    </B>
+                </Data>`;
+    record {|
+        record {
+            string C;
+        }[]...;
+    |} rec1 = check fromXmlStringWithType(xmlStr1);
+    test:assertEquals(rec1.length(), 2);
+    test:assertEquals(rec1.get("A"), [{C:"A_C_1", D:"A_D_1"},{C:"A_C_2", D:"A_D_2"}]);
+    test:assertEquals(rec1.get("B"), [{C:"B_C_1", D:"B_D_1"},{C:"B_C_2", D:"B_D_2"}]);
+
+    string xmlStr2 = string `
+    <Data>
+        <Depth1>
+            <A>1</A>
+            <A>2</A>
+            <B>2</B>
+            <B>5</B>
+        </Depth1>
+        <value>3</value>
+    </Data>
+    `;
+
+    record {|
+        string value;
+        record {|
+            int[]...;
+        |}...;
+    |} rec2 = check fromXmlStringWithType(xmlStr2);
+    test:assertEquals(rec2.length(), 2);
+    test:assertEquals(rec2.get("Depth1"), {A: [1, 2], B: [2, 5]});
+    test:assertEquals(rec2.get("value"), "3");
+
+    record {|
+        int value;
+        record {|
+            string[]...;
+        |}...;
+    |} rec3 = check fromXmlStringWithType(xmlStr2);
+    test:assertEquals(rec3.length(), 2);
+    test:assertEquals(rec3.get("Depth1"), {A: ["1", "2"], B: ["2", "5"]});
+    test:assertEquals(rec3.get("value"), 3);
+}
+
+@test:Config
+function testAddingContentFieldWhenRestTypeAsExpTypeForFromXmlStringWithType() returns error? {
+    string xmlStr = string `
+    <Data>
+        <A a="attribute_a">2</A>
+        <B><C c="attribute_c">3</C></B>
+    </Data>
+    `;
+
+    record {} rec = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec.length(), 2);
+    test:assertEquals(rec.get("A"), {\#content: 2, a: "attribute_a"});
+    test:assertEquals(rec.get("B"), {C: {\#content: 3, c: "attribute_c"}});
+
+    record {|
+        string A;
+        record {} B;
+    |} val2 = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(val2.length(), 2);
+    test:assertEquals(val2.A, "2");
+    test:assertEquals(val2.B, {C: {\#content: 3, c: "attribute_c"}});
+}
+
+@test:Config
+function testAddingContentFieldWhenRestTypeAsExpTypeForFromXmlWithType() returns error? {
+    xml xmlVal = xml `
+    <Data>
+        <A a="attribute_a">2</A>
+        <B><C c="attribute_c">3</C></B>
+    </Data>
+    `;
+
+    record {} rec = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec.length(), 2);
+    test:assertEquals(rec.get("A"), {\#content: 2, a: "attribute_a"});
+    test:assertEquals(rec.get("B"), {C: {\#content: 3, c: "attribute_c"}});
+
+    record {|
+        string A;
+        record {} B;
+    |} val2 = check fromXmlWithType(xmlVal);
+    test:assertEquals(val2.length(), 2);
+    test:assertEquals(val2.A, "2");
+    test:assertEquals(val2.B, {C: {\#content: 3, c: "attribute_c"}});
 }
 
 // Negative cases
@@ -2286,4 +3051,37 @@ function testCommentMiddleInContentNegative2() {
         int...;
     |}|error rec2 = fromXmlWithType(xmlVal);
     test:assertEquals((<error>rec2).message(), "invalid type expected 'int' but found 'string'");
+}
+
+@test:Config {
+    groups: ["fromXml"]
+}
+function testUnsupportedTypeNegative() {
+    xml xmlVal1 = xml `
+    <Data>
+        <A>1</A>
+        <A>2</A>
+    </Data>
+    `;
+    record {|
+        xml[] A;
+    |}|error err1 = fromXmlWithType(xmlVal1);
+    test:assertEquals((<error>err1).message(), "unsupported input type");
+
+    xml xmlVal2 = xml `
+    <Data>
+        <A>
+            <a>1</a>
+        </A>
+    </Data>
+    `;
+    record {|
+        record {|string a;|}|record {|string b;|} A;
+    |}|error err2 = fromXmlWithType(xmlVal2);
+    test:assertEquals((<error>err2).message(), "unsupported input type");
+
+    record {|
+        record {|string a;|}? A;
+    |}|error err3 = fromXmlWithType(xmlVal2);
+    test:assertEquals((<error>err3).message(), "unsupported input type");
 }

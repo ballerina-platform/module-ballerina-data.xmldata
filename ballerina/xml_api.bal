@@ -57,7 +57,7 @@ public const annotation Attribute on record field;
 
 # Represent the options that can be used to modify the behaviour of conversion.
 #
-# + attributePrefix - prefix added for attribute fields in the record 
+# + attributePrefix - prefix added for attribute fields in the record
 # + textFieldName - field name for the text field
 public type Options record {|
     string attributePrefix = EMPTY_STRING;
@@ -105,7 +105,7 @@ public isolated function fromXmlStringWithType(string|byte[]|stream<byte[], erro
 # successfully converted or else an `xmldata:Error`
 public isolated function toXml(map<anydata> mapValue, Options options = {}) returns xml|Error {
     string textFieldName = options.textFieldName;
-    JsonOptions jsonOptions = {attributePrefix: ATTRIBUTE_PREFIX, arrayEntryTag : EMPTY_STRING, 
+    JsonOptions jsonOptions = {attributePrefix: ATTRIBUTE_PREFIX, arrayEntryTag : EMPTY_STRING,
         textFieldName: textFieldName, userAttributePrefix: options.attributePrefix};
     typedesc<(map<anydata>)> inputType = typeof mapValue;
     json|record{} jsonValue = check getModifiedRecord(mapValue, textFieldName, inputType);
@@ -133,15 +133,15 @@ isolated function convertMapXml(map<xml>|map<xml[]> mapValue) returns xml {
     return xml:createElement("root", {}, xNode);
 }
 
-isolated function getModifiedRecord(map<anydata> mapValue, string textFieldName, typedesc<(map<anydata>|json)> inputType) 
+isolated function getModifiedRecord(map<anydata> mapValue, string textFieldName, typedesc<(map<anydata>|json)> inputType)
     returns json|record{}|Error = @java:Method {'class: "io.ballerina.stdlib.data.xmldata.utils.DataUtils"} external;
 
 # Provides configurations for converting JSON to XML.
 #
-# + attributePrefix - The prefix of JSON elements' key which is to be treated as an attribute in the XML representation  
-# + arrayEntryTag - The name of the XML elements that represent a converted JSON array entry  
-# + rootTag - The name of the root element of the XML that will be created. If its value is (), and the converted XML  
-# is not in the valid format, it will create a root tag as `root`  
+# + attributePrefix - The prefix of JSON elements' key which is to be treated as an attribute in the XML representation
+# + arrayEntryTag - The name of the XML elements that represent a converted JSON array entry
+# + rootTag - The name of the root element of the XML that will be created. If its value is (), and the converted XML
+# is not in the valid format, it will create a root tag as `root`
 # + textFieldName - field name for the text field
 # + userAttributePrefix - The prefix of JSON elements' key which used by the user to distinguish the attribute fields
 type JsonOptions record {|
@@ -153,13 +153,6 @@ type JsonOptions record {|
 |};
 
 # Converts a JSON object to an XML representation.
-# ```ballerina
-# json data = {
-#     name: "John",
-#     age: 30
-# };
-# xml xmlValue = check xmldata:fromJson(data);
-# ```
 #
 # + jsonValue - The JSON source to be converted to XML
 # + options - The `xmldata:JsonOptions` record for JSON to XML conversion properties

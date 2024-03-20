@@ -68,11 +68,9 @@ public class QualifiedName {
             return true;
         }
 
-        if (objectToTest == null || !(objectToTest instanceof QualifiedName)) {
+        if (!(objectToTest instanceof QualifiedName qName)) {
             return false;
         }
-
-        QualifiedName qName = (QualifiedName) objectToTest;
 
         if (qName.namespaceURI.equals(NS_ANNOT_NOT_DEFINED) || namespaceURI.equals(NS_ANNOT_NOT_DEFINED)) {
             return localPart.equals(qName.localPart);
