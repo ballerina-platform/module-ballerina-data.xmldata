@@ -164,6 +164,10 @@ public class XmlTraversal {
 
             BMap<BString, Object> mapValue = (BMap<BString, Object>) currentNode;
             Type currentFieldType = TypeUtils.getReferredType(currentField.getFieldType());
+            if (!DataUtils.isSupportedType(currentFieldType)) {
+                throw DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE, currentFieldType);
+            }
+
             String fieldName = currentField.getFieldName();
             BString bCurrentFieldName = StringUtils.fromString(fieldName);
             switch (currentFieldType.getTag()) {
@@ -245,7 +249,7 @@ public class XmlTraversal {
                     updateNextValue(recordType, fieldName, fieldType, currentMapValue, analyzerData);
             QName qName = xmlItem.getQName();
             DataUtils.validateTypeNamespace(qName.getPrefix(), qName.getNamespaceURI(), recordType);
-            handleAttributes(xmlItem, nextValue, recordType, analyzerData);
+            handleAttributes(xmlItem, nextValue, analyzerData);
             return nextValue;
         }
 
@@ -502,11 +506,11 @@ public class XmlTraversal {
 
             // Keep track of fields and attributes
             DataUtils.updateExpectedTypeStacks(recordType, analyzerData);
-            handleAttributes(xmlItem, (BMap<BString, Object>) currentNode, recordType, analyzerData);
+            handleAttributes(xmlItem, (BMap<BString, Object>) currentNode, analyzerData);
             return xmlItem.getChildrenSeq();
         }
 
-        private void handleAttributes(BXmlItem xmlItem, BMap<BString, Object> currentNode, RecordType recordType,
+        private void handleAttributes(BXmlItem xmlItem, BMap<BString, Object> currentNode,
                                       XmlAnalyzerData analyzerData) {
             HashSet<String> innerElements = findAllInnerElement(xmlItem);
             BMap<BString, BString> attributeMap = xmlItem.getAttributesMap();

@@ -227,6 +227,7 @@ public class XmlParser {
         handleAttributes(xmlStreamReader, xmlParserData);
     }
 
+    @SuppressWarnings("unchecked")
     private void readText(XMLStreamReader xmlStreamReader,
                           boolean isCData,
                           XmlParserData xmlParserData) throws XMLStreamException {
@@ -289,7 +290,6 @@ public class XmlParser {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void convertTextAndUpdateCurrentNode(BMap<BString, Object> currentNode,
                                                  BMap<BString, Object> parent,
                                                  BString currentFieldName,
@@ -302,9 +302,7 @@ public class XmlParser {
             currentNode.put(StringUtils.fromString(Constants.CONTENT), result);
         } else if (parent.get(currentFieldName) instanceof BArray bArray) {
              bArray.add(bArray.getLength() - 1, result);
-         } else if (parent instanceof BArray) {
-            ((BArray) parent).append(result);
-        } else {
+         } else {
             parent.put(currentFieldName, result);
         }
 
@@ -316,6 +314,7 @@ public class XmlParser {
         xmlParserData.siblings = xmlParserData.parents.pop();
     }
 
+    @SuppressWarnings("unchecked")
     private void addTextToCurrentNodeIfExpTypeIsArray(ArrayType fieldType, BString bFieldName, BString bText,
                                                       XmlParserData xmlParserData) {
         int elementTypeTag = TypeUtils.getReferredType(fieldType.getElementType()).getTag();
@@ -326,7 +325,6 @@ public class XmlParser {
                 BArray tempArr = (BArray) ((BMap<BString, Object>) xmlParserData.nodesStack.peek()).get(bFieldName);
                 tempArr.add(tempArr.getLength() - 1, convertStringToRestExpType(bText, fieldType));
             }
-            default -> xmlParserData.currentNode.put(bFieldName, convertStringToRestExpType(bText, fieldType));
         }
     }
 
@@ -395,9 +393,8 @@ public class XmlParser {
         throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_REST_TYPE, expType.getName());
     }
 
-    private Object buildDocument(XmlParserData xmlParserData) {
+    private void buildDocument(XmlParserData xmlParserData) {
         validateRequiredFields(xmlParserData);
-        return xmlParserData.currentNode;
     }
 
     @SuppressWarnings("unchecked")
@@ -494,9 +491,8 @@ public class XmlParser {
 
                 updateNextArrayMember(xmlStreamReader, xmlParserData, fieldName, fieldType, referredType);
             }
-            case TypeTags.MAP_TAG, TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG -> {
-                updateNextMap(xmlParserData, fieldName, fieldType);
-            }
+            case TypeTags.MAP_TAG, TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG ->
+                    updateNextMap(xmlParserData, fieldName, fieldType);
         }
     }
 
@@ -699,11 +695,11 @@ public class XmlParser {
         }
 
         Object currentElement = xmlParserData.currentNode.get(currentFieldName);
-        xmlParserData.nodesStack.add(xmlParserData.currentNode);
 
         if (currentElement instanceof BArray) {
             int elemTypeTag = ((BArray) currentElement).getElementType().getTag();
             if (elemTypeTag == TypeTags.ANYDATA_TAG || elemTypeTag == TypeTags.JSON_TAG) {
+                xmlParserData.nodesStack.add(xmlParserData.currentNode);
                 xmlParserData.parents.push(xmlParserData.siblings);
                 xmlParserData.siblings = new LinkedHashMap<>();
                 updateExpectedTypeStacksOfRestType(restType, xmlParserData);
@@ -722,6 +718,7 @@ public class XmlParser {
 
         int elemTypeTag = tempArray.getElementType().getTag();
         if (elemTypeTag == TypeTags.ANYDATA_TAG || elemTypeTag == TypeTags.JSON_TAG) {
+            xmlParserData.nodesStack.add(xmlParserData.currentNode);
             xmlParserData.parents.push(xmlParserData.siblings);
             xmlParserData.siblings = new LinkedHashMap<>();
             updateExpectedTypeStacksOfRestType(restType, xmlParserData);
@@ -758,6 +755,7 @@ public class XmlParser {
         xmlParserData.siblings.put(elemQName, true);
     }
 
+    @SuppressWarnings("unchecked")
     private void readTextRest(XMLStreamReader xmlStreamReader,
                               BString currentFieldName,
                               boolean isCData,
@@ -783,30 +781,24 @@ public class XmlParser {
         }
 
         convertTextRestAndUpdateCurrentNodeForRestType(xmlParserData.currentNode,
-                (BMap<BString, Object>) xmlParserData.nodesStack.peek(), currentFieldName, bText,
-                restType, xmlParserData);
+                (BMap<BString, Object>) xmlParserData.nodesStack.peek(), currentFieldName, bText, restType);
     }
 
     @SuppressWarnings("unchecked")
     private void convertTextRestAndUpdateCurrentNodeForRestType(BMap<BString, Object> currentNode,
                                                             BMap<BString, Object> parent,
                                                             BString currentFieldName,
-                                                            BString bText, Type restType,
-                                                            XmlParserData xmlParserData) {
+                                                            BString bText, Type restType) {
         Object currentElement = currentNode.get(currentFieldName);
         Object result = convertStringToRestExpType(bText, restType);
 
-        if (currentElement == null &&
-                (DataUtils.isAnydataOrJson(restType.getTag()) || DataUtils.isAnydataOrJsonArray(restType)) &&
+        if (currentElement == null && DataUtils.isAnydataOrJson(restType.getTag()) &&
                 parent != null && parent.get(currentFieldName) instanceof BArray bArray) {
             bArray.add(bArray.getLength() - 1, result);
             return;
         }
 
-        if (currentElement == null && !currentNode.isEmpty()) { // Add text to the #content field
-            currentNode.put(StringUtils.fromString(Constants.CONTENT), result);
-            xmlParserData.currentNode = parent;
-        } else if (currentElement instanceof BArray) {
+        if (currentElement instanceof BArray) {
             ((BArray) currentElement).append(result);
         } else if (currentElement instanceof BMap && !((BMap<BString, Object>) currentElement).isEmpty()) {
             ((BMap<BString, Object>) currentElement).put(StringUtils.fromString(Constants.CONTENT), result);

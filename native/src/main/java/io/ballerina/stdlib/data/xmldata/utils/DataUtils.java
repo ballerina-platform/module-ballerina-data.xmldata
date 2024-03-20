@@ -301,11 +301,39 @@ public class DataUtils {
         return typeTag == TypeTags.ANYDATA_TAG || typeTag == TypeTags.JSON_TAG;
     }
 
-    public static boolean isAnydataOrJsonArray(Type type) {
-        if (type.getTag() != TypeTags.ARRAY_TAG) {
-            return false;
+    public static boolean isSupportedType(Type type) {
+        switch (type.getTag()) {
+            case TypeTags.NULL_TAG, TypeTags.INT_TAG, TypeTags.BYTE_TAG, TypeTags.FLOAT_TAG, TypeTags.DECIMAL_TAG,
+                    TypeTags.BOOLEAN_TAG, TypeTags.STRING_TAG, TypeTags.RECORD_TYPE_TAG, TypeTags.MAP_TAG,
+                    TypeTags.JSON_TAG, TypeTags.ANYDATA_TAG -> {
+                return true;
+            }
+            case TypeTags.ARRAY_TAG -> {
+                return isSupportedType(((ArrayType) type).getElementType());
+            }
+            case TypeTags.UNION_TAG -> {
+                return isSupportedUnionType((UnionType) type);
+            }
+            case TypeTags.TYPE_REFERENCED_TYPE_TAG -> {
+                return isSupportedType(TypeUtils.getReferredType(type));
+            }
         }
-        return isAnydataOrJson(((ArrayType) type).getElementType().getTag());
+        return false;
+    }
+
+    private static boolean isSupportedUnionType(UnionType type) {
+        for (Type memberType : type.getMemberTypes()) {
+            switch (memberType.getTag()) {
+                case TypeTags.RECORD_TYPE_TAG, TypeTags.OBJECT_TYPE_TAG, TypeTags.MAP_TAG, TypeTags.JSON_TAG,
+                        TypeTags.ANYDATA_TAG, TypeTags.XML_TAG -> {
+                    return false;
+                }
+                case TypeTags.UNION_TAG -> {
+                    return !isSupportedUnionType(type);
+                }
+            }
+        }
+        return true;
     }
 
     @SuppressWarnings("unchecked")

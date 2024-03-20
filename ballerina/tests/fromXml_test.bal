@@ -2647,7 +2647,7 @@ function testRecordAsRestTypeForFromXmlStringWithType() returns error? {
 
 @test:Config
 function testRecordArrayAsRestTypeForFromXmlStringWithType() returns error? {
-    string xmlStr = string `<Data>
+    string xmlStr1 = string `<Data>
                     <A>
                         <C>A_C_1</C>
                         <D>A_D_1</D>
@@ -2669,10 +2669,88 @@ function testRecordArrayAsRestTypeForFromXmlStringWithType() returns error? {
         record {
             string C;
         }[]...;
-    |} rec = check fromXmlStringWithType(xmlStr);
+    |} rec1 = check fromXmlStringWithType(xmlStr1);
+    test:assertEquals(rec1.length(), 2);
+    test:assertEquals(rec1.get("A"), [{C:"A_C_1", D:"A_D_1"},{C:"A_C_2", D:"A_D_2"}]);
+    test:assertEquals(rec1.get("B"), [{C:"B_C_1", D:"B_D_1"},{C:"B_C_2", D:"B_D_2"}]);
+
+    string xmlStr2 = string `
+    <Data>
+        <Depth1>
+            <A>1</A>
+            <A>2</A>
+            <B>2</B>
+            <B>5</B>
+        </Depth1>
+        <value>3</value>
+    </Data>
+    `;
+
+    record {|
+        string value;
+        record {|
+            int[]...;
+        |}...;
+    |} rec2 = check fromXmlStringWithType(xmlStr2);
+    test:assertEquals(rec2.length(), 2);
+    test:assertEquals(rec2.get("Depth1"), {A: [1, 2], B: [2, 5]});
+    test:assertEquals(rec2.get("value"), "3");
+
+    record {|
+        int value;
+        record {|
+            string[]...;
+        |}...;
+    |} rec3 = check fromXmlStringWithType(xmlStr2);
+    test:assertEquals(rec3.length(), 2);
+    test:assertEquals(rec3.get("Depth1"), {A: ["1", "2"], B: ["2", "5"]});
+    test:assertEquals(rec3.get("value"), 3);
+}
+
+@test:Config
+function testAddingContentFieldWhenRestTypeAsExpTypeForFromXmlStringWithType() returns error? {
+    string xmlStr = string `
+    <Data>
+        <A a="attribute_a">2</A>
+        <B><C c="attribute_c">3</C></B>
+    </Data>
+    `;
+
+    record {} rec = check fromXmlStringWithType(xmlStr);
     test:assertEquals(rec.length(), 2);
-    test:assertEquals(rec.get("A"), [{C:"A_C_1", D:"A_D_1"},{C:"A_C_2", D:"A_D_2"}]);
-    test:assertEquals(rec.get("B"), [{C:"B_C_1", D:"B_D_1"},{C:"B_C_2", D:"B_D_2"}]);
+    test:assertEquals(rec.get("A"), {\#content: 2, a: "attribute_a"});
+    test:assertEquals(rec.get("B"), {C: {\#content: 3, c: "attribute_c"}});
+
+    record {|
+        string A;
+        record {} B;
+    |} val2 = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(val2.length(), 2);
+    test:assertEquals(val2.A, "2");
+    test:assertEquals(val2.B, {C: {\#content: 3, c: "attribute_c"}});
+}
+
+@test:Config
+function testAddingContentFieldWhenRestTypeAsExpTypeForFromXmlWithType() returns error? {
+    xml xmlVal = xml `
+    <Data>
+        <A a="attribute_a">2</A>
+        <B><C c="attribute_c">3</C></B>
+    </Data>
+    `;
+
+    record {} rec = check fromXmlWithType(xmlVal);
+    test:assertEquals(rec.length(), 2);
+    test:assertEquals(rec.get("A"), {\#content: 2, a: "attribute_a"});
+    test:assertEquals(rec.get("B"), {C: {\#content: 3, c: "attribute_c"}});
+
+    record {|
+        string A;
+        record {} B;
+    |} val2 = check fromXmlWithType(xmlVal);
+    test:assertEquals(val2.length(), 2);
+    test:assertEquals(val2.A, "2");
+    test:assertEquals(val2.B, {C: {\#content: 3, c: "attribute_c"}});
 }
 
 // Negative cases
@@ -2973,4 +3051,37 @@ function testCommentMiddleInContentNegative2() {
         int...;
     |}|error rec2 = fromXmlWithType(xmlVal);
     test:assertEquals((<error>rec2).message(), "invalid type expected 'int' but found 'string'");
+}
+
+@test:Config {
+    groups: ["fromXml"]
+}
+function testUnsupportedTypeNegative() {
+    xml xmlVal1 = xml `
+    <Data>
+        <A>1</A>
+        <A>2</A>
+    </Data>
+    `;
+    record {|
+        xml[] A;
+    |}|error err1 = fromXmlWithType(xmlVal1);
+    test:assertEquals((<error>err1).message(), "unsupported input type");
+
+    xml xmlVal2 = xml `
+    <Data>
+        <A>
+            <a>1</a>
+        </A>
+    </Data>
+    `;
+    record {|
+        record {|string a;|}|record {|string b;|} A;
+    |}|error err2 = fromXmlWithType(xmlVal2);
+    test:assertEquals((<error>err2).message(), "unsupported input type");
+
+    record {|
+        record {|string a;|}? A;
+    |}|error err3 = fromXmlWithType(xmlVal2);
+    test:assertEquals((<error>err3).message(), "unsupported input type");
 }
