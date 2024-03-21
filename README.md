@@ -320,18 +320,22 @@ The translation into a Ballerina record would be:
 import ballerina/data.xmldata;
 
 @xmldata:Namespace {
+    prefix: "bk",
     uri: "http://example.com/book"
 }
 type Book record {|
     @xmldata:Namespace {
+        prefix: "bk",
         uri: "http://example.com/book"
     }
     int id;
     @xmldata:Namespace {
+        prefix: "bk",
         uri: "http://example.com/book"
     }
     string title;
     @xmldata:Namespace {
+        prefix: "bk",
         uri: "http://example.com/book"
     }
     string author;
@@ -445,7 +449,7 @@ The process of projecting XML data into a record supports various use cases, inc
 
 ## Issues and projects
 
-Issues and Projects tabs are disabled for this repository as this is part of the Ballerina standard library. To report bugs, request new features, start new discussions, view project boards, etc. please visit Ballerina standard library [parent repository](https://github.com/ballerina-platform/ballerina-standard-library).
+Issues and Projects tabs are disabled for this repository as this is part of the Ballerina library. To report bugs, request new features, start new discussions, view project boards, etc. please visit Ballerina library [parent repository](https://github.com/ballerina-platform/ballerina-library).
 
 This repository only contains the source code for the package.
 
@@ -494,6 +498,5 @@ All contributors are encouraged to read the [Ballerina code of conduct](https://
 
 ## Useful links
 
-[//]: # (* For more information go to the [`xmldata` library]&#40;https://lib.ballerina.io/ballerina/data.xmldata/latest&#41;.)
 * Chat live with us via our [Discord server](https://discord.gg/ballerinalang).
 * Post all technical questions on Stack Overflow with the [#ballerina](https://stackoverflow.com/questions/tagged/ballerina) tag.
