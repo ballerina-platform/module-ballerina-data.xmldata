@@ -2753,6 +2753,38 @@ function testAddingContentFieldWhenRestTypeAsExpTypeForFromXmlWithType() returns
     test:assertEquals(val2.B, {C: {\#content: 3, c: "attribute_c"}});
 }
 
+type ProjectionRec1 record {|
+    json[1] Employee;
+    anydata[2] Departments;
+|};
+
+@test:Config
+function testProjectionWithJsonArrayOrAnydataArrayForFromXmlStringWithType() returns error? {
+    string xmlStr = string `<Company>
+                        <Employee age="30">
+                            <Name>John Doe</Name>
+                        </Employee>
+                        <Employee age="26">
+                            <Name>Walter White</Name>
+                        </Employee>
+                        <Departments>Engineering</Departments>
+                        <Departments>Hr</Departments>
+                        <Departments>Customer Success</Departments>
+                    </Company>`;
+    record {
+        json[1] Employee;
+        anydata[2] Departments;
+    } rec = check fromXmlStringWithType(xmlStr);
+    test:assertEquals(rec.length(), 2);
+    test:assertEquals(rec.Employee, [
+        {
+            "Name": "John Doe",
+            "age": 30
+        }
+    ]);
+    test:assertEquals(rec.Departments, ["Engineering", "Hr"]);
+}
+
 // Negative cases
 type DataN1 record {|
     int A;

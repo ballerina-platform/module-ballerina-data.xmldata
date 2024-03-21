@@ -128,7 +128,7 @@ public class XmlTraversal {
             }
 
             BString fieldName = StringUtils.fromString(currentField.getFieldName());
-            Type fieldType = currentField.getFieldType();
+            Type fieldType = TypeUtils.getReferredType(currentField.getFieldType());
 
             Object convertedValue = DataUtils.convertStringToExpType(StringUtils.fromString(text), fieldType);
             if (mapValue.containsKey(fieldName)) {

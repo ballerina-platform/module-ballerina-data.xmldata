@@ -228,6 +228,129 @@ function testDisableProjectionForFromXmlWithTypeNegative() returns error? {
     test:assertEquals((<error>e5).message(), "undefined field '#content' in record 'data.xmldata:record {| int age; |}'");
 }
 
+type IntArray int[2];
+type StringArray string[3];
+type Record1 record {|
+    IntArray A;
+    StringArray B;
+|};
+
+@test:Config
+function testDisableProjectionInArrayForFromXmlStringWithTypeNegative() {
+    string xmlStr = string `<DataProj>
+        <A><B>1</B></A>
+        <A><B>2</B></A>
+        <A><B>3</B></A>
+    </DataProj>`;
+    DataProj|Error err1 = fromXmlStringWithType(xmlStr, sOptions3);
+    test:assertTrue(err1 is Error);
+    test:assertEquals((<error> err1).message(), "array size is not compatible with the expected size");
+
+    string xmlStr2 = string `
+    <Data>
+        <A>1</A>
+        <A>2</A>
+        <A>3</A>
+        <B>Kevin</B>
+        <B>Violet</B>
+        <B>Tommy</B>
+    </Data>
+    `;
+    Record1|Error err2 = fromXmlStringWithType(xmlStr2, sOptions3);
+    test:assertTrue(err2 is Error);
+    test:assertEquals((<error> err2).message(), "array size is not compatible with the expected size");
+
+    string xmlStr3 = string `
+    <Data>
+        <A>1</A>
+        <A>2</A>
+        <B>Kevin</B>
+        <B>Violet</B>
+        <B>Tommy</B>
+        <B>James</B>
+    </Data>
+    `;
+    Record1|Error err3 = fromXmlStringWithType(xmlStr3, sOptions3);
+    test:assertTrue(err3 is Error);
+    test:assertEquals((<error> err3).message(), "array size is not compatible with the expected size");
+
+    string xmlStr4 = string `<Company>
+                        <Employee age="30">
+                            <Name>John Doe</Name>
+                        </Employee>
+                        <Employee age="26">
+                            <Name>Walter White</Name>
+                        </Employee>
+                        <Departments>Engineering</Departments>
+                        <Departments>Hr</Departments>
+                        <Departments>Customer Success</Departments>
+                    </Company>`;
+    record {
+        json[1] Employee;
+        anydata[2] Departments;
+    }|error rec = fromXmlStringWithType(xmlStr4, sOptions3);
+    test:assertTrue(rec is error);
+    test:assertEquals((<error>rec).message(), "array size is not compatible with the expected size");
+}
+
+@test:Config
+function testDisableProjectionInArrayForFromXmlWithTypeNegative() {
+    xml xmlVal1 = xml `<DataProj>
+        <A><B>1</B></A>
+        <A><B>2</B></A>
+        <A><B>3</B></A>
+    </DataProj>`;
+    DataProj|Error err1 = fromXmlWithType(xmlVal1, sOptions3);
+    test:assertTrue(err1 is Error);
+    test:assertEquals((<error> err1).message(), "array size is not compatible with the expected size");
+
+    xml xmlVal2 = xml `
+    <Data>
+        <A>1</A>
+        <A>2</A>
+        <A>3</A>
+        <B>Kevin</B>
+        <B>Violet</B>
+        <B>Tommy</B>
+    </Data>
+    `;
+    Record1|Error err2 = fromXmlWithType(xmlVal2, sOptions3);
+    test:assertTrue(err2 is Error);
+    test:assertEquals((<error> err2).message(), "array size is not compatible with the expected size");
+
+    xml xmlVal3 = xml `
+    <Data>
+        <A>1</A>
+        <A>2</A>
+        <B>Kevin</B>
+        <B>Violet</B>
+        <B>Tommy</B>
+        <B>James</B>
+    </Data>
+    `;
+    Record1|Error err3 = fromXmlWithType(xmlVal3, sOptions3);
+    test:assertTrue(err3 is Error);
+    test:assertEquals((<error> err3).message(), "array size is not compatible with the expected size");
+
+    xml xmlVal4 = xml `<Company>
+                        <Employee age="30">
+                            <Name>John Doe</Name>
+                        </Employee>
+                        <Employee age="26">
+                            <Name>Walter White</Name>
+                        </Employee>
+                        <Departments>Engineering</Departments>
+                        <Departments>Hr</Departments>
+                        <Departments>Customer Success</Departments>
+                    </Company>`;
+    record {
+        json[1] Employee;
+        anydata[2] Departments;
+    }|error rec = fromXmlWithType(xmlVal4, sOptions3);
+    test:assertTrue(rec is error);
+    test:assertEquals((<error>rec).message(), "array size is not compatible with the expected size");
+}
+
 SourceOptions sOptions6 = {attributePrefix: "@", allowDataProjection: false, textFieldName: "value"};
 
 type Library record {|

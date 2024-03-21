@@ -149,7 +149,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             case UNION -> {
                 int nonErrorTypeCount = 0;
                 for (TypeSymbol memberTSymbol : ((UnionTypeSymbol) typeSymbol).memberTypeDescriptors()) {
-                    if (memberTSymbol.typeKind() == TypeDescKind.ERROR) {
+                    if (getReferredTypeSymbol(memberTSymbol).typeKind() == TypeDescKind.ERROR) {
                         continue;
                     }
                     nonErrorTypeCount++;
@@ -162,6 +162,13 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         }
     }
 
+    private TypeSymbol getReferredTypeSymbol(TypeSymbol typeSymbol) {
+        if (typeSymbol.typeKind() == TypeDescKind.TYPE_REFERENCE) {
+            return ((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor();
+        }
+        return typeSymbol;
+    }
+
     private boolean isNotValidExpectedType(TypeSymbol typeSymbol) {
         switch (typeSymbol.typeKind()) {
             case RECORD -> {
@@ -172,7 +179,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             }
             case UNION -> {
                 for (TypeSymbol memberTSymbol : ((UnionTypeSymbol) typeSymbol).memberTypeDescriptors()) {
-                    if (memberTSymbol.typeKind() == TypeDescKind.ERROR) {
+                    if (getReferredTypeSymbol(memberTSymbol).typeKind() == TypeDescKind.ERROR) {
                         continue;
                     }
 

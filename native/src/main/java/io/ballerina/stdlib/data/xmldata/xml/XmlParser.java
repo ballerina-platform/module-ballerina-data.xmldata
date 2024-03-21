@@ -342,6 +342,10 @@ public class XmlParser {
                     bText, xmlParserData);
             case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG -> {
                 BArray tempArr = (BArray) ((BMap<BString, Object>) xmlParserData.nodesStack.peek()).get(bFieldName);
+                Object nextValue = tempArr.get(tempArr.getLength() - 1);
+                if (!(nextValue instanceof BMap)) {
+                    return;
+                }
                 tempArr.add(tempArr.getLength() - 1, convertStringToRestExpType(bText, fieldType));
             }
         }
@@ -524,7 +528,7 @@ public class XmlParser {
             case TypeTags.RECORD_TYPE_TAG -> updateNextRecord(xmlStreamReader, xmlParserData, fieldName,
                     fieldType, (RecordType) type);
             case TypeTags.MAP_TAG, TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG ->
-                    updateNextMap(xmlParserData, fieldName, type);
+                    updateNextMap(xmlParserData, fieldName, fieldType);
         }
     }
 
@@ -538,12 +542,17 @@ public class XmlParser {
 
     private BMap<BString, Object> updateNextMapValue(XmlParserData xmlParserData, String fieldName, Type fieldType) {
         BMap<BString, Object> nextValue;
-        if (fieldType.getTag() == TypeTags.MAP_TAG) {
-            nextValue = ValueCreator.createMapValue((MapType) fieldType);
-            xmlParserData.restTypes.push(((MapType) fieldType).getConstrainedType());
+        Type type = fieldType;
+        if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
+            type = ((ArrayType) fieldType).getElementType();
+        }
+
+        if (type.getTag() == TypeTags.MAP_TAG) {
+            nextValue = ValueCreator.createMapValue((MapType) type);
+            xmlParserData.restTypes.push(((MapType) type).getConstrainedType());
         } else {
-            nextValue = ValueCreator.createMapValue(TypeCreator.createMapType(fieldType));
-            xmlParserData.restTypes.push(fieldType);
+            nextValue = ValueCreator.createMapValue(TypeCreator.createMapType(type));
+            xmlParserData.restTypes.push(type);
         }
 
         xmlParserData.attributeHierarchy.push(new HashMap<>());
@@ -552,7 +561,7 @@ public class XmlParser {
         BMap<BString, Object> currentNode = xmlParserData.currentNode;
         Object temp = currentNode.get(StringUtils.fromString(fieldName));
         if (temp instanceof BArray) {
-            int arraySize = ((ArrayType) TypeUtils.getType(temp)).getSize();
+            int arraySize = getArraySize(fieldType, temp);
             if (arraySize > ((BArray) temp).getLength() || arraySize == -1) {
                 ((BArray) temp).append(nextValue);
             } else {
@@ -563,6 +572,11 @@ public class XmlParser {
         }
         xmlParserData.nodesStack.push(currentNode);
         return nextValue;
+    }
+
+    private int getArraySize(Type type, Object temp) {
+        return type.getTag() == TypeTags.ARRAY_TAG ?
+                ((ArrayType) type).getSize() : ((ArrayType) TypeUtils.getType(temp)).getSize();
     }
 
     private void updateNextRecord(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData, String fieldName,

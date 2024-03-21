@@ -200,10 +200,12 @@ public class DataUtils {
 
     public static Object convertStringToExpType(BString value, Type expType) {
         Object result;
-        switch (expType.getTag()) {
+        Type refferedType = TypeUtils.getReferredType(expType);
+        switch (refferedType.getTag()) {
             case TypeTags.ANYDATA_TAG, TypeTags.ANY_TAG, TypeTags.JSON_TAG ->
                     result = FromString.fromStringWithType(value, PredefinedTypes.TYPE_JSON);
-            case TypeTags.ARRAY_TAG -> result = convertStringToExpType(value, ((ArrayType) expType).getElementType());
+            case TypeTags.ARRAY_TAG -> result = convertStringToExpType(value,
+                    ((ArrayType) refferedType).getElementType());
             default -> result = FromString.fromStringWithType(value, expType);
         }
 
