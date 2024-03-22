@@ -1,6 +1,6 @@
-# Package overview
+# Ballerina XML Data Library
 
-This package is designed to facilitate the handling and manipulation of XML data within Ballerina applications. It streamlines the process of converting XML data to native Ballerina data types, enabling developers to work with XML content seamlessly and efficiently.
+The Ballerina XML Data Library is a comprehensive toolkit designed to facilitate the handling and manipulation of XML data within Ballerina applications. It streamlines the process of converting XML data to native Ballerina data types, enabling developers to work with XML content seamlessly and efficiently.
 
 This library is the refined successor of the `ballerina/xmldata` module, incorporating enhanced functionalities and improved performance.
 
@@ -14,10 +14,10 @@ This library is the refined successor of the `ballerina/xmldata` module, incorpo
 
 ### Converting an XML value to a Record value
 
-To convert an XML value to a Record value, you can utilize the `fromXmlWithType` function provided by the library. The example below showcases the transformation of an XML value into a Record value.
+To convert an XML value to a Record value, you can utilize the `parseAsType` function provided by the library. The example below showcases the transformation of an XML value into a Record value.
 
 ```ballerina
-import ballerina/data.xml as xmldata;
+import ballerina/data.xmldata;
 import ballerina/io;
 
 public function main() returns error? {
@@ -27,7 +27,7 @@ public function main() returns error? {
         <author>string</author>
     </book>`;
 
-    Book book = check xmldata:fromXmlWithType(data, Book);
+    Book book = check xmldata:parseAsType(data);
     io:println(book);
 }
 
@@ -40,15 +40,15 @@ type Book record {
 
 ### Converting an external XML document to a Record value
 
-For transforming XML content from an external source into a Record value, the `fromXmlStringWithType` function can be used. This external source can be in the form of a string or a byte array/byte stream that houses the XML data. This is commonly extracted from files or network sockets. The example below demonstrates the conversion of an XML value from an external source into a Record value.
+For transforming XML content from an external source into a Record value, the `parseString`, `parseBytes`, `parseStream` functions can be used. This external source can be in the form of a string or a byte array/byte-block-stream that houses the XML data. This is commonly extracted from files or network sockets. The example below demonstrates the conversion of an XML value from an external source into a Record value.
 
 ```ballerina
-import ballerina/data.xml as xmldata;
+import ballerina/data.xmldata;
 import ballerina/io;
 
 public function main() returns error? {
     string xmlContent = check io:fileReadString("path/to/file.xml");
-    Book book = check xmldata:fromXmlStringWithType(xmlContent, Book);
+    Book book = check xmldata:parseString(xmlContent);
     io:println(book);
 }
 
@@ -69,7 +69,7 @@ Take for instance the following XML snippet:
 
 ```xml
 <book>
-    <id>0</id>
+    <id>601970</id>
     <title>string</title>
     <author>string</author>
 </book>
@@ -99,7 +99,7 @@ Consider the XML snippet:
 
 ```xml
 <book>
-    <id>0</id>
+    <id>601970</id>
     <title-name>string</title-name>
     <author-name>string</author-name>
 </book>
@@ -110,17 +110,17 @@ The canonical representation of the above XML as a Ballerina record is:
 ```ballerina
 type Book record {
     int id;
-    string 'title\-name';
-    string 'author\-name';
+    string title\-name;
+    string author\-name;
 };
 ```
 
-Observe how the XML element names `title-name` and `author-name` are represented using delimited identifiers in Ballerina; the `-` characters in the XML element names are escaped using the `\` character.
+Observe how the XML element names `title-name` and `author-name` are represented using delimited identifiers in Ballerina; the `-` characters in the XML element names are escaped using the `\ ` character.
 
 Moreover, the `@Name` annotation can be utilized to explicitly specify the name of the record field, providing control over the translation process:
 
 ```ballerina
-import ballerina/data.xml as xmldata;
+import ballerina/data.xmldata;
 
 type Book record {
     int id;
@@ -139,7 +139,7 @@ Consider the following XML snippet:
 
 ```xml
 <book lang="en" price="10.5">
-    <id>0</id>
+    <id>601970</id>
     <title>string</title>
     <author>string</author>
 </book>
@@ -157,7 +157,7 @@ type Book record {
 };
 ```
 
-Additionally the `@Attribute` annotation can be utilized to explicitly specify the name of the record field, providing control over the translation process.
+Additionally, the `@Attribute` annotation can be used to explicitly specify the field as an attribute providing control over the translation process. When element and attribute have same name in the same scope the priority is given to the element unless the expected record field has the `@Attribute` annotation.
 
 ### Child Elements
 
@@ -167,7 +167,7 @@ Examine the XML snippet below:
 
 ```xml
 <book>
-    <id>0</id>
+    <id>601970</id>
     <title>string</title>
     <author>
         <name>string</name>
@@ -216,7 +216,7 @@ Consider the XML snippet below:
 
 ```xml
 <book>
-    <id>0</id>
+    <id>601970</id>
     <title>string</title>
     <author>string</author>
     <available>true</available>
@@ -242,7 +242,7 @@ For instance, examine this XML:
 
 ```xml
 <book>
-    <id>0</id>
+    <id>601970</id>
     <title lang="en">string</title>
     <price>10.5</price>
 </book>
@@ -263,8 +263,6 @@ type Title record {
 };
 ```
 
-Modifications to the default behavior for converting numerical values can be achieved by providing `Options` mappings to the respective functions. This enables developers to choose specific data types and exert finer control over the conversion process.
-
 ### XML Namespaces
 
 XML namespaces are accommodated by the library, supporting the translation of XML data that contains namespace prefixes. However, the presence of XML namespaces is not mandatory, and the library is capable of processing XML data without namespaces. Should namespaces be present, they will be utilized to resolve the names of XML elements and attributes.
@@ -275,7 +273,7 @@ Examine the XML snippet below with default namespaces:
 
 ```xml
 <book xmlns="http://example.com/book">
-    <id>0</id>
+    <id>601970</id>
     <title>string</title>
     <author>string</author>
 </book>
@@ -294,7 +292,7 @@ type Book record {
 Incorporating namespace validation yields:
 
 ```ballerina
-import ballerina/data.xml as xmldata;
+import ballerina/data.xmldata;
 
 @xmldata:Namespace {
     uri: "http://example.com/book"
@@ -310,7 +308,7 @@ Here is the same XML snippet with a namespace prefix:
 
 ```xml
 <bk:book xmlns:bk="http://example.com/book">
-    <bk:id>0</bk:id>
+    <bk:id>601970</bk:id>
     <bk:title>string</bk:title>
     <bk:author>string</bk:author>
 </bk:book>
@@ -319,17 +317,67 @@ Here is the same XML snippet with a namespace prefix:
 The translation into a Ballerina record would be:
 
 ```ballerina
-import ballerina/data.xml as xmldata;
+import ballerina/data.xmldata;
+
+@xmldata:Namespace {
+    prefix: "bk",
+    uri: "http://example.com/book"
+}
+type Book record {|
+    @xmldata:Namespace {
+        prefix: "bk",
+        uri: "http://example.com/book"
+    }
+    int id;
+    @xmldata:Namespace {
+        prefix: "bk",
+        uri: "http://example.com/book"
+    }
+    string title;
+    @xmldata:Namespace {
+        prefix: "bk",
+        uri: "http://example.com/book"
+    }
+    string author;
+|};
+```
+
+Here is the same XML snippet with a namespace prefix:
+
+```xml
+<bk:book xmlns:bk="http://example.com/book" xmlns:au="http://example.com/author">
+    <bk:id>601970</bk:id>
+    <bk:title>string</bk:title>
+    <au:author>string</au:author>
+</bk:book>
+```
+
+The translation into a Ballerina record would be:
+
+```ballerina
+import ballerina/data.xmldata;
 
 @xmldata:Namespace {
     uri: "http://example.com/book",
     prefix: "bk"
 }
-type Book record {
+type Book record {|
+    @xmldata:Namespace {
+        uri: "http://example.com/book",
+        prefix: "bk"
+    }
     int id;
+    @xmldata:Namespace {
+        uri: "http://example.com/book",
+        prefix: "bk"
+    }
     string title;
+    @xmldata:Namespace {
+        uri: "http://example.com/author",
+        prefix: "au"
+    }
     string author;
-};
+|};
 ```
 
 In these examples, the XML namespaces are appropriately acknowledged, ensuring the integrity of the XML structure within the Ballerina records.
@@ -342,7 +390,7 @@ Take the following XML snippet as an example:
 
 ```xml
 <book>
-    <id>0</id>
+    <id>601970</id>
     <title>string</title>
     <author>string</author>
     <author>string</author>
@@ -368,7 +416,7 @@ Take this XML snippet as an example:
 
 ```xml
 <book lang="en">
-    <id>0</id>
+    <id>601970</id>
     <title lang="en">string</title>
     <author>string</author>
     <price>10.5</price>

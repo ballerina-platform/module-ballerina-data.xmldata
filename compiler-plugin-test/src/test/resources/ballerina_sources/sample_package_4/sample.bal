@@ -10,4 +10,4 @@ type Person record {|
 |};
 
 string xmlStr = string `<Person><name>Kevin</name><address></address></Person>`;
-Person _ = check xmldata:fromXmlStringWithType(xmlStr);
+Person _ = check xmldata:parseString(xmlStr);

@@ -133,7 +133,7 @@ type InvoiceFullNS record {
 @test:Config
 function testNamespaceInvoiceFull() returns error? {
     stream<byte[], error?> dataStream = check io:fileReadBlocksAsStream("tests/resources/namespaced_invoice.xml");
-    InvoiceFullNS invoice = check fromXmlStringWithType(dataStream);
+    InvoiceFullNS invoice = check parseStream(dataStream);
 
     test:assertEquals(invoice.length(), 2, "Invoice count mismatched");
     test:assertEquals(invoice.products.length(), 1, "Products count mismatched");
@@ -188,7 +188,7 @@ function testNamespaceInvoiceFull() returns error? {
 @test:Config
 function testNamespaceInvoiceFullPlain() returns error? {
     stream<byte[], error?> dataStream = check io:fileReadBlocksAsStream("tests/resources/default_namespaced_invoice.xml");
-    InvoiceFullPlain invoice = check fromXmlStringWithType(dataStream);
+    InvoiceFullPlain invoice = check parseStream(dataStream);
 
     test:assertEquals(invoice.length(), 2, "Invoice count mismatched");
     test:assertEquals(invoice.products.length(), 1, "Products count mismatched");

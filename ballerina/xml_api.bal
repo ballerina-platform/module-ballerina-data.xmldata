@@ -30,11 +30,12 @@ public type NameConfig record {|
 |};
 
 # The annotation is used to specify the new name of the existing record name or field name according to the XML format.
-# When using `fromXmlStringWithType` or `fromXmlWithType`, this annotation can be used to validate the name of the XML element with the record field or type.
+# When using `parseString`, `parseBytes`, `parseStream`, `parseAsType`, this annotation can be used to 
+# validate the name of the XML element with the record field or type.
 # When using `toXml`, this annotation can be used to override the name of field or type.
 public const annotation NameConfig Name on type, record field;
 
-# Defines the namespace of the XML element
+# Defines the namespace of the XML element.
 #
 # + prefix - The value of the prefix of the namespace
 # + uri - The value of the URI of the namespace
@@ -44,18 +45,18 @@ public type NamespaceConfig record {|
 |};
 
 # The annotation is used to specify the namespace's prefix and URI of the XML element.
-# When using `fromXmlStringWithType` or `fromXmlWithType`, this annotation can be used to 
+# When using `parseString`, `parseBytes`, `parseStream`, `parseAsType`, this annotation can be used to 
 # validate the namespace of the XML element with the record field or type.
 # When using `toXml`, this annotation can be used to add the namespace to the XML element.
 public const annotation NamespaceConfig Namespace on type, record field;
 
 # The annotation is used to denote the field that is considered an attribute.
-# When using `fromXmlStringWithType` or `fromXmlWithType`, this annotation can be used to 
+# When using `parseString`, `parseBytes`, `parseStream`, `parseAsType`, this annotation can be used to 
 # indicate the record field as an attribute.
 # When using `toXml`, this annotation can be used to add the attribute to the XML element.
 public const annotation Attribute on record field;
 
-# Represent the options that can be used to modify the behaviour of conversion.
+# Represent the options that can be used to modify the behaviour of projection.
 #
 # + attributePrefix - prefix added for attribute fields in the record
 # + textFieldName - field name for the text field
@@ -64,7 +65,7 @@ public type Options record {|
     string textFieldName = "#content";
 |};
 
-# Represent the options that can be used to modify the behaviour of conversion in `fromXmlStringWithType` and `fromXmlWithType`.
+# Represent the options that can be used to modify the behaviour of projection.
 #
 # + allowDataProjection - enable or disable projection
 public type SourceOptions record {|
@@ -76,24 +77,41 @@ public type SourceOptions record {|
 # during the execution of xmldata APIs.
 public type Error distinct error;
 
-# Converts XML to record type with projection
+# Converts XML to record type with projection.
 #
 # + v - Source XML value 
 # + options - Options to be used for filtering in the projection
 # + t - Target type to be used for filtering in the projection
-# + return - On success, returns the given target type value, else returns an `xmldata:Error`
-public isolated function fromXmlWithType(xml v, SourceOptions options = {}, typedesc<record {}> t = <>)
+# + return - On success, returns the given target type value, else returns an `xmldata:Error` value
+public isolated function parseAsType(xml v, SourceOptions options = {}, typedesc<record {}> t = <>)
         returns t|Error = @java:Method {'class: "io.ballerina.stdlib.data.xmldata.xml.Native"} external;
 
-# Converts XML string, byte[] or byte-stream to record type with projection
+# Converts XML string to record type with projection.
 #
-# + s - Source XML string value or byte[] or byte-stream
+# + s - Source XML string value
 # + options - Options to be used for filtering in the projection
 # + t - Target type to be used for filtering in the projection
-# + return - On success, returns the given target type value, else returns an `xmldata:Error`
-public isolated function fromXmlStringWithType(string|byte[]|stream<byte[], error?> s, SourceOptions options = {}, typedesc<record {}> t = <>)
+# + return - On success, returns the given target type value, else returns an `xmldata:Error` value
+public isolated function parseString(string s, SourceOptions options = {}, typedesc<record {}> t = <>)
         returns t|Error = @java:Method {'class: "io.ballerina.stdlib.data.xmldata.xml.Native"} external;
 
+# Converts XML byte[] to record type with projection.
+#
+# + s - Source XML  byte[]
+# + options - Options to be used for filtering in the projection
+# + t - Target type to be used for filtering in the projection
+# + return - On success, returns the given target type value, else returns an `xmldata:Error` value
+public isolated function parseBytes(byte[] s, SourceOptions options = {}, typedesc<record {}> t = <>)
+        returns t|Error = @java:Method {'class: "io.ballerina.stdlib.data.xmldata.xml.Native"} external;
+
+# Converts XML byte-block-stream to record type with projection.
+#
+# + s - Source XML byte-block-stream
+# + options - Options to be used for filtering in the projection
+# + t - Target type to be used for filtering in the projection
+# + return - On success, returns the given target type value, else returns an `xmldata:Error` value
+public isolated function parseStream(stream<byte[], error?> s, SourceOptions options = {}, typedesc<record {}> t = <>)
+        returns t|Error = @java:Method {'class: "io.ballerina.stdlib.data.xmldata.xml.Native"} external;
 
 # Converts a `Map` or `Record` representation to its XML representation.
 # Additionally, when converting from a record, the `xmldata:Namespace`, `xmldata:Name`, and `xmldata:Attribute`

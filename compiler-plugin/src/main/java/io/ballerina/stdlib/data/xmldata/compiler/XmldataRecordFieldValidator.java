@@ -113,7 +113,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             }
 
             TypeSymbol typeSymbol = ((VariableSymbol) symbol.get()).typeDescriptor();
-            if (!isNotFromXmlFunctionFromXmldata(initializer.get())) {
+            if (!isParseFunctionFromXmldata(initializer.get())) {
                 validateAnnotationUsageInAllInlineExpectedTypes(typeSymbol, ctx);
                 continue;
             }
@@ -206,7 +206,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         }
         TypeSymbol typeSymbol = ((VariableSymbol) symbol.get()).typeDescriptor();
 
-        if (!isNotFromXmlFunctionFromXmldata(initializer.get())) {
+        if (!isParseFunctionFromXmldata(initializer.get())) {
             validateAnnotationUsageInAllInlineExpectedTypes(typeSymbol, ctx);
             return;
         }
@@ -378,7 +378,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         return moduleName.orElse("");
     }
 
-    private boolean isNotFromXmlFunctionFromXmldata(ExpressionNode expressionNode) {
+    private boolean isParseFunctionFromXmldata(ExpressionNode expressionNode) {
         if (expressionNode.kind() == SyntaxKind.CHECK_EXPRESSION) {
             expressionNode = ((CheckExpressionNode) expressionNode).expression();
         }
@@ -387,8 +387,8 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             return false;
         }
         String functionName = ((FunctionCallExpressionNode) expressionNode).functionName().toSourceCode().trim();
-        return functionName.contains(Constants.FROM_XML_STRING_WITH_TYPE)
-                || functionName.contains(Constants.FROM_XML_WITH_TYPE);
+        return functionName.contains(Constants.PARSE_STRING) || functionName.contains(Constants.PARSE_BYTES)
+                || functionName.contains(Constants.PARSE_STREAM) || functionName.contains(Constants.PARSE_AS_TYPE);
     }
 
     private void reportDiagnosticInfo(SyntaxNodeAnalysisContext ctx, Optional<Location> location,

@@ -21,7 +21,7 @@ import ballerina/test;
 }
 function testToXmlBasic1() returns error? {
     xml xmlVal = xml `<Data><A><B>1</B><B>2</B><C>6</C></A><A><B>3</B><B>4</B><C>5</C></A><D>5</D></Data>`;
-    Data rec1 = check fromXmlWithType(xmlVal);
+    Data rec1 = check parseAsType(xmlVal);
     xml result1 = check toXml(rec1);
     test:assertTrue(result1 == xmlVal);
 }
@@ -31,12 +31,12 @@ function testToXmlBasic1() returns error? {
 }
 function testToXmlBasic2() returns error? {
     xml xmlVal1 = xml `<Data1><A>1</A></Data1>`;
-    Data1 rec1 = check fromXmlWithType(xmlVal1);
+    Data1 rec1 = check parseAsType(xmlVal1);
     xml result1 = check toXml(rec1);
     test:assertTrue(result1 == xmlVal1);
 
     xml xmlVal2 = xml `<Data2><A>1</A></Data2>`;
-    Data2 rec2 = check fromXmlWithType(xmlVal2);
+    Data2 rec2 = check parseAsType(xmlVal2);
     xml result2 = check toXml(rec2);
     test:assertTrue(result2 == xmlVal2);
 }
@@ -46,17 +46,17 @@ function testToXmlBasic2() returns error? {
 }
 function testToXmlBasic3() returns error? {
     xml xmlval1 = xml `<Data3><A>1</A><B>2</B></Data3>`;
-    Data3 rec1 = check fromXmlWithType(xmlval1);
+    Data3 rec1 = check parseAsType(xmlval1);
     xml result1 = check toXml(rec1);
     test:assertTrue(result1 == xmlval1);
 
     xml xmlVal2 = xml `<Data3><A>1</A><B>2</B></Data3>`;
-    Data4 rec2 = check fromXmlWithType(xmlVal2);
+    Data4 rec2 = check parseAsType(xmlVal2);
     xml result2 = check toXml(rec2);
     test:assertTrue(result2 == xmlVal2);
 
     xml xmlVal3 = xml `<Data5><A><B>1</B></A><A><B>2</B></A><A><B>3</B></A></Data5>`;
-    Data5 rec3 = check fromXmlWithType(xmlVal3);
+    Data5 rec3 = check parseAsType(xmlVal3);
     xml result3 = check toXml(rec3);
     test:assertTrue(result3 == xmlVal3);
 }
@@ -66,7 +66,7 @@ function testToXmlBasic3() returns error? {
 }
 function testToXmlBasic4() returns error? {
     xml xmlVal1 = xml `<Data6><A><D><C><D>1</D><D>2</D></C><C><D>3</D><D>4</D></C></D></A></Data6>`;
-    Data6 rec1 = check fromXmlWithType(xmlVal1);
+    Data6 rec1 = check parseAsType(xmlVal1);
     xml result = check toXml(rec1);
     test:assertTrue(result == xmlVal1);
 }
@@ -83,7 +83,7 @@ function testToXmlBasic5() returns error? {
             <C>2</C>
         </A>
     </Data>`;
-    Data7 rec1 = check fromXmlWithType(xmlVal1);
+    Data7 rec1 = check parseAsType(xmlVal1);
     xml result = check toXml(rec1);
     test:assertEquals(result, xml `<Data7><A><C>1</C></A><A><C>2</C></A></Data7>`);
 }
@@ -93,7 +93,7 @@ function testToXmlBasic5() returns error? {
 }
 function testToXmlWithNameAnnotation() returns error? {
     xml xmlVal1 = xml `<Data8><A><D><C><D>1</D><D>2</D></C><C><D>3</D><D>4</D></C></D></A></Data8>`;
-    Rec2 rec1 = check fromXmlWithType(xmlVal1);
+    Rec2 rec1 = check parseAsType(xmlVal1);
     xml result = check toXml(rec1);
     test:assertTrue(result == xmlVal1);
 }

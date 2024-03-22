@@ -43,36 +43,39 @@ import java.io.StringReader;
  */
 public class Native {
 
-    public static Object fromXmlWithType(BXml xml, BMap<BString, Object> options, BTypedesc typed) {
+    public static Object parseAsType(BXml xml, BMap<BString, Object> options, BTypedesc typed) {
         try {
             return XmlTraversal.traverse(xml, options, typed.getDescribingType());
         } catch (Exception e) {
             return DiagnosticLog.getXmlError(e.getMessage());
         }
     }
-
-    public static Object fromXmlStringWithType(Environment env, Object xml, BMap<BString, Object> options,
-                                               BTypedesc typed) {
+    public static Object parseString(BString xml, BMap<BString, Object> options, BTypedesc typed) {
         try {
-            if (xml instanceof BString) {
-                return XmlParser.parse(new StringReader(((BString) xml).getValue()), options,
-                        typed.getDescribingType());
-            } else if (xml instanceof BArray) {
-                byte[] bytes = ((BArray) xml).getBytes();
-                return XmlParser.parse(new InputStreamReader(new ByteArrayInputStream(bytes)), options,
-                        typed.getDescribingType());
-            } else if (xml instanceof BStream) {
-                final BObject iteratorObj = ((BStream) xml).getIteratorObj();
-                final Future future = env.markAsync();
-                DataReaderTask task = new DataReaderTask(env, iteratorObj, future, options, typed);
-                DataReaderThreadPool.EXECUTOR_SERVICE.submit(task);
-                return null;
-            } else {
-                return DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE);
-            }
+            return XmlParser.parse(new StringReader(xml.getValue()), options, typed.getDescribingType());
         } catch (Exception e) {
             return DiagnosticLog.error(DiagnosticErrorCode.XML_PARSE_ERROR, e.getMessage());
         }
     }
 
+    public static Object parseBytes(BArray xml, BMap<BString, Object> options, BTypedesc typed) {
+        try {
+            return XmlParser.parse(new InputStreamReader(new ByteArrayInputStream(xml.getBytes())), options,
+                    typed.getDescribingType());
+        } catch (Exception e) {
+            return DiagnosticLog.error(DiagnosticErrorCode.XML_PARSE_ERROR, e.getMessage());
+        }
+    }
+
+    public static Object parseStream(Environment env, BStream xml, BMap<BString, Object> options, BTypedesc typed) {
+        try {
+            final BObject iteratorObj = xml.getIteratorObj();
+            final Future future = env.markAsync();
+            DataReaderTask task = new DataReaderTask(env, iteratorObj, future, typed, options);
+            DataReaderThreadPool.EXECUTOR_SERVICE.submit(task);
+            return null;
+        } catch (Exception e) {
+            return DiagnosticLog.error(DiagnosticErrorCode.XML_PARSE_ERROR, e.getMessage());
+        }
+    }
 }

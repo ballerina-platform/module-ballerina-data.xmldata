@@ -31,7 +31,7 @@ type Address record {|
 |};
 
 @test:Config
-function testAttributePrefixForFromXmlStringWithType() returns error? {
+function testAttributePrefixForParseString() returns error? {
     string xmlStr1 = string `
         <Employee age="26">
             <name>Kanth</name>
@@ -41,7 +41,7 @@ function testAttributePrefixForFromXmlStringWithType() returns error? {
             </address>
         </Employee>
     `;
-    Employee e = check fromXmlStringWithType(xmlStr1, sOptions1);
+    Employee e = check parseString(xmlStr1, sOptions1);
     test:assertEquals(e.name, "Kanth");
     test:assertEquals(e.\@age, 26);
     test:assertEquals(e.address.city, "Colombo");
@@ -50,7 +50,7 @@ function testAttributePrefixForFromXmlStringWithType() returns error? {
 }
 
 @test:Config
-function testAttributePrefixForFromXmlWithType() returns error? {
+function testAttributePrefixForParseAsType() returns error? {
     xml xmlVal = xml `
         <Employee age="26">
             <name>Kanth</name>
@@ -60,7 +60,7 @@ function testAttributePrefixForFromXmlWithType() returns error? {
             </address>
         </Employee>
     `;
-    Employee e = check fromXmlWithType(xmlVal, sOptions1);
+    Employee e = check parseAsType(xmlVal, sOptions1);
     test:assertEquals(e.name, "Kanth");
     test:assertEquals(e.\@age, 26);
     test:assertEquals(e.address.city, "Colombo");
@@ -85,13 +85,13 @@ type Author record {|
 |};
 
 @test:Config
-function testTextFieldNameWithFromXmlStringWithtype() returns error? {
+function testTextFieldNameWithParseString() returns error? {
     string xmlStr = string `<Book>
             <title>Clean Code</title>
             <year>2008</year>
             <author age="55">Robert C. Martin</author>
         </Book>`;
-    Book b = check fromXmlStringWithType(xmlStr, sOptions2);
+    Book b = check parseString(xmlStr, sOptions2);
     test:assertEquals(b.title.value, "Clean Code");
     test:assertEquals(b.year, 2008);
     test:assertEquals(b.author.value, "Robert C. Martin");
@@ -103,18 +103,18 @@ function testTextFieldNameWithFromXmlStringWithtype() returns error? {
     string xmlStr2 = string `<author value="55">Robert C. Martin</author>`;
     record {|
         string value;
-    |} author = check fromXmlStringWithType(xmlStr2, sOptions2);
+    |} author = check parseString(xmlStr2, sOptions2);
     test:assertEquals(author.value, "Robert C. Martin");
 }
 
 @test:Config
-function testTextFieldNameWithFromXmlWithtype() returns error? {
+function testTextFieldNameWithParseAsType() returns error? {
     xml xmlVal = xml `<Book>
             <title>Clean Code</title>
             <year>2008</year>
             <author age="55">Robert C. Martin</author>
         </Book>`;
-    Book b = check fromXmlWithType(xmlVal, sOptions2);
+    Book b = check parseAsType(xmlVal, sOptions2);
     test:assertEquals(b.title.value, "Clean Code");
     test:assertEquals(b.year, 2008);
     test:assertEquals(b.author.value, "Robert C. Martin");
@@ -126,7 +126,7 @@ function testTextFieldNameWithFromXmlWithtype() returns error? {
     xml xmlVal2 = xml `<author value="55">Robert C. Martin</author>`;
     record {|
         string value;
-    |} author = check fromXmlWithType(xmlVal2, sOptions2);
+    |} author = check parseAsType(xmlVal2, sOptions2);
     test:assertEquals(author.value, "Robert C. Martin");
 }
 
@@ -135,7 +135,7 @@ SourceOptions sOptions4 = {attributePrefix: "@", allowDataProjection: false};
 SourceOptions sOptions5 = {textFieldName: "value", allowDataProjection: false};
 
 @test:Config
-function testDisableProjectionForFromXmlStringWithTypeNegative() returns error? {
+function testDisableProjectionForParseStringNegative() returns error? {
     string xmlStr1 = string `
         <Employee age="26">
             <name>Kanth</name>
@@ -146,11 +146,11 @@ function testDisableProjectionForFromXmlStringWithTypeNegative() returns error? 
             <title>Software Engineer</title>
         </Employee>
     `;
-    Employee|error e = fromXmlStringWithType(xmlStr1, sOptions3);
+    Employee|error e = parseString(xmlStr1, sOptions3);
     test:assertTrue(e is error);
     test:assertEquals((<error>e).message(), "undefined field 'age' in record 'data.xmldata:Employee'");
 
-    Employee|error e2 = fromXmlStringWithType(xmlStr1, sOptions4);
+    Employee|error e2 = parseString(xmlStr1, sOptions4);
     test:assertTrue(e2 is error);
     test:assertEquals((<error>e2).message(), "undefined field 'title' in record 'data.xmldata:Employee'");
 
@@ -163,26 +163,26 @@ function testDisableProjectionForFromXmlStringWithTypeNegative() returns error? 
             </address>
         </Employee>
     `;
-    Employee|error e3 = fromXmlStringWithType(xmlStr2, sOptions4);
+    Employee|error e3 = parseString(xmlStr2, sOptions4);
     test:assertTrue(e3 is error);
     test:assertEquals((<error>e3).message(), "undefined field '@title' in record 'data.xmldata:Employee'");
 
     string xmlStr3 = string `<author age="55">Robert C. Martin</author>`;
     record {|
         int age;
-    |}|error e4 = fromXmlStringWithType(xmlStr3, sOptions5);
+    |}|error e4 = parseString(xmlStr3, sOptions5);
     test:assertTrue(e4 is error);
     test:assertEquals((<error>e4).message(), "undefined field 'value' in record 'data.xmldata:record {| int age; |}'");
 
     record {|
         int age;
-    |}|error e5 = fromXmlStringWithType(xmlStr3, sOptions3);
+    |}|error e5 = parseString(xmlStr3, sOptions3);
     test:assertTrue(e5 is error);
     test:assertEquals((<error>e5).message(), "undefined field '#content' in record 'data.xmldata:record {| int age; |}'");
 }
 
 @test:Config
-function testDisableProjectionForFromXmlWithTypeNegative() returns error? {
+function testDisableProjectionForParseAsTypeNegative() returns error? {
     xml xmlVal1 = xml `
         <Employee age="26">
             <name>Kanth</name>
@@ -193,11 +193,11 @@ function testDisableProjectionForFromXmlWithTypeNegative() returns error? {
             <title>Software Engineer</title>
         </Employee>
     `;
-    Employee|error e = fromXmlWithType(xmlVal1, sOptions3);
+    Employee|error e = parseAsType(xmlVal1, sOptions3);
     test:assertTrue(e is error);
     test:assertEquals((<error>e).message(), "undefined field 'age' in record 'data.xmldata:Employee'");
 
-    Employee|error e2 = fromXmlWithType(xmlVal1, sOptions4);
+    Employee|error e2 = parseAsType(xmlVal1, sOptions4);
     test:assertTrue(e2 is error);
     test:assertEquals((<error>e2).message(), "undefined field 'title' in record 'data.xmldata:Employee'");
 
@@ -210,20 +210,20 @@ function testDisableProjectionForFromXmlWithTypeNegative() returns error? {
             </address>
         </Employee>
     `;
-    Employee|error e3 = fromXmlWithType(xmlVal2, sOptions4);
+    Employee|error e3 = parseAsType(xmlVal2, sOptions4);
     test:assertTrue(e3 is error);
     test:assertEquals((<error>e3).message(), "undefined field '@title' in record 'data.xmldata:Employee'");
 
     xml xmlVal3 = xml `<author age="55">Robert C. Martin</author>`;
     record {|
         int age;
-    |}|error e4 = fromXmlWithType(xmlVal3, sOptions5);
+    |}|error e4 = parseAsType(xmlVal3, sOptions5);
     test:assertTrue(e4 is error);
     test:assertEquals((<error>e4).message(), "undefined field 'value' in record 'data.xmldata:record {| int age; |}'");
 
     record {|
         int age;
-    |}|error e5 = fromXmlWithType(xmlVal3, sOptions3);
+    |}|error e5 = parseAsType(xmlVal3, sOptions3);
     test:assertTrue(e5 is error);
     test:assertEquals((<error>e5).message(), "undefined field '#content' in record 'data.xmldata:record {| int age; |}'");
 }
@@ -236,13 +236,13 @@ type Record1 record {|
 |};
 
 @test:Config
-function testDisableProjectionInArrayForFromXmlStringWithTypeNegative() {
+function testDisableProjectionInArrayForParseStringNegative() {
     string xmlStr = string `<DataProj>
         <A><B>1</B></A>
         <A><B>2</B></A>
         <A><B>3</B></A>
     </DataProj>`;
-    DataProj|Error err1 = fromXmlStringWithType(xmlStr, sOptions3);
+    DataProj|Error err1 = parseString(xmlStr, sOptions3);
     test:assertTrue(err1 is Error);
     test:assertEquals((<error> err1).message(), "array size is not compatible with the expected size");
 
@@ -256,7 +256,7 @@ function testDisableProjectionInArrayForFromXmlStringWithTypeNegative() {
         <B>Tommy</B>
     </Data>
     `;
-    Record1|Error err2 = fromXmlStringWithType(xmlStr2, sOptions3);
+    Record1|Error err2 = parseString(xmlStr2, sOptions3);
     test:assertTrue(err2 is Error);
     test:assertEquals((<error> err2).message(), "array size is not compatible with the expected size");
 
@@ -270,7 +270,7 @@ function testDisableProjectionInArrayForFromXmlStringWithTypeNegative() {
         <B>James</B>
     </Data>
     `;
-    Record1|Error err3 = fromXmlStringWithType(xmlStr3, sOptions3);
+    Record1|Error err3 = parseString(xmlStr3, sOptions3);
     test:assertTrue(err3 is Error);
     test:assertEquals((<error> err3).message(), "array size is not compatible with the expected size");
 
@@ -288,19 +288,19 @@ function testDisableProjectionInArrayForFromXmlStringWithTypeNegative() {
     record {
         json[1] Employee;
         anydata[2] Departments;
-    }|error rec = fromXmlStringWithType(xmlStr4, sOptions3);
+    }|error rec = parseString(xmlStr4, sOptions3);
     test:assertTrue(rec is error);
     test:assertEquals((<error>rec).message(), "array size is not compatible with the expected size");
 }
 
 @test:Config
-function testDisableProjectionInArrayForFromXmlWithTypeNegative() {
+function testDisableProjectionInArrayForParseAsTypeNegative() {
     xml xmlVal1 = xml `<DataProj>
         <A><B>1</B></A>
         <A><B>2</B></A>
         <A><B>3</B></A>
     </DataProj>`;
-    DataProj|Error err1 = fromXmlWithType(xmlVal1, sOptions3);
+    DataProj|Error err1 = parseAsType(xmlVal1, sOptions3);
     test:assertTrue(err1 is Error);
     test:assertEquals((<error> err1).message(), "array size is not compatible with the expected size");
 
@@ -314,7 +314,7 @@ function testDisableProjectionInArrayForFromXmlWithTypeNegative() {
         <B>Tommy</B>
     </Data>
     `;
-    Record1|Error err2 = fromXmlWithType(xmlVal2, sOptions3);
+    Record1|Error err2 = parseAsType(xmlVal2, sOptions3);
     test:assertTrue(err2 is Error);
     test:assertEquals((<error> err2).message(), "array size is not compatible with the expected size");
 
@@ -328,7 +328,7 @@ function testDisableProjectionInArrayForFromXmlWithTypeNegative() {
         <B>James</B>
     </Data>
     `;
-    Record1|Error err3 = fromXmlWithType(xmlVal3, sOptions3);
+    Record1|Error err3 = parseAsType(xmlVal3, sOptions3);
     test:assertTrue(err3 is Error);
     test:assertEquals((<error> err3).message(), "array size is not compatible with the expected size");
 
@@ -346,7 +346,7 @@ function testDisableProjectionInArrayForFromXmlWithTypeNegative() {
     record {
         json[1] Employee;
         anydata[2] Departments;
-    }|error rec = fromXmlWithType(xmlVal4, sOptions3);
+    }|error rec = parseAsType(xmlVal4, sOptions3);
     test:assertTrue(rec is error);
     test:assertEquals((<error>rec).message(), "array size is not compatible with the expected size");
 }
@@ -375,7 +375,7 @@ type Book1 record {|
 |};
 
 @test:Config
-function testComplexOptionsForFromXmlStringWithType() returns error? {
+function testComplexOptionsForParseString() returns error? {
     string xmlStr = string `
         <Library>
             <Book>
@@ -401,7 +401,7 @@ function testComplexOptionsForFromXmlStringWithType() returns error? {
             </address>
         </Library>
     `;
-    Library l = check fromXmlStringWithType(xmlStr, sOptions6);
+    Library l = check parseString(xmlStr, sOptions6);
     test:assertEquals(l.books[0].title.value, "Clean Code");
     test:assertEquals(l.books[0].year, 2008);
     test:assertEquals(l.books[0].author.value, "Robert C. Martin");
@@ -421,7 +421,7 @@ function testComplexOptionsForFromXmlStringWithType() returns error? {
 }
 
 @test:Config
-function testComplexOptionsForFromXmlStringWithTypeNegative() returns error? {
+function testComplexOptionsForParseStringNegative() returns error? {
     string xmlStr = string `
         <Library>
             <Book>
@@ -448,7 +448,7 @@ function testComplexOptionsForFromXmlStringWithTypeNegative() returns error? {
             </address>
         </Library>
     `;
-    Library|error l = fromXmlStringWithType(xmlStr, sOptions6);
+    Library|error l = parseString(xmlStr, sOptions6);
     test:assertTrue(l is error);
     test:assertEquals((<error>l).message(), "undefined field 'street' in record 'data.xmldata:Address'");
 }

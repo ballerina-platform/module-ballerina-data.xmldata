@@ -49,13 +49,13 @@ public class DataReaderTask implements Runnable {
     private final BTypedesc typed;
     private final BMap<BString, Object> options;
 
-    public DataReaderTask(Environment env, BObject iteratorObj, Future future, BMap<BString, Object> options,
-                          BTypedesc typed) {
+    public DataReaderTask(Environment env, BObject iteratorObj, Future future, BTypedesc typed,
+                          BMap<BString, Object> options) {
         this.env = env;
         this.iteratorObj = iteratorObj;
         this.future = future;
-        this.options = options;
         this.typed = typed;
+        this.options = options;
     }
 
     static MethodType resolveNextMethod(BObject iterator) {

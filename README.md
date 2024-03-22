@@ -14,7 +14,7 @@ This library is the refined successor of the `ballerina/xmldata` module, incorpo
 
 ### Converting an XML value to a Record value
 
-To convert an XML value to a Record value, you can utilize the `fromXmlWithType` function provided by the library. The example below showcases the transformation of an XML value into a Record value.
+To convert an XML value to a Record value, you can utilize the `parseAsType` function provided by the library. The example below showcases the transformation of an XML value into a Record value.
 
 ```ballerina
 import ballerina/data.xmldata;
@@ -27,7 +27,7 @@ public function main() returns error? {
         <author>string</author>
     </book>`;
 
-    Book book = check xmldata:fromXmlWithType(data);
+    Book book = check xmldata:parseAsType(data);
     io:println(book);
 }
 
@@ -40,7 +40,7 @@ type Book record {
 
 ### Converting an external XML document to a Record value
 
-For transforming XML content from an external source into a Record value, the `fromXmlStringWithType` function can be used. This external source can be in the form of a string or a byte array/byte stream that houses the XML data. This is commonly extracted from files or network sockets. The example below demonstrates the conversion of an XML value from an external source into a Record value.
+For transforming XML content from an external source into a Record value, the `parseString`, `parseBytes`, `parseStream` functions can be used. This external source can be in the form of a string or a byte array/byte-block-stream that houses the XML data. This is commonly extracted from files or network sockets. The example below demonstrates the conversion of an XML value from an external source into a Record value.
 
 ```ballerina
 import ballerina/data.xmldata;
@@ -48,7 +48,7 @@ import ballerina/io;
 
 public function main() returns error? {
     string xmlContent = check io:fileReadString("path/to/file.xml");
-    Book book = check xmldata:fromXmlStringWithType(xmlContent);
+    Book book = check xmldata:parseString(xmlContent);
     io:println(book);
 }
 

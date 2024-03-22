@@ -11,7 +11,7 @@ record {|
         value: "A"
     }
     string b;
-|} _ = check xmldata:fromXmlStringWithType(xmlStr);
+|} _ = check xmldata:parseString(xmlStr);
 
 record {|
     @xmldata:Name {
@@ -34,7 +34,7 @@ function testFunction() returns error? {
             value: "A"
         }
         string b;
-    |} _ = check xmldata:fromXmlStringWithType(xmlStr);
+    |} _ = check xmldata:parseString(xmlStr);
 
     record {|
         @xmldata:Name {
