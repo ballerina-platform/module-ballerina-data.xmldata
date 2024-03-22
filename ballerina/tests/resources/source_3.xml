@@ -1,0 +1,29 @@
+<library xmlns:bk="http://example.com/books" xmlns:auth="http://example.com/authors">
+    <bk:book id="1">
+        <bk:title>The Catcher in the Rye</bk:title>
+        <bk:author id="101" auth:nationality="American">
+            <auth:first_name>J.D.</auth:first_name>
+            <auth:last_name>Salinger</auth:last_name>
+        </bk:author>
+        <bk:genre>Fiction</bk:genre>
+        <bk:publication_year>1951</bk:publication_year>
+    </bk:book>
+    <bk:book id="2">
+        <bk:title>1984</bk:title>
+        <bk:author id="102" auth:nationality="British">
+            <auth:first_name>George</auth:first_name>
+            <auth:last_name>Orwell</auth:last_name>
+        </bk:author>
+        <bk:genre>Dystopian</bk:genre>
+        <bk:publication_year>1949</bk:publication_year>
+    </bk:book>
+    <bk:book id="3">
+        <bk:title>The Lord of the Rings</bk:title>
+        <bk:author id="103" auth:nationality="British">
+            <auth:first_name>J.R.R.</auth:first_name>
+            <auth:last_name>Tolkien</auth:last_name>
+        </bk:author>
+        <bk:genre>Fantasy</bk:genre>
+        <bk:publication_year>1954</bk:publication_year>
+    </bk:book>
+</library>

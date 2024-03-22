@@ -1,0 +1,20 @@
+<movies>
+    <movie id="1">
+        <title>American Beauty</title>
+        <director>Sam Mendes</director>
+        <genre>Drama</genre>
+        <release_year>1999</release_year>
+    </movie>
+    <movie id="2">
+        <title>The Shawshank Redemption</title>
+        <director>Frank Darabont</director>
+        <genre>Drama</genre>
+        <release_year>1994</release_year>
+    </movie>
+    <movie id="3">
+        <title>Forrest Gump</title>
+        <director>Robert Zemeckis</director>
+        <genre>Drama</genre>
+        <release_year>1994</release_year>
+    </movie>
+</movies>

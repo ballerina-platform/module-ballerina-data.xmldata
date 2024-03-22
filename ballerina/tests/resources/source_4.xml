@@ -1,0 +1,70 @@
+<orders xmlns="http://example.com/orders" xmlns:cust="http://example.com/customers" xmlns:prod="http://example.com/products">
+    <order order_id="123456" date="2024-03-22T10:30:00" cust:customer_id="987654">
+        <cust:customer_info>
+            <cust:name>John Doe</cust:name>
+            <cust:email>john.doe@example.com</cust:email>
+            <cust:address>
+                <cust:street>123 Main St</cust:street>
+                <cust:city>Anytown</cust:city>
+                <cust:state>CA</cust:state>
+                <cust:zip>12345</cust:zip>
+                <cust:country>USA</cust:country>
+            </cust:address>
+        </cust:customer_info>
+        <products>
+            <prod:product prod:product_id="789" prod:quantity="2">
+                <prod:name>Laptop</prod:name>
+                <prod:price currency="USD">999.99</prod:price>
+            </prod:product>
+            <prod:product prod:product_id="456" prod:quantity="1">
+                <prod:name>Printer</prod:name>
+                <prod:price currency="USD">199.99</prod:price>
+            </prod:product>
+        </products>
+        <payment>
+            <method>credit_card</method>
+            <amount currency="USD">2199.97</amount>
+            <card>
+                <card_type>VISA</card_type>
+                <card_number>1234 5678 9012 3456</card_number>
+                <expiration_date>2026-12</expiration_date>
+            </card>
+        </payment>
+        <status>completed</status>
+    </order>
+    <order order_id="789012" date="2024-03-22T11:45:00" cust:customer_id="543210">
+        <cust:customer_info>
+            <cust:name>Jane Smith</cust:name>
+            <cust:email>jane.smith@example.com</cust:email>
+            <cust:address>
+                <cust:street>456 Oak Ave</cust:street>
+                <cust:city>Smalltown</cust:city>
+                <cust:state>NY</cust:state>
+                <cust:zip>54321</cust:zip>
+                <cust:country>USA</cust:country>
+            </cust:address>
+        </cust:customer_info>
+        <products>
+            <prod:product prod:product_id="123" prod:quantity="3">
+                <prod:name>Smartphone</prod:name>
+                <prod:price currency="USD">799.99</prod:price>
+            </prod:product>
+            <prod:product prod:product_id="234" prod:quantity="2">
+                <prod:name>Tablet</prod:name>
+                <prod:price currency="USD">499.99</prod:price>
+            </prod:product>
+            <prod:product prod:product_id="345" prod:quantity="1">
+                <prod:name>Smart Watch</prod:name>
+                <prod:price currency="USD">299.99</prod:price>
+            </prod:product>
+        </products>
+        <payment>
+            <method>paypal</method>
+            <amount currency="USD">3499.94</amount>
+            <paypal>
+                <email>jane.smith@example.com</email>
+            </paypal>
+        </payment>
+        <status>pending</status>
+    </order>
+</orders>

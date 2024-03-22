@@ -41,7 +41,7 @@ function testXmlStringToRecord1() returns error? {
             <C>5</C>
         </A>
     </Data>`;
-    Data rec1 = check parseString(xmlStr);
+    Data rec1 = check parseString(xmlStr, {});
 
     test:assertEquals(rec1.A.length(), 2);
     test:assertEquals(rec1.A[0].B.length(), 2);
@@ -62,7 +62,7 @@ function testXmlStringToRecord1() returns error? {
 }
 function testXmlToRecord1() returns error? {
     xml xmlVal = xml `<Data><A><B>1</B><B>2</B><C>6</C></A><D>5</D><A><B>3</B><B>4</B><C>5</C></A></Data>`;
-    Data rec1 = check parseAsType(xmlVal);
+    Data rec1 = check parseAsType(xmlVal, {});
 
     test:assertEquals(rec1.A.length(), 2);
     test:assertEquals(rec1.A[0].B.length(), 2);
@@ -93,7 +93,7 @@ type Data2 record {|
 }
 function testXmlStringToRecord2() returns error? {
     string xmlStr1 = "<Data1><A>1</A></Data1>";
-    Data1 rec1 = check parseString(xmlStr1);
+    Data1 rec1 = check parseString(xmlStr1, {});
     test:assertEquals(rec1.A.\#content, "1");
 
     string xmlStr2 = "<Data2><A>1</A></Data2>";
@@ -142,7 +142,7 @@ type Data5 record {|
 }
 function testXmlStringToRecord3() returns error? {
     string xmlStr1 = "<Data3><A>1</A><B>2</B></Data3>";
-    Data3 rec1 = check parseString(xmlStr1);
+    Data3 rec1 = check parseString(xmlStr1, {});
     test:assertEquals(rec1.A.\#content, "1");
     test:assertEquals(rec1.B.\#content, 2);
 
