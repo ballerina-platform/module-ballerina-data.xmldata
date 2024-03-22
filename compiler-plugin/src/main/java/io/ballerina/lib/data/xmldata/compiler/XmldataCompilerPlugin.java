@@ -16,11 +16,20 @@
  * under the License.
  */
 
-module io.ballerina.stdlib.data {
-    requires io.ballerina.runtime;
-    requires io.ballerina.lang.value;
-    requires java.xml;
-    requires junit;
-    requires org.apache.commons.lang3;
-    exports io.ballerina.lib.data.xmldata.xml;
+package io.ballerina.lib.data.xmldata.compiler;
+
+import io.ballerina.projects.plugins.CompilerPlugin;
+import io.ballerina.projects.plugins.CompilerPluginContext;
+
+/**
+ * Compiler plugin for Xmldata's utils functions.
+ *
+ * @since 0.1.0
+ */
+public class XmldataCompilerPlugin extends CompilerPlugin {
+
+    @Override
+    public void init(CompilerPluginContext compilerPluginContext) {
+        compilerPluginContext.addCodeAnalyzer(new XmldataCodeAnalyzer());
+    }
 }

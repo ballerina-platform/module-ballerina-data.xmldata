@@ -84,7 +84,7 @@ public type Error distinct error;
 # + t - Target type to be used for filtering in the projection
 # + return - On success, returns the given target type value, else returns an `xmldata:Error` value
 public isolated function parseAsType(xml v, SourceOptions options = {}, typedesc<record {}> t = <>)
-        returns t|Error = @java:Method {'class: "io.ballerina.stdlib.data.xmldata.xml.Native"} external;
+        returns t|Error = @java:Method {'class: "io.ballerina.lib.data.xmldata.xml.Native"} external;
 
 # Converts XML string to record type with projection.
 #
@@ -93,7 +93,7 @@ public isolated function parseAsType(xml v, SourceOptions options = {}, typedesc
 # + t - Target type to be used for filtering in the projection
 # + return - On success, returns the given target type value, else returns an `xmldata:Error` value
 public isolated function parseString(string s, SourceOptions options = {}, typedesc<record {}> t = <>)
-        returns t|Error = @java:Method {'class: "io.ballerina.stdlib.data.xmldata.xml.Native"} external;
+        returns t|Error = @java:Method {'class: "io.ballerina.lib.data.xmldata.xml.Native"} external;
 
 # Converts XML byte[] to record type with projection.
 #
@@ -102,7 +102,7 @@ public isolated function parseString(string s, SourceOptions options = {}, typed
 # + t - Target type to be used for filtering in the projection
 # + return - On success, returns the given target type value, else returns an `xmldata:Error` value
 public isolated function parseBytes(byte[] s, SourceOptions options = {}, typedesc<record {}> t = <>)
-        returns t|Error = @java:Method {'class: "io.ballerina.stdlib.data.xmldata.xml.Native"} external;
+        returns t|Error = @java:Method {'class: "io.ballerina.lib.data.xmldata.xml.Native"} external;
 
 # Converts XML byte-block-stream to record type with projection.
 #
@@ -111,7 +111,7 @@ public isolated function parseBytes(byte[] s, SourceOptions options = {}, typede
 # + t - Target type to be used for filtering in the projection
 # + return - On success, returns the given target type value, else returns an `xmldata:Error` value
 public isolated function parseStream(stream<byte[], error?> s, SourceOptions options = {}, typedesc<record {}> t = <>)
-        returns t|Error = @java:Method {'class: "io.ballerina.stdlib.data.xmldata.xml.Native"} external;
+        returns t|Error = @java:Method {'class: "io.ballerina.lib.data.xmldata.xml.Native"} external;
 
 # Converts a `Map` or `Record` representation to its XML representation.
 # Additionally, when converting from a record, the `xmldata:Namespace`, `xmldata:Name`, and `xmldata:Attribute`
@@ -152,7 +152,7 @@ isolated function convertMapXml(map<xml>|map<xml[]> mapValue) returns xml {
 }
 
 isolated function getModifiedRecord(map<anydata> mapValue, string textFieldName, typedesc<(map<anydata>|json)> inputType)
-    returns json|record{}|Error = @java:Method {'class: "io.ballerina.stdlib.data.xmldata.utils.DataUtils"} external;
+    returns json|record{}|Error = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.DataUtils"} external;
 
 # Provides configurations for converting JSON to XML.
 #

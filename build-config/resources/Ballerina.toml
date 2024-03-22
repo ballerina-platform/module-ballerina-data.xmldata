@@ -10,7 +10,7 @@ distribution = "2201.8.6"
 export = ["data.xmldata"]
 
 [[platform.java17.dependency]]
-groupId = "io.ballerina.stdlib"
+groupId = "io.ballerina.lib"
 artifactId = "data-native"
 version = "@toml.version@"
 path = "../native/build/libs/data.xmldata-native-@project.version@.jar"
