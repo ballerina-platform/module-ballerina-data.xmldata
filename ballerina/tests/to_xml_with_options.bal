@@ -36,14 +36,14 @@ function testTextFieldNameForToXml() returns error? {
         }
     };
     xml xmlBook = check toXml(book, options1);
-    test:assertEquals(xmlBook, xml`<Book><title>Clean Code</title><year>2008</year><author age="55">Robert C. Martin</author></Book>`);
+    test:assertEquals(xmlBook, xml `<Book><title>Clean Code</title><year>2008</year><author age="55">Robert C. Martin</author></Book>`);
 
     Person person = {
         \#content: "Kanth",
         age: 26
     };
     xml xmlPerson = check toXml(person);
-    test:assertEquals(xmlPerson, xml`<Person age="26">Kanth</Person>`);
+    test:assertEquals(xmlPerson, xml `<Person age="26">Kanth</Person>`);
 }
 
 type EmployeeNew record {|
@@ -67,7 +67,7 @@ function testAttributePrefixForToXml() returns error? {
             city: "Colombo",
             country: "Sri Lanka",
             \@zip: "10280"
-        }    
+        }
     };
     xml xmlEmployee1 = check toXml(employee1, options2);
     test:assertEquals(xmlEmployee1, xml `<Employee><name>Kanth</name><age>26</age><address><city>Colombo</city><country>Sri Lanka</country><zip>10280</zip></address></Employee>`);
@@ -78,7 +78,7 @@ function testAttributePrefixForToXml() returns error? {
         address: {
             city: "Colombo",
             \@zip: "10280"
-        }    
+        }
     };
     xml xmlEmployee2 = check toXml(employee2, options2);
     test:assertEquals(xmlEmployee2, xml `<EmployeeNew age="26"><name>Kanth</name><address zip="10280"><city>Colombo</city></address></EmployeeNew>`);
@@ -87,7 +87,7 @@ function testAttributePrefixForToXml() returns error? {
 type City record {|
     string \@name;
     string \@country;
-    Place[] place; 
+    Place[] place;
 |};
 
 type Place record {|

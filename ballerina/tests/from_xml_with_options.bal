@@ -13,7 +13,6 @@
 // KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 import ballerina/test;
 
 SourceOptions sOptions1 = {attributePrefix: "@"};
@@ -229,7 +228,9 @@ function testDisableProjectionForParseAsTypeNegative() returns error? {
 }
 
 type IntArray int[2];
+
 type StringArray string[3];
+
 type Record1 record {|
     IntArray A;
     StringArray B;
@@ -244,7 +245,7 @@ function testDisableProjectionInArrayForParseStringNegative() {
     </DataProj>`;
     DataProj|Error err1 = parseString(xmlStr, sOptions3);
     test:assertTrue(err1 is Error);
-    test:assertEquals((<error> err1).message(), "array size is not compatible with the expected size");
+    test:assertEquals((<error>err1).message(), "array size is not compatible with the expected size");
 
     string xmlStr2 = string `
     <Data>
@@ -258,7 +259,7 @@ function testDisableProjectionInArrayForParseStringNegative() {
     `;
     Record1|Error err2 = parseString(xmlStr2, sOptions3);
     test:assertTrue(err2 is Error);
-    test:assertEquals((<error> err2).message(), "array size is not compatible with the expected size");
+    test:assertEquals((<error>err2).message(), "array size is not compatible with the expected size");
 
     string xmlStr3 = string `
     <Data>
@@ -272,7 +273,7 @@ function testDisableProjectionInArrayForParseStringNegative() {
     `;
     Record1|Error err3 = parseString(xmlStr3, sOptions3);
     test:assertTrue(err3 is Error);
-    test:assertEquals((<error> err3).message(), "array size is not compatible with the expected size");
+    test:assertEquals((<error>err3).message(), "array size is not compatible with the expected size");
 
     string xmlStr4 = string `<Company>
                         <Employee age="30">
@@ -302,7 +303,7 @@ function testDisableProjectionInArrayForParseAsTypeNegative() {
     </DataProj>`;
     DataProj|Error err1 = parseAsType(xmlVal1, sOptions3);
     test:assertTrue(err1 is Error);
-    test:assertEquals((<error> err1).message(), "array size is not compatible with the expected size");
+    test:assertEquals((<error>err1).message(), "array size is not compatible with the expected size");
 
     xml xmlVal2 = xml `
     <Data>
@@ -316,7 +317,7 @@ function testDisableProjectionInArrayForParseAsTypeNegative() {
     `;
     Record1|Error err2 = parseAsType(xmlVal2, sOptions3);
     test:assertTrue(err2 is Error);
-    test:assertEquals((<error> err2).message(), "array size is not compatible with the expected size");
+    test:assertEquals((<error>err2).message(), "array size is not compatible with the expected size");
 
     xml xmlVal3 = xml `
     <Data>
@@ -330,7 +331,7 @@ function testDisableProjectionInArrayForParseAsTypeNegative() {
     `;
     Record1|Error err3 = parseAsType(xmlVal3, sOptions3);
     test:assertTrue(err3 is Error);
-    test:assertEquals((<error> err3).message(), "array size is not compatible with the expected size");
+    test:assertEquals((<error>err3).message(), "array size is not compatible with the expected size");
 
     xml xmlVal4 = xml `<Company>
                         <Employee age="30">

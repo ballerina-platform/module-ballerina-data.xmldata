@@ -2232,7 +2232,7 @@ function testJsonAsFieldTypeWiThParseAsType() returns error? {
     test:assertEquals(rec3.length(), 1);
     test:assertEquals(rec3.name, "WSO2");
 
-      xml xmlVal4 = xml `<Company>
+    xml xmlVal4 = xml `<Company>
                         <Employee age="30">
                             <Name>John Doe</Name>
                         </Employee>
@@ -2672,8 +2672,8 @@ function testRecordArrayAsRestTypeForParseString() returns error? {
         }[]...;
     |} rec1 = check parseString(xmlStr1);
     test:assertEquals(rec1.length(), 2);
-    test:assertEquals(rec1.get("A"), [{C:"A_C_1", D:"A_D_1"},{C:"A_C_2", D:"A_D_2"}]);
-    test:assertEquals(rec1.get("B"), [{C:"B_C_1", D:"B_D_1"},{C:"B_C_2", D:"B_D_2"}]);
+    test:assertEquals(rec1.get("A"), [{C: "A_C_1", D: "A_D_1"}, {C: "A_C_2", D: "A_D_2"}]);
+    test:assertEquals(rec1.get("B"), [{C: "B_C_1", D: "B_D_1"}, {C: "B_C_2", D: "B_D_2"}]);
 
     string xmlStr2 = string `
     <Data>
