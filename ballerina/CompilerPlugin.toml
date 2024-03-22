@@ -1,6 +1,6 @@
 [plugin]
 id = "constraint-compiler-plugin"
-class = "io.ballerina.stdlib.data.xmldata.compiler.XmldataCompilerPlugin"
+class = "io.ballerina.lib.data.xmldata.compiler.XmldataCompilerPlugin"
 
 [[dependency]]
 path = "../compiler-plugin/build/libs/data.xmldata-compiler-plugin-0.1.0-SNAPSHOT.jar"
