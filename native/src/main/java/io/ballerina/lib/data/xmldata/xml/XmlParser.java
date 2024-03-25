@@ -518,7 +518,7 @@ public class XmlParser {
                 updateNextArrayMember(xmlStreamReader, xmlParserData, fieldName, fieldType, referredType);
             }
             case TypeTags.MAP_TAG, TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG ->
-                    updateNextMap(xmlParserData, fieldName, fieldType);
+                    intializeAttributesForNextMappingValue(xmlParserData, fieldName, fieldType);
         }
     }
 
@@ -528,19 +528,20 @@ public class XmlParser {
             case TypeTags.RECORD_TYPE_TAG -> updateNextRecord(xmlStreamReader, xmlParserData, fieldName,
                     fieldType, (RecordType) type);
             case TypeTags.MAP_TAG, TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG ->
-                    updateNextMap(xmlParserData, fieldName, fieldType);
+                    intializeAttributesForNextMappingValue(xmlParserData, fieldName, fieldType);
         }
     }
 
-    private void updateNextMap(XmlParserData xmlParserData, String fieldName, Type fieldType) {
+    private void intializeAttributesForNextMappingValue(XmlParserData xmlParserData, String fieldName, Type fieldType) {
         xmlParserData.parents.push(xmlParserData.siblings);
         xmlParserData.siblings = new LinkedHashMap<>();
-        BMap<BString, Object> nextMapValue = updateNextMapValue(xmlParserData, fieldName, fieldType);
+        BMap<BString, Object> nextMapValue = updateNextMappingValue(xmlParserData, fieldName, fieldType);
         handleAttributesRest(xmlStreamReader, fieldType, nextMapValue);
         xmlParserData.currentNode = nextMapValue;
     }
 
-    private BMap<BString, Object> updateNextMapValue(XmlParserData xmlParserData, String fieldName, Type fieldType) {
+    private BMap<BString, Object> updateNextMappingValue(XmlParserData xmlParserData, String fieldName,
+                                                         Type fieldType) {
         BMap<BString, Object> nextValue;
         Type type = fieldType;
         if (fieldType.getTag() == TypeTags.ARRAY_TAG) {

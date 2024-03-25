@@ -2786,6 +2786,32 @@ function testProjectionWithJsonArrayOrAnydataArrayForParseString() returns error
     test:assertEquals(rec.Departments, ["Engineering", "Hr"]);
 }
 
+type ProjectionRec2 record {|
+    string A;
+|};
+
+@test:Config
+function testProjectionWithXmlAttributeForParseString() returns error? {
+    string xmlStr = string `<Data>
+                    <A a="attribute_a">2</A>
+                    <B><C c="attribute_c">3</C></B>
+                </Data>`;
+    ProjectionRec2 rec = check parseString(xmlStr);
+    test:assertEquals(rec.length(), 1);
+    test:assertEquals(rec.A, "2");
+}
+
+@test:Config
+function testProjectionWithXmlAttributeForParseAsType() returns error? {
+    xml xmlVal = xml `<Data>
+                    <A a="attribute_a">2</A>
+                    <B><C c="attribute_c">3</C></B>
+                </Data>`;
+    ProjectionRec2 rec = check parseAsType(xmlVal);
+    test:assertEquals(rec.length(), 1);
+    test:assertEquals(rec.A, "2");
+}
+
 // Negative cases
 type DataN1 record {|
     int A;
