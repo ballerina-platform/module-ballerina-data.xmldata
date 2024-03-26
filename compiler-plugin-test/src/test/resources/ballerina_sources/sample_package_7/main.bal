@@ -6,7 +6,7 @@ record {|
     () B;
     ()[] C;
     record {||}?[] D;
-|} _ = check xmldata:fromXmlStringWithType(xmlStr);
+|} _ = check xmldata:parseString(xmlStr);
 
 function testFunction() returns error? {
     record {|
@@ -14,5 +14,5 @@ function testFunction() returns error? {
         () B;
         ()[] C;
         record {||}?[] D;
-    |} _ = check xmldata:fromXmlStringWithType(xmlStr);
+    |} _ = check xmldata:parseString(xmlStr);
 }

@@ -12,5 +12,5 @@ type Data record {|
 
 function testFunction() returns error? {
     string xmlStr = string `<Data><A>1</A><B>2</B></Data>`;
-    Data _ = check xmldata:fromXmlStringWithType(xmlStr);
+    Data _ = check xmldata:parseString(xmlStr);
 }

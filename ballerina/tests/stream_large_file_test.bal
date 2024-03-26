@@ -60,7 +60,7 @@ const LARGE_XML_FILE = "build//resources//large_data.xml";
 @test:Config
 function testLargeFileStreamWithNamespace() returns error? {
     stream<byte[], error?> dataStream = check io:fileReadBlocksAsStream(LARGE_XML_FILE);
-    SimpleInvoiceNS invoice = check fromXmlStringWithType(dataStream);
+    SimpleInvoiceNS invoice = check parseStream(dataStream);
 
     test:assertEquals(invoice.customers.length(), 1, "Invalid number of customers fields");
     test:assertEquals(invoice.customers.cust.length(), 10, "Invalid customers/customer length");
@@ -94,7 +94,7 @@ type SimpleCustomer record {|
 @test:Config
 function testLargeFileStream() returns error? {
     stream<byte[], error?> dataStream = check io:fileReadBlocksAsStream(LARGE_XML_FILE);
-    SimpleInvoice invoice = check fromXmlStringWithType(dataStream);
+    SimpleInvoice invoice = check parseStream(dataStream);
 
     test:assertEquals(invoice.customers.length(), 1, "Invalid number of customers fields");
     test:assertEquals(invoice.customers.customer.length(), 100001, "Invalid customers/customer length");

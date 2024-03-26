@@ -8,7 +8,7 @@ record {|
     }
     string A;
     string B;
-|}|map<int>|error rec1 = xmldata:fromXmlStringWithType(xmlStr);
+|}|map<int>|error rec1 = xmldata:parseString(xmlStr);
 
 record {|
     @xmldata:Name {
@@ -25,7 +25,7 @@ public function main() {
         }
         string A;
         string B;
-    |}|map<int>|error rec3 = xmldata:fromXmlStringWithType(xmlStr);
+    |}|map<int>|error rec3 = xmldata:parseString(xmlStr);
 
     record {|
         @xmldata:Name {

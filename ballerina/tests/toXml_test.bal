@@ -21,7 +21,7 @@ import ballerina/test;
 }
 function testToXmlBasic1() returns error? {
     xml xmlVal = xml `<Data><A><B>1</B><B>2</B><C>6</C></A><A><B>3</B><B>4</B><C>5</C></A><D>5</D></Data>`;
-    Data rec1 = check fromXmlWithType(xmlVal);
+    Data rec1 = check parseAsType(xmlVal);
     xml result1 = check toXml(rec1);
     test:assertTrue(result1 == xmlVal);
 }
@@ -31,12 +31,12 @@ function testToXmlBasic1() returns error? {
 }
 function testToXmlBasic2() returns error? {
     xml xmlVal1 = xml `<Data1><A>1</A></Data1>`;
-    Data1 rec1 = check fromXmlWithType(xmlVal1);
+    Data1 rec1 = check parseAsType(xmlVal1);
     xml result1 = check toXml(rec1);
     test:assertTrue(result1 == xmlVal1);
 
     xml xmlVal2 = xml `<Data2><A>1</A></Data2>`;
-    Data2 rec2 = check fromXmlWithType(xmlVal2);
+    Data2 rec2 = check parseAsType(xmlVal2);
     xml result2 = check toXml(rec2);
     test:assertTrue(result2 == xmlVal2);
 }
@@ -46,17 +46,17 @@ function testToXmlBasic2() returns error? {
 }
 function testToXmlBasic3() returns error? {
     xml xmlval1 = xml `<Data3><A>1</A><B>2</B></Data3>`;
-    Data3 rec1 = check fromXmlWithType(xmlval1);
+    Data3 rec1 = check parseAsType(xmlval1);
     xml result1 = check toXml(rec1);
     test:assertTrue(result1 == xmlval1);
 
     xml xmlVal2 = xml `<Data3><A>1</A><B>2</B></Data3>`;
-    Data4 rec2 = check fromXmlWithType(xmlVal2);
+    Data4 rec2 = check parseAsType(xmlVal2);
     xml result2 = check toXml(rec2);
     test:assertTrue(result2 == xmlVal2);
 
     xml xmlVal3 = xml `<Data5><A><B>1</B></A><A><B>2</B></A><A><B>3</B></A></Data5>`;
-    Data5 rec3 = check fromXmlWithType(xmlVal3);
+    Data5 rec3 = check parseAsType(xmlVal3);
     xml result3 = check toXml(rec3);
     test:assertTrue(result3 == xmlVal3);
 }
@@ -66,7 +66,7 @@ function testToXmlBasic3() returns error? {
 }
 function testToXmlBasic4() returns error? {
     xml xmlVal1 = xml `<Data6><A><D><C><D>1</D><D>2</D></C><C><D>3</D><D>4</D></C></D></A></Data6>`;
-    Data6 rec1 = check fromXmlWithType(xmlVal1);
+    Data6 rec1 = check parseAsType(xmlVal1);
     xml result = check toXml(rec1);
     test:assertTrue(result == xmlVal1);
 }
@@ -83,7 +83,7 @@ function testToXmlBasic5() returns error? {
             <C>2</C>
         </A>
     </Data>`;
-    Data7 rec1 = check fromXmlWithType(xmlVal1);
+    Data7 rec1 = check parseAsType(xmlVal1);
     xml result = check toXml(rec1);
     test:assertEquals(result, xml `<Data7><A><C>1</C></A><A><C>2</C></A></Data7>`);
 }
@@ -93,7 +93,7 @@ function testToXmlBasic5() returns error? {
 }
 function testToXmlWithNameAnnotation() returns error? {
     xml xmlVal1 = xml `<Data8><A><D><C><D>1</D><D>2</D></C><C><D>3</D><D>4</D></C></D></A></Data8>`;
-    Rec2 rec1 = check fromXmlWithType(xmlVal1);
+    Rec2 rec1 = check parseAsType(xmlVal1);
     xml result = check toXml(rec1);
     test:assertTrue(result == xmlVal1);
 }
@@ -107,14 +107,14 @@ function testToXmlWithNameSpaceAnnotation1() returns error? {
     test:assertEquals(result, xml `<x:foo xmlns:x="example.com">1</x:foo>`);
 }
 
-@test:Config{
+@test:Config {
     groups: ["toXml"]
 }
 
 function testToXmlWithNameSpaceAnnotation2() returns error? {
     NSRec3 rec = {bar: {baz: "2"}};
     xml result = check toXml(rec);
-    test:assertEquals(result.toString(), 
+    test:assertEquals(result.toString(),
         string `<x:foo xmlns:x="example.com"><x:bar><baz xmlns="example2.com">2</baz></x:bar></x:foo>`);
 }
 
@@ -144,7 +144,7 @@ isolated function testDefaultRecordToXml2() returns error? {
     record {int id; string name;} data = {id: 30, name: "Asha"};
     xml result = check toXml(data);
     test:assertEquals(result, xml `<root><id>30</id><name>Asha</name></root>`,
-                      msg = "testDefaultRecordToXml2 result incorrect");
+                    msg = "testDefaultRecordToXml2 result incorrect");
 }
 
 @test:Config {
@@ -163,7 +163,7 @@ isolated function testMapStringToXml2() returns error? {
     map<string> data = {"id": "30", "name": "Asha"};
     xml result = check toXml(data);
     test:assertEquals(result, xml `<root><id>30</id><name>Asha</name></root>`,
-                      msg = "testMapStringToXml2 result incorrect");
+                    msg = "testMapStringToXml2 result incorrect");
 }
 
 @Name {
@@ -595,9 +595,9 @@ isolated function testRecordArrayToXml2() returns error? {
 }
 isolated function testMapTableToXml1() returns error? {
     table<map<string>> tableValue = table [
-            {key: "value", key1: "value1"},
-            {key2: "value2", key3: "value3"}
-        ];
+        {key: "value", key1: "value1"},
+        {key2: "value2", key3: "value3"}
+    ];
     map<table<map<string>>> data = {
         data: tableValue
     };
@@ -663,11 +663,11 @@ type BookStore6 record {
     string storeName;
     int postalCode;
     boolean isOpen;
-    @Name{
+    @Name {
         value: "address"
     }
     Address6 add;
-    @Name{
+    @Name {
         value: "codes"
     }
     Codes6 codeValues;
@@ -684,7 +684,7 @@ type Address6 record {
 };
 
 type Codes6 record {
-    @Name{
+    @Name {
         value: "item"
     }
     int[] items;
@@ -777,13 +777,13 @@ type Purchased_Address record {
 isolated function testRecordWithNamespaceAnnotationToXml() returns error? {
     Purchased_Bill input = {
         PurchasedItems: {
-                PLine: [
-                    {ItemCode: "223345", Count: 10},
-                    {ItemCode: "223300", Count: 7},
-                    {
-                        ItemCode: {discount: "22%", \#content: "200777"},
-                        Count: 7
-                    }
+            PLine: [
+                {ItemCode: "223345", Count: 10},
+                {ItemCode: "223300", Count: 7},
+                {
+                    ItemCode: {discount: "22%", \#content: "200777"},
+                    Count: 7
+                }
             ]
         },
         Address: {
@@ -825,7 +825,7 @@ isolated function testRecordWithNamespaceAnnotationToXml() returns error? {
     uri: "example.com"
 }
 type Purchased_Bill1 record {
-    @Name{
+    @Name {
         value: "PurchasedItems"
     }
     Purchased_Items1 PurchasedItem;
@@ -865,18 +865,18 @@ type Purchased_ItemCode1 record {
 }
 isolated function testRecordWithNamaspaceAnnotationToXml1() returns error? {
     Purchased_Bill1 input = {
-            PurchasedItem: {
-                    PLine: [
-                        {ItemCode: "223345", Count: 10},
-                        {ItemCode: "223300", Count: 7},
-                        {
-                            ItemCode: {discount: "22%", \#content: "200777"},
-                            Count: 7
-                        }
-                    ]
-            },
-            attr: "attr-val"
-        };
+        PurchasedItem: {
+            PLine: [
+                {ItemCode: "223345", Count: 10},
+                {ItemCode: "223300", Count: 7},
+                {
+                    ItemCode: {discount: "22%", \#content: "200777"},
+                    Count: 7
+                }
+            ]
+        },
+        attr: "attr-val"
+    };
     string expected =
         "<Purchased_Bill1 xmlns=\"example.com\" xmlns:ns=\"ns.com\" ns:attr=\"attr-val\">" +
             "<ns0:PurchasedItems xmlns:ns0=\"example.com\">" +
@@ -943,18 +943,18 @@ type Purchased_ItemCode2 record {
 }
 isolated function testRecordWithNamaspaceAnnotationToXml2() returns error? {
     Purchased_Bill2 input = {
-            PurchasedItems: {
-                    pLine: [
-                        {itemCode: "223345", count: 10},
-                        {itemCode: "223300", count: 7},
-                        {
-                            itemCode: {discount: "22%", \#content: "200777"},
-                            count: 7
-                        }
-                    ]
-            },
-            attr: "attr-val"
-        };
+        PurchasedItems: {
+            pLine: [
+                {itemCode: "223345", count: 10},
+                {itemCode: "223300", count: 7},
+                {
+                    itemCode: {discount: "22%", \#content: "200777"},
+                    count: 7
+                }
+            ]
+        },
+        attr: "attr-val"
+    };
     string expected =
         "<ns0:Purchased_Bill2 xmlns:ns0=\"example.com\" xmlns:ns=\"ns.com\" ns:attr=\"attr-val\">" +
             "<ns1:PurchasedItems xmlns:ns1=\"example1.com\">" +
@@ -1033,9 +1033,9 @@ type Items record {
 isolated function testRecordWithAnnotationToXml7() returns error? {
     Invoices1 data = {
         items: [
-                   {itemCode: "223345", count: 1},
-                   {itemCode: "223300", count: 7}
-               ],
+            {itemCode: "223345", count: 1},
+            {itemCode: "223300", count: 7}
+        ],
         id: 1,
         attr: "attr-val"
     };
@@ -1121,13 +1121,13 @@ type PurchasedAddress record {
 isolated function testRecordWithNamespaceAnnotationToXml1() returns error? {
     Example input = {
         PurchasedItems: {
-                PLine: [
-                    {ItemCode: "223345", Count: 10, attr: "1"},
-                    {ItemCode: "223300", Count: 7},
-                    {
-                        ItemCode: {discount: "22%", \#content: "200777"},
-                        Count: 7
-                    }
+            PLine: [
+                {ItemCode: "223345", Count: 10, attr: "1"},
+                {ItemCode: "223300", Count: 7},
+                {
+                    ItemCode: {discount: "22%", \#content: "200777"},
+                    Count: 7
+                }
             ]
         },
         Address: {
@@ -1140,27 +1140,27 @@ isolated function testRecordWithNamespaceAnnotationToXml1() returns error? {
     };
     string expected =
         "<nso:PurchasedBill xmlns:nso=\"example.com\" xmlns:ns=\"ns.com\" ns:attr=\"attr-val\">" +
-         	"<ns1:PurchasedPurchase xmlns:ns1=\"example1.com\">" +
-         		"<ns1:PLine xmlns:ns2=\"example1.com\" attr=\"1\">" +
-         			"<ItemCode>223345</ItemCode>" +
-         			"<Count>10</Count>" +
-         		"</ns1:PLine>" +
-         		"<ns1:PLine xmlns:ns2=\"example1.com\">" +
-         			"<ItemCode>223300</ItemCode>" +
-         			"<Count>7</Count>" +
-         		"</ns1:PLine>" +
-         			"<ns1:PLine xmlns:ns2=\"example1.com\">" +
-         				"<ns1:ItemCode xmlns:ns3=\"example1.com\" discount=\"22%\">200777</ns1:ItemCode>" +
-         				"<Count>7</Count>" +
-         			"</ns1:PLine>" +
-         		"</ns1:PurchasedPurchase>" +
-         		"<Address xmlns=\"example3.com\">" +
-         			"<StreetAddress>20, Palm grove, Colombo 3</StreetAddress>" +
-         			"<City>Colombo</City>" +
-         			"<Zip>300</Zip>" +
-         			"<Country>LK</Country>" +
-         		"</Address>" +
-         	"</nso:PurchasedBill>";
+        "<ns1:PurchasedPurchase xmlns:ns1=\"example1.com\">" +
+            "<ns1:PLine xmlns:ns2=\"example1.com\" attr=\"1\">" +
+            "<ItemCode>223345</ItemCode>" +
+            "<Count>10</Count>" +
+            "</ns1:PLine>" +
+            "<ns1:PLine xmlns:ns2=\"example1.com\">" +
+            "<ItemCode>223300</ItemCode>" +
+            "<Count>7</Count>" +
+            "</ns1:PLine>" +
+            "<ns1:PLine xmlns:ns2=\"example1.com\">" +
+            "<ns1:ItemCode xmlns:ns3=\"example1.com\" discount=\"22%\">200777</ns1:ItemCode>" +
+            "<Count>7</Count>" +
+            "</ns1:PLine>" +
+            "</ns1:PurchasedPurchase>" +
+            "<Address xmlns=\"example3.com\">" +
+            "<StreetAddress>20, Palm grove, Colombo 3</StreetAddress>" +
+            "<City>Colombo</City>" +
+            "<Zip>300</Zip>" +
+            "<Country>LK</Country>" +
+            "</Address>" +
+        "</nso:PurchasedBill>";
     xml result = check toXml(input);
     test:assertEquals(result.toString(), expected, msg = "testComplexRecordToXml result incorrect");
 }
@@ -1174,5 +1174,5 @@ function testMapXmltoXmlNegative() {
         "value1": 2
     };
     xml|Error result = toXml(data);
-    test:assertEquals((<Error> result).message(), "unsupported input type");
+    test:assertEquals((<Error>result).message(), "unsupported input type");
 }

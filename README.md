@@ -14,7 +14,7 @@ This library is the refined successor of the `ballerina/xmldata` module, incorpo
 
 ### Converting an XML value to a Record value
 
-To convert an XML value to a Record value, you can utilize the `fromXmlWithType` function provided by the library. The example below showcases the transformation of an XML value into a Record value.
+To convert an XML value to a Record value, you can utilize the `parseAsType` function provided by the library. The example below showcases the transformation of an XML value into a Record value.
 
 ```ballerina
 import ballerina/data.xmldata;
@@ -27,7 +27,7 @@ public function main() returns error? {
         <author>string</author>
     </book>`;
 
-    Book book = check xmldata:fromXmlWithType(data);
+    Book book = check xmldata:parseAsType(data);
     io:println(book);
 }
 
@@ -40,7 +40,7 @@ type Book record {
 
 ### Converting an external XML document to a Record value
 
-For transforming XML content from an external source into a Record value, the `fromXmlStringWithType` function can be used. This external source can be in the form of a string or a byte array/byte stream that houses the XML data. This is commonly extracted from files or network sockets. The example below demonstrates the conversion of an XML value from an external source into a Record value.
+For transforming XML content from an external source into a Record value, the `parseString`, `parseBytes`, `parseStream` functions can be used. This external source can be in the form of a string or a byte array/byte-block-stream that houses the XML data. This is commonly extracted from files or network sockets. The example below demonstrates the conversion of an XML value from an external source into a Record value.
 
 ```ballerina
 import ballerina/data.xmldata;
@@ -48,7 +48,7 @@ import ballerina/io;
 
 public function main() returns error? {
     string xmlContent = check io:fileReadString("path/to/file.xml");
-    Book book = check xmldata:fromXmlStringWithType(xmlContent);
+    Book book = check xmldata:parseString(xmlContent);
     io:println(book);
 }
 
@@ -320,18 +320,22 @@ The translation into a Ballerina record would be:
 import ballerina/data.xmldata;
 
 @xmldata:Namespace {
+    prefix: "bk",
     uri: "http://example.com/book"
 }
 type Book record {|
     @xmldata:Namespace {
+        prefix: "bk",
         uri: "http://example.com/book"
     }
     int id;
     @xmldata:Namespace {
+        prefix: "bk",
         uri: "http://example.com/book"
     }
     string title;
     @xmldata:Namespace {
+        prefix: "bk",
         uri: "http://example.com/book"
     }
     string author;
@@ -445,7 +449,7 @@ The process of projecting XML data into a record supports various use cases, inc
 
 ## Issues and projects
 
-Issues and Projects tabs are disabled for this repository as this is part of the Ballerina standard library. To report bugs, request new features, start new discussions, view project boards, etc. please visit Ballerina standard library [parent repository](https://github.com/ballerina-platform/ballerina-standard-library).
+Issues and Projects tabs are disabled for this repository as this is part of the Ballerina library. To report bugs, request new features, start new discussions, view project boards, etc. please visit Ballerina library [parent repository](https://github.com/ballerina-platform/ballerina-library).
 
 This repository only contains the source code for the package.
 
@@ -494,6 +498,5 @@ All contributors are encouraged to read the [Ballerina code of conduct](https://
 
 ## Useful links
 
-[//]: # (* For more information go to the [`xmldata` library]&#40;https://lib.ballerina.io/ballerina/data.xmldata/latest&#41;.)
 * Chat live with us via our [Discord server](https://discord.gg/ballerinalang).
 * Post all technical questions on Stack Overflow with the [#ballerina](https://stackoverflow.com/questions/tagged/ballerina) tag.
