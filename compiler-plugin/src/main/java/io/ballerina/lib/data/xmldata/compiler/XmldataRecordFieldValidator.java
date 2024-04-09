@@ -41,7 +41,9 @@ import io.ballerina.compiler.syntax.tree.FunctionDefinitionNode;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.ModulePartNode;
 import io.ballerina.compiler.syntax.tree.ModuleVariableDeclarationNode;
+import io.ballerina.compiler.syntax.tree.NameReferenceNode;
 import io.ballerina.compiler.syntax.tree.Node;
+import io.ballerina.compiler.syntax.tree.QualifiedNameReferenceNode;
 import io.ballerina.compiler.syntax.tree.SyntaxKind;
 import io.ballerina.compiler.syntax.tree.TypeDefinitionNode;
 import io.ballerina.compiler.syntax.tree.VariableDeclarationNode;
@@ -386,6 +388,16 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         if (expressionNode.kind() != SyntaxKind.FUNCTION_CALL) {
             return false;
         }
+
+        NameReferenceNode nameReferenceNode = ((FunctionCallExpressionNode) expressionNode).functionName();
+        if (nameReferenceNode.kind() != SyntaxKind.QUALIFIED_NAME_REFERENCE) {
+            return false;
+        }
+        String prefix = ((QualifiedNameReferenceNode) nameReferenceNode).modulePrefix().text();
+        if (!prefix.equals(Constants.XMLDATA)) {
+            return false;
+        }
+
         String functionName = ((FunctionCallExpressionNode) expressionNode).functionName().toSourceCode().trim();
         return functionName.contains(Constants.PARSE_STRING) || functionName.contains(Constants.PARSE_BYTES)
                 || functionName.contains(Constants.PARSE_STREAM) || functionName.contains(Constants.PARSE_AS_TYPE);
