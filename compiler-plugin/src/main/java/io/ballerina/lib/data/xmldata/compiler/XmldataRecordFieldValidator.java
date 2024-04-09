@@ -393,7 +393,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         if (nameReferenceNode.kind() != SyntaxKind.QUALIFIED_NAME_REFERENCE) {
             return false;
         }
-        String prefix = ((QualifiedNameReferenceNode) nameReferenceNode).modulePrefix().toString();
+        String prefix = ((QualifiedNameReferenceNode) nameReferenceNode).modulePrefix().text();
         if (!prefix.equals(Constants.XMLDATA)) {
             return false;
         }
