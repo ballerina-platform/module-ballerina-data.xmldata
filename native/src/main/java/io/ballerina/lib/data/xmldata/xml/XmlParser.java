@@ -471,18 +471,31 @@ public class XmlParser {
 
     private void readElement(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
         QualifiedName elemQName = getElementName(xmlStreamReader);
+        Map<QualifiedName, Field> fieldMap = xmlParserData.fieldHierarchy.peek();
         // Assume type of record field `name` is `string[]` and
         // relevant source position is `<ns1:name>1<ns1:name><ns2:name>1<ns2:name>`
-        for (QualifiedName key : xmlParserData.fieldHierarchy.peek().keySet()) {
+        Field currentField = null;
+        String localPartName = null;
+        for (QualifiedName key : fieldMap.keySet()) {
             if (key.equals(elemQName)) {
                 elemQName = key;
+                currentField = fieldMap.get(key);
+                localPartName = currentField.getFieldName();
                 break;
             }
+
+            if (key.getLocalPart().equals(elemQName.getLocalPart())) {
+                localPartName = key.getLocalPart();
+            }
         }
-        Field currentField = xmlParserData.fieldHierarchy.peek().get(elemQName);
+
         xmlParserData.currentField = currentField;
-        if (xmlParserData.currentField == null) {
+        if (currentField == null) {
             if (xmlParserData.restTypes.peek() != null) {
+                if (localPartName != null) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, elemQName.getLocalPart(),
+                            xmlParserData.rootRecord);
+                }
                 xmlParserData.currentNode = handleRestField(xmlParserData);
             } else if (!xmlParserData.allowDataProjection) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, elemQName.getLocalPart(),

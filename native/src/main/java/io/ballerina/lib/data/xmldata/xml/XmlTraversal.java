@@ -162,12 +162,25 @@ public class XmlTraversal {
         @SuppressWarnings("unchecked")
         private void convertElement(BXmlItem xmlItem, XmlAnalyzerData analyzerData) {
             QualifiedName elementName = DataUtils.getElementName(xmlItem.getQName());
-            Field currentField = analyzerData.fieldHierarchy.peek().get(elementName);
+            Map<QualifiedName, Field> fieldMap = analyzerData.fieldHierarchy.peek();
+            String localPartName = null;
+            for (QualifiedName key : fieldMap.keySet()) {
+                if (key.getLocalPart().equals(elementName.getLocalPart())) {
+                    localPartName = key.getLocalPart();
+                    break;
+                }
+            }
+
+            Field currentField = fieldMap.get(elementName);
             analyzerData.currentField = currentField;
 
             if (currentField == null) {
                 Type restType = analyzerData.restTypes.peek();
                 if (restType != null) {
+                    if (localPartName != null) {
+                        throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, elementName.getLocalPart(),
+                                analyzerData.rootRecord);
+                    }
                     convertWithRestType(xmlItem, restType, analyzerData);
                 } else if (!analyzerData.allowDataProjection) {
                     throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, elementName.getLocalPart(),
