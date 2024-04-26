@@ -264,7 +264,7 @@ public class XmlParser {
                 }
                 return;
             } else {
-                currentField = xmlParserData.fieldHierarchy.peek().removeElement(contentQName);
+                currentField = xmlParserData.fieldHierarchy.peek().remove(contentQName);
             }
         }
 
@@ -949,7 +949,7 @@ public class XmlParser {
             QName attributeQName = xmlStreamReader.getAttributeName(i);
             QualifiedName attQName = new QualifiedName(attributeQName.getNamespaceURI(),
                     xmlParserData.attributePrefix + attributeQName.getLocalPart(), attributeQName.getPrefix());
-            Field field = xmlParserData.attributeHierarchy.peek().removeElement(attQName);
+            Field field = xmlParserData.attributeHierarchy.peek().remove(attQName);
             if (field == null) {
                 Optional<Field> f = getFieldFromFieldHierarchy(attQName, xmlParserData);
                 if (f.isEmpty()) {

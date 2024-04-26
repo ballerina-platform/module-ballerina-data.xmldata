@@ -114,7 +114,7 @@ public class XmlTraversal {
             if (currentField == null) {
                 QualifiedName contentQName = new QualifiedName("", textFieldName, "");
                 if (analyzerData.fieldHierarchy.peek().contains(contentQName)) {
-                    currentField = analyzerData.fieldHierarchy.peek().removeElement(contentQName);
+                    currentField = analyzerData.fieldHierarchy.peek().remove(contentQName);
                 } else if (analyzerData.restTypes.peek() != null) {
                     currentField = TypeCreator.createField(analyzerData.restTypes.peek(),
                             analyzerData.textFieldName, SymbolFlags.REQUIRED);
@@ -543,7 +543,7 @@ public class XmlTraversal {
                 BString key = entry.getKey();
                 QualifiedName attribute = getAttributePreservingNamespace(nsPrefixMap, key.getValue(),
                         analyzerData.attributePrefix);
-                Field field = analyzerData.attributeHierarchy.peek().removeElement(attribute);
+                Field field = analyzerData.attributeHierarchy.peek().remove(attribute);
                 if (field == null) {
                     if (innerElements.contains(attribute.getLocalPart())) {
                         // Element and Attribute have same name. Priority given to element.

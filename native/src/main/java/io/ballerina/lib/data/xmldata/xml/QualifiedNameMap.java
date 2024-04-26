@@ -21,7 +21,7 @@ public class QualifiedNameMap<V> {
         return members;
     }
 
-    public V removeElement(QualifiedName qName) {
+    public V remove(QualifiedName qName) {
         V field = members.remove(qName);
         if (field == null) {
             Map<String, List<QualifiedName>> fields = stringToQNameMap;
