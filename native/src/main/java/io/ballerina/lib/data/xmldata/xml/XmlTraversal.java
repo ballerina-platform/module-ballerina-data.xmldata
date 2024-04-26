@@ -113,9 +113,8 @@ public class XmlTraversal {
             String textFieldName = analyzerData.textFieldName;
             if (currentField == null) {
                 QualifiedName contentQName = new QualifiedName("", textFieldName, "");
-                Map<QualifiedName, Field> currentFieldMap = analyzerData.fieldHierarchy.peek();
-                if (currentFieldMap.containsKey(contentQName)) {
-                    currentField = currentFieldMap.remove(contentQName);
+                if (analyzerData.fieldHierarchy.peek().contains(contentQName)) {
+                    currentField = analyzerData.fieldHierarchy.peek().removeElement(contentQName);
                 } else if (analyzerData.restTypes.peek() != null) {
                     currentField = TypeCreator.createField(analyzerData.restTypes.peek(),
                             analyzerData.textFieldName, SymbolFlags.REQUIRED);
@@ -161,29 +160,22 @@ public class XmlTraversal {
 
         @SuppressWarnings("unchecked")
         private void convertElement(BXmlItem xmlItem, XmlAnalyzerData analyzerData) {
-            QualifiedName elementName = DataUtils.getElementName(xmlItem.getQName());
-            Map<QualifiedName, Field> fieldMap = analyzerData.fieldHierarchy.peek();
-            String localPartName = null;
-            for (QualifiedName key : fieldMap.keySet()) {
-                if (key.getLocalPart().equals(elementName.getLocalPart())) {
-                    localPartName = key.getLocalPart();
-                    break;
-                }
-            }
-
-            Field currentField = fieldMap.get(elementName);
+            QualifiedName elementQName = DataUtils.getElementName(xmlItem.getQName());
+            QualifiedNameMap<Field> fieldsMap = analyzerData.fieldHierarchy.peek();
+            Field currentField = fieldsMap.get(elementQName);
             analyzerData.currentField = currentField;
 
             if (currentField == null) {
                 Type restType = analyzerData.restTypes.peek();
+                String elementName = elementQName.getLocalPart();
                 if (restType != null) {
-                    if (localPartName != null) {
-                        throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, elementName.getLocalPart(),
+                    if (fieldsMap.contains(elementName)) {
+                        throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, elementName,
                                 analyzerData.rootRecord);
                     }
                     convertWithRestType(xmlItem, restType, analyzerData);
                 } else if (!analyzerData.allowDataProjection) {
-                    throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, elementName.getLocalPart(),
+                    throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, elementName,
                             analyzerData.rootRecord);
                 }
                 return;
@@ -264,8 +256,8 @@ public class XmlTraversal {
             } else {
                 analyzerData.restTypes.push(fieldType);
             }
-            analyzerData.fieldHierarchy.push(new HashMap<>());
-            analyzerData.attributeHierarchy.push(new HashMap<>());
+            analyzerData.fieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
+            analyzerData.attributeHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
         }
 
         private BMap<BString, Object> updateNextRecord(BXmlItem xmlItem, RecordType recordType, String fieldName,
@@ -382,7 +374,7 @@ public class XmlTraversal {
                 currentNode = nextValue;
                 handleAttributesRest(xmlItem, nextValue, restType);
 
-                analyzerData.fieldHierarchy.push(new HashMap<>());
+                analyzerData.fieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
                 if (restType.getTag() == TypeTags.ARRAY_TAG) {
                     Type memberType = ((ArrayType) restType).getElementType();
                     analyzerData.restTypes.push(memberType);
@@ -551,7 +543,7 @@ public class XmlTraversal {
                 BString key = entry.getKey();
                 QualifiedName attribute = getAttributePreservingNamespace(nsPrefixMap, key.getValue(),
                         analyzerData.attributePrefix);
-                Field field = analyzerData.attributeHierarchy.peek().remove(attribute);
+                Field field = analyzerData.attributeHierarchy.peek().removeElement(attribute);
                 if (field == null) {
                     if (innerElements.contains(attribute.getLocalPart())) {
                         // Element and Attribute have same name. Priority given to element.
