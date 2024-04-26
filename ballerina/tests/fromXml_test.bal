@@ -3144,3 +3144,47 @@ function testUnsupportedTypeNegative() {
     |}|error err3 = parseAsType(xmlVal2);
     test:assertEquals((<error>err3).message(), "unsupported input type");
 }
+
+@Namespace {
+    uri: "http://example.com/book"
+}
+type OpenBook record {
+    @Namespace {
+        uri: "http://example.com"
+    }
+    int id;
+    @Namespace {
+        uri: "http://example.com/book"
+    }
+    string title;
+    @Namespace {
+        uri: "http://example.com/book"
+    }
+    string author;
+};
+
+@test:Config
+function testInvalidNamespaceInOpenRecordForParseString() {
+    string xmldata = string `
+    <book xmlns="http://example.com/book">
+        <id>601970</id>
+        <title>string</title>
+        <author>string</author>
+    </book>`;
+    OpenBook|Error err = parseString(xmldata);
+    test:assertTrue(err is error);
+    test:assertEquals((<error>err).message(), "undefined field 'id' in record 'data.xmldata:OpenBook'");
+}
+
+@test:Config
+function testInvalidNamespaceInOpenRecordForParseAsType() {
+    xml xmldata = xml `
+    <book xmlns="http://example.com/book">
+        <id>601970</id>
+        <title>string</title>
+        <author>string</author>
+    </book>`;
+    OpenBook|Error err = parseAsType(xmldata);
+    test:assertTrue(err is error);
+    test:assertEquals((<error>err).message(), "undefined field 'id' in record 'data.xmldata:OpenBook'");
+}
