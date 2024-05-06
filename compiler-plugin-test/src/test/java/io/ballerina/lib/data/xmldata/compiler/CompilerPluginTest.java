@@ -178,4 +178,23 @@ public class CompilerPluginTest {
         Assert.assertEquals(errorDiagnosticsList.get(5).diagnosticInfo().messageFormat(),
                 "invalid field: duplicate field found");
     }
+
+    @Test
+    public void testCompilerPluginWithAProjectWithSubModule() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_10").getCompilation().diagnosticResult();
+        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
+                .collect(Collectors.toList());
+        Assert.assertEquals(errorDiagnosticsList.size(), 1);
+        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "invalid field: duplicate field found");
+
+        List<Diagnostic> warningDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.WARNING))
+                .collect(Collectors.toList());
+        Assert.assertEquals(warningDiagnosticsList.size(), 1);
+        Assert.assertEquals(warningDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "invalid annotation attachment: child record does not allow name annotation");
+    }
 }
