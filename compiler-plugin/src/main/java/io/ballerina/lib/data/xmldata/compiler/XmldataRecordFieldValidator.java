@@ -47,6 +47,7 @@ import io.ballerina.compiler.syntax.tree.TypeDefinitionNode;
 import io.ballerina.compiler.syntax.tree.VariableDeclarationNode;
 import io.ballerina.lib.data.xmldata.compiler.objects.QualifiedName;
 import io.ballerina.projects.Document;
+import io.ballerina.projects.Module;
 import io.ballerina.projects.plugins.AnalysisTask;
 import io.ballerina.projects.plugins.SyntaxNodeAnalysisContext;
 import io.ballerina.tools.diagnostics.Diagnostic;
@@ -76,7 +77,16 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
     @Override
     public void perform(SyntaxNodeAnalysisContext ctx) {
         semanticModel = ctx.semanticModel();
-        srcFile = ctx.currentPackage().getDefaultModule().document(ctx.documentId());
+        for (Module module : ctx.currentPackage().modules()) {
+            if (module.moduleId().equals(ctx.documentId().moduleId())) {
+                srcFile = module.document(ctx.documentId());
+                break;
+            }
+        }
+        if (srcFile == null) {
+            return;
+        }
+
         List<Diagnostic> diagnostics = semanticModel.diagnostics();
         boolean erroneousCompilation = diagnostics.stream()
                 .anyMatch(d -> d.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR));
