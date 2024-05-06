@@ -1,5 +1,12 @@
 # Ballerina XML Data Library 
 
+[![Build](https://github.com/ballerina-platform/module-ballerina-data.xmldata/actions/workflows/build-timestamped-master.yml/badge.svg)](https://github.com/ballerina-platform/module-ballerina-data.xmldata/actions/workflows/build-timestamped-master.yml)
+[![codecov](https://codecov.io/gh/ballerina-platform/module-ballerina-data.xmldata/branch/main/graph/badge.svg)](https://codecov.io/gh/ballerina-platform/module-ballerina-data.xmldata)
+[![Trivy](https://github.com/ballerina-platform/module-ballerina-data.xmldata/actions/workflows/trivy-scan.yml/badge.svg)](https://github.com/ballerina-platform/module-ballerina-data.xmldata/actions/workflows/trivy-scan.yml)
+[![GraalVM Check](https://github.com/ballerina-platform/module-ballerina-data.xmldata/actions/workflows/build-with-bal-test-graalvm.yml/badge.svg)](https://github.com/ballerina-platform/module-ballerina-data.xmldata/actions/workflows/build-with-bal-test-graalvm.yml)
+[![GitHub Last Commit](https://img.shields.io/github/last-commit/ballerina-platform/module-ballerina-data.xmldata.svg)](https://github.com/ballerina-platform/module-ballerina-data.xmldata/commits/master)
+[![Github issues](https://img.shields.io/github/issues/ballerina-platform/ballerina-standard-library/module/data.xmldata.svg?label=Open%20Issues)](https://github.com/ballerina-platform/ballerina-standard-library/labels/module%2Fdata.xmldata)
+
 The Ballerina XML Data Library is a comprehensive toolkit designed to facilitate the handling and manipulation of XML data within Ballerina applications. It streamlines the process of converting XML data to native Ballerina data types, enabling developers to work with XML content seamlessly and efficiently.
 
 This library is the refined successor of the `ballerina/xmldata` module, incorporating enhanced functionalities and improved performance.
