@@ -191,12 +191,8 @@ public class XmlTraversal {
             BString bCurrentFieldName = StringUtils.fromString(fieldName);
             switch (currentFieldType.getTag()) {
                 case TypeTags.RECORD_TYPE_TAG -> {
-                    currentNode = updateNextRecord(xmlItem, (RecordType) currentFieldType, fieldName,
-                            currentFieldType, mapValue, analyzerData);
-                    traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
-                    DataUtils.validateRequiredFields((BMap<BString, Object>) currentNode, analyzerData);
-                    DataUtils.removeExpectedTypeStacks(analyzerData);
-                    currentNode = analyzerData.nodesStack.pop();
+                    handleRecordType(xmlItem, currentFieldType, fieldName, (RecordType) currentFieldType, mapValue,
+                            analyzerData);
                     return;
                 }
                 case TypeTags.ARRAY_TAG -> {
@@ -207,12 +203,8 @@ public class XmlTraversal {
                     Type elementType = TypeUtils.getReferredType(((ArrayType) currentFieldType).getElementType());
                     int elementTypeTag = elementType.getTag();
                     if (elementTypeTag == TypeTags.RECORD_TYPE_TAG) {
-                        currentNode = updateNextRecord(xmlItem, (RecordType) elementType, fieldName,
-                                currentFieldType, mapValue, analyzerData);
-                        traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
-                        DataUtils.validateRequiredFields((BMap<BString, Object>) currentNode, analyzerData);
-                        DataUtils.removeExpectedTypeStacks(analyzerData);
-                        currentNode = analyzerData.nodesStack.pop();
+                        handleRecordType(xmlItem, currentFieldType, fieldName, (RecordType) elementType, mapValue,
+                                analyzerData);
                         return;
                     } else if (elementTypeTag == TypeTags.MAP_TAG) {
                         updateNextMap(elementType, analyzerData);
@@ -248,6 +240,19 @@ public class XmlTraversal {
                 }
             }
             traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
+        }
+
+        private void handleRecordType(BXmlItem xmlItem, Type currentFieldType, String fieldName, RecordType elementType,
+                                      BMap<BString, Object> mapValue, XmlAnalyzerData analyzerData) {
+            currentNode = updateNextRecord(xmlItem, elementType, fieldName,
+                    currentFieldType, mapValue, analyzerData);
+            RecordType prevRecord = analyzerData.rootRecord;
+            analyzerData.rootRecord = elementType;
+            traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
+            DataUtils.validateRequiredFields((BMap<BString, Object>) currentNode, analyzerData);
+            DataUtils.removeExpectedTypeStacks(analyzerData);
+            analyzerData.rootRecord = prevRecord;
+            currentNode = analyzerData.nodesStack.pop();
         }
 
         private void updateNextMap(Type fieldType, XmlAnalyzerData analyzerData) {
@@ -308,12 +313,7 @@ public class XmlTraversal {
 
             switch (restType.getTag()) {
                 case TypeTags.RECORD_TYPE_TAG -> {
-                    currentNode = updateNextRecord(xmlItem, (RecordType) restType, elemName, restType, mapValue,
-                            analyzerData);
-                    traverseXml(xmlItem.getChildrenSeq(), restType, analyzerData);
-                    DataUtils.validateRequiredFields((BMap<BString, Object>) currentNode, analyzerData);
-                    DataUtils.removeExpectedTypeStacks(analyzerData);
-                    currentNode = analyzerData.nodesStack.pop();
+                    handleRecordType(xmlItem, restType, elemName, (RecordType) restType, mapValue, analyzerData);
                     return;
                 }
                 case TypeTags.ARRAY_TAG -> {
@@ -324,12 +324,8 @@ public class XmlTraversal {
                     }
                     Type elementType = ((ArrayType) restType).getElementType();
                     if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
-                        currentNode = updateNextRecord(xmlItem, (RecordType) elementType, elemName,
-                                restType, mapValue, analyzerData);
-                        traverseXml(xmlItem.getChildrenSeq(), elementType, analyzerData);
-                        DataUtils.validateRequiredFields((BMap<BString, Object>) currentNode, analyzerData);
-                        DataUtils.removeExpectedTypeStacks(analyzerData);
-                        currentNode = analyzerData.nodesStack.pop();
+                        handleRecordType(xmlItem, restType, elemName, (RecordType) elementType, mapValue,
+                                analyzerData);
                         return;
                     }
                 }
