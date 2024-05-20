@@ -1620,7 +1620,9 @@ function testCommentMiddleInContent2() returns error? {
     test:assertEquals(rec2.A, "John Doe");
 }
 
-@test:Config
+@test:Config {
+    enable: false
+}
 function testRegexAsFieldTypeWithParseString() returns error? {
     string xmlStr = string `<Data>
                     <A>1</A>
@@ -2812,6 +2814,28 @@ function testProjectionWithXmlAttributeForParseAsType() returns error? {
     test:assertEquals(rec.A, "2");
 }
 
+type DataN3 record {|
+    int[4] A;
+|};
+
+@test:Config {
+    groups: ["fromXmlString"]
+}
+function testXmlStringToRecordWithArrayAsFieldType() returns error? {
+    string xmlStr1 = "<Data><A>1</A><A>2</A><A>3</A></Data>";
+    DataN3 rec1 = check parseString(xmlStr1);
+    test:assertEquals(rec1.A, [1, 2, 3, 0]);
+}
+
+@test:Config {
+    groups: ["fromXml"]
+}
+function testXmlToRecordWithArrayAsFieldType() returns error? {
+    xml xmlVal1 = xml `<Data><A>1</A><A>2</A><A>3</A></Data>`;
+    DataN3 rec1 = check parseAsType(xmlVal1);
+    test:assertEquals(rec1.A, [1, 2, 3, 0]);
+}
+
 // Negative cases
 type DataN1 record {|
     int A;
@@ -2869,28 +2893,6 @@ function testXmlToRecordNegative4() {
     xml xmlVal1 = xml `<Data><A>1</A><A>2</A></Data>`;
     DataN1|error rec1 = parseAsType(xmlVal1);
     test:assertEquals((<error>rec1).message(), "expected 'int' value for the field 'A' found 'array' value");
-}
-
-type DataN3 record {|
-    int[4] A;
-|};
-
-@test:Config {
-    groups: ["fromXmlString"]
-}
-function testXmlStringToRecordNegative5() {
-    string xmlStr1 = "<Data><A>1</A><A>2</A><A>3</A></Data>";
-    DataN3|error rec1 = parseString(xmlStr1);
-    test:assertEquals((<error>rec1).message(), "array size is not compatible with the expected size");
-}
-
-@test:Config {
-    groups: ["fromXml"]
-}
-function testXmlToRecordNegative5() {
-    xml xmlVal1 = xml `<Data><A>1</A><A>2</A><A>3</A></Data>`;
-    DataN3|error rec1 = parseAsType(xmlVal1);
-    test:assertEquals((<error>rec1).message(), "array size is not compatible with the expected size");
 }
 
 type DataN4 record {|

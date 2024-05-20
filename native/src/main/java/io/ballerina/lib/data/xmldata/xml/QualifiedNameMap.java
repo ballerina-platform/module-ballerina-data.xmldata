@@ -29,11 +29,18 @@ public class QualifiedNameMap<V> {
             if (!fields.containsKey(localName)) {
                 return null;
             }
-            for (QualifiedName qualifiedName : fields.get(localName)) {
+
+            List<QualifiedName> qNames = fields.get(localName);
+            for (QualifiedName qualifiedName : qNames) {
                 if (qualifiedName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)) {
                     field = this.members.remove(qualifiedName);
+                    qNames.remove(qualifiedName);
                     break;
                 }
+            }
+
+            if (qNames.isEmpty()) {
+                fields.remove(localName);
             }
         }
         return field;
