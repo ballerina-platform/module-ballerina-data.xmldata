@@ -21,6 +21,7 @@ package io.ballerina.lib.data.xmldata.utils;
 import io.ballerina.lib.data.xmldata.FromString;
 import io.ballerina.lib.data.xmldata.xml.QualifiedName;
 import io.ballerina.lib.data.xmldata.xml.QualifiedNameMap;
+import io.ballerina.runtime.api.Module;
 import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.TypeTags;
 import io.ballerina.runtime.api.creators.TypeCreator;
@@ -30,6 +31,7 @@ import io.ballerina.runtime.api.types.ArrayType;
 import io.ballerina.runtime.api.types.Field;
 import io.ballerina.runtime.api.types.MapType;
 import io.ballerina.runtime.api.types.RecordType;
+import io.ballerina.runtime.api.types.ReferenceType;
 import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.types.UnionType;
 import io.ballerina.runtime.api.utils.StringUtils;
@@ -762,6 +764,27 @@ public class DataUtils {
         }
         subRecord.put(StringUtils.fromString(ATTRIBUTE_PREFIX + "xmlns:" + prefix), uri);
         return prefix.getValue().concat(Constants.COLON).concat(key);
+    }
+
+    public static boolean isRegExpType(Type type) {
+        Module module = type.getPackage();
+        if (module == null) {
+            return false;
+        }
+
+        String moduleName = module.getName();
+        String typeName = type.getName();
+        if (typeName == null || moduleName == null) {
+            return false;
+        }
+        if (moduleName.equals(Constants.REGEXP_MODULE_NAME) && typeName.equals(Constants.REGEXP_TYPE_NAME)) {
+            return true;
+        }
+
+        if (type.getTag() == TypeTags.TYPE_REFERENCED_TYPE_TAG) {
+            return isRegExpType(((ReferenceType) type).getReferredType());
+        }
+        return false;
     }
 
     /**

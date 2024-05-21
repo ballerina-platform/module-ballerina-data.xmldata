@@ -1620,54 +1620,6 @@ function testCommentMiddleInContent2() returns error? {
     test:assertEquals(rec2.A, "John Doe");
 }
 
-@test:Config {
-    enable: false
-}
-function testRegexAsFieldTypeWithParseString() returns error? {
-    string xmlStr = string `<Data>
-                    <A>1</A>
-                    <A>2</A>
-                    <B>Code</B>
-                    <C>
-                        <name>Kanth</name>
-                    </C>
-                </Data>`;
-    record {|
-        string:RegExp[] A;
-        string B;
-        record {|
-            string name;
-        |} C;
-    |} rec1 = check parseString(xmlStr);
-    test:assertEquals(rec1.length(), 3);
-    test:assertEquals(rec1.A, [1, 2]);
-    test:assertEquals(rec1.B, "Code");
-    test:assertEquals(rec1.C.name, "Kanth");
-}
-
-@test:Config
-function testRegexAsFieldTypeWithParseAsType() returns error? {
-    xml xmlVal = xml `<Data>
-                    <A>1</A>
-                    <A>2</A>
-                    <B>Code</B>
-                    <C>
-                        <name>Kanth</name>
-                    </C>
-                </Data>`;
-    record {|
-        string:RegExp[] A;
-        string B;
-        record {|
-            string name;
-        |} C;
-    |} rec1 = check parseAsType(xmlVal);
-    test:assertEquals(rec1.length(), 3);
-    test:assertEquals(rec1.A, [1, 2]);
-    test:assertEquals(rec1.B, "Code");
-    test:assertEquals(rec1.C.name, "Kanth");
-}
-
 @test:Config
 function testAnydataAsRestFieldWithParseString() returns error? {
     string xmlStr = string `<Data>
@@ -3241,4 +3193,86 @@ function testInvalidNamespaceInOpenRecordForParseAsType2() {
     OpenBook2|Error err = parseAsType(xmldata);
     test:assertTrue(err is error);
     test:assertEquals((<error>err).message(), "undefined field 'name' in record 'data.xmldata:AuthorOpen'");
+}
+
+@test:Config 
+function testRegexAsFieldTypeWithParseStringNegative1() {
+    string xmlStr = string `<Data>
+                    <A>1</A>
+                    <A>2</A>
+                    <B>Code</B>
+                    <C>
+                        <name>Kanth</name>
+                    </C>
+                </Data>`;
+    record {|
+        string:RegExp[] A;
+        string B;
+        record {|
+            string name;
+        |} C;
+    |}|Error err = parseString(xmlStr);
+    test:assertTrue(err is error);
+    test:assertEquals((<error>err).message(), "unsupported input type");
+}
+
+@test:Config 
+function testRegexAsFieldTypeWithParseStringNegative2() {
+    string xmlStr = string `<Data>
+                    <A>1</A>
+                    <B>Code</B>
+                    <C>
+                        <name>Kanth</name>
+                    </C>
+                </Data>`;
+    record {|
+        string:RegExp A;
+        string B;
+        record {|
+            string name;
+        |} C;
+    |}|Error err = parseString(xmlStr);
+    test:assertTrue(err is error);
+    test:assertEquals((<error>err).message(), "unsupported input type");
+}
+
+@test:Config
+function testRegexAsFieldTypeWithParseAsType() {
+    xml xmlVal = xml `<Data>
+                    <A>1</A>
+                    <A>2</A>
+                    <B>Code</B>
+                    <C>
+                        <name>Kanth</name>
+                    </C>
+                </Data>`;
+    record {|
+        string:RegExp[] A;
+        string B;
+        record {|
+            string name;
+        |} C;
+    |}|error err = parseAsType(xmlVal);
+    test:assertTrue(err is error);
+    test:assertEquals((<error>err).message(), "unsupported input type");
+}
+
+@test:Config
+function testRegexAsFieldTypeWithParseAsType2() {
+    xml xmlVal = xml `<Data>
+                    <A>1</A>
+                    <B>Code</B>
+                    <C>
+                        <name>Kanth</name>
+                    </C>
+                </Data>`;
+    record {|
+        string:RegExp A;
+        string B;
+        record {|
+            string name;
+        |} C;
+    |}|error err = parseAsType(xmlVal);
+    test:assertTrue(err is error);
+    test:assertEquals((<error>err).message(), "unsupported input type");
 }

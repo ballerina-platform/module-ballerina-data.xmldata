@@ -504,26 +504,38 @@ public class XmlParser {
         String fieldName = currentField.getFieldName();
         BString bFieldName = StringUtils.fromString(fieldName);
         Object temp = currentNode.get(bFieldName);
-        Type fieldType = TypeUtils.getReferredType(currentField.getFieldType());
+        Type fieldType = currentField.getFieldType();
+        Type referredFieldType = TypeUtils.getReferredType(fieldType);
         if (!xmlParserData.siblings.contains(elemQName)) {
             xmlParserData.siblings.put(elemQName, false);
         } else {
-            if (DataUtils.isAnydataOrJson(fieldType.getTag()) && !(temp instanceof BArray)) {
-                BArray tempArray = DataUtils.createArrayValue(fieldType);
+            if (DataUtils.isAnydataOrJson(referredFieldType.getTag()) && !(temp instanceof BArray)) {
+                BArray tempArray = DataUtils.createArrayValue(referredFieldType);
                 tempArray.append(temp);
                 currentNode.put(bFieldName, tempArray);
-            } else if (fieldType.getTag() != TypeTags.ARRAY_TAG) {
+            } else if (referredFieldType.getTag() != TypeTags.ARRAY_TAG) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, fieldType, fieldName);
             }
         }
 
+        if (DataUtils.isRegExpType(fieldType)) {
+            throw DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE);
+        }
+
+        initializeNextValueBasedOnExpectedType(fieldName, fieldType, temp, currentNode, xmlParserData);
+    }
+
+    private void initializeNextValueBasedOnExpectedType(String fieldName, Type fieldType, Object temp,
+                                                        BMap<BString, Object> currentNode,
+                                                        XmlParserData xmlParserData) {
         switch (fieldType.getTag()) {
             case TypeTags.RECORD_TYPE_TAG ->
                     updateNextRecord(xmlStreamReader, xmlParserData, fieldName, fieldType, (RecordType) fieldType);
             case TypeTags.ARRAY_TAG -> {
                 if (temp == null) {
                     xmlParserData.arrayIndexes.peek().put(fieldName, 0);
-                    currentNode.put(bFieldName, ValueCreator.createArrayValue((ArrayType) fieldType));
+                    currentNode.put(StringUtils.fromString(fieldName),
+                            ValueCreator.createArrayValue((ArrayType) fieldType));
                 } else {
                     HashMap<String, Integer> indexes = xmlParserData.arrayIndexes.peek();
                     indexes.put(fieldName, indexes.get(fieldName) + 1);
@@ -533,11 +545,18 @@ public class XmlParser {
             }
             case TypeTags.MAP_TAG, TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG ->
                     initializeAttributesForNextMappingValue(xmlParserData, fieldName, fieldType);
+            case TypeTags.TYPE_REFERENCED_TYPE_TAG ->
+                initializeNextValueBasedOnExpectedType(fieldName, TypeUtils.getReferredType(fieldType), temp,
+                        currentNode, xmlParserData);
         }
     }
 
     private void updateNextArrayMember(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData,
                                        String fieldName, Type fieldType, Type type) {
+        if (DataUtils.isRegExpType(type)) {
+            throw DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE);
+        }
+
         switch (type.getTag()) {
             case TypeTags.RECORD_TYPE_TAG -> updateNextRecord(xmlStreamReader, xmlParserData, fieldName,
                     fieldType, (RecordType) type);
