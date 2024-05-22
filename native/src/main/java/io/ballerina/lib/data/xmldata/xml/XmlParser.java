@@ -199,11 +199,7 @@ public class XmlParser {
                     QName endElement = xmlStreamReader.getName();
                     if (endElement.getLocalPart().equals(startElementName)) {
                         validateRequiredFields(xmlParserData);
-                        xmlParserData.fieldHierarchy.pop();
-                        xmlParserData.visitedFieldHierarchy.pop();
-                        xmlParserData.restTypes.pop();
-                        xmlParserData.attributeHierarchy.pop();
-                        xmlParserData.arrayIndexes.pop();
+                        popExpectedTypeStacks(xmlParserData);
                         break;
                     }
                 }
@@ -292,10 +288,6 @@ public class XmlParser {
                 return;
             }
 
-            if (!DataUtils.isArrayValueAssignable(fieldType.getTag())) {
-                throw DiagnosticLog.error(DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, fieldType, fieldName);
-            }
-
             ArrayType arrayType = (ArrayType) fieldType;
             int currentIndex = xmlParserData.arrayIndexes.peek().get(fieldName);
             if (arrayType.getState() == ArrayType.ArrayState.CLOSED
@@ -330,22 +322,17 @@ public class XmlParser {
         Object currentElement = currentNode.get(currentFieldName);
         Object result = convertStringToRestExpType(bText, restType);
 
-         if (currentElement == null && !currentNode.isEmpty()) { // Add text to the #content field
+        if (currentElement == null && !currentNode.isEmpty()) { // Add text to the #content field
             currentNode.put(StringUtils.fromString(Constants.CONTENT), result);
         } else if (parent.get(currentFieldName) instanceof BArray bArray) {
              bArray.add(bArray.getLength() - 1, result);
-         } else {
+        } else {
             parent.put(currentFieldName, result);
         }
 
         xmlParserData.currentNode = parent;
-        xmlParserData.fieldHierarchy.pop();
-        xmlParserData.visitedFieldHierarchy.pop();
-        xmlParserData.restTypes.pop();
-        xmlParserData.attributeHierarchy.pop();
-        xmlParserData.recordTypeStack.pop();
-        xmlParserData.siblings = xmlParserData.parents.pop();
-        xmlParserData.arrayIndexes.pop();
+        popExpectedTypeStacks(xmlParserData);
+        updateSiblingAndRootRecord(xmlParserData);
     }
 
     @SuppressWarnings("unchecked")
@@ -385,7 +372,8 @@ public class XmlParser {
 
     @SuppressWarnings("unchecked")
     private void handleContentFieldInRecordType(RecordType recordType, BString text, XmlParserData xmlParserData) {
-        popStacks(xmlParserData);
+        popExpectedTypeStacks(xmlParserData);
+        updateSiblingAndRootRecord(xmlParserData);
         for (String key : recordType.getFields().keySet()) {
             if (key.contains(xmlParserData.textFieldName)) {
                 xmlParserData.currentNode.put(StringUtils.fromString(key),
@@ -454,7 +442,8 @@ public class XmlParser {
 
         validateRequiredFields(xmlParserData);
         xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.pop();
-        popStacks(xmlParserData);
+        popExpectedTypeStacks(xmlParserData);
+        updateSiblingAndRootRecord(xmlParserData);
     }
 
     private void validateRequiredFields(XmlParserData xmlParserData) {
@@ -665,14 +654,21 @@ public class XmlParser {
         xmlParserData.restTypes.push(recordType.getRestFieldType());
     }
 
-    private void popStacks(XmlParserData xmlParserData) {
+    private void popExpectedTypeStacks(XmlParserData xmlParserData) {
+        popMappingTypeStacks(xmlParserData);
+        xmlParserData.attributeHierarchy.pop();
+        xmlParserData.arrayIndexes.pop();
+    }
+
+    private void popMappingTypeStacks(XmlParserData xmlParserData) {
         xmlParserData.fieldHierarchy.pop();
         xmlParserData.visitedFieldHierarchy.pop();
         xmlParserData.restTypes.pop();
-        xmlParserData.attributeHierarchy.pop();
+    }
+
+    private void updateSiblingAndRootRecord(XmlParserData xmlParserData) {
         xmlParserData.siblings = xmlParserData.parents.pop();
         xmlParserData.rootRecord = xmlParserData.recordTypeStack.pop();
-        xmlParserData.arrayIndexes.pop();
     }
 
     @SuppressWarnings("unchecked")
@@ -840,11 +836,8 @@ public class XmlParser {
         xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.pop();
         xmlParserData.siblings = xmlParserData.parents.pop();
         if (xmlParserData.siblings.contains(elemQName)) {
-            // TODO: This is duplicated in several places. Remove the duplication.
             // TODO: This place behaviour is strange need to check and fix it, Properly.
-            xmlParserData.fieldHierarchy.pop();
-            xmlParserData.visitedFieldHierarchy.pop();
-            xmlParserData.restTypes.pop();
+            popMappingTypeStacks(xmlParserData);
 //            xmlParserData.attributeHierarchy.pop();
             xmlParserData.arrayIndexes.pop();
         }

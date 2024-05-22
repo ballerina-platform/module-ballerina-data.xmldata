@@ -288,14 +288,13 @@ public class DataUtils {
         analyzerData.fieldHierarchy.push(new QualifiedNameMap<>(getAllFieldsInRecordType(recordType, analyzerData)));
         analyzerData.visitedFieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
         analyzerData.restTypes.push(recordType.getRestFieldType());
-//        analyzerData.arrayIndexes.push(new HashMap<>());
     }
 
-    public static void removeExpectedTypeStacks(XmlAnalyzerData analyzerData) {
-        analyzerData.attributeHierarchy.pop();
+    public static void popExpectedTypeStacks(XmlAnalyzerData analyzerData) {
         analyzerData.fieldHierarchy.pop();
         analyzerData.visitedFieldHierarchy.pop();
         analyzerData.restTypes.pop();
+        analyzerData.attributeHierarchy.pop();
         analyzerData.arrayIndexes.pop();
     }
 

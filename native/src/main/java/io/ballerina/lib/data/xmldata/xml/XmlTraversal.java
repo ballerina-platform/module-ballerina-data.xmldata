@@ -138,10 +138,6 @@ public class XmlTraversal {
                     mapValue.put(fieldName, convertedValue);
                     return;
                 }
-                // TODO: Check do we need this check.
-                if (!DataUtils.isArrayValueAssignable(fieldType.getTag())) {
-                    throw DiagnosticLog.error(DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, fieldType, fieldName);
-                }
 
                 if (DataUtils.isAnydataOrJson(fieldType.getTag())) {
                     ((BArray) value).append(convertedValue);
@@ -221,7 +217,7 @@ public class XmlTraversal {
                     updateNextMap(currentFieldType, analyzerData);
                     analyzerData.arrayIndexes.push(new HashMap<>());
                     convertToRestType(xmlItem, currentFieldType, analyzerData);
-                    DataUtils.removeExpectedTypeStacks(analyzerData);
+                    DataUtils.popExpectedTypeStacks(analyzerData);
                 }
                 case TypeTags.TYPE_REFERENCED_TYPE_TAG ->
                     convertToFieldType(xmlItem, currentField, fieldName, TypeUtils.getReferredType(currentFieldType),
@@ -280,7 +276,7 @@ public class XmlTraversal {
             analyzerData.rootRecord = elementType;
             traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
             DataUtils.validateRequiredFields(analyzerData);
-            DataUtils.removeExpectedTypeStacks(analyzerData);
+            DataUtils.popExpectedTypeStacks(analyzerData);
             analyzerData.rootRecord = prevRecord;
             currentNode = analyzerData.nodesStack.pop();
         }
@@ -291,7 +287,7 @@ public class XmlTraversal {
             currentNode = updateNextMappingValue(elementType, fieldName, fieldType, mapValue, analyzerData);
             traverseXml(xmlItem.getChildrenSeq(), fieldType, analyzerData);
             DataUtils.validateRequiredFields(analyzerData);
-            DataUtils.removeExpectedTypeStacks(analyzerData);
+            DataUtils.popExpectedTypeStacks(analyzerData);
             currentNode = analyzerData.nodesStack.pop();
         }
 
@@ -455,8 +451,7 @@ public class XmlTraversal {
 
             analyzerData.fieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
             analyzerData.visitedFieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
-            // TODO: Check and fix this.
-//                analyzerData.arrayIndexes.push(new HashMap<>());
+            analyzerData.arrayIndexes.push(new HashMap<>());
             if (restType.getTag() == TypeTags.ARRAY_TAG) {
                 Type memberType = ((ArrayType) restType).getElementType();
                 analyzerData.restTypes.push(memberType);
@@ -468,7 +463,7 @@ public class XmlTraversal {
             analyzerData.fieldHierarchy.pop();
             analyzerData.visitedFieldHierarchy.pop();
             analyzerData.restTypes.pop();
-//                analyzerData.arrayIndexes.pop();
+            analyzerData.arrayIndexes.pop();
             currentNode = analyzerData.nodesStack.pop();
         }
 
