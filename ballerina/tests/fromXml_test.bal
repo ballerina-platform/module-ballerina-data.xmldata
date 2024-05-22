@@ -2788,6 +2788,106 @@ function testXmlToRecordWithArrayAsFieldType() returns error? {
     test:assertEquals(rec1.A, [1, 2, 3, 0]);
 }
 
+type Student record {|
+    string name;
+    int age;
+    string code = "Admitted";
+|};
+
+@test:Config
+function testXmlToRecordWithDefaultValuesForParseString1() returns error? {
+    string xmlStr = string `
+    <Student>
+        <name>Walter</name>
+        <age>27</age>
+    </Student>
+    `;
+
+    Student student = check parseString(xmlStr);
+    test:assertEquals(student.name, "Walter");
+    test:assertEquals(student.age, 27);
+    test:assertEquals(student.code, "Admitted");
+}
+
+@test:Config
+function testXmlToRecordWithDefaultValuesForPasrseAsType1() returns error? {
+    xml xmlVal = xml `
+    <Student>
+        <name>Walter</name>
+        <age>27</age>
+    </Student>
+    `;
+
+    Student student = check parseAsType(xmlVal);
+    test:assertEquals(student.name, "Walter");
+    test:assertEquals(student.age, 27);
+    test:assertEquals(student.code, "Admitted");
+}
+
+type University record {|
+    Student[] student;
+    string name;
+    string category = "State"; 
+|};
+
+@test:Config
+function testXmlToRecordWithDefaultValuesForParseString2() returns error? {
+    string xmlStr = string `
+    <University>
+        <student>
+            <name>Walter</name>
+            <age>27</age>
+        </student>
+        <student>
+            <name>Jessy</name>
+            <age>18</age>
+        </student>
+        <name>Standford</name>
+    </University>
+    `;
+
+    University university = check parseString(xmlStr);
+    test:assertEquals(university.student[0].name, "Walter");
+    test:assertEquals(university.student[0].age, 27);
+    test:assertEquals(university.student[0].code, "Admitted");
+
+    test:assertEquals(university.student[1].name, "Jessy");
+    test:assertEquals(university.student[1].age, 18);
+    test:assertEquals(university.student[1].code, "Admitted");
+
+    test:assertEquals(university.name, "Standford");
+    test:assertEquals(university.category, "State");
+}
+
+@test:Config
+function testXmlToRecordWithDefaultValuesForParseAsType2() returns error? {
+    xml xmlVal = xml `
+    <University>
+        <student>
+            <name>Walter</name>
+            <age>27</age>
+        </student>
+        <student>
+            <name>Jessy</name>
+            <age>18</age>
+        </student>
+        <name>Standford</name>
+    </University>
+    `;
+
+    University university = check parseAsType(xmlVal);
+    test:assertEquals(university.student[0].name, "Walter");
+    test:assertEquals(university.student[0].age, 27);
+    test:assertEquals(university.student[0].code, "Admitted");
+
+    test:assertEquals(university.student[1].name, "Jessy");
+    test:assertEquals(university.student[1].age, 18);
+    test:assertEquals(university.student[1].code, "Admitted");
+
+    test:assertEquals(university.name, "Standford");
+    test:assertEquals(university.category, "State");
+}
+
 // Negative cases
 type DataN1 record {|
     int A;
