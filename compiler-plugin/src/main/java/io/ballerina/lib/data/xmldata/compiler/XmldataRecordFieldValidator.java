@@ -41,12 +41,13 @@ import io.ballerina.compiler.syntax.tree.FunctionDefinitionNode;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.ModulePartNode;
 import io.ballerina.compiler.syntax.tree.ModuleVariableDeclarationNode;
+import io.ballerina.compiler.syntax.tree.NameReferenceNode;
 import io.ballerina.compiler.syntax.tree.Node;
+import io.ballerina.compiler.syntax.tree.QualifiedNameReferenceNode;
 import io.ballerina.compiler.syntax.tree.SyntaxKind;
 import io.ballerina.compiler.syntax.tree.TypeDefinitionNode;
 import io.ballerina.compiler.syntax.tree.VariableDeclarationNode;
 import io.ballerina.lib.data.xmldata.compiler.objects.QualifiedName;
-import io.ballerina.projects.Document;
 import io.ballerina.projects.plugins.AnalysisTask;
 import io.ballerina.projects.plugins.SyntaxNodeAnalysisContext;
 import io.ballerina.tools.diagnostics.Diagnostic;
@@ -70,13 +71,11 @@ import java.util.Optional;
 public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnalysisContext> {
 
     private SemanticModel semanticModel;
-    private Document srcFile;
     private final HashMap<Location, DiagnosticInfo> allDiagnosticInfo = new HashMap<>();
 
     @Override
     public void perform(SyntaxNodeAnalysisContext ctx) {
         semanticModel = ctx.semanticModel();
-        srcFile = ctx.currentPackage().getDefaultModule().document(ctx.documentId());
         List<Diagnostic> diagnostics = semanticModel.diagnostics();
         boolean erroneousCompilation = diagnostics.stream()
                 .anyMatch(d -> d.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR));
@@ -258,15 +257,16 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             return;
         }
 
-        Optional<Symbol> symbol = semanticModel.symbol(srcFile, location.get().lineRange().startLine());
-        if (symbol.isEmpty()) {
+        TypeSymbol typeSymbol = fieldSymbol.typeDescriptor();
+        if (typeSymbol.typeKind() != TypeDescKind.TYPE_REFERENCE) {
             return;
         }
-
-        if (symbol.get().kind() != SymbolKind.TYPE_DEFINITION) {
+        TypeReferenceTypeSymbol typeReferenceTypeSymbol = (TypeReferenceTypeSymbol) typeSymbol;
+        Symbol symbol = typeReferenceTypeSymbol.definition();
+        if (symbol == null || symbol.kind() != SymbolKind.TYPE_DEFINITION) {
             return;
         }
-        TypeDefinitionSymbol typeDefinitionSymbol = (TypeDefinitionSymbol) symbol.get();
+        TypeDefinitionSymbol typeDefinitionSymbol = (TypeDefinitionSymbol) symbol;
         typeDefinitionSymbol.annotations().forEach(annotationSymbol -> {
             if (!isAnnotFromXmldata(annotationSymbol)) {
                 return;
@@ -386,6 +386,16 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         if (expressionNode.kind() != SyntaxKind.FUNCTION_CALL) {
             return false;
         }
+
+        NameReferenceNode nameReferenceNode = ((FunctionCallExpressionNode) expressionNode).functionName();
+        if (nameReferenceNode.kind() != SyntaxKind.QUALIFIED_NAME_REFERENCE) {
+            return false;
+        }
+        String prefix = ((QualifiedNameReferenceNode) nameReferenceNode).modulePrefix().text();
+        if (!prefix.equals(Constants.XMLDATA)) {
+            return false;
+        }
+
         String functionName = ((FunctionCallExpressionNode) expressionNode).functionName().toSourceCode().trim();
         return functionName.contains(Constants.PARSE_STRING) || functionName.contains(Constants.PARSE_BYTES)
                 || functionName.contains(Constants.PARSE_STREAM) || functionName.contains(Constants.PARSE_AS_TYPE);
