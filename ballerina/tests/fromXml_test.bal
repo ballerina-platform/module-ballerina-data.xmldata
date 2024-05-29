@@ -3081,7 +3081,7 @@ function testXmlToRecordNegative12() {
 }
 
 @test:Config {
-    groups: ["fromXmlString"]
+    groups: ["fromXmlString", "testFail"]
 }
 function testCommentMiddleInContentNegative1() {
     string xmlStr = string `<Data><A>1<!-- cmt -->2</A></Data>`;

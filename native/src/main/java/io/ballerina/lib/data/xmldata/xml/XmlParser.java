@@ -110,9 +110,9 @@ public class XmlParser {
     private void handleXMLStreamException(Exception e) {
         String reason = e.getCause() == null ? e.getMessage() : e.getCause().getMessage();
         if (reason == null) {
-            throw DiagnosticLog.getXmlError(PARSE_ERROR);
+            throw DiagnosticLog.createXmlError(PARSE_ERROR);
         }
-        throw DiagnosticLog.getXmlError(PARSE_ERROR_PREFIX + reason);
+        throw DiagnosticLog.createXmlError(PARSE_ERROR_PREFIX + reason);
     }
 
     public Object parse(Type type, XmlParserData xmlParserData) {
@@ -151,7 +151,7 @@ public class XmlParser {
                 readNext = parseXmlElements(next, xmlParserData);
             }
         } catch (NumberFormatException e) {
-            throw DiagnosticLog.getXmlError(PARSE_ERROR_PREFIX + e);
+            throw DiagnosticLog.createXmlError(PARSE_ERROR_PREFIX + e);
         } catch (BError e) {
             throw e;
         } catch (Exception e) {
