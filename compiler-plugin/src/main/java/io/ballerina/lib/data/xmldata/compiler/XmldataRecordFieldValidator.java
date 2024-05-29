@@ -18,6 +18,7 @@
 
 package io.ballerina.lib.data.xmldata.compiler;
 
+import io.ballerina.compiler.api.ModuleID;
 import io.ballerina.compiler.api.SemanticModel;
 import io.ballerina.compiler.api.symbols.AnnotationAttachmentSymbol;
 import io.ballerina.compiler.api.symbols.AnnotationSymbol;
@@ -38,6 +39,7 @@ import io.ballerina.compiler.syntax.tree.ChildNodeList;
 import io.ballerina.compiler.syntax.tree.ExpressionNode;
 import io.ballerina.compiler.syntax.tree.FunctionCallExpressionNode;
 import io.ballerina.compiler.syntax.tree.FunctionDefinitionNode;
+import io.ballerina.compiler.syntax.tree.ImportDeclarationNode;
 import io.ballerina.compiler.syntax.tree.ModuleMemberDeclarationNode;
 import io.ballerina.compiler.syntax.tree.ModulePartNode;
 import io.ballerina.compiler.syntax.tree.ModuleVariableDeclarationNode;
@@ -72,6 +74,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
 
     private SemanticModel semanticModel;
     private final HashMap<Location, DiagnosticInfo> allDiagnosticInfo = new HashMap<>();
+    private String modulePrefix = Constants.XMLDATA;
 
     @Override
     public void perform(SyntaxNodeAnalysisContext ctx) {
@@ -84,6 +87,8 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         }
 
         ModulePartNode rootNode = (ModulePartNode) ctx.node();
+        updateModulePrefix(rootNode);
+
         for (ModuleMemberDeclarationNode member : rootNode.members()) {
             switch (member.kind()) {
                 case FUNCTION_DEFINITION -> processFunctionDefinitionNode((FunctionDefinitionNode) member, ctx);
@@ -92,6 +97,25 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
                 case TYPE_DEFINITION -> processTypeDefinitionNode((TypeDefinitionNode) member, ctx);
             }
         }
+    }
+
+    private void updateModulePrefix(ModulePartNode rootNode) {
+        for (ImportDeclarationNode importDeclarationNode : rootNode.imports()) {
+            Optional<Symbol> symbol = semanticModel.symbol(importDeclarationNode);
+            if (symbol.isPresent() && symbol.get().kind() == SymbolKind.MODULE) {
+                ModuleSymbol moduleSymbol = (ModuleSymbol) symbol.get();
+                if (isXmldataImport(moduleSymbol)) {
+                    modulePrefix = moduleSymbol.id().modulePrefix();
+                    break;
+                }
+            }
+        }
+    }
+
+    private boolean isXmldataImport(ModuleSymbol moduleSymbol) {
+        ModuleID moduleId = moduleSymbol.id();
+        return Constants.BALLERINA.equals(moduleId.orgName())
+                && Constants.DATA_XMLDATA.equals(moduleId.moduleName());
     }
 
     private void processFunctionDefinitionNode(FunctionDefinitionNode functionDefinitionNode,
@@ -392,7 +416,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             return false;
         }
         String prefix = ((QualifiedNameReferenceNode) nameReferenceNode).modulePrefix().text();
-        if (!prefix.equals(Constants.XMLDATA)) {
+        if (!prefix.equals(modulePrefix)) {
             return false;
         }
 
