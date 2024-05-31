@@ -83,6 +83,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         boolean erroneousCompilation = diagnostics.stream()
                 .anyMatch(d -> d.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR));
         if (erroneousCompilation) {
+            rest();
             return;
         }
 
@@ -97,6 +98,14 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
                 case TYPE_DEFINITION -> processTypeDefinitionNode((TypeDefinitionNode) member, ctx);
             }
         }
+
+        rest();
+    }
+
+    private void rest() {
+        semanticModel = null;
+        allDiagnosticInfo.clear();
+        modulePrefix = Constants.XMLDATA;
     }
 
     private void updateModulePrefix(ModulePartNode rootNode) {
