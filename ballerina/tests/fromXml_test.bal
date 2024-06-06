@@ -3144,3 +3144,99 @@ function testUnsupportedTypeNegative() {
     |}|error err3 = parseAsType(xmlVal2);
     test:assertEquals((<error>err3).message(), "unsupported input type");
 }
+
+@Namespace {
+    uri: "http://example.com/book"
+}
+type OpenBook1 record {
+    @Namespace {
+        uri: "http://example.com"
+    }
+    int id;
+    @Namespace {
+        uri: "http://example.com/book"
+    }
+    string title;
+    @Namespace {
+        uri: "http://example.com/book"
+    }
+    string author;
+};
+
+@test:Config
+function testInvalidNamespaceInOpenRecordForParseString1() {
+    string xmldata = string `
+    <book xmlns="http://example.com/book">
+        <id>601970</id>
+        <title>string</title>
+        <author>string</author>
+    </book>`;
+    OpenBook1|Error err = parseString(xmldata);
+    test:assertTrue(err is error);
+    test:assertEquals((<error>err).message(), "undefined field 'id' in record 'data.xmldata:OpenBook1'");
+}
+
+@test:Config
+function testInvalidNamespaceInOpenRecordForParseAsType1() {
+    xml xmldata = xml `
+    <book xmlns="http://example.com/book">
+        <id>601970</id>
+        <title>string</title>
+        <author>string</author>
+    </book>`;
+    OpenBook1|Error err = parseAsType(xmldata);
+    test:assertTrue(err is error);
+    test:assertEquals((<error>err).message(), "undefined field 'id' in record 'data.xmldata:OpenBook1'");
+}
+
+@Namespace {
+    uri: "http://example.com/book"
+}
+type OpenBook2 record {
+    AuthorOpen author;
+    @Namespace {
+        uri: "http://example.com/book"
+    }
+    string title;
+};
+
+type AuthorOpen record {
+    @Namespace {
+        uri: "http://example.com"
+    }
+    string name;
+    @Namespace {
+        uri: "http://example.com/book"
+    }
+    int age;
+};
+
+@test:Config
+function testInvalidNamespaceInOpenRecordForParseString2() {
+    string xmldata = string `
+    <book xmlns="http://example.com/book">
+        <author>
+            <name>R.C Martin</name>
+            <age>60</age>
+        </author>
+        <title>Clean Code</title>
+    </book>`;
+    OpenBook2|Error err = parseString(xmldata);
+    test:assertTrue(err is error);
+    test:assertEquals((<error>err).message(), "undefined field 'name' in record 'data.xmldata:AuthorOpen'");
+}
+
+@test:Config
+function testInvalidNamespaceInOpenRecordForParseAsType2() {
+    xml xmldata = xml `
+    <book xmlns="http://example.com/book">
+        <author>
+            <name>R.C Martin</name>
+            <age>60</age>
+        </author>
+        <title>Clean Code</title>
+    </book>`;
+    OpenBook2|Error err = parseAsType(xmldata);
+    test:assertTrue(err is error);
+    test:assertEquals((<error>err).message(), "undefined field 'name' in record 'data.xmldata:AuthorOpen'");
+}

@@ -59,4 +59,5 @@ public class Constants {
     public static final BString TEXT_FIELD_NAME = StringUtils.fromString("textFieldName");
     public static final BString ALLOW_DATA_PROJECTION = StringUtils.fromString("allowDataProjection");
     public static final String NON_NUMERIC_STRING_REGEX = "[^a-zA-Z\\d\s]";
+    public static final String NS_ANNOT_NOT_DEFINED = "$$ns_annot_not_defined$$";
 }
