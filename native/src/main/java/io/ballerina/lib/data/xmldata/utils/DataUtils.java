@@ -20,6 +20,7 @@ package io.ballerina.lib.data.xmldata.utils;
 
 import io.ballerina.lib.data.xmldata.FromString;
 import io.ballerina.lib.data.xmldata.xml.QualifiedName;
+import io.ballerina.lib.data.xmldata.xml.QualifiedNameMap;
 import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.TypeTags;
 import io.ballerina.runtime.api.creators.TypeCreator;
@@ -89,7 +90,7 @@ public class DataUtils {
                         prefix == null ? "" : prefix.getValue());
             }
         }
-        return new QualifiedName(QualifiedName.NS_ANNOT_NOT_DEFINED, localName, "");
+        return new QualifiedName(Constants.NS_ANNOT_NOT_DEFINED, localName, "");
     }
 
     public static void validateTypeNamespace(String prefix, String uri, RecordType recordType) {
@@ -134,19 +135,33 @@ public class DataUtils {
             }
         }
 
-        Map<QualifiedName, Field> fields = new HashMap<>();
+        Map<QualifiedName, Field> fieldMap = new HashMap<>();
+        Map<String, List<QualifiedName>> fieldNames = new HashMap<>();
         Map<String, Field> recordFields = recordType.getFields();
         for (String key : recordFields.keySet()) {
-            QualifiedName modifiedQName = modifiedNames.getOrDefault(key,
-                    new QualifiedName(QualifiedName.NS_ANNOT_NOT_DEFINED, key, ""));
-            if (fields.containsKey(modifiedQName)) {
-                throw DiagnosticLog.error(DiagnosticErrorCode.DUPLICATE_FIELD, modifiedQName.getLocalPart());
-            } else if (analyzerData.attributeHierarchy.peek().containsKey(modifiedQName)) {
-                continue;
+            QualifiedName modifiedQName =
+                    modifiedNames.getOrDefault(key, new QualifiedName(Constants.NS_ANNOT_NOT_DEFINED, key, ""));
+            String localName = modifiedQName.getLocalPart();
+            if (fieldMap.containsKey(modifiedQName)) {
+                throw DiagnosticLog.error(DiagnosticErrorCode.DUPLICATE_FIELD, localName);
+            } else if (fieldNames.containsKey(localName)) {
+                if (modifiedQName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.DUPLICATE_FIELD, localName);
+                }
+                List<QualifiedName> qNames = fieldNames.get(localName);
+                qNames.forEach(qName -> {
+                    if (qName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)) {
+                        throw DiagnosticLog.error(DiagnosticErrorCode.DUPLICATE_FIELD, localName);
+                    }
+                });
+                fieldMap.put(modifiedQName, recordFields.get(key));
+                fieldNames.get(localName).add(modifiedQName);
+            } else if (!analyzerData.attributeHierarchy.peek().contains(modifiedQName)) {
+                fieldMap.put(modifiedQName, recordFields.get(key));
+                fieldNames.put(localName, new ArrayList<>(List.of(modifiedQName)));
             }
-            fields.put(modifiedQName, recordFields.get(key));
         }
-        return fields;
+        return fieldMap;
     }
 
     @SuppressWarnings("unchecked")
@@ -177,7 +192,7 @@ public class DataUtils {
                         prefix == null ? "" : prefix.getValue());
             }
         }
-        return new QualifiedName(QualifiedName.NS_ANNOT_NOT_DEFINED, fieldName, "");
+        return new QualifiedName(Constants.NS_ANNOT_NOT_DEFINED, fieldName, "");
     }
 
     @SuppressWarnings("unchecked")
@@ -216,7 +231,7 @@ public class DataUtils {
     }
 
     public static void validateRequiredFields(BMap<BString, Object> currentMapValue, XmlAnalyzerData analyzerData) {
-        Map<QualifiedName, Field> fields = analyzerData.fieldHierarchy.peek();
+        Map<QualifiedName, Field> fields = analyzerData.fieldHierarchy.peek().getMembers();
         for (QualifiedName key : fields.keySet()) {
             // Validate required array size
             Field field = fields.get(key);
@@ -236,7 +251,7 @@ public class DataUtils {
             }
         }
 
-        Map<QualifiedName, Field> attributes = analyzerData.attributeHierarchy.peek();
+        Map<QualifiedName, Field> attributes = analyzerData.attributeHierarchy.peek().getMembers();
         for (QualifiedName key : attributes.keySet()) {
             Field field = attributes.get(key);
             String fieldName = field.getFieldName();
@@ -289,8 +304,8 @@ public class DataUtils {
     }
 
     public static void updateExpectedTypeStacks(RecordType recordType, XmlAnalyzerData analyzerData) {
-        analyzerData.attributeHierarchy.push(new HashMap<>(getAllAttributesInRecordType(recordType)));
-        analyzerData.fieldHierarchy.push(new HashMap<>(getAllFieldsInRecordType(recordType, analyzerData)));
+        analyzerData.attributeHierarchy.push(new QualifiedNameMap(getAllAttributesInRecordType(recordType)));
+        analyzerData.fieldHierarchy.push(new QualifiedNameMap(getAllFieldsInRecordType(recordType, analyzerData)));
         analyzerData.restTypes.push(recordType.getRestFieldType());
     }
 
@@ -774,8 +789,8 @@ public class DataUtils {
      */
     public static class XmlAnalyzerData {
         public final Stack<Object> nodesStack = new Stack<>();
-        public final Stack<Map<QualifiedName, Field>> fieldHierarchy = new Stack<>();
-        public final Stack<Map<QualifiedName, Field>> attributeHierarchy = new Stack<>();
+        public final Stack<QualifiedNameMap<Field>> fieldHierarchy = new Stack<>();
+        public final Stack<QualifiedNameMap<Field>> attributeHierarchy = new Stack<>();
         public final Stack<Type> restTypes = new Stack<>();
         public RecordType rootRecord;
         public Field currentField;

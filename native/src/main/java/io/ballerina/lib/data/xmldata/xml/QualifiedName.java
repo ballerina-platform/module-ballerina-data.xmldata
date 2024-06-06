@@ -24,7 +24,6 @@ package io.ballerina.lib.data.xmldata.xml;
  * @since 0.1.0
  */
 public class QualifiedName {
-    public static final String NS_ANNOT_NOT_DEFINED = "$$ns_annot_not_defined$$";
     private String localPart;
     private String namespaceURI;
     private String prefix;
@@ -59,7 +58,7 @@ public class QualifiedName {
 
     @Override
     public int hashCode() {
-        return localPart.hashCode();
+        return prefix.hashCode() ^ namespaceURI.hashCode() ^ localPart.hashCode();
     }
 
     @Override
@@ -72,9 +71,6 @@ public class QualifiedName {
             return false;
         }
 
-        if (qName.namespaceURI.equals(NS_ANNOT_NOT_DEFINED) || namespaceURI.equals(NS_ANNOT_NOT_DEFINED)) {
-            return localPart.equals(qName.localPart);
-        }
         return localPart.equals(qName.localPart) && namespaceURI.equals(qName.namespaceURI) &&
                 prefix.equals(qName.prefix);
     }
