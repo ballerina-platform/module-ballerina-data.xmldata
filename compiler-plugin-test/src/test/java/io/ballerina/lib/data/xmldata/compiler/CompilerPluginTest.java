@@ -197,4 +197,32 @@ public class CompilerPluginTest {
         Assert.assertEquals(warningDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
                 "invalid annotation attachment: child record does not allow name annotation");
     }
+
+    @Test
+    public void testComplexUnionTypeCaseWhenUserDefinedModulePrefix() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_11").getCompilation().diagnosticResult();
+        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
+                .collect(Collectors.toList());
+        Assert.assertEquals(errorDiagnosticsList.size(), 1);
+        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "invalid type: expected a record type");
+    }
+
+    @Test
+    public void testComplexUnionTypeCaseWhenUserDefinedModulePrefix2() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_12").getCompilation().diagnosticResult();
+        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
+                .collect(Collectors.toList());
+        Assert.assertEquals(errorDiagnosticsList.size(), 3);
+        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "invalid type: expected a record type");
+        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
+                "invalid type: expected a record type");
+        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
+                "invalid type: expected a record type");
+    }
 }
