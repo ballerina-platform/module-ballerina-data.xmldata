@@ -42,6 +42,19 @@ public type ValidationPerson record {|
         message: "Invalid date found for date of birth"
     }
     time:Date dob;
+    Family family;
+|};
+
+public type Family record {|
+    @constraint:Array {
+        maxLength: 2,
+        minLength: 1
+    }
+    string[] members;
+    @constraint:Int {
+        maxDigits: 4
+    }
+    int id;
 |};
 
 @test:Config {
@@ -58,6 +71,11 @@ function testValidConstraintAnnotationForParseString() returns error? {
             <month>12</month>
             <day>31</day>
         </dob>
+        <family>
+            <id>2221</id>
+            <members>John</members>
+            <members>Doe</members>
+        </family>
     </Person>
     `;
 
@@ -68,6 +86,10 @@ function testValidConstraintAnnotationForParseString() returns error? {
     test:assertEquals(person.dob.year, 1990);
     test:assertEquals(person.dob.month, 12);
     test:assertEquals(person.dob.day, 31);
+    test:assertEquals(person.family.id, 2221);
+    test:assertEquals(person.family.members.length(), 2); 
+    test:assertEquals(person.family.members[0], "John"); 
+    test:assertEquals(person.family.members[1], "Doe"); 
 }
 
 @constraint:Array {
@@ -102,6 +124,11 @@ function invalidConstraintAnnotation() returns [string, typedesc<record {}>, str
                         <month>12</month>
                         <day>31</day>
                     </dob>
+                    <family>
+                        <id>2221</id>
+                        <members>John</members>
+                        <members>Doe</members>
+                    </family>
                 </Person>
                 `,
             ValidationPerson,
@@ -118,6 +145,11 @@ function invalidConstraintAnnotation() returns [string, typedesc<record {}>, str
                         <month>12</month>
                         <day>31</day>
                     </dob>
+                    <family>
+                        <id>2221</id>
+                        <members>John</members>
+                        <members>Doe</members>
+                    </family>
                 </Person>
                 `,
             ValidationPerson,
@@ -134,6 +166,11 @@ function invalidConstraintAnnotation() returns [string, typedesc<record {}>, str
                         <month>12</month>
                         <day>31</day>
                     </dob>
+                    <family>
+                        <id>2221</id>
+                        <members>John</members>
+                        <members>Doe</members>
+                    </family>
                 </Person>
                 `,
             ValidationPerson,
@@ -150,6 +187,11 @@ function invalidConstraintAnnotation() returns [string, typedesc<record {}>, str
                         <month>12</month>
                         <day>31</day>
                     </dob>
+                    <family>
+                        <id>2221</id>
+                        <members>John</members>
+                        <members>Doe</members>
+                    </family>
                 </Person>
                 `,
             ValidationPerson,
@@ -166,10 +208,37 @@ function invalidConstraintAnnotation() returns [string, typedesc<record {}>, str
                         <month>12</month>
                         <day>31</day>
                     </dob>
+                    <family>
+                        <id>2221</id>
+                        <members>John</members>
+                        <members>Doe</members>
+                    </family>
                 </Person>
                 `,
             ValidationPerson,
             "Date of birth should be past value."
+        ],
+        [
+            string `
+                <Person>
+                    <name>John</name>
+                    <age>6</age>
+                    <height>167.25</height>
+                    <dob>
+                        <year>1999</year>
+                        <month>12</month>
+                        <day>31</day>
+                    </dob>
+                    <family>
+                        <id>22213</id>
+                        <members>John</members>
+                        <members>Doe</members>
+                        <members>Ross</members>
+                    </family>
+                </Person>
+                `,
+            ValidationPerson,
+            "Validation failed for '$.family.id:maxDigits','$.family.members:maxLength' constraint(s)."
         ],
         [
             string `
@@ -199,6 +268,11 @@ function testValidConstraintAnnotationForParseAsType() returns error? {
             <month>12</month>
             <day>31</day>
         </dob>
+        <family>
+            <id>2221</id>
+            <members>John</members>
+            <members>Doe</members>
+        </family>
     </Person>
     `;
 
@@ -209,6 +283,9 @@ function testValidConstraintAnnotationForParseAsType() returns error? {
     test:assertEquals(person.dob.year, 1990);
     test:assertEquals(person.dob.month, 12);
     test:assertEquals(person.dob.day, 31);
+    test:assertEquals(person.family.members.length(), 2); 
+    test:assertEquals(person.family.members[0], "John"); 
+    test:assertEquals(person.family.members[1], "Doe"); 
 }
 
 @test:Config {
@@ -234,6 +311,11 @@ function invalidConstraintAnnotationForParseAsType() returns [xml, typedesc<reco
                         <month>12</month>
                         <day>31</day>
                     </dob>
+                    <family>
+                        <id>2221</id>
+                        <members>John</members>
+                        <members>Doe</members>
+                    </family>
                 </Person>
                 `,
             ValidationPerson,
@@ -250,6 +332,11 @@ function invalidConstraintAnnotationForParseAsType() returns [xml, typedesc<reco
                         <month>12</month>
                         <day>31</day>
                     </dob>
+                    <family>
+                        <id>2221</id>
+                        <members>John</members>
+                        <members>Doe</members>
+                    </family> 
                 </Person>
                 `,
             ValidationPerson,
@@ -266,6 +353,11 @@ function invalidConstraintAnnotationForParseAsType() returns [xml, typedesc<reco
                         <month>12</month>
                         <day>31</day>
                     </dob>
+                    <family>
+                        <id>2221</id>
+                        <members>John</members>
+                        <members>Doe</members>
+                    </family>
                 </Person>
                 `,
             ValidationPerson,
@@ -282,6 +374,11 @@ function invalidConstraintAnnotationForParseAsType() returns [xml, typedesc<reco
                         <month>12</month>
                         <day>31</day>
                     </dob>
+                    <family>
+                        <id>2221</id>
+                        <members>John</members>
+                        <members>Doe</members>
+                    </family>
                 </Person>
                 `,
             ValidationPerson,
@@ -298,10 +395,37 @@ function invalidConstraintAnnotationForParseAsType() returns [xml, typedesc<reco
                         <month>12</month>
                         <day>31</day>
                     </dob>
+                    <family>
+                        <id>2221</id>
+                        <members>John</members>
+                        <members>Doe</members>
+                    </family>
                 </Person>
                 `,
             ValidationPerson,
             "Date of birth should be past value."
+        ],
+        [
+            xml `
+                <Person>
+                    <name>John</name>
+                    <age>6</age>
+                    <height>167.25</height>
+                    <dob>
+                        <year>1999</year>
+                        <month>12</month>
+                        <day>31</day>
+                    </dob>
+                    <family>
+                        <id>22213</id>
+                        <members>John</members>
+                        <members>Doe</members>
+                        <members>Ross</members>
+                    </family>
+                </Person>
+                `,
+            ValidationPerson,
+            "Validation failed for '$.family.id:maxDigits','$.family.members:maxLength' constraint(s)."
         ],
         [
             xml `

@@ -20,13 +20,11 @@ package io.ballerina.lib.data.xmldata.xml;
 
 import io.ballerina.lib.data.xmldata.io.DataReaderTask;
 import io.ballerina.lib.data.xmldata.io.DataReaderThreadPool;
-import io.ballerina.lib.data.xmldata.utils.DataUtils;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
 import io.ballerina.runtime.api.Environment;
 import io.ballerina.runtime.api.Future;
 import io.ballerina.runtime.api.values.BArray;
-import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BObject;
 import io.ballerina.runtime.api.values.BStream;
@@ -38,8 +36,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 
-import static io.ballerina.lib.data.xmldata.utils.Constants.ENABLE_CONSTRAINT_VALIDATION;
-
 /**
  * Xml conversion.
  *
@@ -49,25 +45,14 @@ public class Native {
 
     public static Object parseAsType(BXml xml, BMap<BString, Object> options, BTypedesc typed) {
         try {
-            Object convertedValue = XmlTraversal.traverse(xml, options, typed.getDescribingType());
-            if (convertedValue instanceof BError) {
-                return convertedValue;
-            }
-            return DataUtils.validateConstraints(convertedValue, typed,
-                    (Boolean) options.get(ENABLE_CONSTRAINT_VALIDATION));
+            return XmlTraversal.traverse(xml, options, typed);
         } catch (Exception e) {
             return DiagnosticLog.createXmlError(e.getMessage());
         }
     }
     public static Object parseString(BString xml, BMap<BString, Object> options, BTypedesc typed) {
         try {
-            Object convertedValue = XmlParser.parse(new StringReader(xml.getValue()), options,
-                    typed.getDescribingType());
-            if (convertedValue instanceof BError) {
-                return convertedValue;
-            }
-            return DataUtils.validateConstraints(convertedValue, typed,
-                    (Boolean) options.get(ENABLE_CONSTRAINT_VALIDATION));
+            return XmlParser.parse(new StringReader(xml.getValue()), options, typed);
         } catch (Exception e) {
             return DiagnosticLog.error(DiagnosticErrorCode.XML_PARSE_ERROR, e.getMessage());
         }
@@ -75,13 +60,7 @@ public class Native {
 
     public static Object parseBytes(BArray xml, BMap<BString, Object> options, BTypedesc typed) {
         try {
-            Object convertedValue = XmlParser.parse(new InputStreamReader(new ByteArrayInputStream(xml.getBytes())),
-                    options, typed.getDescribingType());
-            if (convertedValue instanceof BError) {
-                return convertedValue;
-            }
-            return DataUtils.validateConstraints(convertedValue, typed,
-                    (Boolean) options.get(ENABLE_CONSTRAINT_VALIDATION));
+            return XmlParser.parse(new InputStreamReader(new ByteArrayInputStream(xml.getBytes())), options, typed);
         } catch (Exception e) {
             return DiagnosticLog.error(DiagnosticErrorCode.XML_PARSE_ERROR, e.getMessage());
         }

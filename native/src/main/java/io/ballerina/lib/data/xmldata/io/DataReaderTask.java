@@ -17,7 +17,6 @@
  */
 package io.ballerina.lib.data.xmldata.io;
 
-import io.ballerina.lib.data.xmldata.utils.DataUtils;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
 import io.ballerina.lib.data.xmldata.xml.XmlParser;
@@ -26,7 +25,6 @@ import io.ballerina.runtime.api.Future;
 import io.ballerina.runtime.api.types.MethodType;
 import io.ballerina.runtime.api.types.ObjectType;
 import io.ballerina.runtime.api.utils.TypeUtils;
-import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BObject;
 import io.ballerina.runtime.api.values.BString;
@@ -34,8 +32,6 @@ import io.ballerina.runtime.api.values.BTypedesc;
 
 import java.io.InputStreamReader;
 import java.util.function.Consumer;
-
-import static io.ballerina.lib.data.xmldata.utils.Constants.ENABLE_CONSTRAINT_VALIDATION;
 
 /**
  * This class will read data from a Ballerina Stream of byte blocks, in non-blocking manner.
@@ -91,11 +87,7 @@ public class DataReaderTask implements Runnable {
         DataReaderTask.ResultConsumer<Object> resultConsumer = new DataReaderTask.ResultConsumer<>(future);
         try (var byteBlockSteam = new BallerinaByteBlockInputStream(env, iteratorObj, resolveNextMethod(iteratorObj),
                                                                     resolveCloseMethod(iteratorObj), resultConsumer)) {
-            Object result = XmlParser.parse(new InputStreamReader(byteBlockSteam), options, typed.getDescribingType());
-            if (!(result instanceof BError)) {
-                result = DataUtils.validateConstraints(result, typed,
-                        (Boolean) options.get(ENABLE_CONSTRAINT_VALIDATION));
-            }
+            Object result = XmlParser.parse(new InputStreamReader(byteBlockSteam), options, typed);
             future.complete(result);
         } catch (Exception e) {
             future.complete(DiagnosticLog.error(DiagnosticErrorCode.STREAM_BROKEN, e.getMessage()));
