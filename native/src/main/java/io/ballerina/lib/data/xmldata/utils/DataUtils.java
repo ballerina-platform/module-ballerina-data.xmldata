@@ -786,6 +786,29 @@ public class DataUtils {
         return false;
     }
 
+    public static boolean isEqualQualifiedName(QualifiedName firstQName, QualifiedName secondQName) {
+        if (firstQName == null || secondQName == null) {
+            return false;
+        }
+
+        if (firstQName.equals(secondQName)) {
+            return true;
+        }
+
+        return firstQName.getLocalPart().equals(secondQName.getLocalPart())
+                && (firstQName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)
+                || secondQName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED));
+    }
+
+    public static boolean isSimpleType(Type type) {
+        return switch (type.getTag()) {
+            case TypeTags.JSON_TAG, TypeTags.ANYDATA_TAG, TypeTags.MAP_TAG, TypeTags.OBJECT_TYPE_TAG,
+                    TypeTags.RECORD_TYPE_TAG, TypeTags.XML_TAG -> false;
+            case TypeTags.ARRAY_TAG -> isSimpleType(((ArrayType) type).getElementType());
+            default -> true;
+        };
+    }
+
     /**
      * Holds data required for the traversing.
      *
