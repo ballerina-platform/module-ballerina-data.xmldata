@@ -713,7 +713,12 @@ public class DataUtils {
         BString[] keys = annotation.getKeys();
         boolean hasNamespaceAnnotation = false;
         for (BString value : keys) {
-            if (value.getValue().endsWith(Constants.NAMESPACE)) {
+            String strValue = value.getValue();
+            if (strValue.startsWith(Constants.FIELD)) {
+                continue;
+            }
+
+            if (strValue.endsWith(Constants.NAMESPACE)) {
                 hasNamespaceAnnotation = true;
                 BMap<BString, Object> namespaceAnnotation = (BMap<BString, Object>) annotation.get(value);
                 BString prefix = (BString) namespaceAnnotation.get(Constants.PREFIX);
@@ -721,7 +726,7 @@ public class DataUtils {
                     key = prefix.getValue().concat(Constants.COLON).concat(key);
                 }
             }
-            if (value.getValue().endsWith(Constants.NAME)) {
+            if (strValue.endsWith(Constants.NAME)) {
                 key = processNameAnnotation(annotation, key, value, hasNamespaceAnnotation);
             }
         }
