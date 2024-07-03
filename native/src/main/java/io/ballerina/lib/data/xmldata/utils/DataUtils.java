@@ -41,6 +41,7 @@ import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTypedesc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -608,6 +609,43 @@ public class DataUtils {
                     StringUtils.fromString(getElementName(((RecordType) elementType).getAnnotations(), keyName)),
                     ValueCreator.createArrayValue(records.toArray(),
                             TypeCreator.createArrayType(Constants.JSON_ARRAY_TYPE)));
+        } else if (elementType.getTag() == TypeTags.UNION_TAG) {
+            Map<String, List<Object>> records = new HashMap<>();
+            for (int i = 0; i < arrayValue.getLength(); i++) {
+                Object element = arrayValue.get(i);
+                Type actualElementType = getTypeFromUnionType(elementType, element);
+                if (actualElementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                    BMap<BString, Object> subRecord = addFields(((BMap<BString, Object>) arrayValue.get(i)),
+                            actualElementType);
+                    subRecord = processParentAnnotation(actualElementType, subRecord);
+                    String elementName = getElementName(((RecordType) actualElementType).getAnnotations(),
+                            keyName);
+                    if (records.containsKey(elementName)) {
+                        records.get(elementName).add(subRecord.get(subRecord.getKeys()[0]));
+                    } else {
+                        records.put(elementName, new ArrayList<>(Arrays.asList(subRecord.get(subRecord.getKeys()[0]))));
+                    }
+                } else {
+                    if (records.containsKey(keyName)) {
+                        records.get(keyName).add(arrayValue.get(i));
+                    } else {
+                        records.put(keyName, new ArrayList<>(Arrays.asList(arrayValue.get(i))));
+                    }
+                }
+            }
+
+            for (Map.Entry<String, List<Object>> member : records.entrySet()) {
+                String name = member.getKey();
+                List<Object> value = member.getValue();
+
+                BString bKeyName = StringUtils.fromString(name);
+                if (value.size() == 1) {
+                    record.put(bKeyName, value.get(0));
+                } else {
+                    record.put(bKeyName, ValueCreator.createArrayValue(value.toArray(),
+                            TypeCreator.createArrayType(Constants.JSON_ARRAY_TYPE)));
+                }
+            }
         } else {
             List<Object> records = new ArrayList<>();
             for (int i = 0; i < arrayValue.getLength(); i++) {
