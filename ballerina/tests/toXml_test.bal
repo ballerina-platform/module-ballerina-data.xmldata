@@ -1165,6 +1165,73 @@ isolated function testRecordWithNamespaceAnnotationToXml1() returns error? {
     test:assertEquals(result.toString(), expected, msg = "testComplexRecordToXml result incorrect");
 }
 
+@Namespace {prefix: "wsa", uri: "http://www.w3.org/2005/08/addressing"}
+type Wsa_ReplyTo record {
+    @Namespace {prefix: "wsa", uri: "http://www.w3.org/2005/08/addressing"}
+    string Address;
+};
+
+@Namespace{prefix: "htng", uri: "http://htng.org/PWSWG/2007/02/AsyncHeaders"}
+type Htng_ReplyTo record {
+    @Namespace {prefix: "htng", uri: "http://htng.org/PWSWG/2007/02/AsyncHeaders"}
+    string Address;
+};
+
+@Name {value: "soap"}
+type Soap record {
+    (Htng_ReplyTo|Wsa_ReplyTo)[] ReplyTo;
+};
+
+@test:Config {
+    groups: ["toXml"]
+}
+isolated function testUnionArrayAsRecordFieldType() returns error? {
+    Soap data = {
+        ReplyTo: [
+            <Wsa_ReplyTo>{Address: "http://www.w3.org/2005/08/addressing/role/anonymous"},
+            <Htng_ReplyTo>{Address: "http://demo5199745.mockable.io/post/"}
+        ]
+    };
+    
+    xml result = check toXml(data);
+    string expected = 
+    "<soap>" +
+    "<wsa:ReplyTo xmlns:wsa=\"http://www.w3.org/2005/08/addressing\">" +
+    "<wsa:Address>http://www.w3.org/2005/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo>" +
+    "<htng:ReplyTo xmlns:htng=\"http://htng.org/PWSWG/2007/02/AsyncHeaders\">" +
+    "<htng:Address>http://demo5199745.mockable.io/post/</htng:Address></htng:ReplyTo>" +
+    "</soap>";
+    test:assertEquals(result.toString(), expected);
+}
+
+@Namespace {
+    uri: "example.com"
+}
+type File record {|
+    @Namespace {
+        uri: "example.com"
+    }
+    string fileName;
+    @Namespace {
+        uri: "example.com"
+    }
+    string fileNamespace;
+|};
+
+@test:Config {
+    groups: ["toXml"]
+}
+isolated function testToRecordFieldNameEndsWithNameOrNamespace() returns error? {
+    File file = {
+        fileName: "test.bal",
+        fileNamespace: "wso2.com"
+    };
+
+    xml result = check toXml(file);
+    string expected = "<File xmlns=\"example.com\"><fileName>test.bal</fileName><fileNamespace>wso2.com</fileNamespace></File>";
+    test:assertEquals(result.toString(), expected);
+}
+
 @test:Config {
     groups: ["toXml"]
 }
