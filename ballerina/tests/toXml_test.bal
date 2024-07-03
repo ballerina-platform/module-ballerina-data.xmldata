@@ -1165,21 +1165,21 @@ isolated function testRecordWithNamespaceAnnotationToXml1() returns error? {
     test:assertEquals(result.toString(), expected, msg = "testComplexRecordToXml result incorrect");
 }
 
-@Namespace {prefix: "wsa", uri: "http://www.w3.org/2005/08/addressing"}
-type Wsa_ReplyTo record {
-    @Namespace {prefix: "wsa", uri: "http://www.w3.org/2005/08/addressing"}
+@Namespace {prefix: "ex1", uri: "example1.com"}
+type Ex1_Reply record {
+    @Namespace {prefix: "ex1", uri: "example1.com"}
     string Address;
 };
 
-@Namespace{prefix: "htng", uri: "http://htng.org/PWSWG/2007/02/AsyncHeaders"}
-type Htng_ReplyTo record {
-    @Namespace {prefix: "htng", uri: "http://htng.org/PWSWG/2007/02/AsyncHeaders"}
+@Namespace{prefix: "ex2", uri: "example2.com"}
+type Ex2_Reply record {
+    @Namespace {prefix: "ex2", uri: "example2.com"}
     string Address;
 };
 
 @Name {value: "soap"}
 type Soap record {
-    (Htng_ReplyTo|Wsa_ReplyTo)[] ReplyTo;
+    (Ex2_Reply|Ex1_Reply)[] Reply;
 };
 
 @test:Config {
@@ -1187,19 +1187,19 @@ type Soap record {
 }
 isolated function testUnionArrayAsRecordFieldType() returns error? {
     Soap data = {
-        ReplyTo: [
-            <Wsa_ReplyTo>{Address: "http://www.w3.org/2005/08/addressing/role/anonymous"},
-            <Htng_ReplyTo>{Address: "http://demo5199745.mockable.io/post/"}
+        Reply: [
+            <Ex1_Reply>{Address: "example3.com"},
+            <Ex2_Reply>{Address: "example4.com"}
         ]
     };
     
     xml result = check toXml(data);
     string expected = 
     "<soap>" +
-    "<wsa:ReplyTo xmlns:wsa=\"http://www.w3.org/2005/08/addressing\">" +
-    "<wsa:Address>http://www.w3.org/2005/08/addressing/role/anonymous</wsa:Address></wsa:ReplyTo>" +
-    "<htng:ReplyTo xmlns:htng=\"http://htng.org/PWSWG/2007/02/AsyncHeaders\">" +
-    "<htng:Address>http://demo5199745.mockable.io/post/</htng:Address></htng:ReplyTo>" +
+    "<ex1:Reply xmlns:ex1=\"example1.com\">" +
+    "<ex1:Address>example3.com</ex1:Address></ex1:Reply>" +
+    "<ex2:Reply xmlns:ex2=\"example2.com\">" +
+    "<ex2:Address>example4.com</ex2:Address></ex2:Reply>" +
     "</soap>";
     test:assertEquals(result.toString(), expected);
 }
