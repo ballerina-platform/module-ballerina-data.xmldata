@@ -620,10 +620,11 @@ public class DataUtils {
                     subRecord = processParentAnnotation(actualElementType, subRecord);
                     String elementName = getElementName(((RecordType) actualElementType).getAnnotations(),
                             keyName);
+                    Object value = subRecord.get(subRecord.getKeys()[0]);
                     if (records.containsKey(elementName)) {
-                        records.get(elementName).add(subRecord.get(subRecord.getKeys()[0]));
+                        records.get(elementName).add(value);
                     } else {
-                        records.put(elementName, new ArrayList<>(Arrays.asList(subRecord.get(subRecord.getKeys()[0]))));
+                        records.put(elementName, new ArrayList<>(Arrays.asList(value)));
                     }
                 } else {
                     if (records.containsKey(keyName)) {
