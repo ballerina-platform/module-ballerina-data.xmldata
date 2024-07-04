@@ -1165,6 +1165,62 @@ isolated function testRecordWithNamespaceAnnotationToXml1() returns error? {
     test:assertEquals(result.toString(), expected, msg = "testComplexRecordToXml result incorrect");
 }
 
+type AddressR record {|
+    string city;
+    int code; 
+|};
+
+type Wsa_ReplyTo record {
+    @Namespace {prefix: "wsa", uri: "example1.com"}
+    AddressR Address;
+};
+
+type Htng_ReplyTo record {
+    @Namespace {prefix: "htng", uri: "example2.com"}
+    AddressR Address;
+};
+
+@Name {value: "soap"}
+type Soap record {
+    @Name {value: "ReplyTo"}
+    @Namespace {prefix: "wsa", uri: "example1.com"}
+    Wsa_ReplyTo wsaReplyTo;
+    @Name {value: "ReplyTo"}
+    @Namespace {prefix: "htng", uri: "example2.com"}
+    Htng_ReplyTo htngReplyTo;
+};
+
+@test:Config {
+    groups: ["toXml"]
+}
+isolated function testXmlToRecordWithNamespaceAttachedToFields() returns error? {
+    Soap val = {
+        htngReplyTo: {
+            Address: {
+                code: 40000,
+                city: "Colombo"
+            }
+        }, 
+        wsaReplyTo: {
+            Address: {
+                code: 10000,
+                city: "Kandy"
+            }
+        }
+    };
+    
+    xml xmlVal = check toXml(val);
+    string expected = "<soap>" +
+    "<wsa:ReplyTo xmlns:wsa=\"example1.com\">" +
+    "<wsa:Address><city>Kandy</city><code>10000</code></wsa:Address>" +
+    "</wsa:ReplyTo>" +
+    "<htng:ReplyTo xmlns:htng=\"example2.com\">" +
+    "<htng:Address><city>Colombo</city><code>40000</code></htng:Address>" +
+    "</htng:ReplyTo>" +
+    "</soap>";
+    test:assertEquals(xmlVal.toString(), expected);
+}
+
 @test:Config {
     groups: ["toXml"]
 }

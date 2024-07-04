@@ -459,14 +459,20 @@ public class DataUtils {
                     processRecord(key, annotations, recordValue, value, fieldType);
                 } else if (fieldType.getTag() == TypeTags.TYPE_REFERENCED_TYPE_TAG) {
                     Type referredType = TypeUtils.getReferredType(fieldType);
+                    BMap<BString, Object> namespaceAnnotRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
                     if (annotations.size() > 0) {
+                        String fieldName = key;
                         key = getKeyNameFromAnnotation(annotations, key);
+                        QName qName = addFieldNamespaceAnnotation(fieldName, key, annotations, namespaceAnnotRecord);
+                        String localPart = qName.getLocalPart();
+                        key = qName.getPrefix().isBlank() ? localPart : qName.getPrefix() + ":" + localPart;
                     }
                     BMap<BString, Object> subRecordAnnotations = ((RecordType) referredType).getAnnotations();
                     key = getElementName(subRecordAnnotations, key);
                     BMap<BString, Object>  annotationRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
                     processSubRecordAnnotation(subRecordAnnotations, annotationRecord);
                     BMap<BString, Object> subRecordValue = addFields(((BMap<BString, Object>) value), referredType);
+                    addNamespaceToSubRecord(key, namespaceAnnotRecord, subRecordValue);
                     if (annotationRecord.size() > 0) {
                         subRecordValue.put(annotationRecord.getKeys()[0],
                                 annotationRecord.get(annotationRecord.getKeys()[0]));
@@ -475,7 +481,7 @@ public class DataUtils {
                 } else if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
                     processArray(fieldType, annotations, recordValue, entry);
                 } else {
-                    addPrimitiveValue(addFieldNamespaceAnnotation(key, annotations, recordValue),
+                    addPrimitiveValue(addFieldNamespaceAnnotation(key, key, annotations, recordValue),
                             annotations, recordValue, value);
                 }
             } else {
@@ -486,10 +492,27 @@ public class DataUtils {
     }
 
     @SuppressWarnings("unchecked")
-    private static QName addFieldNamespaceAnnotation(String key, BMap<BString, Object> annotations,
+    private static void addNamespaceToSubRecord(String key, BMap<BString, Object> namespaceAnnotRecord,
+                                                BMap<BString, Object> subRecord) {
+        if (namespaceAnnotRecord.isEmpty()) {
+            return;
+        }
+
+        Object value = namespaceAnnotRecord.get(StringUtils.fromString(key));
+        if (value == null) {
+            return;
+        }
+
+        for (Map.Entry<BString, Object> nsAnnotEntry: ((BMap<BString, Object>) value).entrySet()) {
+            subRecord.put(nsAnnotEntry.getKey(), nsAnnotEntry.getValue());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static QName addFieldNamespaceAnnotation(String fieldName, String key, BMap<BString, Object> annotations,
                                                      BMap<BString, Object> recordValue) {
         BString annotationKey = StringUtils.fromString(Constants.FIELD
-                + (key.replaceAll(Constants.NON_NUMERIC_STRING_REGEX, "\\\\$0")));
+                + (fieldName.replaceAll(Constants.NON_NUMERIC_STRING_REGEX, "\\\\$0")));
         boolean isAttributeField = isAttributeField(annotationKey, annotations);
         if (annotations.containsKey(annotationKey)) {
             BMap<BString, Object> annotationValue = (BMap<BString, Object>) annotations.get(annotationKey);
