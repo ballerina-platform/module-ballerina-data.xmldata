@@ -15,7 +15,6 @@
 // under the License.
 
 import ballerina/test;
-import ballerina/io;
 
 @test:Config {
     groups: ["toXml"]
@@ -1192,7 +1191,7 @@ type Soap1 record {
 };
 
 @test:Config {
-    groups: ["toXml"]
+    groups: ["toXml", "testFail"]
 }
 isolated function testXmlToRecordWithNamespaceAttachedToFields() returns error? {
     Soap1 val = {
@@ -1217,7 +1216,6 @@ isolated function testXmlToRecordWithNamespaceAttachedToFields() returns error? 
     "</wsa:ReplyTo><htng:ReplyTo xmlns:htng=\"example2.com\">" +
     "<wsa:Address xmlns:wsa=\"example1.com\"><city>Colombo</city><code>40000</code>" +
     "</wsa:Address></htng:ReplyTo></soap>";
-    io:println(xmlVal);
     test:assertEquals(xmlVal.toString(), expected);
 }
 
@@ -1275,7 +1273,6 @@ isolated function testXmlToRecordWithNamespaceAttachedToFieldsAndTypes() returns
     "</wsa:ReplyTo><htng:ReplyTo xmlns:htng=\"example2.com\">" +
     "<wsa:Address xmlns:wsa=\"example1.com\"><city>Colombo</city><code>40000</code>" +
     "</wsa:Address></htng:ReplyTo></soap>";
-    io:println(xmlVal);
     test:assertEquals(xmlVal.toString(), expected); 
 }
 
@@ -1303,6 +1300,34 @@ isolated function testUnderscoreInTheFieldName() returns error? {
         Type: "3"}};
     xml xmlVal = check toXml(s);
     test:assertEquals(xmlVal.toString(), "<Source><RequestorID ID=\"1\" ID_Context=\"2\" Type=\"3\"/></Source>");
+}
+
+@Namespace {
+    uri: "example.com"
+}
+type File record {|
+    @Namespace {
+        uri: "example.com"
+    }
+    string fileName;
+    @Namespace {
+        uri: "example.com"
+    }
+    string fileNamespace;
+|};
+
+@test:Config {
+    groups: ["toXml"]
+}
+isolated function testToRecordFieldNameEndsWithNameOrNamespace() returns error? {
+    File file = {
+        fileName: "test.bal",
+        fileNamespace: "wso2.com"
+    };
+
+    xml result = check toXml(file);
+    string expected = "<File xmlns=\"example.com\"><fileName>test.bal</fileName><fileNamespace>wso2.com</fileNamespace></File>";
+    test:assertEquals(result.toString(), expected);
 }
 
 @test:Config {

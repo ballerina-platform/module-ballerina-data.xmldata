@@ -42,6 +42,7 @@ public class Constants {
     public static final ArrayType JSON_ARRAY_TYPE = TypeCreator.createArrayType(PredefinedTypes.TYPE_JSON);
     public static final String FIELD = "$field$.";
     public static final String NAMESPACE = "Namespace";
+    public static final String MODULE_NAME = "ballerina/data.xmldata";
     public static final BString URI = StringUtils.fromString("uri");
     public static final BString PREFIX = StringUtils.fromString("prefix");
     public static final String ATTRIBUTE = "Attribute";

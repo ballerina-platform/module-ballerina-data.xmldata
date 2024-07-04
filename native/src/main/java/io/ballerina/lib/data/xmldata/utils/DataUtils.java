@@ -66,8 +66,7 @@ public class DataUtils {
         BMap<BString, Object> annotations = recordType.getAnnotations();
         String localName = recordName;
         for (BString annotationsKey : annotations.getKeys()) {
-            String key = annotationsKey.getValue();
-            if (!key.contains(Constants.FIELD) && key.endsWith(Constants.NAME)) {
+            if (isNameAnnotationKey(annotationsKey.getValue())) {
                 String name = ((BMap<BString, Object>) annotations.get(annotationsKey)).get(Constants.VALUE).toString();
                 String localPart = elementName.getLocalPart();
                 if (!name.equals(localPart)) {
@@ -81,7 +80,7 @@ public class DataUtils {
         // Handle the namespace annotation.
         for (BString annotationsKey : annotations.getKeys()) {
             String key = annotationsKey.getValue();
-            if (!key.contains(Constants.FIELD) && key.endsWith(Constants.NAMESPACE)) {
+            if (isNamespaceAnnotationKey(key)) {
                 Map<BString, Object> namespaceAnnotation =
                         ((Map<BString, Object>) annotations.get(StringUtils.fromString(key)));
                 BString uri = (BString) namespaceAnnotation.get(Constants.URI);
@@ -106,8 +105,7 @@ public class DataUtils {
         BMap<BString, Object> annotations = recordType.getAnnotations();
         ArrayList<String> namespace = new ArrayList<>();
         for (BString annotationsKey : annotations.getKeys()) {
-            String key = annotationsKey.getValue();
-            if (!key.contains(Constants.FIELD) && key.endsWith(Constants.NAMESPACE)) {
+            if (isNamespaceAnnotationKey(annotationsKey.getValue())) {
                 BMap<BString, Object> namespaceAnnotation = (BMap<BString, Object>) annotations.get(annotationsKey);
                 namespace.add(namespaceAnnotation.containsKey(Constants.PREFIX) ?
                         ((BString) namespaceAnnotation.get(Constants.PREFIX)).getValue() : "");
@@ -184,7 +182,7 @@ public class DataUtils {
     @SuppressWarnings("unchecked")
     public static QualifiedName getFieldNameFromRecord(Map<BString, Object> fieldAnnotation, String fieldName) {
         for (BString key : fieldAnnotation.keySet()) {
-            if (key.getValue().endsWith(Constants.NAMESPACE)) {
+            if (isNamespaceAnnotationKey(key.getValue())) {
                 Map<BString, Object> namespaceAnnotation = ((Map<BString, Object>) fieldAnnotation.get(key));
                 BString uri = (BString) namespaceAnnotation.get(Constants.URI);
                 BString prefix = (BString) namespaceAnnotation.get(Constants.PREFIX);
@@ -198,7 +196,7 @@ public class DataUtils {
     @SuppressWarnings("unchecked")
     private static String getModifiedName(Map<BString, Object> fieldAnnotation, String attributeName) {
         for (BString key : fieldAnnotation.keySet()) {
-            if (key.getValue().endsWith(Constants.NAME)) {
+            if (isNameAnnotationKey(key.getValue())) {
                 return ((Map<BString, Object>) fieldAnnotation.get(key)).get(Constants.VALUE).toString();
             }
         }
@@ -525,7 +523,7 @@ public class DataUtils {
         if (annotations.containsKey(annotationKey)) {
             BMap<BString, Object> annotationValue = (BMap<BString, Object>) annotations.get(annotationKey);
             for (BString fieldKey : annotationValue.getKeys()) {
-                if (fieldKey.toString().endsWith(Constants.NAMESPACE)) {
+                if (isNamespaceAnnotationKey(fieldKey.getValue())) {
                     return processFieldNamespaceAnnotation(annotationValue, key, fieldKey, recordValue,
                             isAttributeField);
                 }
@@ -542,7 +540,7 @@ public class DataUtils {
 
         BMap<BString, Object> annotationValue = (BMap<BString, Object>) annotations.get(annotationKey);
         for (BString fieldKey : annotationValue.getKeys()) {
-            if (fieldKey.toString().endsWith(Constants.ATTRIBUTE)) {
+            if (isAttributeAnnotationKey(fieldKey.getValue())) {
                 return true;
             }
         }
@@ -563,7 +561,7 @@ public class DataUtils {
         BMap<BString, Object> annotationValue = (BMap<BString, Object>) parentAnnotations.get(annotationKey);
         for (BString fieldKey : annotationValue.getKeys()) {
             String keyName = fieldKey.getValue();
-            if (keyName.endsWith(Constants.NAMESPACE) || keyName.endsWith(Constants.NAME)) {
+            if (isNamespaceAnnotationKey(keyName) || isNameAnnotationKey(keyName)) {
                 nsFieldAnnotation.put(fieldKey, annotationValue.get(fieldKey));
                 break;
             }
@@ -694,7 +692,7 @@ public class DataUtils {
     private static String processFieldAnnotation(BMap<BString, Object> annotation, String key) {
         for (BString value : annotation.getKeys()) {
             String stringValue = value.getValue();
-            if (stringValue.endsWith(Constants.NAME)) {
+            if (isNameAnnotationKey(stringValue)) {
                 BMap<BString, Object> names = (BMap<BString, Object>) annotation.get(value);
                 String name = names.get(StringUtils.fromString(VALUE)).toString();
                 if (key.contains(Constants.COLON)) {
@@ -705,7 +703,7 @@ public class DataUtils {
                     key = name;
                 }
             }
-            if (stringValue.endsWith(Constants.ATTRIBUTE)) {
+            if (isAttributeAnnotationKey(stringValue)) {
                 key = ATTRIBUTE_PREFIX.concat(key);
             }
         }
@@ -718,10 +716,10 @@ public class DataUtils {
         for (BString value : annotation.getKeys()) {
             if (!value.getValue().contains(Constants.FIELD)) {
                 String stringValue = value.getValue();
-                if (stringValue.endsWith(Constants.NAME)) {
+                if (isNameAnnotationKey(stringValue)) {
                     key = processNameAnnotation(annotation, key, value, hasNamespaceAnnotation);
                 }
-                if (stringValue.endsWith(Constants.NAMESPACE)) {
+                if (isNamespaceAnnotationKey(stringValue)) {
                     hasNamespaceAnnotation = true;
                     key = processNamespaceAnnotation(annotation, key, value, namespaces);
                 }
@@ -733,7 +731,7 @@ public class DataUtils {
     private static void processSubRecordAnnotation(BMap<BString, Object> annotation, BMap<BString, Object>  subRecord) {
         BString[] keys = annotation.getKeys();
         for (BString value : keys) {
-            if (value.getValue().endsWith(Constants.NAMESPACE)) {
+            if (isNamespaceAnnotationKey(value.getValue())) {
                 processNamespaceAnnotation(annotation, "", value, subRecord);
             }
         }
@@ -744,7 +742,7 @@ public class DataUtils {
         BString[] keys = annotation.getKeys();
         boolean hasNamespaceAnnotation = false;
         for (BString value : keys) {
-            if (value.getValue().endsWith(Constants.NAMESPACE)) {
+            if (isNamespaceAnnotationKey(value.getValue())) {
                 hasNamespaceAnnotation = true;
                 BMap<BString, Object> namespaceAnnotation = (BMap<BString, Object>) annotation.get(value);
                 BString prefix = (BString) namespaceAnnotation.get(Constants.PREFIX);
@@ -755,7 +753,7 @@ public class DataUtils {
         }
 
         for (BString value : keys) {
-            if (value.getValue().endsWith(Constants.NAME)) {
+            if (isNameAnnotationKey(value.getValue())) {
                 key = processNameAnnotation(annotation, key, value, hasNamespaceAnnotation);
             }
         }
@@ -814,6 +812,18 @@ public class DataUtils {
         }
         subRecord.put(StringUtils.fromString(ATTRIBUTE_PREFIX + "xmlns:" + prefix), uri);
         return prefix.getValue().concat(Constants.COLON).concat(key);
+    }
+
+    private static boolean isNamespaceAnnotationKey(String key) {
+        return key.startsWith(Constants.MODULE_NAME) && key.endsWith(Constants.NAMESPACE);
+    }
+
+    private static boolean isNameAnnotationKey(String key) {
+        return key.startsWith(Constants.MODULE_NAME) && key.endsWith(Constants.NAME);
+    }
+
+    private static boolean isAttributeAnnotationKey(String key) {
+        return key.startsWith(Constants.MODULE_NAME) && key.endsWith(Constants.ATTRIBUTE);
     }
 
     /**
