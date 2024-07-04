@@ -425,7 +425,10 @@ public class XmlParser {
     }
 
     private void buildDocument(XmlParserData xmlParserData) {
-//        validateRequiredFields(xmlParserData);
+        if (xmlParserData.fieldHierarchy.empty()) {
+            return;
+        }
+        validateRequiredFields(xmlParserData);
     }
 
     @SuppressWarnings("unchecked")
@@ -690,20 +693,20 @@ public class XmlParser {
         BString currentFieldName = null;
         try {
             boolean readNext = false;
+            boolean isRestExit = false;
             while (!xmlParserData.restFieldsPoints.isEmpty()) {
-                if (xmlParserData.restFieldsPoints.peek() == Constants.EXIT_REST_POINT) {
-                    xmlParserData.restFieldsPoints.pop();
-                    break;
-                }
-
                 switch (next) {
                     case START_ELEMENT -> currentFieldName = readElementRest(xmlStreamReader, xmlParserData);
-                    case END_ELEMENT -> endElementRest(xmlStreamReader, xmlParserData);
+                    case END_ELEMENT -> isRestExit = endElementRest(xmlStreamReader, xmlParserData);
                     case CDATA -> readTextRest(xmlStreamReader, currentFieldName, true, xmlParserData);
                     case CHARACTERS -> {
                         readTextRest(xmlStreamReader, currentFieldName, false, xmlParserData);
                         readNext = true;
                     }
+                }
+
+                if (isRestExit) {
+                    break;
                 }
 
                 if (xmlStreamReader.hasNext() && !xmlParserData.restFieldsPoints.isEmpty()) {
@@ -816,7 +819,7 @@ public class XmlParser {
     }
 
     @SuppressWarnings("unchecked")
-    private void endElementRest(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
+    private boolean endElementRest(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
         QualifiedName elemQName = getElementName(xmlStreamReader);
         if (xmlParserData.siblings.contains(elemQName) && !xmlParserData.siblings.get(elemQName)) {
             xmlParserData.siblings.put(elemQName, true);
@@ -827,11 +830,11 @@ public class XmlParser {
             xmlParserData.siblings = xmlParserData.parents.pop();
             xmlParserData.restFieldsPoints.pop();
             xmlParserData.siblings.put(elemQName, true);
-            return;
+            return true;
         }
 
         if (xmlParserData.parents.isEmpty() || !xmlParserData.parents.peek().contains(elemQName)) {
-            return;
+            return false;
         }
 
         xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.pop();
@@ -844,6 +847,7 @@ public class XmlParser {
         }
         xmlParserData.restFieldsPoints.pop();
         xmlParserData.siblings.put(elemQName, true);
+        return false;
     }
 
     @SuppressWarnings("unchecked")
@@ -1092,7 +1096,6 @@ public class XmlParser {
         if (!xmlParserData.siblings.contains(elementQName)) {
             xmlParserData.siblings.put(elementQName, false);
         }
-        xmlParserData.restFieldsPoints.push(Constants.EXIT_REST_POINT);
         xmlParserData.parents.push(xmlParserData.siblings);
         xmlParserData.siblings = new QualifiedNameMap<>(new LinkedHashMap<>());
     }

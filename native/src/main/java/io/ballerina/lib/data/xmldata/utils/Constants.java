@@ -54,7 +54,6 @@ public class Constants {
     public static final String RECORD = "record";
     public static final String RECORD_OR_MAP = "record or map";
     public static final String ANON_TYPE = "$anonType$";
-    public static final QualifiedName EXIT_REST_POINT = new QualifiedName("", "$exitRestPoint$", "");
     public static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attributePrefix");
     public static final BString TEXT_FIELD_NAME = StringUtils.fromString("textFieldName");
     public static final BString ALLOW_DATA_PROJECTION = StringUtils.fromString("allowDataProjection");
