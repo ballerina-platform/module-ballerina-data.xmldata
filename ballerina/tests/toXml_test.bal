@@ -15,6 +15,7 @@
 // under the License.
 
 import ballerina/test;
+import ballerina/io;
 
 @test:Config {
     groups: ["toXml"]
@@ -1165,36 +1166,36 @@ isolated function testRecordWithNamespaceAnnotationToXml1() returns error? {
     test:assertEquals(result.toString(), expected, msg = "testComplexRecordToXml result incorrect");
 }
 
-type AddressR record {|
+type AddressR1 record {|
     string city;
     int code; 
 |};
 
-type Wsa_ReplyTo record {
+type Wsa_ReplyTo1 record {
     @Namespace {prefix: "wsa", uri: "example1.com"}
-    AddressR Address;
+    AddressR1 Address;
 };
 
-type Htng_ReplyTo record {
-    @Namespace {prefix: "htng", uri: "example2.com"}
-    AddressR Address;
+type Htng_ReplyTo1 record {
+    @Namespace {prefix: "wsa", uri: "example1.com"}
+    AddressR1 Address;
 };
 
 @Name {value: "soap"}
-type Soap record {
+type Soap1 record {
     @Name {value: "ReplyTo"}
     @Namespace {prefix: "wsa", uri: "example1.com"}
-    Wsa_ReplyTo wsaReplyTo;
+    Wsa_ReplyTo1 wsaReplyTo;
     @Name {value: "ReplyTo"}
     @Namespace {prefix: "htng", uri: "example2.com"}
-    Htng_ReplyTo htngReplyTo;
+    Htng_ReplyTo1 htngReplyTo;
 };
 
 @test:Config {
     groups: ["toXml"]
 }
 isolated function testXmlToRecordWithNamespaceAttachedToFields() returns error? {
-    Soap val = {
+    Soap1 val = {
         htngReplyTo: {
             Address: {
                 code: 40000,
@@ -1213,12 +1214,69 @@ isolated function testXmlToRecordWithNamespaceAttachedToFields() returns error? 
     string expected = "<soap>" +
     "<wsa:ReplyTo xmlns:wsa=\"example1.com\">" +
     "<wsa:Address><city>Kandy</city><code>10000</code></wsa:Address>" +
-    "</wsa:ReplyTo>" +
-    "<htng:ReplyTo xmlns:htng=\"example2.com\">" +
-    "<htng:Address><city>Colombo</city><code>40000</code></htng:Address>" +
-    "</htng:ReplyTo>" +
-    "</soap>";
+    "</wsa:ReplyTo><htng:ReplyTo xmlns:htng=\"example2.com\">" +
+    "<wsa:Address xmlns:wsa=\"example1.com\"><city>Colombo</city><code>40000</code>" +
+    "</wsa:Address></htng:ReplyTo></soap>";
+    io:println(xmlVal);
     test:assertEquals(xmlVal.toString(), expected);
+}
+
+@Namespace {prefix: "wsa", uri: "example1.com"}
+type AddressR2 record {|
+    string city;
+    int code; 
+|};
+
+@Namespace {prefix: "wsa", uri: "example1.com"}
+type Wsa_ReplyTo2 record {
+    @Namespace {prefix: "wsa", uri: "example1.com"}
+    AddressR2 Address;
+};
+
+@Namespace {prefix: "htng", uri: "example2.com"}
+type Htng_ReplyTo2 record {
+    @Namespace {prefix: "wsa", uri: "example1.com"}
+    AddressR2 Address;
+};
+
+@Name {value: "soap"}
+type Soap2 record {
+    @Name {value: "ReplyTo"}
+    @Namespace {prefix: "wsa", uri: "example1.com"}
+    Wsa_ReplyTo2 wsaReplyTo;
+    @Name {value: "ReplyTo"}
+    @Namespace {prefix: "htng", uri: "example2.com"}
+    Htng_ReplyTo2 htngReplyTo;
+};
+
+@test:Config {
+    groups: ["toXml"]
+}
+isolated function testXmlToRecordWithNamespaceAttachedToFieldsAndTypes() returns error? {
+    Soap2 val = {
+        htngReplyTo: {
+            Address: {
+                code: 40000,
+                city: "Colombo"
+            }
+        }, 
+        wsaReplyTo: {
+            Address: {
+                code: 10000,
+                city: "Kandy"
+            }
+        }
+    };
+    
+    xml xmlVal = check toXml(val);
+    string expected = "<soap>" +
+    "<wsa:ReplyTo xmlns:wsa=\"example1.com\">" +
+    "<wsa:Address><city>Kandy</city><code>10000</code></wsa:Address>" +
+    "</wsa:ReplyTo><htng:ReplyTo xmlns:htng=\"example2.com\">" +
+    "<wsa:Address xmlns:wsa=\"example1.com\"><city>Colombo</city><code>40000</code>" +
+    "</wsa:Address></htng:ReplyTo></soap>";
+    io:println(xmlVal);
+    test:assertEquals(xmlVal.toString(), expected); 
 }
 
 type RequestorID record {

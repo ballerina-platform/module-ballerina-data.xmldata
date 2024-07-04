@@ -460,17 +460,25 @@ public class DataUtils {
                 } else if (fieldType.getTag() == TypeTags.TYPE_REFERENCED_TYPE_TAG) {
                     Type referredType = TypeUtils.getReferredType(fieldType);
                     BMap<BString, Object> namespaceAnnotRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
+                    boolean doesNamespaceDefinedInField = false;
                     if (annotations.size() > 0) {
                         String fieldName = key;
                         key = getKeyNameFromAnnotation(annotations, key);
                         QName qName = addFieldNamespaceAnnotation(fieldName, key, annotations, namespaceAnnotRecord);
+                        if (!qName.getNamespaceURI().equals("")) {
+                            doesNamespaceDefinedInField = true;
+                        }
                         String localPart = qName.getLocalPart();
                         key = qName.getPrefix().isBlank() ? localPart : qName.getPrefix() + ":" + localPart;
                     }
-                    BMap<BString, Object> subRecordAnnotations = ((RecordType) referredType).getAnnotations();
-                    key = getElementName(subRecordAnnotations, key);
+
                     BMap<BString, Object>  annotationRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
-                    processSubRecordAnnotation(subRecordAnnotations, annotationRecord);
+                    if (!doesNamespaceDefinedInField) {
+                        BMap<BString, Object> subRecordAnnotations = ((RecordType) referredType).getAnnotations();
+                        key = getElementName(subRecordAnnotations, key);
+                        processSubRecordAnnotation(subRecordAnnotations, annotationRecord);
+                    }
+
                     BMap<BString, Object> subRecordValue = addFields(((BMap<BString, Object>) value), referredType);
                     addNamespaceToSubRecord(key, namespaceAnnotRecord, subRecordValue);
                     if (annotationRecord.size() > 0) {
@@ -744,6 +752,9 @@ public class DataUtils {
                     key = prefix.getValue().concat(Constants.COLON).concat(key);
                 }
             }
+        }
+
+        for (BString value : keys) {
             if (value.getValue().endsWith(Constants.NAME)) {
                 key = processNameAnnotation(annotation, key, value, hasNamespaceAnnotation);
             }
