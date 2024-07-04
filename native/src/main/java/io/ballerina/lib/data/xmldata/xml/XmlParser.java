@@ -345,7 +345,6 @@ public class XmlParser {
                     bText, xmlParserData);
             case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG -> {
                 BArray tempArr = (BArray) ((BMap<BString, Object>) xmlParserData.nodesStack.peek()).get(bFieldName);
-                // TODO: Using this -2 here seems strange for me. Find a better way to handle this.
                 HashMap<String, Integer> indexes
                         = xmlParserData.arrayIndexes.get(xmlParserData.arrayIndexes.size() - 2);
                 int currentIndex = indexes.get(bFieldName.getValue());
@@ -777,8 +776,7 @@ public class XmlParser {
             xmlParserData.siblings.put(elemQName, false);
             if (restType.getTag() == TypeTags.ARRAY_TAG) {
                 BArray tempArray = DataUtils.createArrayValue(restType);
-                // TODO: Should initialize next value holder with member-type.
-                updateNextArrayMemberForRestType(tempArray, restType);
+                updateNextArrayMemberForRestType(tempArray, ((ArrayType) restType).getElementType());
                 xmlParserData.currentNode.put(currentFieldName, tempArray);
             } else {
                 BMap<BString, Object> next =
@@ -791,7 +789,6 @@ public class XmlParser {
 
         Object currentElement = xmlParserData.currentNode.get(currentFieldName);
         if (currentElement instanceof BArray bArray) {
-            // TODO: Should initialize next value holder with member-type.
             updateNextArrayMemberForRestType(bArray, restType);
             xmlParserData.siblings.put(elemQName, false);
             return currentFieldName;
@@ -877,24 +874,16 @@ public class XmlParser {
 
         convertTextRestAndUpdateCurrentNodeForRestType(xmlParserData.currentNode,
                 (BMap<BString, Object>) xmlParserData.nodesStack.peek(), currentFieldName, bText, restType,
-                StringUtils.fromString(xmlParserData.textFieldName), xmlParserData);
+                StringUtils.fromString(xmlParserData.textFieldName));
     }
 
     @SuppressWarnings("unchecked")
     private void convertTextRestAndUpdateCurrentNodeForRestType(BMap<BString, Object> currentNode,
                                                             BMap<BString, Object> parent,
                                                             BString currentFieldName,
-                                                            BString bText, Type restType, BString textFieldName,
-                                                            XmlParserData xmlParserData) {
+                                                            BString bText, Type restType, BString textFieldName) {
         Object currentElement = currentNode.get(currentFieldName);
         Object result = convertStringToRestExpType(bText, restType);
-
-        // TODO: Check and remove this, since json and anydata special removed from readElementRest logic.
-        if (currentElement == null && DataUtils.isAnydataOrJson(restType.getTag()) &&
-                parent != null && parent.get(currentFieldName) instanceof BArray bArray) {
-            bArray.add(bArray.getLength() - 1, result);
-            return;
-        }
 
         if (currentElement instanceof BArray bArray) {
             if (DataUtils.isSimpleType(restType)) {
