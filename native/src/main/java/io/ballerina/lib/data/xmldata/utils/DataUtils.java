@@ -512,7 +512,7 @@ public class DataUtils {
     private static QName addFieldNamespaceAnnotation(String fieldName, String key, BMap<BString, Object> annotations,
                                                      BMap<BString, Object> recordValue) {
         BString annotationKey = StringUtils.fromString(Constants.FIELD
-                + (fieldName.replaceAll(Constants.NON_NUMERIC_STRING_REGEX, "\\\\$0")));
+                + (fieldName.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0")));
         boolean isAttributeField = isAttributeField(annotationKey, annotations);
         if (annotations.containsKey(annotationKey)) {
             BMap<BString, Object> annotationValue = (BMap<BString, Object>) annotations.get(annotationKey);
@@ -547,7 +547,7 @@ public class DataUtils {
         BMap<BString, Object> nsFieldAnnotation = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         BString annotationKey =
                 StringUtils.fromString((Constants.FIELD
-                        + (key.replaceAll(Constants.NON_NUMERIC_STRING_REGEX, "\\\\$0"))));
+                        + (key.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0"))));
         if (!parentAnnotations.containsKey(annotationKey)) {
             return nsFieldAnnotation;
         }
@@ -591,7 +591,7 @@ public class DataUtils {
         BString key = qName.getPrefix().isBlank() ?
                 localPart : StringUtils.fromString(qName.getPrefix() + ":" + localPart);
         BString annotationKey = StringUtils.fromString(Constants.FIELD
-                        + (localPart.getValue().replaceAll(Constants.NON_NUMERIC_STRING_REGEX, "\\\\$0")));
+                        + (localPart.getValue().replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0")));
         BMap<BString, Object> currentValue;
         if (record.containsKey(key)) {
             currentValue = (BMap<BString, Object>) record.get(key);
@@ -648,7 +648,7 @@ public class DataUtils {
     @SuppressWarnings("unchecked")
     private static String getKeyNameFromAnnotation(BMap<BString, Object> annotations, String keyName) {
         BString annotationKey = StringUtils.fromString(Constants.FIELD
-                + (keyName.replaceAll(Constants.NON_NUMERIC_STRING_REGEX, "\\\\$0")));
+                + (keyName.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0")));
         if (annotations.containsKey(annotationKey)) {
             BMap<BString, Object> annotationValue = (BMap<BString, Object>) annotations.get(annotationKey);
             return processFieldAnnotation(annotationValue, keyName);

@@ -1221,6 +1221,32 @@ isolated function testXmlToRecordWithNamespaceAttachedToFields() returns error? 
     test:assertEquals(xmlVal.toString(), expected);
 }
 
+type RequestorID record {
+    @Attribute
+    string ID;
+    @Attribute
+    string ID_Context;
+    @Attribute
+    string Type;
+};
+
+type Source record {
+    RequestorID RequestorID;
+};
+
+@test:Config {
+    groups: ["toXml"]
+}
+isolated function testUnderscoreInTheFieldName() returns error? {
+    Source s = {
+    RequestorID: {
+        ID: "1", 
+        ID_Context: "2", 
+        Type: "3"}};
+    xml xmlVal = check toXml(s);
+    test:assertEquals(xmlVal.toString(), "<Source><RequestorID ID=\"1\" ID_Context=\"2\" Type=\"3\"/></Source>");
+}
+
 @test:Config {
     groups: ["toXml"]
 }
