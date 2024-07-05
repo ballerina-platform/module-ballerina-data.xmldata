@@ -42,6 +42,7 @@ public class Constants {
     public static final ArrayType JSON_ARRAY_TYPE = TypeCreator.createArrayType(PredefinedTypes.TYPE_JSON);
     public static final String FIELD = "$field$.";
     public static final String NAMESPACE = "Namespace";
+    public static final String MODULE_NAME = "ballerina/data.xmldata";
     public static final BString URI = StringUtils.fromString("uri");
     public static final BString PREFIX = StringUtils.fromString("prefix");
     public static final String ATTRIBUTE = "Attribute";
@@ -58,6 +59,6 @@ public class Constants {
     public static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attributePrefix");
     public static final BString TEXT_FIELD_NAME = StringUtils.fromString("textFieldName");
     public static final BString ALLOW_DATA_PROJECTION = StringUtils.fromString("allowDataProjection");
-    public static final String NON_NUMERIC_STRING_REGEX = "[^a-zA-Z\\d\s]";
+    public static final String RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX = "[^a-zA-Z\\d\s_]";
     public static final String NS_ANNOT_NOT_DEFINED = "$$ns_annot_not_defined$$";
 }
