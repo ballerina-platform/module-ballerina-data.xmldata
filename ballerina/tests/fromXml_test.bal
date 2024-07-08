@@ -2812,6 +2812,75 @@ function testProjectionWithXmlAttributeForParseAsType() returns error? {
     test:assertEquals(rec.A, "2");
 }
 
+type RecType record {
+    string name;
+    @Name {
+        value: "name"
+    }
+    @Attribute
+    string duplicateName;
+};
+
+@test:Config
+isolated function testElementAndAttributeInSameScopeHaveSameName() returns error? {
+    string xmlStr = string `
+    <Data name="Kevin">
+        <name>Kanth</name>
+    </Data>
+    `; 
+    RecType rec = check parseString(xmlStr);
+    test:assertEquals(rec.name, "Kanth");
+    test:assertEquals(rec.duplicateName, "Kevin");
+    
+    xml xmlVal = xml `
+    <Data name="Kevin">
+        <name>Kanth</name>
+    </Data>
+    `;
+    RecType rec2 = check parseAsType(xmlVal);
+    test:assertEquals(rec2.name, "Kanth");
+    test:assertEquals(rec2.duplicateName, "Kevin");
+}
+
+type RecNs3 record {|
+    @Namespace {
+        prefix: "ns1",
+        uri: "example1.com"
+    }
+    string name;
+    @Name {
+        value: "name"
+    }
+    @Namespace {
+        prefix: "ns2",
+        uri: "example2.com"
+    }
+    string duplicateName;
+|};
+
+@test:Config
+isolated function testElementWithDifferentNamespace() returns error? {
+    string xmlStr = string `
+    <Data xmlns:ns1="example1.com" xmlns:ns2="example2.com">
+        <ns1:name>Kevin</ns1:name>
+        <ns2:name>Kanth</ns2:name>
+    </Data>
+    `;
+    RecNs3 rec = check parseString(xmlStr);
+    test:assertEquals(rec.name, "Kevin");
+    test:assertEquals(rec.duplicateName, "Kanth");
+    
+    xml xmlVal = xml `
+    <Data xmlns:ns1="example1.com" xmlns:ns2="example2.com">
+        <ns1:name>Kevin</ns1:name>
+        <ns2:name>Kanth</ns2:name>
+    </Data>
+    `;
+    RecNs3 rec2 = check parseAsType(xmlVal);
+    test:assertEquals(rec2.name, "Kevin");
+    test:assertEquals(rec2.duplicateName, "Kanth");
+}
+
 // Negative cases
 type DataN1 record {|
     int A;
@@ -3239,4 +3308,63 @@ function testInvalidNamespaceInOpenRecordForParseAsType2() {
     OpenBook2|Error err = parseAsType(xmldata);
     test:assertTrue(err is error);
     test:assertEquals((<error>err).message(), "undefined field 'name' in record 'data.xmldata:AuthorOpen'");
+}
+
+type RecTypeDup1 record {
+    string name;
+    @Name {
+        value: "name"
+    }
+    string duplicateName;
+};
+
+type RecTypeDup2 record {
+    @Namespace {
+        prefix: "ns",
+        uri: "example.com"
+    }
+    string name;
+    @Name {
+        value: "name"
+    }
+    string duplicateName;
+};
+
+@test:Config
+isolated function testDuplicateField() {
+    string xmlStr = string `
+    <Data name="Kevin">
+        <name>Kanth</name>
+    </Data>
+    `;
+    RecTypeDup1|Error err = parseString(xmlStr);
+    test:assertTrue(err is Error);
+    test:assertEquals((<Error> err).message(), "duplicate field 'name'");
+
+    xml xmlVal = xml `
+    <Data name="Kevin">
+        <name>Kanth</name>
+    </Data>
+    `;
+    RecTypeDup1|Error err2 = parseAsType(xmlVal);
+    test:assertTrue(err2 is Error);
+    test:assertEquals((<Error> err2).message(), "duplicate field 'name'");
+
+    string xmlStr2 = string `
+    <Data name="Kevin">
+        <name>Kanth</name>
+    </Data>
+    `;
+    RecTypeDup2|Error err3 = parseString(xmlStr2);
+    test:assertTrue(err3 is Error);
+    test:assertEquals((<Error> err3).message(), "duplicate field 'name'");
+    
+    xml xmlVal2 = xml `
+    <Data name="Kevin">
+        <name>Kanth</name>
+    </Data>
+    `;
+    RecTypeDup2|Error err4 = parseAsType(xmlVal2);
+    test:assertTrue(err4 is Error);
+    test:assertEquals((<Error> err4).message(), "duplicate field 'name'");
 }

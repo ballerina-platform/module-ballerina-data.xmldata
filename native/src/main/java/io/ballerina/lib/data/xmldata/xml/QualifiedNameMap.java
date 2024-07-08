@@ -32,7 +32,8 @@ public class QualifiedNameMap<V> {
 
             List<QualifiedName> qNames = fields.get(localName);
             for (QualifiedName qualifiedName : fields.get(localName)) {
-                if (qualifiedName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)) {
+                if (isSameNamespace(qualifiedName, qName)
+                        && isSameAttributeFlag(qualifiedName.getAttributeState(), qName.getAttributeState())) {
                     field = this.members.remove(qualifiedName);
                     qNames.remove(qualifiedName);
                     break;
@@ -56,11 +57,24 @@ public class QualifiedNameMap<V> {
             return false;
         }
         for (QualifiedName qualifiedName : stringToQNameMap.get(localName)) {
-            if (qualifiedName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)) {
+            if (isSameNamespace(qualifiedName, qName)
+                    && isSameAttributeFlag(qualifiedName.getAttributeState(), qName.getAttributeState())) {
                 return true;
             }
         }
         return false;
+    }
+
+    private boolean isSameNamespace(QualifiedName q1, QualifiedName q2) {
+        String ns1 = q1.getNamespaceURI();
+        String ns2 = q2.getNamespaceURI();
+        return  (ns1.equals(ns2) && q1.getPrefix().equals(q2.getPrefix()))
+                || ns1.equals(Constants.NS_ANNOT_NOT_DEFINED) || ns2.equals(Constants.NS_ANNOT_NOT_DEFINED);
+    }
+
+    private boolean isSameAttributeFlag(QualifiedName.AttributeState flag1, QualifiedName.AttributeState flag2) {
+        return (flag1 == QualifiedName.AttributeState.NOT_DEFINED
+                || flag2 == QualifiedName.AttributeState.NOT_DEFINED) || (flag1.equals(flag2));
     }
 
     public boolean contains(String localName) {
@@ -89,7 +103,8 @@ public class QualifiedNameMap<V> {
             return null;
         }
         for (QualifiedName qualifiedName : stringToQNameMap.get(localName)) {
-            if (qualifiedName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)) {
+            if (isSameNamespace(qualifiedName, qName)
+                    && isSameAttributeFlag(qualifiedName.getAttributeState(), qName.getAttributeState())) {
                 return members.get(qualifiedName);
             }
         }
@@ -115,7 +130,8 @@ public class QualifiedNameMap<V> {
             return null;
         }
         for (QualifiedName qualifiedName : stringToQNameMap.get(localName)) {
-            if (qualifiedName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)) {
+            if (isSameNamespace(qualifiedName, elementQName)
+                    && isSameAttributeFlag(qualifiedName.getAttributeState(), elementQName.getAttributeState())) {
                 return qualifiedName;
             }
         }
