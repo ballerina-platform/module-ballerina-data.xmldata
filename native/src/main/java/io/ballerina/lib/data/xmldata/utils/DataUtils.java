@@ -50,6 +50,10 @@ import java.util.Stack;
 
 import javax.xml.namespace.QName;
 
+import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ATTRIBUTE;
+import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ELEMENT;
+import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.NOT_DEFINED;
+
 /**
  * A util class for the Data package's native implementation.
  *
@@ -137,24 +141,29 @@ public class DataUtils {
         Map<String, List<QualifiedName>> fieldNames = new HashMap<>();
         Map<String, Field> recordFields = recordType.getFields();
         for (String key : recordFields.keySet()) {
+            QualifiedNameMap<Field> attributeMap = analyzerData.attributeHierarchy.peek();
             QualifiedName modifiedQName =
                     modifiedNames.getOrDefault(key, new QualifiedName(Constants.NS_ANNOT_NOT_DEFINED, key, ""));
             String localName = modifiedQName.getLocalPart();
-            if (fieldMap.containsKey(modifiedQName)) {
+            if (attributeMap.contains(modifiedQName) && modifiedQName.getAttributeState() == NOT_DEFINED) {
+                if (!key.equals(attributeMap.get(modifiedQName).getFieldName())) {
+                    modifiedQName.setAttributeState(ELEMENT);
+                    fieldMap.put(modifiedQName, recordFields.get(key));
+                    fieldNames.put(localName, new ArrayList<>(List.of(modifiedQName)));
+                }
+            } else if (fieldMap.containsKey(modifiedQName)) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.DUPLICATE_FIELD, localName);
             } else if (fieldNames.containsKey(localName)) {
-                if (modifiedQName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)) {
-                    throw DiagnosticLog.error(DiagnosticErrorCode.DUPLICATE_FIELD, localName);
-                }
                 List<QualifiedName> qNames = fieldNames.get(localName);
                 qNames.forEach(qName -> {
-                    if (qName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)) {
+                    if (DataUtils.isSameAttributeFlag(qName.getAttributeState(), modifiedQName.getAttributeState())
+                            && DataUtils.isSameNamespace(qName, modifiedQName)) {
                         throw DiagnosticLog.error(DiagnosticErrorCode.DUPLICATE_FIELD, localName);
                     }
                 });
                 fieldMap.put(modifiedQName, recordFields.get(key));
                 fieldNames.get(localName).add(modifiedQName);
-            } else if (!analyzerData.attributeHierarchy.peek().contains(modifiedQName)) {
+            } else if (!attributeMap.contains(modifiedQName)) {
                 fieldMap.put(modifiedQName, recordFields.get(key));
                 fieldNames.put(localName, new ArrayList<>(List.of(modifiedQName)));
             }
@@ -172,6 +181,7 @@ public class DataUtils {
                 String attributeName = keyStr.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
                 Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
                 QualifiedName fieldQName = getFieldNameFromRecord(fieldAnnotation, attributeName);
+                fieldQName.setAttributeState(ATTRIBUTE);
                 fieldQName.setLocalPart(getModifiedName(fieldAnnotation, attributeName));
                 attributes.put(fieldQName, recordType.getFields().get(attributeName));
             }
@@ -363,6 +373,17 @@ public class DataUtils {
             return;
         }
         throw DiagnosticLog.error(DiagnosticErrorCode.ARRAY_SIZE_MISMATCH);
+    }
+
+    public static boolean isSameNamespace(QualifiedName q1, QualifiedName q2) {
+        String ns1 = q1.getNamespaceURI();
+        String ns2 = q2.getNamespaceURI();
+        return  (ns1.equals(ns2) && q1.getPrefix().equals(q2.getPrefix()))
+                || ns1.equals(Constants.NS_ANNOT_NOT_DEFINED) || ns2.equals(Constants.NS_ANNOT_NOT_DEFINED);
+    }
+
+    public static boolean isSameAttributeFlag(QualifiedName.AttributeState flag1, QualifiedName.AttributeState flag2) {
+        return flag1 == NOT_DEFINED || flag2 == NOT_DEFINED || flag1.equals(flag2);
     }
 
     @SuppressWarnings("unchecked")

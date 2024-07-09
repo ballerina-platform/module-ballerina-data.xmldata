@@ -1191,7 +1191,7 @@ type Soap1 record {
 };
 
 @test:Config {
-    groups: ["toXml", "testFail"]
+    groups: ["toXml"]
 }
 isolated function testXmlToRecordWithNamespaceAttachedToFields() returns error? {
     Soap1 val = {

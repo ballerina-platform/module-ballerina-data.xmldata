@@ -13,6 +13,7 @@ public class Constants {
     static final String TO_XML = "toXml";
     static final String NAME = "Name";
     static final String NAMESPACE = "Namespace";
+    static final String ATTRIBUTE = "Attribute";
     static final String XMLDATA = "xmldata";
     static final String BALLERINA = "ballerina";
     static final String DATA_XMLDATA = "data.xmldata";
