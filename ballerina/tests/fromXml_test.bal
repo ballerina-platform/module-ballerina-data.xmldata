@@ -2812,8 +2812,19 @@ function testProjectionWithXmlAttributeForParseAsType() returns error? {
     test:assertEquals(rec.A, "2");
 }
 
-type RecType record {
+type RecType1 record {
     string name;
+    @Name {
+        value: "name"
+    }
+    @Attribute
+    string duplicateName;
+};
+
+type RecType2 record {
+    record {|
+        string \#content;
+    |} name;
     @Name {
         value: "name"
     }
@@ -2828,18 +2839,26 @@ isolated function testElementAndAttributeInSameScopeHaveSameName() returns error
         <name>Kanth</name>
     </Data>
     `; 
-    RecType rec = check parseString(xmlStr);
-    test:assertEquals(rec.name, "Kanth");
-    test:assertEquals(rec.duplicateName, "Kevin");
+    RecType1 rec11 = check parseString(xmlStr);
+    test:assertEquals(rec11.name, "Kanth");
+    test:assertEquals(rec11.duplicateName, "Kevin");
+
+    RecType2 rec12 = check parseString(xmlStr);
+    test:assertEquals(rec12.name.\#content, "Kanth");
+    test:assertEquals(rec12.duplicateName, "Kevin");  
     
     xml xmlVal = xml `
     <Data name="Kevin">
         <name>Kanth</name>
     </Data>
     `;
-    RecType rec2 = check parseAsType(xmlVal);
-    test:assertEquals(rec2.name, "Kanth");
-    test:assertEquals(rec2.duplicateName, "Kevin");
+    RecType1 rec21 = check parseAsType(xmlVal);
+    test:assertEquals(rec21.name, "Kanth");
+    test:assertEquals(rec21.duplicateName, "Kevin");
+
+    RecType2 rec22 = check parseAsType(xmlVal);
+    test:assertEquals(rec22.name.\#content, "Kanth");
+    test:assertEquals(rec22.duplicateName, "Kevin");  
 }
 
 type RecNs3 record {|
