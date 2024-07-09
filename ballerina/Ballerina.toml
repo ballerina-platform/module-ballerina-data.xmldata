@@ -13,4 +13,4 @@ export = ["data.xmldata"]
 groupId = "io.ballerina.lib"
 artifactId = "data-native"
 version = "0.1.3"
-path = "../native/build/libs/data.xmldata-native-0.1.3-SNAPSHOT.jar"
+path = "../native/build/libs/data.xmldata-native-0.1.3.jar"
