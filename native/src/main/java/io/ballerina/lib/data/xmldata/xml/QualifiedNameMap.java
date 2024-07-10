@@ -1,6 +1,6 @@
 package io.ballerina.lib.data.xmldata.xml;
 
-import io.ballerina.lib.data.xmldata.utils.Constants;
+import io.ballerina.lib.data.xmldata.utils.DataUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,8 +31,10 @@ public class QualifiedNameMap<V> {
             }
 
             List<QualifiedName> qNames = fields.get(localName);
-            for (QualifiedName qualifiedName : qNames) {
-                if (qualifiedName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)) {
+            for (QualifiedName qualifiedName : fields.get(localName)) {
+                if (DataUtils.isSameNamespace(qualifiedName, qName)
+                        && DataUtils.isSameAttributeFlag(qualifiedName.getAttributeState(),
+                        qName.getAttributeState())) {
                     field = this.members.remove(qualifiedName);
                     qNames.remove(qualifiedName);
                     break;
@@ -56,7 +58,8 @@ public class QualifiedNameMap<V> {
             return false;
         }
         for (QualifiedName qualifiedName : stringToQNameMap.get(localName)) {
-            if (qualifiedName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)) {
+            if (DataUtils.isSameNamespace(qualifiedName, qName)
+                    && DataUtils.isSameAttributeFlag(qualifiedName.getAttributeState(), qName.getAttributeState())) {
                 return true;
             }
         }
@@ -89,7 +92,8 @@ public class QualifiedNameMap<V> {
             return null;
         }
         for (QualifiedName qualifiedName : stringToQNameMap.get(localName)) {
-            if (qualifiedName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)) {
+            if (DataUtils.isSameNamespace(qualifiedName, qName)
+                    && DataUtils.isSameAttributeFlag(qualifiedName.getAttributeState(), qName.getAttributeState())) {
                 return members.get(qualifiedName);
             }
         }
@@ -115,7 +119,9 @@ public class QualifiedNameMap<V> {
             return null;
         }
         for (QualifiedName qualifiedName : stringToQNameMap.get(localName)) {
-            if (qualifiedName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)) {
+            if (DataUtils.isSameNamespace(qualifiedName, elementQName)
+                    && DataUtils.isSameAttributeFlag(qualifiedName.getAttributeState(),
+                    elementQName.getAttributeState())) {
                 return qualifiedName;
             }
         }

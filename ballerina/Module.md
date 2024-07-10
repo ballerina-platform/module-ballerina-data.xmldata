@@ -446,12 +446,3 @@ In this instance, all other elements in the XML data, such as `author` and `pric
 This behavior extends to arrays as well.
 
 The process of projecting XML data into a record supports various use cases, including the filtering out of unnecessary elements. This functionality is anticipated to be enhanced in the future to accommodate more complex scenarios, such as filtering values based on regular expressions, among others.
-
-## Report issues
-
-To report bugs, request new features, start new discussions, view project boards, etc., go to the [Ballerina library parent repository](https://github.com/ballerina-platform/ballerina-library).
-
-## Useful links
-
-- Chat live with us via our [Discord server](https://discord.gg/ballerinalang).
-- Post all technical questions on Stack Overflow with the [#ballerina](https://stackoverflow.com/questions/tagged/ballerina) tag.

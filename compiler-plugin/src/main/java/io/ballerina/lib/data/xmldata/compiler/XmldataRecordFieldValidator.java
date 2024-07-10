@@ -83,7 +83,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         boolean erroneousCompilation = diagnostics.stream()
                 .anyMatch(d -> d.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR));
         if (erroneousCompilation) {
-            rest();
+            reset();
             return;
         }
 
@@ -99,10 +99,10 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             }
         }
 
-        rest();
+        reset();
     }
 
-    private void rest() {
+    private void reset() {
         semanticModel = null;
         allDiagnosticInfo.clear();
         modulePrefix = Constants.XMLDATA;
@@ -376,6 +376,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         String uri = "";
         String name = fieldName;
         String prefix = "";
+        boolean isAttribute = false;
         for (AnnotationAttachmentSymbol annotAttSymbol : annotationAttachments) {
             AnnotationSymbol annotation = annotAttSymbol.typeDescriptor();
             if (!getAnnotModuleName(annotation).contains(Constants.XMLDATA)) {
@@ -397,9 +398,11 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
                 }
                 uri = ((LinkedHashMap<?, ?>) annotAttSymbol.attachmentValue().orElseThrow().value())
                         .get("uri").toString();
+            } else if (value.equals(Constants.ATTRIBUTE)) {
+                isAttribute = true;
             }
         }
-        return new QualifiedName(uri, name, prefix);
+        return new QualifiedName(uri, name, prefix, isAttribute);
     }
 
     private String getAnnotModuleName(AnnotationSymbol annotation) {
