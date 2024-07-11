@@ -347,7 +347,6 @@ public class XmlParser {
                     bText, xmlParserData);
             case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG -> {
                 BArray tempArr = (BArray) ((BMap<BString, Object>) xmlParserData.nodesStack.peek()).get(bFieldName);
-                // TODO: Using this -2 here seems strange for me. Find a better way to handle this.
                 HashMap<String, Integer> indexes
                         = xmlParserData.arrayIndexes.get(xmlParserData.arrayIndexes.size() - 2);
                 int currentIndex = indexes.get(bFieldName.getValue());

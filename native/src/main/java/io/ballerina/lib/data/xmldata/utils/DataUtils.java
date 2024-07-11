@@ -237,15 +237,13 @@ public class DataUtils {
     }
 
     public static void validateRequiredFields(XmlAnalyzerData analyzerData) {
-        Map<QualifiedName, Field> remainingFields = analyzerData.fieldHierarchy.peek().getMembers();
-        for (Field field : remainingFields.values()) {
+        for (Field field : analyzerData.fieldHierarchy.peek().getMembers().values()) {
             if (SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.REQUIRED)) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_FIELD_NOT_PRESENT, field.getFieldName());
             }
         }
 
-        Map<QualifiedName, Field> remainingAttributes = analyzerData.attributeHierarchy.peek().getMembers();
-        for (Field attribute : remainingAttributes.values()) {
+        for (Field attribute : analyzerData.attributeHierarchy.peek().getMembers().values()) {
             if (!SymbolFlags.isFlagOn(attribute.getFlags(), SymbolFlags.OPTIONAL)) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_ATTRIBUTE_NOT_PRESENT, attribute.getFieldName());
             }
@@ -258,15 +256,6 @@ public class DataUtils {
 
     public static boolean isStringValueAssignable(int typeTag) {
         return typeTag == TypeTags.STRING_TAG || typeTag == TypeTags.ANYDATA_TAG || typeTag == TypeTags.JSON_TAG;
-    }
-
-    public static ArrayType getValidArrayType(Type type) {
-        return switch (type.getTag()) {
-            case TypeTags.ARRAY_TAG -> (ArrayType) type;
-            case TypeTags.ANYDATA_TAG -> PredefinedTypes.TYPE_ANYDATA_ARRAY;
-            case TypeTags.JSON_TAG -> PredefinedTypes.TYPE_JSON_ARRAY;
-            default -> null;
-        };
     }
 
     public static BArray createArrayValue(Type type) {
