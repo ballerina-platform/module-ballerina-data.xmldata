@@ -1008,6 +1008,8 @@ public class XmlParser {
                     ATTRIBUTE);
             Field field = xmlParserData.attributeHierarchy.peek().remove(attQName);
             if (field == null) {
+                // Here attQName state is set to NOT_DEFINED since it accessed from field hierarchy.
+                attQName.setAttributeState(NOT_DEFINED);
                 Optional<Field> f = getFieldFromFieldHierarchy(attQName, xmlParserData);
                 if (f.isEmpty()) {
                     continue;

@@ -994,18 +994,18 @@ type RecAtt5 record {|
 |};
 
 @test:Config {
-    groups: ["fromXmlString", "testFail"]
+    groups: ["fromXmlString"]
 }
 function testXmlStringToRecord38() returns error? {
     string xmlStr = string `<Data101 A="name"><A>1</A></Data101>`;
     RecAtt3 rec = check parseString(xmlStr);
     test:assertEquals(rec.A, "1");
 
-    // RecAtt4 rec2 = check parseString(xmlStr);
-    // test:assertEquals(rec2.A.get("#content"), 1);
+    RecAtt4 rec2 = check parseString(xmlStr);
+    test:assertEquals(rec2.A.get("#content"), 1);
 
-    // RecAtt5 rec3 = check parseString(xmlStr);
-    // test:assertEquals(rec3.A, "name");
+    RecAtt5 rec3 = check parseString(xmlStr);
+    test:assertEquals(rec3.A, "name");
 }
 
 @test:Config {
