@@ -20,7 +20,9 @@ package io.ballerina.lib.data.xmldata.utils;
 
 import io.ballerina.lib.data.xmldata.FromString;
 import io.ballerina.lib.data.xmldata.xml.QualifiedName;
+import io.ballerina.lib.data.xmldata.xml.QualifiedNameFactory;
 import io.ballerina.lib.data.xmldata.xml.QualifiedNameMap;
+import io.ballerina.lib.data.xmldata.xml.QualifiedNameSemantic;
 import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.TypeTags;
 import io.ballerina.runtime.api.creators.TypeCreator;
@@ -66,7 +68,8 @@ public class DataUtils {
 
     @SuppressWarnings("unchecked")
     public static QualifiedName validateAndGetXmlNameFromRecordAnnotation(RecordType recordType, String recordName,
-                                                                          QualifiedName elementName) {
+                                                                          QualifiedName elementName,
+                                                                          boolean isSemantic) {
         BMap<BString, Object> annotations = recordType.getAnnotations();
         String localName = recordName;
         for (BString annotationsKey : annotations.getKeys()) {
@@ -89,11 +92,11 @@ public class DataUtils {
                         ((Map<BString, Object>) annotations.get(StringUtils.fromString(key)));
                 BString uri = (BString) namespaceAnnotation.get(Constants.URI);
                 BString prefix = (BString) namespaceAnnotation.get(Constants.PREFIX);
-                return new QualifiedName(uri == null ? "" : uri.getValue(), localName,
-                        prefix == null ? "" : prefix.getValue());
+                return QualifiedNameFactory.createQualifiedName(uri == null ? "" : uri.getValue(), localName,
+                        prefix == null ? "" : prefix.getValue(), isSemantic);
             }
         }
-        return new QualifiedName(Constants.NS_ANNOT_NOT_DEFINED, localName, "");
+        return QualifiedNameFactory.createQualifiedName(Constants.NS_ANNOT_NOT_DEFINED, localName, "", isSemantic);
     }
 
     public static void validateTypeNamespace(String prefix, String uri, RecordType recordType) {
@@ -131,7 +134,8 @@ public class DataUtils {
                 // Capture namespace and name from the field annotation.
                 String fieldName = keyStr.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
                 Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
-                QualifiedName fieldQName = DataUtils.getFieldNameFromRecord(fieldAnnotation, fieldName);
+                QualifiedName fieldQName = DataUtils.getFieldNameFromRecord(fieldAnnotation, fieldName,
+                        analyzerData.isSemantic);
                 fieldQName.setLocalPart(getModifiedName(fieldAnnotation, fieldName));
                 modifiedNames.put(fieldName, fieldQName);
             }
@@ -143,7 +147,9 @@ public class DataUtils {
         for (String key : recordFields.keySet()) {
             QualifiedNameMap<Field> attributeMap = analyzerData.attributeHierarchy.peek();
             QualifiedName modifiedQName =
-                    modifiedNames.getOrDefault(key, new QualifiedName(Constants.NS_ANNOT_NOT_DEFINED, key, ""));
+                    modifiedNames.getOrDefault(key,
+                            QualifiedNameFactory.createQualifiedName(Constants.NS_ANNOT_NOT_DEFINED, key, "",
+                                    analyzerData.isSemantic));
             String localName = modifiedQName.getLocalPart();
             if (attributeMap.contains(modifiedQName) && modifiedQName.getAttributeState() == NOT_DEFINED) {
                 if (!key.equals(attributeMap.get(modifiedQName).getFieldName())) {
@@ -172,7 +178,7 @@ public class DataUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static Map<QualifiedName, Field> getAllAttributesInRecordType(RecordType recordType) {
+    public static Map<QualifiedName, Field> getAllAttributesInRecordType(RecordType recordType, boolean isSemantic) {
         BMap<BString, Object> annotations = recordType.getAnnotations();
         Map<QualifiedName, Field> attributes = new HashMap<>();
         for (BString annotationKey : annotations.getKeys()) {
@@ -180,7 +186,7 @@ public class DataUtils {
             if (keyStr.contains(Constants.FIELD) && DataUtils.isAttributeField(annotationKey, annotations)) {
                 String attributeName = keyStr.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
                 Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
-                QualifiedName fieldQName = getFieldNameFromRecord(fieldAnnotation, attributeName);
+                QualifiedName fieldQName = getFieldNameFromRecord(fieldAnnotation, attributeName, isSemantic);
                 fieldQName.setAttributeState(ATTRIBUTE);
                 fieldQName.setLocalPart(getModifiedName(fieldAnnotation, attributeName));
                 attributes.put(fieldQName, recordType.getFields().get(attributeName));
@@ -190,17 +196,18 @@ public class DataUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static QualifiedName getFieldNameFromRecord(Map<BString, Object> fieldAnnotation, String fieldName) {
+    public static QualifiedName getFieldNameFromRecord(Map<BString, Object> fieldAnnotation, String fieldName,
+                                                       boolean isSemantic) {
         for (BString key : fieldAnnotation.keySet()) {
             if (isNamespaceAnnotationKey(key.getValue())) {
                 Map<BString, Object> namespaceAnnotation = ((Map<BString, Object>) fieldAnnotation.get(key));
                 BString uri = (BString) namespaceAnnotation.get(Constants.URI);
                 BString prefix = (BString) namespaceAnnotation.get(Constants.PREFIX);
-                return new QualifiedName(uri == null ? "" : uri.getValue(), fieldName,
-                        prefix == null ? "" : prefix.getValue());
+                return QualifiedNameFactory.createQualifiedName(uri == null ? "" : uri.getValue(), fieldName,
+                        prefix == null ? "" : prefix.getValue(), isSemantic);
             }
         }
-        return new QualifiedName(Constants.NS_ANNOT_NOT_DEFINED, fieldName, "");
+        return QualifiedNameFactory.createQualifiedName(Constants.NS_ANNOT_NOT_DEFINED, fieldName, "", isSemantic);
     }
 
     @SuppressWarnings("unchecked")
@@ -217,8 +224,9 @@ public class DataUtils {
         return ValueCreator.createArrayValue(getArrayTypeFromElementType(type));
     }
 
-    public static QualifiedName getElementName(QName qName) {
-        return new QualifiedName(qName.getNamespaceURI(), qName.getLocalPart(), qName.getPrefix());
+    public static QualifiedName getElementName(QName qName, boolean isSemantic) {
+        return QualifiedNameFactory.createQualifiedName(qName.getNamespaceURI(), qName.getLocalPart(),
+                qName.getPrefix(), ELEMENT, isSemantic);
     }
 
     public static Object convertStringToExpType(BString value, Type expType) {
@@ -312,7 +320,8 @@ public class DataUtils {
     }
 
     public static void updateExpectedTypeStacks(RecordType recordType, XmlAnalyzerData analyzerData) {
-        analyzerData.attributeHierarchy.push(new QualifiedNameMap(getAllAttributesInRecordType(recordType)));
+        analyzerData.attributeHierarchy.push(new QualifiedNameMap(getAllAttributesInRecordType(recordType,
+                analyzerData.isSemantic)));
         analyzerData.fieldHierarchy.push(new QualifiedNameMap(getAllFieldsInRecordType(recordType, analyzerData)));
         analyzerData.restTypes.push(recordType.getRestFieldType());
     }
@@ -366,6 +375,7 @@ public class DataUtils {
         analyzerData.attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
         analyzerData.textFieldName = options.get(Constants.TEXT_FIELD_NAME).toString();
         analyzerData.allowDataProjection = (boolean) options.get(Constants.ALLOW_DATA_PROJECTION);
+        analyzerData.isSemantic = (boolean) options.get(Constants.IS_SEMANTIC);
     }
 
     public static void logArrayMismatchErrorIfProjectionNotAllowed(boolean allowDataProjection) {
@@ -378,8 +388,13 @@ public class DataUtils {
     public static boolean isSameNamespace(QualifiedName q1, QualifiedName q2) {
         String ns1 = q1.getNamespaceURI();
         String ns2 = q2.getNamespaceURI();
-        return  (ns1.equals(ns2) && q1.getPrefix().equals(q2.getPrefix()))
-                || ns1.equals(Constants.NS_ANNOT_NOT_DEFINED) || ns2.equals(Constants.NS_ANNOT_NOT_DEFINED);
+        if (q1 instanceof QualifiedNameSemantic && q2 instanceof QualifiedNameSemantic) {
+            return ns1.equals(ns2)
+                    || ns1.equals(Constants.NS_ANNOT_NOT_DEFINED) || ns2.equals(Constants.NS_ANNOT_NOT_DEFINED);
+        } else {
+            return (ns1.equals(ns2) && q1.getPrefix().equals(q2.getPrefix()))
+                    || ns1.equals(Constants.NS_ANNOT_NOT_DEFINED) || ns2.equals(Constants.NS_ANNOT_NOT_DEFINED);
+        }
     }
 
     public static boolean isSameAttributeFlag(QualifiedName.AttributeState flag1, QualifiedName.AttributeState flag2) {
@@ -863,5 +878,6 @@ public class DataUtils {
         public String attributePrefix;
         public String textFieldName;
         public boolean allowDataProjection;
+        public boolean isSemantic;
     }
 }

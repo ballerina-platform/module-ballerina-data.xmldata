@@ -110,6 +110,7 @@ public class XmlParser {
         xmlParserData.attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
         xmlParserData.textFieldName = options.get(Constants.TEXT_FIELD_NAME).toString();
         xmlParserData.allowDataProjection = (boolean) options.get(Constants.ALLOW_DATA_PROJECTION);
+        xmlParserData.isSemantic = (boolean) options.get(Constants.IS_SEMANTIC);
     }
 
     private void handleXMLStreamException(Exception e) {
@@ -229,9 +230,11 @@ public class XmlParser {
 
         RecordType rootRecord = xmlParserData.rootRecord;
         xmlParserData.currentNode = ValueCreator.createRecordValue(rootRecord);
-        QualifiedName elementQName = getElementName(xmlStreamReader);
+        boolean isSemantic = xmlParserData.isSemantic;
+        QualifiedName elementQName = getElementName(xmlStreamReader, isSemantic);
         xmlParserData.rootElement =
-                DataUtils.validateAndGetXmlNameFromRecordAnnotation(rootRecord, rootRecord.getName(), elementQName);
+                DataUtils.validateAndGetXmlNameFromRecordAnnotation(rootRecord, rootRecord.getName(), elementQName,
+                        isSemantic);
         DataUtils.validateTypeNamespace(elementQName.getPrefix(), elementQName.getNamespaceURI(), rootRecord);
 
         // Keep track of fields and attributes
@@ -259,7 +262,8 @@ public class XmlParser {
 
         String textFieldName = xmlParserData.textFieldName;
         if (currentField == null) {
-            QualifiedName contentQName = new QualifiedName("", textFieldName, "");
+            QualifiedName contentQName = QualifiedNameFactory.createQualifiedName("", textFieldName, "",
+                    xmlParserData.isSemantic);
             if (!xmlParserData.fieldHierarchy.peek().contains(contentQName)) {
                 if (!xmlParserData.allowDataProjection) {
                     throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, textFieldName,
@@ -427,7 +431,7 @@ public class XmlParser {
     @SuppressWarnings("unchecked")
     private void endElement(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
         xmlParserData.currentField = null;
-        QualifiedName elemQName = getElementName(xmlStreamReader);
+        QualifiedName elemQName = getElementName(xmlStreamReader, xmlParserData.isSemantic);
         QualifiedNameMap<Boolean> siblings = xmlParserData.siblings;
         Stack<QualifiedNameMap<Boolean>> parents = xmlParserData.parents;
         if (siblings.contains(elemQName) && !siblings.get(elemQName)) {
@@ -474,7 +478,7 @@ public class XmlParser {
     }
 
     private void readElement(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
-        QualifiedName elemQName = getElementName(xmlStreamReader);
+        QualifiedName elemQName = getElementName(xmlStreamReader, xmlParserData.isSemantic);
         QualifiedNameMap<Field> fieldMap = xmlParserData.fieldHierarchy.peek();
         Field currentField = fieldMap.get(elemQName);
         xmlParserData.currentField = currentField;
@@ -540,7 +544,7 @@ public class XmlParser {
         xmlParserData.parents.push(xmlParserData.siblings);
         xmlParserData.siblings = new QualifiedNameMap<>(new LinkedHashMap<>());
         BMap<BString, Object> nextMapValue = updateNextMappingValue(xmlParserData, fieldName, fieldType);
-        handleAttributesRest(xmlStreamReader, fieldType, nextMapValue);
+        handleAttributesRest(xmlStreamReader, fieldType, nextMapValue, xmlParserData.isSemantic);
         xmlParserData.currentNode = nextMapValue;
     }
 
@@ -617,7 +621,8 @@ public class XmlParser {
     }
 
     private void updateExpectedTypeStacks(RecordType recordType, XmlParserData xmlParserData) {
-        xmlParserData.attributeHierarchy.push(new QualifiedNameMap<>(getAllAttributesInRecordType(recordType)));
+        xmlParserData.attributeHierarchy.push(new QualifiedNameMap<>(getAllAttributesInRecordType(recordType,
+                xmlParserData.isSemantic)));
         xmlParserData.fieldHierarchy.push(new QualifiedNameMap<>(getAllFieldsInRecordType(recordType, xmlParserData)));
         xmlParserData.restTypes.push(recordType.getRestFieldType());
     }
@@ -694,7 +699,8 @@ public class XmlParser {
 
     @SuppressWarnings("unchecked")
     private BString readElementRest(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
-        QualifiedName elemQName = getElementName(xmlStreamReader);
+        boolean isSemantic = xmlParserData.isSemantic;
+        QualifiedName elemQName = getElementName(xmlStreamReader, isSemantic);
         BString currentFieldName = StringUtils.fromString(elemQName.getLocalPart());
         QualifiedName lastElement = getLastElementInSiblings(xmlParserData.siblings.getMembers());
         Type restType = TypeUtils.getReferredType(xmlParserData.restTypes.peek());
@@ -707,7 +713,7 @@ public class XmlParser {
             xmlParserData.siblings.put(elemQName, false);
             BMap<BString, Object> next =
                     ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
-            handleAttributesRest(xmlStreamReader, restType, next);
+            handleAttributesRest(xmlStreamReader, restType, next, isSemantic);
 
             Object temp = xmlParserData.currentNode.get(
                             StringUtils.fromString(lastElement.getLocalPart()));
@@ -734,7 +740,7 @@ public class XmlParser {
                 BMap<BString, Object> next =
                         ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
                 xmlParserData.currentNode.put(currentFieldName, next);
-                handleAttributesRest(xmlStreamReader, restType, next);
+                handleAttributesRest(xmlStreamReader, restType, next, isSemantic);
             }
             return currentFieldName;
         }
@@ -748,7 +754,8 @@ public class XmlParser {
                 xmlParserData.parents.push(xmlParserData.siblings);
                 xmlParserData.siblings = new QualifiedNameMap<>(new LinkedHashMap<>());
                 updateExpectedTypeStacksOfRestType(restType, xmlParserData);
-                xmlParserData.currentNode = updateNextArrayMemberForRestType((BArray) currentElement, restType);
+                xmlParserData.currentNode = updateNextArrayMemberForRestType((BArray) currentElement, restType,
+                        isSemantic);
             }
             return currentFieldName;
         }
@@ -767,21 +774,22 @@ public class XmlParser {
             xmlParserData.parents.push(xmlParserData.siblings);
             xmlParserData.siblings = new QualifiedNameMap<>(new LinkedHashMap<>());
             updateExpectedTypeStacksOfRestType(restType, xmlParserData);
-            xmlParserData.currentNode = updateNextArrayMemberForRestType(tempArray, restType);
+            xmlParserData.currentNode = updateNextArrayMemberForRestType(tempArray, restType, isSemantic);
         }
         return currentFieldName;
     }
 
-    private BMap<BString, Object> updateNextArrayMemberForRestType(BArray tempArray, Type restType) {
+    private BMap<BString, Object> updateNextArrayMemberForRestType(BArray tempArray, Type restType,
+                                                                   boolean isSemantic) {
         BMap<BString, Object> temp = ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
         tempArray.append(temp);
-        handleAttributesRest(xmlStreamReader, restType, temp);
+        handleAttributesRest(xmlStreamReader, restType, temp, isSemantic);
         return temp;
     }
 
     @SuppressWarnings("unchecked")
     private void endElementRest(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
-        QualifiedName elemQName = getElementName(xmlStreamReader);
+        QualifiedName elemQName = getElementName(xmlStreamReader, xmlParserData.isSemantic);
         if (xmlParserData.siblings.contains(elemQName) && !xmlParserData.siblings.get(elemQName)) {
             xmlParserData.siblings.put(elemQName, true);
         }
@@ -885,7 +893,8 @@ public class XmlParser {
                 // Capture namespace and name from the field annotation.
                 String fieldName = keyStr.split(Constants.FIELD_REGEX)[1];
                 Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
-                QualifiedName fieldQName = DataUtils.getFieldNameFromRecord(fieldAnnotation, fieldName);
+                QualifiedName fieldQName = DataUtils.getFieldNameFromRecord(fieldAnnotation, fieldName,
+                        xmlParserData.isSemantic);
                 fieldQName.setLocalPart(getModifiedName(fieldAnnotation, fieldName));
                 modifiedNames.put(fieldName, fieldQName);
             }
@@ -897,7 +906,9 @@ public class XmlParser {
         for (String key : recordFields.keySet()) {
             QualifiedNameMap<Field> attributeMap = xmlParserData.attributeHierarchy.peek();
             QualifiedName modifiedQName =
-                    modifiedNames.getOrDefault(key, new QualifiedName(Constants.NS_ANNOT_NOT_DEFINED, key, ""));
+                    modifiedNames.getOrDefault(key,
+                            QualifiedNameFactory.createQualifiedName(Constants.NS_ANNOT_NOT_DEFINED, key, "",
+                                    xmlParserData.isSemantic));
             String localName = modifiedQName.getLocalPart();
             if (attributeMap.contains(modifiedQName) && modifiedQName.getAttributeState() == NOT_DEFINED) {
                 if (!key.equals(attributeMap.get(modifiedQName).getFieldName())) {
@@ -926,7 +937,7 @@ public class XmlParser {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<QualifiedName, Field> getAllAttributesInRecordType(RecordType recordType) {
+    private Map<QualifiedName, Field> getAllAttributesInRecordType(RecordType recordType, boolean isSemantic) {
         BMap<BString, Object> annotations = recordType.getAnnotations();
         Map<QualifiedName, Field> attributes = new HashMap<>();
         for (BString annotationKey : annotations.getKeys()) {
@@ -934,7 +945,7 @@ public class XmlParser {
             if (keyStr.contains(Constants.FIELD) && DataUtils.isAttributeField(annotationKey, annotations)) {
                 String attributeName = keyStr.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
                 Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
-                QualifiedName fieldQName = DataUtils.getFieldNameFromRecord(fieldAnnotation, attributeName);
+                QualifiedName fieldQName = DataUtils.getFieldNameFromRecord(fieldAnnotation, attributeName, isSemantic);
                 fieldQName.setLocalPart(getModifiedName(fieldAnnotation, attributeName));
                 fieldQName.setAttributeState(ATTRIBUTE);
                 attributes.put(fieldQName, recordType.getFields().get(attributeName));
@@ -956,9 +967,9 @@ public class XmlParser {
     private void handleAttributes(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
         for (int i = 0; i < xmlStreamReader.getAttributeCount(); i++) {
             QName attributeQName = xmlStreamReader.getAttributeName(i);
-            QualifiedName attQName = new QualifiedName(attributeQName.getNamespaceURI(),
+            QualifiedName attQName = QualifiedNameFactory.createQualifiedName(attributeQName.getNamespaceURI(),
                     xmlParserData.attributePrefix + attributeQName.getLocalPart(), attributeQName.getPrefix(),
-                    ATTRIBUTE);
+                    ATTRIBUTE, xmlParserData.isSemantic);
             Field field = xmlParserData.attributeHierarchy.peek().remove(attQName);
             if (field == null) {
                 Optional<Field> f = getFieldFromFieldHierarchy(attQName, xmlParserData);
@@ -990,11 +1001,12 @@ public class XmlParser {
                 xmlParserData.rootRecord);
     }
 
-    private void handleAttributesRest(XMLStreamReader xmlStreamReader, Type restType, BMap<BString, Object> mapNode) {
+    private void handleAttributesRest(XMLStreamReader xmlStreamReader, Type restType, BMap<BString, Object> mapNode,
+                                      boolean isSemantic) {
         for (int i = 0; i < xmlStreamReader.getAttributeCount(); i++) {
             QName attributeQName = xmlStreamReader.getAttributeName(i);
-            QualifiedName attQName = new QualifiedName(attributeQName.getNamespaceURI(),
-                    attributeQName.getLocalPart(), attributeQName.getPrefix(), ATTRIBUTE);
+            QualifiedName attQName = QualifiedNameFactory.createQualifiedName(attributeQName.getNamespaceURI(),
+                    attributeQName.getLocalPart(), attributeQName.getPrefix(), ATTRIBUTE, isSemantic);
             try {
                 mapNode.put(StringUtils.fromString(attQName.getLocalPart()), convertStringToRestExpType(
                         StringUtils.fromString(xmlStreamReader.getAttributeValue(i)), restType));
@@ -1007,7 +1019,7 @@ public class XmlParser {
     private Optional<Object> handleRecordRestType(XmlParserData xmlParserData, XMLStreamReader xmlStreamReader) {
         xmlParserData.currentField = null;
         Type restType = TypeUtils.getReferredType(xmlParserData.restTypes.peek());
-        QualifiedName elementQName = getElementName(xmlStreamReader);
+        QualifiedName elementQName = getElementName(xmlStreamReader, xmlParserData.isSemantic);
         String fieldName = elementQName.getLocalPart(); // Since local part equals to field name.
         switch (restType.getTag()) {
             case TypeTags.RECORD_TYPE_TAG -> {
@@ -1050,9 +1062,10 @@ public class XmlParser {
         xmlParserData.siblings = new QualifiedNameMap<>(new LinkedHashMap<>());
     }
 
-    private QualifiedName getElementName(XMLStreamReader xmlStreamReader) {
+    private QualifiedName getElementName(XMLStreamReader xmlStreamReader, boolean isSemantic) {
         QName qName = xmlStreamReader.getName();
-        return new QualifiedName(qName.getNamespaceURI(), qName.getLocalPart(), qName.getPrefix(), ELEMENT);
+        return QualifiedNameFactory.createQualifiedName(qName.getNamespaceURI(), qName.getLocalPart(),
+                qName.getPrefix(), ELEMENT, isSemantic);
     }
 
     /**
@@ -1086,5 +1099,6 @@ public class XmlParser {
         private String attributePrefix;
         private String textFieldName;
         private boolean allowDataProjection;
+        private boolean isSemantic;
     }
 }

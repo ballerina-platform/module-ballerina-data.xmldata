@@ -19,6 +19,7 @@
 package io.ballerina.lib.data.xmldata.utils;
 
 import io.ballerina.lib.data.xmldata.xml.QualifiedName;
+import io.ballerina.lib.data.xmldata.xml.QualifiedNameFactory;
 import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.types.ArrayType;
@@ -55,10 +56,12 @@ public class Constants {
     public static final String RECORD = "record";
     public static final String RECORD_OR_MAP = "record or map";
     public static final String ANON_TYPE = "$anonType$";
-    public static final QualifiedName EXIT_REST_POINT = new QualifiedName("", "$exitRestPoint$", "");
+    public static final QualifiedName EXIT_REST_POINT = QualifiedNameFactory.createQualifiedName("",
+            "$exitRestPoint$", "", true);
     public static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attributePrefix");
     public static final BString TEXT_FIELD_NAME = StringUtils.fromString("textFieldName");
     public static final BString ALLOW_DATA_PROJECTION = StringUtils.fromString("allowDataProjection");
+    public static final BString IS_SEMANTIC = StringUtils.fromString("isSemantic");
     public static final String RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX = "[^a-zA-Z\\d\s_]";
     public static final String NS_ANNOT_NOT_DEFINED = "$$ns_annot_not_defined$$";
 }

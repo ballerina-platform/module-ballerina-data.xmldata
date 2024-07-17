@@ -453,3 +453,29 @@ function testComplexOptionsForParseStringNegative() returns error? {
     test:assertTrue(l is error);
     test:assertEquals((<error>l).message(), "undefined field 'street' in record 'data.xmldata:Address'");
 }
+
+SourceOptions sOptions7 = {isSemantic: false};
+
+@test:Config {
+    groups: ["fromXmlString"]
+}
+function testXmlStringToRecordWithSyntacticEqaulityNegative() {
+    string xmlStr1 = string `<x:foo xmlns:x="example.com"><x:bar>1</x:bar></x:foo>`;
+    Foo1|error err1 = parseString(xmlStr1, options = sOptions7);
+    test:assertEquals((<error>err1).message(), "required field 'bar' not present in XML");
+
+    Foo2|error err2 = parseString(xmlStr1, options = sOptions7);
+    test:assertEquals((<error>err2).message(), "required field 'bar' not present in XML");
+}
+
+@test:Config {
+    groups: ["fromXml"]
+}
+function testXmlToRecordWithSyntacticEqaulityNegative() {
+    xml xmlVal1 = xml `<x:foo xmlns:x="example.com"><x:bar>1</x:bar></x:foo>`;
+    Foo1|error err1 = parseAsType(xmlVal1, options = sOptions7);
+    test:assertEquals((<error>err1).message(), "required field 'bar' not present in XML");
+    
+    Foo2|error err2 = parseAsType(xmlVal1, options = sOptions7);
+    test:assertEquals((<error>err2).message(), "required field 'bar' not present in XML");
+}

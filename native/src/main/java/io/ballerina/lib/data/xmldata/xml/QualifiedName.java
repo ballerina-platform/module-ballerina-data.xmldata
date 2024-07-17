@@ -23,7 +23,7 @@ package io.ballerina.lib.data.xmldata.xml;
  *
  * @since 0.1.0
  */
-public class QualifiedName {
+public abstract class QualifiedName {
     private String localPart;
     private String namespaceURI;
     private String prefix;
@@ -48,12 +48,6 @@ public class QualifiedName {
         this.prefix = prefix;
     }
 
-    public QualifiedName(String localPart) {
-        this.localPart = localPart;
-        this.namespaceURI = "";
-        this.prefix = "";
-    }
-
     public String getLocalPart() {
         return localPart;
     }
@@ -76,24 +70,5 @@ public class QualifiedName {
 
     public AttributeState getAttributeState() {
         return this.attributeState;
-    }
-
-    @Override
-    public int hashCode() {
-        return prefix.hashCode() ^ namespaceURI.hashCode() ^ localPart.hashCode() ^ attributeState.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object objectToTest) {
-        if (objectToTest == this) {
-            return true;
-        }
-
-        if (!(objectToTest instanceof QualifiedName qName)) {
-            return false;
-        }
-
-        return localPart.equals(qName.localPart) && namespaceURI.equals(qName.namespaceURI) &&
-                prefix.equals(qName.prefix) && attributeState.equals(qName.attributeState);
     }
 }

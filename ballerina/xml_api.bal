@@ -68,9 +68,11 @@ public type Options record {|
 # Represent the options that can be used to modify the behaviour of projection.
 #
 # + allowDataProjection - enable or disable projection
+# + isSemantic - choose between semantic and syntactic equality
 public type SourceOptions record {|
     *Options;
     boolean allowDataProjection = true;
+    boolean isSemantic = true;
 |};
 
 # Represents the error type of the ballerina/data.xmldata module. This error type represents any error that can occur
