@@ -18,6 +18,11 @@
 
 package io.ballerina.lib.data.xmldata.xml;
 
+/**
+ * Represents a syntactic qualified name.
+ *
+ * @since 0.1.4
+ */
 public class QualifiedNameSyntax extends QualifiedName {
 
     public QualifiedNameSyntax(String namespaceURI, String localPart, String prefix, AttributeState attributeState) {

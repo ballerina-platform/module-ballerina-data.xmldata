@@ -18,6 +18,11 @@
 
 package io.ballerina.lib.data.xmldata.xml;
 
+/**
+ * Represents a semantic qualified name.
+ *
+ * @since 0.1.4
+ */
 public class QualifiedNameSemantic extends QualifiedName {
 
     public QualifiedNameSemantic(String namespaceURI, String localPart, String prefix, AttributeState attributeState) {
