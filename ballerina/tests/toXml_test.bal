@@ -1330,7 +1330,9 @@ isolated function testToRecordFieldNameEndsWithNameOrNamespace() returns error? 
     test:assertEquals(result.toString(), expected);
 }
 
-type VersionType string;
+type String string;
+
+type VersionType String;
 
 @Name {
     value: "Payload"
