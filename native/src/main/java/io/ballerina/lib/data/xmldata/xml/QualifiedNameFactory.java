@@ -29,17 +29,15 @@ public class QualifiedNameFactory {
                                                     boolean isSemantic) {
         if (isSemantic) {
             return new QualifiedNameSemantic(namespaceURI, localPart, prefix, attributeState);
-        } else {
-            return new QualifiedNameSyntax(namespaceURI, localPart, prefix, attributeState);
         }
+        return new QualifiedNameSyntax(namespaceURI, localPart, prefix, attributeState);
     }
 
     public static QualifiedName createQualifiedName(String namespaceURI, String localPart, String prefix,
                                                     boolean isSemantic) {
         if (isSemantic) {
             return new QualifiedNameSemantic(namespaceURI, localPart, prefix);
-        } else {
-            return new QualifiedNameSyntax(namespaceURI, localPart, prefix);
         }
+        return new QualifiedNameSyntax(namespaceURI, localPart, prefix);
     }
 }
