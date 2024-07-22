@@ -1165,6 +1165,171 @@ isolated function testRecordWithNamespaceAnnotationToXml1() returns error? {
     test:assertEquals(result.toString(), expected, msg = "testComplexRecordToXml result incorrect");
 }
 
+type AddressR1 record {|
+    string city;
+    int code; 
+|};
+
+type Wsa_ReplyTo1 record {
+    @Namespace {prefix: "wsa", uri: "example1.com"}
+    AddressR1 Address;
+};
+
+type Htng_ReplyTo1 record {
+    @Namespace {prefix: "wsa", uri: "example1.com"}
+    AddressR1 Address;
+};
+
+@Name {value: "soap"}
+type Soap1 record {
+    @Name {value: "ReplyTo"}
+    @Namespace {prefix: "wsa", uri: "example1.com"}
+    Wsa_ReplyTo1 wsaReplyTo;
+    @Name {value: "ReplyTo"}
+    @Namespace {prefix: "htng", uri: "example2.com"}
+    Htng_ReplyTo1 htngReplyTo;
+};
+
+@test:Config {
+    groups: ["toXml"]
+}
+isolated function testXmlToRecordWithNamespaceAttachedToFields() returns error? {
+    Soap1 val = {
+        htngReplyTo: {
+            Address: {
+                code: 40000,
+                city: "Colombo"
+            }
+        }, 
+        wsaReplyTo: {
+            Address: {
+                code: 10000,
+                city: "Kandy"
+            }
+        }
+    };
+    
+    xml xmlVal = check toXml(val);
+    string expected = "<soap>" +
+    "<wsa:ReplyTo xmlns:wsa=\"example1.com\">" +
+    "<wsa:Address><city>Kandy</city><code>10000</code></wsa:Address>" +
+    "</wsa:ReplyTo><htng:ReplyTo xmlns:htng=\"example2.com\">" +
+    "<wsa:Address xmlns:wsa=\"example1.com\"><city>Colombo</city><code>40000</code>" +
+    "</wsa:Address></htng:ReplyTo></soap>";
+    test:assertEquals(xmlVal.toString(), expected);
+}
+
+@Namespace {prefix: "wsa", uri: "example1.com"}
+type AddressR2 record {|
+    string city;
+    int code; 
+|};
+
+@Namespace {prefix: "wsa", uri: "example1.com"}
+type Wsa_ReplyTo2 record {
+    @Namespace {prefix: "wsa", uri: "example1.com"}
+    AddressR2 Address;
+};
+
+@Namespace {prefix: "htng", uri: "example2.com"}
+type Htng_ReplyTo2 record {
+    @Namespace {prefix: "wsa", uri: "example1.com"}
+    AddressR2 Address;
+};
+
+@Name {value: "soap"}
+type Soap2 record {
+    @Name {value: "ReplyTo"}
+    @Namespace {prefix: "wsa", uri: "example1.com"}
+    Wsa_ReplyTo2 wsaReplyTo;
+    @Name {value: "ReplyTo"}
+    @Namespace {prefix: "htng", uri: "example2.com"}
+    Htng_ReplyTo2 htngReplyTo;
+};
+
+@test:Config {
+    groups: ["toXml"]
+}
+isolated function testXmlToRecordWithNamespaceAttachedToFieldsAndTypes() returns error? {
+    Soap2 val = {
+        htngReplyTo: {
+            Address: {
+                code: 40000,
+                city: "Colombo"
+            }
+        }, 
+        wsaReplyTo: {
+            Address: {
+                code: 10000,
+                city: "Kandy"
+            }
+        }
+    };
+    
+    xml xmlVal = check toXml(val);
+    string expected = "<soap>" +
+    "<wsa:ReplyTo xmlns:wsa=\"example1.com\">" +
+    "<wsa:Address><city>Kandy</city><code>10000</code></wsa:Address>" +
+    "</wsa:ReplyTo><htng:ReplyTo xmlns:htng=\"example2.com\">" +
+    "<wsa:Address xmlns:wsa=\"example1.com\"><city>Colombo</city><code>40000</code>" +
+    "</wsa:Address></htng:ReplyTo></soap>";
+    test:assertEquals(xmlVal.toString(), expected); 
+}
+
+type RequestorID record {
+    @Attribute
+    string ID;
+    @Attribute
+    string ID_Context;
+    @Attribute
+    string Type;
+};
+
+type Source record {
+    RequestorID RequestorID;
+};
+
+@test:Config {
+    groups: ["toXml"]
+}
+isolated function testUnderscoreInTheFieldName() returns error? {
+    Source s = {
+    RequestorID: {
+        ID: "1", 
+        ID_Context: "2", 
+        Type: "3"}};
+    xml xmlVal = check toXml(s);
+    test:assertEquals(xmlVal.toString(), "<Source><RequestorID ID=\"1\" ID_Context=\"2\" Type=\"3\"/></Source>");
+}
+
+@Namespace {
+    uri: "example.com"
+}
+type File record {|
+    @Namespace {
+        uri: "example.com"
+    }
+    string fileName;
+    @Namespace {
+        uri: "example.com"
+    }
+    string fileNamespace;
+|};
+
+@test:Config {
+    groups: ["toXml"]
+}
+isolated function testToRecordFieldNameEndsWithNameOrNamespace() returns error? {
+    File file = {
+        fileName: "test.bal",
+        fileNamespace: "wso2.com"
+    };
+
+    xml result = check toXml(file);
+    string expected = "<File xmlns=\"example.com\"><fileName>test.bal</fileName><fileNamespace>wso2.com</fileNamespace></File>";
+    test:assertEquals(result.toString(), expected);
+}
+
 @test:Config {
     groups: ["toXml"]
 }

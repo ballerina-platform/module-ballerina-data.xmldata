@@ -50,8 +50,9 @@ public class Constants {
     public static final String RECORD = "record";
     public static final String RECORD_OR_MAP = "record or map";
     public static final String ANON_TYPE = "$anonType$";
-    public static final String NON_NUMERIC_STRING_REGEX = "[^a-zA-Z\\d\s]";
+    public static final String RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX = "[^a-zA-Z\\d\s_]";
     public static final String NS_ANNOT_NOT_DEFINED = "$$ns_annot_not_defined$$";
+    public static final String MODULE_NAME = "ballerina/data.xmldata";
 
     public static final BString URI = StringUtils.fromString("uri");
     public static final BString PREFIX = StringUtils.fromString("prefix");

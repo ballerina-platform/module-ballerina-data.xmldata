@@ -22,11 +22,13 @@ public class QualifiedName {
     private final String localPart;
     private final String namespaceURI;
     private final String prefix;
+    private boolean isAttributeDefined;
 
-    public QualifiedName(String namespaceURI, String localPart, String prefix) {
+    public QualifiedName(String namespaceURI, String localPart, String prefix, boolean isAttributeDefined) {
         this.localPart = localPart;
         this.namespaceURI = namespaceURI;
         this.prefix = prefix;
+        this.isAttributeDefined = isAttributeDefined;
     }
 
     @Override
@@ -46,6 +48,6 @@ public class QualifiedName {
 
         QualifiedName qName = (QualifiedName) objectToTest;
         return localPart.equals(qName.localPart) && namespaceURI.equals(qName.namespaceURI) &&
-                prefix.equals(qName.prefix);
+                prefix.equals(qName.prefix) && (isAttributeDefined == qName.isAttributeDefined);
     }
 }
