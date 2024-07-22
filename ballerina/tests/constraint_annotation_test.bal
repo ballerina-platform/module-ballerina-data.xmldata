@@ -38,7 +38,7 @@ public type ValidationPerson record {|
         option: {
             value: "PAST",
             message: "Date of birth should be past value"
-            }, 
+        },
         message: "Invalid date found for date of birth"
     }
     time:Date dob;
@@ -87,9 +87,9 @@ function testValidConstraintAnnotationForParseString() returns error? {
     test:assertEquals(person.dob.month, 12);
     test:assertEquals(person.dob.day, 31);
     test:assertEquals(person.family.id, 2221);
-    test:assertEquals(person.family.members.length(), 2); 
-    test:assertEquals(person.family.members[0], "John"); 
-    test:assertEquals(person.family.members[1], "Doe"); 
+    test:assertEquals(person.family.members.length(), 2);
+    test:assertEquals(person.family.members[0], "John");
+    test:assertEquals(person.family.members[1], "Doe");
 }
 
 @constraint:Array {
@@ -108,7 +108,7 @@ public type ValidationItem record {|
 function testInvalidConstraintAnnotationForParseString(string sourceData, typedesc<record {}> expType, string expectedError) {
     anydata|Error err = parseString(sourceData, {}, expType);
     test:assertEquals(err is Error, true);
-    test:assertEquals((<error> err).message(), expectedError);
+    test:assertEquals((<error>err).message(), expectedError);
 }
 
 function invalidConstraintAnnotation() returns [string, typedesc<record {}>, string][] {
@@ -196,7 +196,7 @@ function invalidConstraintAnnotation() returns [string, typedesc<record {}>, str
                 `,
             ValidationPerson,
             "Validation failed for '$.height:maxFractionDigits' constraint(s)."
-        ], 
+        ],
         [
             string `
                 <Person>
@@ -255,6 +255,70 @@ function invalidConstraintAnnotation() returns [string, typedesc<record {}>, str
 }
 
 @test:Config {
+    groups: ["constraint-validation"],
+    dataProvider: disableConstraintValidation
+}
+function testDisableConstraintValidationForParseString(string sourceData, typedesc<record {}> expType, anydata result) returns error? {
+    anydata err = check parseString(sourceData, {enableConstraintValidation: false}, expType);
+    test:assertEquals(err, result);
+}
+
+function disableConstraintValidation() returns [string, typedesc<record {}>, anydata][] {
+    return [
+        [
+            string `
+                <Person>
+                    <name>John Doe</name>
+                    <age>4</age>
+                    <height>185.215</height>
+                    <dob>
+                        <year>5000</year>
+                        <month>12</month>
+                        <day>31</day>
+                    </dob>
+                    <family>
+                        <id>22213</id>
+                        <members>John</members>
+                        <members>Doe</members>
+                        <members>Ross</members>
+                    </family>
+                </Person>
+                `,
+            ValidationPerson,
+            {
+                "name": "John Doe",
+                "age": 4,
+                "height": 185.215,
+                "dob": {
+                    "year": 5000,
+                    "month": 12,
+                    "day": 31
+                },
+                "family": {
+                    "id": 22213,
+                    "members": [
+                        "John",
+                        "Doe",
+                        "Ross"
+                    ]
+                }
+            }
+        ],
+        [
+            string `
+                <Item>
+                    <weight>1.2</weight>
+                    <weight>2.3</weight>
+                    <weight>3.4</weight>
+                </Item>
+                `,
+            ValidationItem,
+            <ValidationItem> {"weight": [1.2, 2.3, 3.4]}
+        ]
+    ];
+}
+
+@test:Config {
     groups: ["constraint-validation"]
 }
 function testValidConstraintAnnotationForParseAsType() returns error? {
@@ -283,9 +347,9 @@ function testValidConstraintAnnotationForParseAsType() returns error? {
     test:assertEquals(person.dob.year, 1990);
     test:assertEquals(person.dob.month, 12);
     test:assertEquals(person.dob.day, 31);
-    test:assertEquals(person.family.members.length(), 2); 
-    test:assertEquals(person.family.members[0], "John"); 
-    test:assertEquals(person.family.members[1], "Doe"); 
+    test:assertEquals(person.family.members.length(), 2);
+    test:assertEquals(person.family.members[0], "John");
+    test:assertEquals(person.family.members[1], "Doe");
 }
 
 @test:Config {
@@ -295,7 +359,7 @@ function testValidConstraintAnnotationForParseAsType() returns error? {
 function testInvalidConstraintAnnotationForParseAsType(xml sourceData, typedesc<record {}> expType, string expectedError) {
     anydata|Error err = parseAsType(sourceData, {}, expType);
     test:assertEquals(err is Error, true);
-    test:assertEquals((<error> err).message(), expectedError);
+    test:assertEquals((<error>err).message(), expectedError);
 }
 
 function invalidConstraintAnnotationForParseAsType() returns [xml, typedesc<record {}>, string][] {
@@ -383,7 +447,7 @@ function invalidConstraintAnnotationForParseAsType() returns [xml, typedesc<reco
                 `,
             ValidationPerson,
             "Validation failed for '$.height:maxFractionDigits' constraint(s)."
-        ], 
+        ],
         [
             xml `
                 <Person>
@@ -437,6 +501,70 @@ function invalidConstraintAnnotationForParseAsType() returns [xml, typedesc<reco
                 `,
             ValidationItem,
             "Validation failed for '$.weight:length' constraint(s)."
+        ]
+    ];
+}
+
+@test:Config {
+    groups: ["constraint-validation"],
+    dataProvider: disableConstraintValidationForParseAsType
+}
+function testDisableConstraintValidationForParseAsType(xml sourceData, typedesc<record {}> expType, anydata result) returns error? {
+    anydata err = check parseAsType(sourceData, {enableConstraintValidation: false}, expType);
+    test:assertEquals(err, result);
+}
+
+function disableConstraintValidationForParseAsType() returns [xml, typedesc<record {}>, anydata][] {
+    return [
+        [
+            xml `
+                <Person>
+                    <name>John Doe</name>
+                    <age>4</age>
+                    <height>185.215</height>
+                    <dob>
+                        <year>5000</year>
+                        <month>12</month>
+                        <day>31</day>
+                    </dob>
+                    <family>
+                        <id>22213</id>
+                        <members>John</members>
+                        <members>Doe</members>
+                        <members>Ross</members>
+                    </family>
+                </Person>
+                `,
+            ValidationPerson,
+            {
+                "name": "John Doe",
+                "age": 4,
+                "height": 185.215,
+                "dob": {
+                    "year": 5000,
+                    "month": 12,
+                    "day": 31
+                },
+                "family": {
+                    "id": 22213,
+                    "members": [
+                        "John",
+                        "Doe",
+                        "Ross"
+                    ]
+                }
+            }
+        ],
+        [
+            xml `
+                <Item>
+                    <weight>1.2</weight>
+                    <weight>2.3</weight>
+                    <weight>3.4</weight>
+                </Item>
+                `,
+            ValidationItem,
+            <ValidationItem> {"weight": [1.2, 2.3, 3.4]}
         ]
     ];
 }
