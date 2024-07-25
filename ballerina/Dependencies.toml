@@ -5,7 +5,7 @@
 
 [ballerina]
 dependencies-toml-version = "2"
-distribution-version = "2201.9.0"
+distribution-version = "2201.10.0-20240724-114000-40e856f7"
 
 [[package]]
 org = "ballerina"
@@ -22,7 +22,7 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "data.xmldata"
-version = "0.1.4"
+version = "1.0.0"
 dependencies = [
 	{org = "ballerina", name = "constraint"},
 	{org = "ballerina", name = "io"},
