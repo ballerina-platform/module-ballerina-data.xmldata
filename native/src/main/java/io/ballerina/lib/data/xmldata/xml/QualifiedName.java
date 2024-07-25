@@ -27,6 +27,20 @@ public class QualifiedName {
     private String localPart;
     private String namespaceURI;
     private String prefix;
+    private AttributeState attributeState = AttributeState.NOT_DEFINED;
+
+    public enum AttributeState {
+        ATTRIBUTE,
+        ELEMENT,
+        NOT_DEFINED
+    }
+
+    public QualifiedName(String namespaceURI, String localPart, String prefix, AttributeState attributeState) {
+        this.localPart = localPart;
+        this.namespaceURI = namespaceURI;
+        this.prefix = prefix;
+        this.attributeState = attributeState;
+    }
 
     public QualifiedName(String namespaceURI, String localPart, String prefix) {
         this.localPart = localPart;
@@ -56,9 +70,17 @@ public class QualifiedName {
         return prefix;
     }
 
+    public void setAttributeState(AttributeState attributeState) {
+        this.attributeState = attributeState;
+    }
+
+    public AttributeState getAttributeState() {
+        return this.attributeState;
+    }
+
     @Override
     public int hashCode() {
-        return prefix.hashCode() ^ namespaceURI.hashCode() ^ localPart.hashCode();
+        return prefix.hashCode() ^ namespaceURI.hashCode() ^ localPart.hashCode() ^ attributeState.hashCode();
     }
 
     @Override
@@ -72,6 +94,6 @@ public class QualifiedName {
         }
 
         return localPart.equals(qName.localPart) && namespaceURI.equals(qName.namespaceURI) &&
-                prefix.equals(qName.prefix);
+                prefix.equals(qName.prefix) && attributeState.equals(qName.attributeState);
     }
 }

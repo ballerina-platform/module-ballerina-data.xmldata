@@ -62,6 +62,9 @@ import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static javax.xml.stream.XMLStreamConstants.PROCESSING_INSTRUCTION;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ATTRIBUTE;
+import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ELEMENT;
+import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.NOT_DEFINED;
 
 /**
  * Convert Xml string to a ballerina record.
@@ -847,7 +850,6 @@ public class XmlParser {
         return false;
     }
 
-    @SuppressWarnings("unchecked")
     private void readTextRest(XMLStreamReader xmlStreamReader,
                               BString currentFieldName,
                               boolean isCData,
@@ -873,13 +875,11 @@ public class XmlParser {
         }
 
         convertTextRestAndUpdateCurrentNodeForRestType(xmlParserData.currentNode,
-                (BMap<BString, Object>) xmlParserData.nodesStack.peek(), currentFieldName, bText, restType,
-                StringUtils.fromString(xmlParserData.textFieldName));
+                currentFieldName, bText, restType, StringUtils.fromString(xmlParserData.textFieldName));
     }
 
     @SuppressWarnings("unchecked")
     private void convertTextRestAndUpdateCurrentNodeForRestType(BMap<BString, Object> currentNode,
-                                                            BMap<BString, Object> parent,
                                                             BString currentFieldName,
                                                             BString bText, Type restType, BString textFieldName) {
         Object currentElement = currentNode.get(currentFieldName);
@@ -927,24 +927,29 @@ public class XmlParser {
         Map<String, List<QualifiedName>> fieldNames = new HashMap<>();
         Map<String, Field> recordFields = recordType.getFields();
         for (String key : recordFields.keySet()) {
+            QualifiedNameMap<Field> attributeMap = xmlParserData.attributeHierarchy.peek();
             QualifiedName modifiedQName =
                     modifiedNames.getOrDefault(key, new QualifiedName(Constants.NS_ANNOT_NOT_DEFINED, key, ""));
             String localName = modifiedQName.getLocalPart();
-            if (fieldMap.containsKey(modifiedQName)) {
+            if (attributeMap.contains(modifiedQName) && modifiedQName.getAttributeState() == NOT_DEFINED) {
+                if (!key.equals(attributeMap.get(modifiedQName).getFieldName())) {
+                    modifiedQName.setAttributeState(ELEMENT);
+                    fieldMap.put(modifiedQName, recordFields.get(key));
+                    fieldNames.put(localName, new ArrayList<>(List.of(modifiedQName)));
+                }
+            } else if (fieldMap.containsKey(modifiedQName)) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.DUPLICATE_FIELD, localName);
             } else if (fieldNames.containsKey(localName)) {
-                if (modifiedQName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)) {
-                    throw DiagnosticLog.error(DiagnosticErrorCode.DUPLICATE_FIELD, localName);
-                }
                 List<QualifiedName> qNames = fieldNames.get(localName);
                 qNames.forEach(qName -> {
-                    if (qName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)) {
+                    if (DataUtils.isSameAttributeFlag(qName.getAttributeState(), modifiedQName.getAttributeState())
+                            && DataUtils.isSameNamespace(qName, modifiedQName)) {
                         throw DiagnosticLog.error(DiagnosticErrorCode.DUPLICATE_FIELD, localName);
                     }
                 });
                 fieldMap.put(modifiedQName, recordFields.get(key));
                 fieldNames.get(localName).add(modifiedQName);
-            } else if (!xmlParserData.attributeHierarchy.peek().contains(modifiedQName)) {
+            } else if (!attributeMap.contains(modifiedQName)) {
                 fieldMap.put(modifiedQName, recordFields.get(key));
                 fieldNames.put(localName, new ArrayList<>(List.of(modifiedQName)));
             }
@@ -963,6 +968,7 @@ public class XmlParser {
                 Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
                 QualifiedName fieldQName = DataUtils.getFieldNameFromRecord(fieldAnnotation, attributeName);
                 fieldQName.setLocalPart(getModifiedName(fieldAnnotation, attributeName));
+                fieldQName.setAttributeState(ATTRIBUTE);
                 attributes.put(fieldQName, recordType.getFields().get(attributeName));
             }
         }
@@ -983,9 +989,12 @@ public class XmlParser {
         for (int i = 0; i < xmlStreamReader.getAttributeCount(); i++) {
             QName attributeQName = xmlStreamReader.getAttributeName(i);
             QualifiedName attQName = new QualifiedName(attributeQName.getNamespaceURI(),
-                    xmlParserData.attributePrefix + attributeQName.getLocalPart(), attributeQName.getPrefix());
+                    xmlParserData.attributePrefix + attributeQName.getLocalPart(), attributeQName.getPrefix(),
+                    ATTRIBUTE);
             Field field = xmlParserData.attributeHierarchy.peek().remove(attQName);
             if (field == null) {
+                // Here attQName state is set to NOT_DEFINED since it accessed from field hierarchy.
+                attQName.setAttributeState(NOT_DEFINED);
                 Optional<Field> f = getFieldFromFieldHierarchy(attQName, xmlParserData);
                 if (f.isEmpty()) {
                     continue;
@@ -1026,8 +1035,7 @@ public class XmlParser {
         for (int i = 0; i < xmlStreamReader.getAttributeCount(); i++) {
             QName attributeQName = xmlStreamReader.getAttributeName(i);
             QualifiedName attQName = new QualifiedName(attributeQName.getNamespaceURI(),
-                    attributeQName.getLocalPart(), attributeQName.getPrefix());
-
+                    attributeQName.getLocalPart(), attributeQName.getPrefix(), ATTRIBUTE);
             try {
                 mapNode.put(StringUtils.fromString(attQName.getLocalPart()), convertStringToRestExpType(
                         StringUtils.fromString(xmlStreamReader.getAttributeValue(i)), restType));
@@ -1091,7 +1099,7 @@ public class XmlParser {
 
     private QualifiedName getElementName(XMLStreamReader xmlStreamReader) {
         QName qName = xmlStreamReader.getName();
-        return new QualifiedName(qName.getNamespaceURI(), qName.getLocalPart(), qName.getPrefix());
+        return new QualifiedName(qName.getNamespaceURI(), qName.getLocalPart(), qName.getPrefix(), ELEMENT);
     }
 
     /**

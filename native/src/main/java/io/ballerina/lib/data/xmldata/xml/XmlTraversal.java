@@ -69,7 +69,6 @@ public class XmlTraversal {
     static class XmlTree {
         private Object currentNode;
 
-        @SuppressWarnings("unchecked")
         public Object traverseXml(BXml xml, BMap<BString, Object> options, Type type) {
             Type referredType = TypeUtils.getReferredType(type);
             switch (referredType.getTag()) {
