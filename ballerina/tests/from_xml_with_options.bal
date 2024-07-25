@@ -454,7 +454,7 @@ function testComplexOptionsForParseStringNegative() returns error? {
     test:assertEquals((<error>l).message(), "undefined field 'street' in record 'data.xmldata:Address'");
 }
 
-SourceOptions sOptions7 = {isSemantic: false};
+SourceOptions sOptions7 = {useSemanticEquality: false};
 
 @test:Config {
     groups: ["fromXmlString"]
