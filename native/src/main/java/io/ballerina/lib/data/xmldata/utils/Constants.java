@@ -61,7 +61,9 @@ public class Constants {
     public static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attributePrefix");
     public static final BString TEXT_FIELD_NAME = StringUtils.fromString("textFieldName");
     public static final BString ALLOW_DATA_PROJECTION = StringUtils.fromString("allowDataProjection");
-    public static final BString IS_SEMANTIC = StringUtils.fromString("isSemantic");
+    public static final BString IS_SEMANTIC = StringUtils.fromString("useSemanticEquality");
     public static final String RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX = "[^a-zA-Z\\d\s_]";
     public static final String NS_ANNOT_NOT_DEFINED = "$$ns_annot_not_defined$$";
+    public static final String REGEXP_MODULE_NAME = "lang.regexp";
+    public static final String REGEXP_TYPE_NAME = "RegExp";
 }
