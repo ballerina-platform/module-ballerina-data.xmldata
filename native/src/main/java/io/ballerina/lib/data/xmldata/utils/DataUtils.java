@@ -71,7 +71,7 @@ public class DataUtils {
     @SuppressWarnings("unchecked")
     public static QualifiedName validateAndGetXmlNameFromRecordAnnotation(RecordType recordType, String recordName,
                                                                           QualifiedName elementName,
-                                                                          boolean isSemantic) {
+                                                                          boolean useSemanticEquality) {
         BMap<BString, Object> annotations = recordType.getAnnotations();
         String localName = recordName;
         for (BString annotationsKey : annotations.getKeys()) {
@@ -95,10 +95,11 @@ public class DataUtils {
                 BString uri = (BString) namespaceAnnotation.get(Constants.URI);
                 BString prefix = (BString) namespaceAnnotation.get(Constants.PREFIX);
                 return QualifiedNameFactory.createQualifiedName(uri == null ? "" : uri.getValue(), localName,
-                        prefix == null ? "" : prefix.getValue(), isSemantic);
+                        prefix == null ? "" : prefix.getValue(), useSemanticEquality);
             }
         }
-        return QualifiedNameFactory.createQualifiedName(Constants.NS_ANNOT_NOT_DEFINED, localName, "", isSemantic);
+        return QualifiedNameFactory.createQualifiedName(Constants.NS_ANNOT_NOT_DEFINED, localName, "",
+                useSemanticEquality);
     }
 
     public static void validateTypeNamespace(String prefix, String uri, RecordType recordType) {
@@ -137,7 +138,7 @@ public class DataUtils {
                 String fieldName = keyStr.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
                 Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
                 QualifiedName fieldQName = DataUtils.getFieldNameFromRecord(fieldAnnotation, fieldName,
-                        analyzerData.isSemantic);
+                        analyzerData.useSemanticEquality);
                 fieldQName.setLocalPart(getModifiedName(fieldAnnotation, fieldName));
                 modifiedNames.put(fieldName, fieldQName);
             }
@@ -151,7 +152,7 @@ public class DataUtils {
             QualifiedName modifiedQName =
                     modifiedNames.getOrDefault(key,
                             QualifiedNameFactory.createQualifiedName(Constants.NS_ANNOT_NOT_DEFINED, key, "",
-                                    analyzerData.isSemantic));
+                                    analyzerData.useSemanticEquality));
             String localName = modifiedQName.getLocalPart();
             if (attributeMap.contains(modifiedQName) && modifiedQName.getAttributeState() == NOT_DEFINED) {
                 if (!key.equals(attributeMap.get(modifiedQName).getFieldName())) {
@@ -180,7 +181,8 @@ public class DataUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static Map<QualifiedName, Field> getAllAttributesInRecordType(RecordType recordType, boolean isSemantic) {
+    public static Map<QualifiedName, Field> getAllAttributesInRecordType(RecordType recordType,
+                                                                         boolean useSemanticEquality) {
         BMap<BString, Object> annotations = recordType.getAnnotations();
         Map<QualifiedName, Field> attributes = new HashMap<>();
         for (BString annotationKey : annotations.getKeys()) {
@@ -188,7 +190,7 @@ public class DataUtils {
             if (keyStr.contains(Constants.FIELD) && DataUtils.isAttributeField(annotationKey, annotations)) {
                 String attributeName = keyStr.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
                 Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
-                QualifiedName fieldQName = getFieldNameFromRecord(fieldAnnotation, attributeName, isSemantic);
+                QualifiedName fieldQName = getFieldNameFromRecord(fieldAnnotation, attributeName, useSemanticEquality);
                 fieldQName.setAttributeState(ATTRIBUTE);
                 fieldQName.setLocalPart(getModifiedName(fieldAnnotation, attributeName));
                 attributes.put(fieldQName, recordType.getFields().get(attributeName));
@@ -199,17 +201,18 @@ public class DataUtils {
 
     @SuppressWarnings("unchecked")
     public static QualifiedName getFieldNameFromRecord(Map<BString, Object> fieldAnnotation, String fieldName,
-                                                       boolean isSemantic) {
+                                                       boolean useSemanticEquality) {
         for (BString key : fieldAnnotation.keySet()) {
             if (isNamespaceAnnotationKey(key.getValue())) {
                 Map<BString, Object> namespaceAnnotation = ((Map<BString, Object>) fieldAnnotation.get(key));
                 BString uri = (BString) namespaceAnnotation.get(Constants.URI);
                 BString prefix = (BString) namespaceAnnotation.get(Constants.PREFIX);
                 return QualifiedNameFactory.createQualifiedName(uri == null ? "" : uri.getValue(), fieldName,
-                        prefix == null ? "" : prefix.getValue(), isSemantic);
+                        prefix == null ? "" : prefix.getValue(), useSemanticEquality);
             }
         }
-        return QualifiedNameFactory.createQualifiedName(Constants.NS_ANNOT_NOT_DEFINED, fieldName, "", isSemantic);
+        return QualifiedNameFactory.createQualifiedName(Constants.NS_ANNOT_NOT_DEFINED, fieldName, "",
+                useSemanticEquality);
     }
 
     @SuppressWarnings("unchecked")
@@ -222,9 +225,9 @@ public class DataUtils {
         return attributeName;
     }
 
-    public static QualifiedName getElementName(QName qName, boolean isSemantic) {
+    public static QualifiedName getElementName(QName qName, boolean useSemanticEquality) {
         return QualifiedNameFactory.createQualifiedName(qName.getNamespaceURI(), qName.getLocalPart(),
-                qName.getPrefix(), ELEMENT, isSemantic);
+                qName.getPrefix(), ELEMENT, useSemanticEquality);
     }
 
     public static Object convertStringToExpType(BString value, Type expType) {
@@ -290,7 +293,7 @@ public class DataUtils {
 
     public static void updateExpectedTypeStacks(RecordType recordType, XmlAnalyzerData analyzerData) {
         analyzerData.attributeHierarchy.push(new QualifiedNameMap<>(getAllAttributesInRecordType(recordType,
-                analyzerData.isSemantic)));
+                analyzerData.useSemanticEquality)));
         analyzerData.fieldHierarchy.push(new QualifiedNameMap<>(getAllFieldsInRecordType(recordType, analyzerData)));
         analyzerData.visitedFieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
         analyzerData.restTypes.push(recordType.getRestFieldType());
@@ -347,7 +350,7 @@ public class DataUtils {
         analyzerData.attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
         analyzerData.textFieldName = options.get(Constants.TEXT_FIELD_NAME).toString();
         analyzerData.allowDataProjection = (boolean) options.get(Constants.ALLOW_DATA_PROJECTION);
-        analyzerData.isSemantic = (boolean) options.get(Constants.IS_SEMANTIC);
+        analyzerData.useSemanticEquality = (boolean) options.get(Constants.USE_SEMANTIC_EQUALITY);
     }
 
     public static void logArrayMismatchErrorIfProjectionNotAllowed(boolean allowDataProjection) {
@@ -888,6 +891,6 @@ public class DataUtils {
         public String attributePrefix;
         public String textFieldName;
         public boolean allowDataProjection;
-        public boolean isSemantic;
+        public boolean useSemanticEquality;
     }
 }

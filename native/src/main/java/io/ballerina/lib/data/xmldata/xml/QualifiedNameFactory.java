@@ -26,16 +26,16 @@ package io.ballerina.lib.data.xmldata.xml;
 public class QualifiedNameFactory {
     public static QualifiedName createQualifiedName(String namespaceURI, String localPart, String prefix,
                                                     QualifiedName.AttributeState attributeState,
-                                                    boolean isSemantic) {
-        if (isSemantic) {
+                                                    boolean useSemanticEquality) {
+        if (useSemanticEquality) {
             return new QualifiedNameSemantic(namespaceURI, localPart, prefix, attributeState);
         }
         return new QualifiedNameSyntax(namespaceURI, localPart, prefix, attributeState);
     }
 
     public static QualifiedName createQualifiedName(String namespaceURI, String localPart, String prefix,
-                                                    boolean isSemantic) {
-        if (isSemantic) {
+                                                    boolean useSemanticEquality) {
+        if (useSemanticEquality) {
             return new QualifiedNameSemantic(namespaceURI, localPart, prefix);
         }
         return new QualifiedNameSyntax(namespaceURI, localPart, prefix);
