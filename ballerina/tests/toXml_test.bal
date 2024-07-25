@@ -1330,6 +1330,43 @@ isolated function testToRecordFieldNameEndsWithNameOrNamespace() returns error? 
     test:assertEquals(result.toString(), expected);
 }
 
+type String string;
+
+type VersionType String;
+
+@Name {
+    value: "Payload"
+}
+type Payload1 record {
+    @Attribute
+    string 'version?;
+    VersionType 'type?;
+};
+
+type Map map<json>;
+
+@Name {
+    value: "Payload"
+}
+type Payload2 record {|
+    @Attribute
+    string 'version?;
+    Map value;
+|};
+
+@test:Config {
+    groups: ["toXml"]
+}
+isolated function testRecordFieldTypeAsReferenceTypeForToXml() returns error? {
+    Payload1 payload1 = {'version: "1.0", 'type: "example"};
+    xml result = check toXml(payload1); 
+    test:assertEquals(result.toString(), "<Payload version=\"1.0\"><type>example</type></Payload>");
+    
+    Payload2 payload2 = {'version: "1.0", value: {id: "243", name: "Kanth"}};
+    xml result2 = check toXml(payload2);
+    test:assertEquals(result2.toString(), "<Payload version=\"1.0\"><value><id>243</id><name>Kanth</name></value></Payload>");
+}
+
 @test:Config {
     groups: ["toXml"]
 }
