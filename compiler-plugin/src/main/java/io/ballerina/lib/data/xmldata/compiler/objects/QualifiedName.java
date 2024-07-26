@@ -33,7 +33,7 @@ public class QualifiedName {
 
     @Override
     public int hashCode() {
-        return localPart.hashCode() ^ namespaceURI.hashCode() ^ prefix.hashCode();
+        return localPart.hashCode() ^ namespaceURI.hashCode();
     }
 
     @Override
@@ -47,7 +47,7 @@ public class QualifiedName {
         }
 
         QualifiedName qName = (QualifiedName) objectToTest;
-        return localPart.equals(qName.localPart) && namespaceURI.equals(qName.namespaceURI) &&
-                prefix.equals(qName.prefix) && (isAttributeDefined == qName.isAttributeDefined);
+        return localPart.equals(qName.localPart) && namespaceURI.equals(qName.namespaceURI)
+                && (isAttributeDefined == qName.isAttributeDefined);
     }
 }
