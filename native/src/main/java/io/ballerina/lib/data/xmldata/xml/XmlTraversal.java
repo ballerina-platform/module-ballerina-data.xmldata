@@ -82,7 +82,6 @@ public class XmlTraversal {
     static class XmlTree {
         private Object currentNode;
 
-        @SuppressWarnings("unchecked")
         public Object traverseXml(BXml xml, BMap<BString, Object> options, Type type) {
             Type referredType = TypeUtils.getReferredType(type);
             switch (referredType.getTag()) {
@@ -125,7 +124,8 @@ public class XmlTraversal {
 
             String textFieldName = analyzerData.textFieldName;
             if (currentField == null) {
-                QualifiedName contentQName = new QualifiedName("", textFieldName, "");
+                QualifiedName contentQName = QualifiedNameFactory.createQualifiedName("", textFieldName, "",
+                        analyzerData.useSemanticEquality);
                 if (analyzerData.fieldHierarchy.peek().contains(contentQName)) {
                     currentField = analyzerData.fieldHierarchy.peek().remove(contentQName);
                 } else if (analyzerData.visitedFieldHierarchy.peek().contains(contentQName)) {
@@ -171,7 +171,7 @@ public class XmlTraversal {
 
         @SuppressWarnings("unchecked")
         private void convertElement(BXmlItem xmlItem, XmlAnalyzerData analyzerData) {
-            QualifiedName elementQName = DataUtils.getElementName(xmlItem.getQName());
+            QualifiedName elementQName = DataUtils.getElementName(xmlItem.getQName(), analyzerData.useSemanticEquality);
             QualifiedNameMap<Field> fieldsMap = analyzerData.fieldHierarchy.peek();
             Field currentField;
             if (analyzerData.visitedFieldHierarchy.peek().contains(elementQName)) {
@@ -411,6 +411,7 @@ public class XmlTraversal {
                                                  BMap<BString, Object> mapValue, XmlAnalyzerData analyzerData) {
             BString bElementName = StringUtils.fromString(elemName);
             Object currentElement = mapValue.get(bElementName);
+            boolean useSemanticEquality = analyzerData.useSemanticEquality;
             BArray arrayValue;
             if (!(currentElement instanceof BArray)) {
                 if (!DataUtils.isArrayValueAssignable(restType.getTag())) {
@@ -428,7 +429,7 @@ public class XmlTraversal {
                 if (isElementHasAttributes(xmlItem)) {
                     BMap<BString, Object> nextValue =
                             ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
-                    handleAttributesRest(xmlItem, nextValue, restType);
+                    handleAttributesRest(xmlItem, nextValue, restType, useSemanticEquality);
                     arrayValue.append(nextValue);
 
                     if (!nextValue.isEmpty()) {
@@ -460,7 +461,7 @@ public class XmlTraversal {
             }
             analyzerData.nodesStack.push(currentNode);
             currentNode = nextValue;
-            handleAttributesRest(xmlItem, nextValue, restType);
+            handleAttributesRest(xmlItem, nextValue, restType, useSemanticEquality);
 
             analyzerData.fieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
             analyzerData.visitedFieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
@@ -485,7 +486,7 @@ public class XmlTraversal {
             if (isElementHasAttributes(xmlItem)) {
                 BMap<BString, Object> nextValue =
                         ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
-                handleAttributesRest(xmlItem, nextValue, restType);
+                handleAttributesRest(xmlItem, nextValue, restType, analyzerData.useSemanticEquality);
                 mapValue.put(bElementName, nextValue);
 
                 if (!nextValue.isEmpty()) {
@@ -508,7 +509,7 @@ public class XmlTraversal {
             mapValue.put(bElementName, nextValue);
             analyzerData.nodesStack.push(currentNode);
             currentNode = nextValue;
-            handleAttributesRest(xmlItem, nextValue, restType);
+            handleAttributesRest(xmlItem, nextValue, restType, analyzerData.useSemanticEquality);
             traverseXml(xmlItem.getChildrenSeq(), restType, analyzerData);
             currentNode = analyzerData.nodesStack.pop();
         }
@@ -612,9 +613,11 @@ public class XmlTraversal {
             }
             BXmlItem xmlItem = (BXmlItem) xml;
             analyzerData.rootRecord = recordType;
-            QualifiedName elementQName = DataUtils.getElementName(xmlItem.getQName());
+            boolean useSemanticEquality = analyzerData.useSemanticEquality;
+            QualifiedName elementQName = DataUtils.getElementName(xmlItem.getQName(), useSemanticEquality);
             analyzerData.rootElement =
-                    DataUtils.validateAndGetXmlNameFromRecordAnnotation(recordType, recordType.getName(), elementQName);
+                    DataUtils.validateAndGetXmlNameFromRecordAnnotation(recordType, recordType.getName(), elementQName,
+                            useSemanticEquality);
             DataUtils.validateTypeNamespace(elementQName.getPrefix(), elementQName.getNamespaceURI(), recordType);
 
             // Keep track of fields and attributes
@@ -635,7 +638,7 @@ public class XmlTraversal {
                 }
                 BString key = entry.getKey();
                 QualifiedName attribute = getAttributePreservingNamespace(nsPrefixMap, key.getValue(),
-                        analyzerData.attributePrefix);
+                        analyzerData.attributePrefix, analyzerData.useSemanticEquality);
                 Field field = analyzerData.attributeHierarchy.peek().remove(attribute);
                 if (field == null) {
                     if (innerElements.contains(attribute.getLocalPart())) {
@@ -667,7 +670,8 @@ public class XmlTraversal {
             }
         }
 
-        private void handleAttributesRest(BXmlItem xmlItem, BMap<BString, Object> currentNode, Type restType) {
+        private void handleAttributesRest(BXmlItem xmlItem, BMap<BString, Object> currentNode, Type restType,
+                                          boolean useSemanticEquality) {
             HashSet<String> innerElements = findAllInnerElement(xmlItem);
             BMap<BString, BString> attributeMap = xmlItem.getAttributesMap();
             Map<String, String> nsPrefixMap = getNamespacePrefixes(attributeMap);
@@ -676,7 +680,8 @@ public class XmlTraversal {
                     continue;
                 }
                 BString key = entry.getKey();
-                QualifiedName attribute = getAttributePreservingNamespace(nsPrefixMap, key.getValue(), "");
+                QualifiedName attribute = getAttributePreservingNamespace(nsPrefixMap, key.getValue(), "",
+                        useSemanticEquality);
 
                 if (innerElements.contains(attribute.getLocalPart())) {
                     // Element and Attribute have same name. Priority given to element.
@@ -709,7 +714,7 @@ public class XmlTraversal {
         }
 
         private QualifiedName getAttributePreservingNamespace(Map<String, String> nsPrefixMap, String attributeKey,
-                                                              String attributePrefix) {
+                                                              String attributePrefix, boolean useSemanticEquality) {
             int nsEndIndex = attributeKey.lastIndexOf('}');
             if (nsEndIndex > 0) {
                 String ns = attributeKey.substring(1, nsEndIndex);
@@ -719,9 +724,11 @@ public class XmlTraversal {
                 if (nsPrefix == null) {
                     nsPrefix = "";
                 }
-                return new QualifiedName(ns, attributePrefix + local, nsPrefix);
+                return QualifiedNameFactory.createQualifiedName(ns, attributePrefix + local, nsPrefix,
+                        useSemanticEquality);
             }
-            return new QualifiedName(attributePrefix + attributeKey);
+            return QualifiedNameFactory.createQualifiedName("", attributePrefix + attributeKey, "",
+                    useSemanticEquality);
         }
 
         private HashSet<String> findAllInnerElement(BXmlItem xmlItem) {

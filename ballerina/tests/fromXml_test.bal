@@ -2976,6 +2976,53 @@ isolated function testElementWithDifferentNamespace() returns error? {
     test:assertEquals(rec2.duplicateName, "Kanth");
 }
 
+@Namespace {
+    prefix: "x",
+    uri: "example.com"
+}
+type Foo1 record {|
+    @Namespace {
+        uri: "example.com"
+    }
+    string bar;
+|};
+
+@Namespace {
+    prefix: "x",
+    uri: "example.com"
+}
+type Foo2 record {|
+    @Namespace {
+        prefix: "y",
+        uri: "example.com"
+    }
+    string bar;
+|};
+
+@test:Config {
+    groups: ["fromXmlString"]
+}
+function testXmlStringToRecordWithSemanticEqaulity() returns error? {
+    string xmlStr1 = string `<x:foo xmlns:x="example.com"><x:bar>1</x:bar></x:foo>`;
+    Foo1 rec1 = check parseString(xmlStr1);
+    test:assertEquals(rec1.bar, "1");
+
+    Foo2 rec2 = check parseString(xmlStr1);
+    test:assertEquals(rec2.bar, "1");
+}
+
+@test:Config {
+    groups: ["fromXml"]
+}
+function testXmlToRecordWithSyntacticSemantic() returns error? {
+    xml xmlVal1 = xml `<x:foo xmlns:x="example.com"><x:bar>1</x:bar></x:foo>`;
+    Foo1 rec1 = check parseAsType(xmlVal1);
+    test:assertEquals(rec1.bar, "1");
+    
+    Foo2 rec2 = check parseAsType(xmlVal1);
+    test:assertEquals(rec2.bar, "1");
+}
+
 // Negative cases
 type DataN1 record {|
     int A;
@@ -3130,35 +3177,6 @@ function testXmlToRecordNegative9() {
     xml xmlVal1 = xml `<Data xmlns:ns1="www.test.com"><ns1:A>1</ns1:A></Data>`;
     DataN7|error rec1 = parseAsType(xmlVal1);
     test:assertEquals((<error>rec1).message(), "required field 'A' not present in XML");
-}
-
-@Namespace {
-    prefix: "x",
-    uri: "example.com"
-}
-type DataN8 record {|
-    @Namespace {
-        uri: "example.com"
-    }
-    string bar;
-|};
-
-@test:Config {
-    groups: ["fromXmlString"]
-}
-function testXmlStringToRecordNegative10() {
-    string xmlStr1 = string `<x:foo xmlns:x="example.com"><x:bar>1</x:bar></x:foo>`;
-    DataN8|error rec1 = parseString(xmlStr1);
-    test:assertEquals((<error>rec1).message(), "required field 'bar' not present in XML");
-}
-
-@test:Config {
-    groups: ["fromXml"]
-}
-function testXmlToRecordNegative10() {
-    xml xmlVal1 = xml `<x:foo xmlns:x="example.com"><x:bar>1</x:bar></x:foo>`;
-    DataN8|error rec1 = parseAsType(xmlVal1);
-    test:assertEquals((<error>rec1).message(), "required field 'bar' not present in XML");
 }
 
 @Namespace {

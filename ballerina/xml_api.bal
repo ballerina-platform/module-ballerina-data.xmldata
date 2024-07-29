@@ -23,9 +23,8 @@ const XMLNS = "xmlns";
 const EMPTY_STRING = "";
 
 # Defines the name of the XML element.
-#
-# + value - The name of the XML element
 public type NameConfig record {|
+    # The name of the XML element
     string value;
 |};
 
@@ -36,11 +35,10 @@ public type NameConfig record {|
 public const annotation NameConfig Name on type, record field;
 
 # Defines the namespace of the XML element.
-#
-# + prefix - The value of the prefix of the namespace
-# + uri - The value of the URI of the namespace
 public type NamespaceConfig record {|
+    # The value of the prefix of the namespace
     string prefix?;
+    # The value of the URI of the namespace
     string uri;
 |};
 
@@ -57,21 +55,21 @@ public const annotation NamespaceConfig Namespace on type, record field;
 public const annotation Attribute on record field;
 
 # Represent the options that can be used to modify the behaviour of projection.
-#
-# + attributePrefix - prefix added for attribute fields in the record
-# + textFieldName - field name for the text field
 public type Options record {|
+    # prefix added for attribute fields in the record
     string attributePrefix = EMPTY_STRING;
+    # field name for the text field
     string textFieldName = "#content";
 |};
 
 # Represent the options that can be used to modify the behaviour of projection.
-#
-# + allowDataProjection - enable or disable projection
-# + enableConstraintValidation - enable or disable constraint validation
 public type SourceOptions record {|
     *Options;
+    # enable or disable projection
     boolean allowDataProjection = true;
+    # choose between semantic and syntactic equality
+    boolean useSemanticEquality = true;
+    # enable or disable constraint validation
     boolean enableConstraintValidation = true;
 |};
 
@@ -161,18 +159,17 @@ isolated function getModifiedRecord(map<anydata> mapValue, string textFieldName,
     returns json|record {}|Error = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.DataUtils"} external;
 
 # Provides configurations for converting JSON to XML.
-#
-# + attributePrefix - The prefix of JSON elements' key which is to be treated as an attribute in the XML representation
-# + arrayEntryTag - The name of the XML elements that represent a converted JSON array entry
-# + rootTag - The name of the root element of the XML that will be created. If its value is (), and the converted XML
-# is not in the valid format, it will create a root tag as `root`
-# + textFieldName - field name for the text field
-# + userAttributePrefix - The prefix of JSON elements' key which used by the user to distinguish the attribute fields
 type JsonOptions record {|
+    # The prefix of JSON elements' key which is to be treated as an attribute in the XML representation
     string attributePrefix = "@";
+    # The name of the XML elements that represent a converted JSON array entry
     string arrayEntryTag = "item";
+    # The name of the root element of the XML that will be created. If its value is (), and the converted XML
+    # is not in the valid format, it will create a root tag as `root`
     string? rootTag = ();
+    # field name for the text field
     string textFieldName = CONTENT;
+    # The prefix of JSON elements' key which used by the user to distinguish the attribute fields
     string userAttributePrefix = EMPTY_STRING;
 |};
 

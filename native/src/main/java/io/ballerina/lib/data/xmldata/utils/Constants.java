@@ -19,6 +19,7 @@
 package io.ballerina.lib.data.xmldata.utils;
 
 import io.ballerina.lib.data.xmldata.xml.QualifiedName;
+import io.ballerina.lib.data.xmldata.xml.QualifiedNameFactory;
 import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.types.ArrayType;
@@ -62,9 +63,11 @@ public class Constants {
     public static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attributePrefix");
     public static final BString TEXT_FIELD_NAME = StringUtils.fromString("textFieldName");
     public static final BString ALLOW_DATA_PROJECTION = StringUtils.fromString("allowDataProjection");
+    public static final BString USE_SEMANTIC_EQUALITY = StringUtils.fromString("useSemanticEquality");
     public static final BString ENABLE_CONSTRAINT_VALIDATION = StringUtils.fromString("enableConstraintValidation");
 
     public static final MapType JSON_MAP_TYPE = TypeCreator.createMapType(PredefinedTypes.TYPE_JSON);
     public static final ArrayType JSON_ARRAY_TYPE = TypeCreator.createArrayType(PredefinedTypes.TYPE_JSON);
-    public static final QualifiedName EXIT_REST_POINT = new QualifiedName("", "$exitRestPoint$", "");
+    public static final QualifiedName EXIT_REST_POINT = QualifiedNameFactory.createQualifiedName("",
+            "$exitRestPoint$", "", true);
 }
