@@ -69,6 +69,8 @@ public type SourceOptions record {|
     boolean allowDataProjection = true;
     # choose between semantic and syntactic equality
     boolean useSemanticEquality = true;
+    # enable or disable constraint validation
+    boolean enableConstraintValidation = true;
 |};
 
 # Represents the error type of the ballerina/data.xmldata module. This error type represents any error that can occur
