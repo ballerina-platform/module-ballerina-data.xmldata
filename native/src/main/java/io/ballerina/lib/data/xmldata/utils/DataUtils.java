@@ -912,6 +912,7 @@ public class DataUtils {
             case TypeTags.JSON_TAG, TypeTags.ANYDATA_TAG, TypeTags.MAP_TAG, TypeTags.OBJECT_TYPE_TAG,
                     TypeTags.RECORD_TYPE_TAG, TypeTags.XML_TAG -> false;
             case TypeTags.ARRAY_TAG -> isSimpleType(((ArrayType) type).getElementType());
+            case TypeTags.TYPE_REFERENCED_TYPE_TAG -> isSimpleType(((ReferenceType) type).getReferredType());
             default -> true;
         };
     }
