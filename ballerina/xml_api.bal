@@ -178,7 +178,7 @@ type JsonOptions record {|
 # + jsonValue - The JSON source to be converted to XML
 # + options - The `xmldata:JsonOptions` record for JSON to XML conversion properties
 # + return - XML representation of the given JSON if the JSON is successfully converted or else an `xmldata:Error`.
-isolated function fromJson(json jsonValue, JsonOptions options = {}) returns xml|Error {
+public isolated function fromJson(json jsonValue, JsonOptions options = {}) returns xml|Error {
     string? rootTag = options.rootTag;
     map<string> allNamespaces = {};
     if !isSingleNode(jsonValue) {
