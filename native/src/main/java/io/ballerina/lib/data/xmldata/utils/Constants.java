@@ -18,8 +18,6 @@
 
 package io.ballerina.lib.data.xmldata.utils;
 
-import io.ballerina.lib.data.xmldata.xml.QualifiedName;
-import io.ballerina.lib.data.xmldata.xml.QualifiedNameFactory;
 import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.types.ArrayType;
@@ -68,6 +66,4 @@ public class Constants {
 
     public static final MapType JSON_MAP_TYPE = TypeCreator.createMapType(PredefinedTypes.TYPE_JSON);
     public static final ArrayType JSON_ARRAY_TYPE = TypeCreator.createArrayType(PredefinedTypes.TYPE_JSON);
-    public static final QualifiedName EXIT_REST_POINT = QualifiedNameFactory.createQualifiedName("",
-            "$exitRestPoint$", "", true);
 }

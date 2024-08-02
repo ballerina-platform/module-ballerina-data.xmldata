@@ -3018,9 +3018,53 @@ function testXmlToRecordWithSyntacticSemantic() returns error? {
     xml xmlVal1 = xml `<x:foo xmlns:x="example.com"><x:bar>1</x:bar></x:foo>`;
     Foo1 rec1 = check parseAsType(xmlVal1);
     test:assertEquals(rec1.bar, "1");
-    
+
     Foo2 rec2 = check parseAsType(xmlVal1);
     test:assertEquals(rec2.bar, "1");
+}
+
+@test:Config
+isolated function testConvertXmlToOpenRecordWithSomeRequiredFields() returns error? {
+    string xmlStr1 = string `
+    <Data>
+        <field2>
+            <str2>2</str2>
+            <str3>3</str3>
+            <str1>1</str1>
+        </field2>
+    </Data>
+    `;
+    record {|
+        record {
+            string str1;
+            float str3;
+        } field2;
+    |} rec1 = check parseString(xmlStr1);
+    test:assertEquals(rec1.field2.str1, "1");
+    test:assertEquals(rec1.field2.str3, 3f);
+    test:assertEquals(rec1.field2.get("str2"), 2);
+
+    string xmlStr2 = string `
+    <Data>
+        <Depth1>
+            <A>1</A>
+            <A>2</A>
+            <B>2</B>
+            <B>5</B>
+        </Depth1>
+        <value>3</value>
+    </Data>
+    `;
+
+    record {|
+        string value;
+        record {|
+            string[] B;
+            int[]...;
+        |}...;
+    |} rec2 = check parseString(xmlStr2);
+    test:assertEquals(rec2.value, "3");
+    test:assertEquals(rec2.get("Depth1"), {A: [1, 2], B: ["2", "5"]});
 }
 
 // Negative cases

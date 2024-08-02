@@ -377,7 +377,6 @@ public class DataUtils {
         return flag1 == NOT_DEFINED || flag2 == NOT_DEFINED || flag1.equals(flag2);
     }
 
-    @SuppressWarnings("unchecked")
     public static Object getModifiedRecord(BMap<BString, Object> input, BString textFieldName, BTypedesc type) {
         Type describingType = type.getDescribingType();
         contentFieldName = textFieldName.getValue();
@@ -454,7 +453,6 @@ public class DataUtils {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static BMap<BString, Object> addFields(BMap<BString, Object> input, Type type) {
         BMap<BString, Object> recordValue = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         Map<String, Field> fields = ((RecordType) type).getFields();
@@ -893,6 +891,30 @@ public class DataUtils {
             errorMsg += ", " + details;
         }
         return errorMsg;
+    }
+
+    public static boolean isEqualQualifiedName(QualifiedName firstQName, QualifiedName secondQName) {
+        if (firstQName == null || secondQName == null) {
+            return false;
+        }
+
+        if (firstQName.equals(secondQName)) {
+            return true;
+        }
+
+        return firstQName.getLocalPart().equals(secondQName.getLocalPart())
+                && (firstQName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED)
+                || secondQName.getNamespaceURI().equals(Constants.NS_ANNOT_NOT_DEFINED));
+    }
+
+    public static boolean isSimpleType(Type type) {
+        return switch (type.getTag()) {
+            case TypeTags.JSON_TAG, TypeTags.ANYDATA_TAG, TypeTags.MAP_TAG, TypeTags.OBJECT_TYPE_TAG,
+                    TypeTags.RECORD_TYPE_TAG, TypeTags.XML_TAG -> false;
+            case TypeTags.ARRAY_TAG -> isSimpleType(((ArrayType) type).getElementType());
+            case TypeTags.TYPE_REFERENCED_TYPE_TAG -> isSimpleType(((ReferenceType) type).getReferredType());
+            default -> true;
+        };
     }
 
     /**
