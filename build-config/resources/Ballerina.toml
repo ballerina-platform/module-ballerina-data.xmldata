@@ -8,6 +8,7 @@ repository = "https://github.com/ballerina-platform/module-ballerina-data-xmldat
 license = ["Apache-2.0"]
 distribution = "2201.10.0"
 export = ["data.xmldata"]
+readme = "Package.md"
 
 [[platform.java17.dependency]]
 groupId = "io.ballerina.lib"
