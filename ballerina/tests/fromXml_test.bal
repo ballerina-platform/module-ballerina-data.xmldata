@@ -3585,3 +3585,26 @@ isolated function testDuplicateField() {
     test:assertTrue(err4 is Error);
     test:assertEquals((<Error> err4).message(), "duplicate field 'name'");
 }
+
+type Ports record {|
+    PortContent[] port;
+|};
+
+@Namespace {
+    prefix: "ns1",
+    uri: "example1.com"
+}
+type PortContent record {|
+    string \#content; 
+|};
+
+@test:Config
+isolated function testTypeRefArray() {
+    string s = string `
+        <A xmlns:ns1="example1.com" xmlns:ns2="example2.com">
+            <ns1:port>1</ns1:port>
+            <ns1:port>1</ns1:port>
+        </A>`;
+    Ports|error rec = parseString(s);
+    test:assertEquals(rec, {"port":[{"#content":"1"},{"#content":"1"}]});
+}
