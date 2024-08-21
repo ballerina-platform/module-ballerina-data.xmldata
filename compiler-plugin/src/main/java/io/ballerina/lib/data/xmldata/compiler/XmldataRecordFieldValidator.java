@@ -179,15 +179,17 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             case TYPE_REFERENCE -> validateExpectedType(((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor(),
                     location, ctx);
             case UNION -> {
-                int nonErrorTypeCount = 0;
+                int recordCount = 0;
                 for (TypeSymbol memberTSymbol : ((UnionTypeSymbol) typeSymbol).memberTypeDescriptors()) {
                     if (getReferredTypeSymbol(memberTSymbol).typeKind() == TypeDescKind.ERROR) {
                         continue;
                     }
-                    nonErrorTypeCount++;
-                    validateExpectedType(memberTSymbol, location, ctx);
+                    if (getReferredTypeSymbol(memberTSymbol).typeKind() == TypeDescKind.RECORD) {
+                        validateExpectedType(memberTSymbol, location, ctx);
+                        recordCount++;
+                    }
                 }
-                if (nonErrorTypeCount > 1) {
+                if (recordCount == 0) {
                     reportDiagnosticInfo(ctx, location, XmldataDiagnosticCodes.EXPECTED_RECORD_TYPE);
                 }
             }
@@ -215,7 +217,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
                         continue;
                     }
 
-                    if (isNotValidExpectedType(memberTSymbol)) {
+                    if (!(getReferredTypeSymbol(memberTSymbol).typeKind() == TypeDescKind.RECORD)) {
                         return true;
                     }
                 }
@@ -323,7 +325,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
     private void validateRecordFieldType(TypeSymbol typeSymbol, Optional<Location> location,
                                          SyntaxNodeAnalysisContext ctx) {
         switch (typeSymbol.typeKind()) {
-            case UNION -> validateUnionType((UnionTypeSymbol) typeSymbol, location, ctx);
+//            case UNION -> validateUnionType((UnionTypeSymbol) typeSymbol, location, ctx);
             case NIL, TUPLE -> reportDiagnosticInfo(ctx, location, XmldataDiagnosticCodes.UNSUPPORTED_TYPE);
             case ARRAY -> validateRecordFieldType(((ArrayTypeSymbol) typeSymbol).memberTypeDescriptor(), location, ctx);
             case TYPE_REFERENCE ->
@@ -331,26 +333,26 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         }
     }
 
-    private void validateUnionType(UnionTypeSymbol unionTypeSymbol, Optional<Location> location,
-                                   SyntaxNodeAnalysisContext ctx) {
-        int nonPrimitiveMemberCount = 0;
-        boolean isNilPresent = false;
-        List<TypeSymbol> memberTypeSymbols = unionTypeSymbol.memberTypeDescriptors();
-        for (TypeSymbol memberTypeSymbol : memberTypeSymbols) {
-            if (isPrimitiveType(memberTypeSymbol)) {
-                continue;
-            }
-
-            if (memberTypeSymbol.typeKind() == TypeDescKind.NIL) {
-                isNilPresent = true;
-            }
-            nonPrimitiveMemberCount++;
-        }
-
-        if (nonPrimitiveMemberCount > 1 || (memberTypeSymbols.size() > 1 && isNilPresent)) {
-            reportDiagnosticInfo(ctx, location, XmldataDiagnosticCodes.UNSUPPORTED_UNION_TYPE);
-        }
-    }
+//    private void validateUnionType(UnionTypeSymbol unionTypeSymbol, Optional<Location> location,
+//                                   SyntaxNodeAnalysisContext ctx) {
+//        int nonPrimitiveMemberCount = 0;
+//        boolean isNilPresent = false;
+//        List<TypeSymbol> memberTypeSymbols = unionTypeSymbol.memberTypeDescriptors();
+//        for (TypeSymbol memberTypeSymbol : memberTypeSymbols) {
+//            if (isPrimitiveType(memberTypeSymbol)) {
+//                continue;
+//            }
+//
+//            if (memberTypeSymbol.typeKind() == TypeDescKind.NIL) {
+//                isNilPresent = true;
+//            }
+//            nonPrimitiveMemberCount++;
+//        }
+//
+//        if (nonPrimitiveMemberCount > 1 || (memberTypeSymbols.size() > 1 && isNilPresent)) {
+//            reportDiagnosticInfo(ctx, location, XmldataDiagnosticCodes.UNSUPPORTED_UNION_TYPE);
+//        }
+//    }
 
     private boolean isPrimitiveType(TypeSymbol typeSymbol) {
         TypeDescKind kind = typeSymbol.typeKind();

@@ -113,7 +113,7 @@ public class XmlParser {
         } catch (BError e) {
             return e;
         } catch (Throwable e) {
-            return DiagnosticLog.error(DiagnosticErrorCode.XML_PARSE_ERROR, e.getMessage());
+            throw DiagnosticLog.error(DiagnosticErrorCode.XML_PARSE_ERROR, e.getMessage());
         }
     }
 
