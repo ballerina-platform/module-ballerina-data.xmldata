@@ -816,7 +816,7 @@ public class XmlParser {
             return currentFieldName;
         }
 
-        if (!DataUtils.isArrayValueAssignable(restType.getTag())) {
+        if (!DataUtils.isArrayValueAssignable(restType)) {
             throw DiagnosticLog.error(
                     DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, restType, elemQName.getLocalPart());
         }

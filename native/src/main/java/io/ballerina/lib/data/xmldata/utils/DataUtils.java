@@ -239,6 +239,7 @@ public class DataUtils {
                     result = FromString.fromStringWithType(value, PredefinedTypes.TYPE_JSON);
             case TypeTags.ARRAY_TAG -> result = convertStringToExpType(value,
                     ((ArrayType) refferedType).getElementType());
+            case TypeTags.UNION_TAG -> result = convertStringToUnionExpType(value, expType);
             default -> result = FromString.fromStringWithType(value, expType);
         }
 
@@ -246,6 +247,19 @@ public class DataUtils {
             throw (BError) result;
         }
         return result;
+    }
+
+    private static Object convertStringToUnionExpType(BString value, Type expType) {
+        for (Type memberType: ((UnionType) expType).getMemberTypes()) {
+            memberType = TypeUtils.getReferredType(memberType);
+            try {
+                return convertStringToExpType(value, memberType);
+            } catch (Exception ex) {
+                int a = 1;
+                // ignore
+            }
+        }
+        throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, expType);
     }
 
     public static void validateRequiredFields(XmlAnalyzerData analyzerData) {
@@ -260,6 +274,19 @@ public class DataUtils {
                 throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_ATTRIBUTE_NOT_PRESENT, attribute.getFieldName());
             }
         }
+    }
+
+    public static boolean isArrayValueAssignable(Type type) {
+        int typeTag = type.getTag();
+        if (typeTag == TypeTags.UNION_TAG) {
+            for (Type memberType: ((UnionType) type).getMemberTypes()) {
+                memberType = TypeUtils.getReferredType(memberType);
+                if (isArrayValueAssignable(memberType.getTag())) {
+                    return true;
+                }
+            }
+        }
+        return isArrayValueAssignable(typeTag);
     }
 
     public static boolean isArrayValueAssignable(int typeTag) {
@@ -334,17 +361,11 @@ public class DataUtils {
 
     private static boolean isSupportedUnionType(UnionType type) {
         for (Type memberType : type.getMemberTypes()) {
-            switch (memberType.getTag()) {
-                case TypeTags.RECORD_TYPE_TAG, TypeTags.OBJECT_TYPE_TAG, TypeTags.MAP_TAG, TypeTags.JSON_TAG,
-                        TypeTags.ANYDATA_TAG, TypeTags.XML_TAG -> {
-                    return false;
-                }
-                case TypeTags.UNION_TAG -> {
-                    return !isSupportedUnionType(type);
-                }
+            if (isSupportedType(memberType)) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     public static void updateOptions(BMap<BString, Object> options, XmlAnalyzerData analyzerData) {
@@ -476,7 +497,8 @@ public class DataUtils {
         switch (fieldType.getTag()) {
             case TypeTags.RECORD_TYPE_TAG -> processRecord(key, annotations, recordValue, value,
                     (RecordType) fieldType);
-            case TypeTags.ARRAY_TAG -> processArray(fieldType, annotations, recordValue, entry);
+            case TypeTags.ARRAY_TAG -> processArray(TypeUtils.getReferredType(((ArrayType) fieldType)
+                    .getElementType()), annotations, recordValue, entry);
             case TypeTags.TYPE_REFERENCED_TYPE_TAG -> {
                 Type referredType = TypeUtils.getReferredType(fieldType);
                 if (referredType.getTag() != TypeTags.RECORD_TYPE_TAG) {
@@ -484,6 +506,17 @@ public class DataUtils {
                     return;
                 }
                 processTypeReferenceType(fieldType, annotations, recordValue, key, value);
+            }
+            case TypeTags.UNION_TAG -> {
+                for (Type memberType: ((UnionType) fieldType).getMemberTypes()) {
+                    try {
+                        processRecordField(memberType, annotations, recordValue, entry, key, value);
+                        return;
+                    } catch (Exception ex) {
+                        //ignore
+                    }
+                    throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, fieldType);
+                }
             }
             default -> addPrimitiveValue(addFieldNamespaceAnnotation(key, key, annotations, recordValue),
                     annotations, recordValue, value);
@@ -640,17 +673,26 @@ public class DataUtils {
     }
 
     @SuppressWarnings("unchecked")
-    private static void processArray(Type childType, BMap<BString, Object> annotations,
+    private static void processArray(Type elementType, BMap<BString, Object> annotations,
                                      BMap<BString, Object> record, Map.Entry<BString, Object> entry) {
-        Type elementType = TypeUtils.getReferredType(((ArrayType) childType).getElementType());
         BMap<BString, Object>  annotationRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         String keyName = entry.getKey().getValue();
-        if (annotations.size() > 0) {
+        if (!annotations.isEmpty()) {
             keyName = getKeyNameFromAnnotation(annotations, keyName);
             processSubRecordAnnotation(annotations, annotationRecord);
         }
         BArray arrayValue = (BArray) entry.getValue();
-        if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+        if (elementType.getTag() == TypeTags.UNION_TAG) {
+            for (Type memberType: ((UnionType) elementType).getMemberTypes()) {
+                try {
+                    processArray(memberType, annotations, record, entry);
+                    return;
+                } catch (Exception ex) {
+                    //ignore
+                }
+                throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, elementType);
+            }
+        } else if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
             List<BMap<BString, Object>> records = new ArrayList<>();
             for (int i = 0; i < arrayValue.getLength(); i++) {
                 BMap<BString, Object> subRecord = addFields(((BMap<BString, Object>) arrayValue.get(i)),
@@ -923,12 +965,12 @@ public class DataUtils {
      * @since 0.1.0
      */
     public static class XmlAnalyzerData {
-        public final Stack<Object> nodesStack = new Stack<>();
-        public final Stack<QualifiedNameMap<Field>> fieldHierarchy = new Stack<>();
-        public final Stack<QualifiedNameMap<Field>> visitedFieldHierarchy = new Stack<>();
-        public final Stack<QualifiedNameMap<Field>> attributeHierarchy = new Stack<>();
-        public final Stack<Type> restTypes = new Stack<>();
-        public final Stack<HashMap<String, Integer>> arrayIndexes = new Stack<>();
+        public Stack<Object> nodesStack = new Stack<>();
+        public Stack<QualifiedNameMap<Field>> fieldHierarchy = new Stack<>();
+        public Stack<QualifiedNameMap<Field>> visitedFieldHierarchy = new Stack<>();
+        public Stack<QualifiedNameMap<Field>> attributeHierarchy = new Stack<>();
+        public Stack<Type> restTypes = new Stack<>();
+        public Stack<HashMap<String, Integer>> arrayIndexes = new Stack<>();
         public RecordType rootRecord;
         public Field currentField;
         public QualifiedName rootElement;
@@ -936,5 +978,41 @@ public class DataUtils {
         public String textFieldName;
         public boolean allowDataProjection;
         public boolean useSemanticEquality;
+
+        @SuppressWarnings("unchecked")
+        public static XmlAnalyzerData copy(XmlAnalyzerData analyzerData) {
+            XmlAnalyzerData data = new XmlAnalyzerData();
+            data.nodesStack = (Stack<Object>) analyzerData.nodesStack.clone();
+            data.fieldHierarchy = (Stack<QualifiedNameMap<Field>>) analyzerData.fieldHierarchy.clone();
+            data.visitedFieldHierarchy = (Stack<QualifiedNameMap<Field>>) analyzerData.visitedFieldHierarchy.clone();
+            data.attributeHierarchy = (Stack<QualifiedNameMap<Field>>) analyzerData.attributeHierarchy.clone();
+            data.restTypes = (Stack<Type>) analyzerData.restTypes.clone();
+            data.arrayIndexes = (Stack<HashMap<String, Integer>>) analyzerData.arrayIndexes.clone();
+            data.rootRecord = analyzerData.rootRecord;
+            data.currentField = analyzerData.currentField;
+            data.rootElement = analyzerData.rootElement;
+            data.attributePrefix = analyzerData.attributePrefix;
+            data.textFieldName = analyzerData.textFieldName;
+            data.allowDataProjection = analyzerData.allowDataProjection;
+            data.useSemanticEquality = analyzerData.useSemanticEquality;
+
+            return data;
+        }
+
+        public void resetFrom(XmlAnalyzerData analyzerData) {
+            this.nodesStack = analyzerData.nodesStack;
+            this.fieldHierarchy = analyzerData.fieldHierarchy;
+            this.visitedFieldHierarchy = analyzerData.visitedFieldHierarchy;
+            this.attributeHierarchy = analyzerData.attributeHierarchy;
+            this.restTypes = analyzerData.restTypes;
+            this.arrayIndexes = analyzerData.arrayIndexes;
+            this.rootRecord = analyzerData.rootRecord;
+            this.currentField = analyzerData.currentField;
+            this.rootElement = analyzerData.rootElement;
+            this.attributePrefix = analyzerData.attributePrefix;
+            this.textFieldName = analyzerData.textFieldName;
+            this.allowDataProjection = analyzerData.allowDataProjection;
+            this.useSemanticEquality = analyzerData.useSemanticEquality;
+        }
     }
 }
