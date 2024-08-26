@@ -45,6 +45,8 @@ import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTypedesc;
 import io.ballerina.stdlib.constraint.Constraints;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -262,16 +264,33 @@ public class DataUtils {
         throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, expType);
     }
 
-    public static void validateRequiredFields(XmlAnalyzerData analyzerData) {
-        for (Field field : analyzerData.fieldHierarchy.peek().getMembers().values()) {
+    public static void validateRequiredFields(XmlAnalyzerData analyzerData, BMap<BString, Object> currentMapValue) {
+        Map<QualifiedName, Field> fields = analyzerData.fieldHierarchy.peek().getMembers();
+        for (QualifiedName key : fields.keySet()) {
+            // Validate required array size
+            Field field = fields.get(key);
+            String fieldName = field.getFieldName();
+            Type fieldType = TypeUtils.getReferredType(field.getFieldType());
+            if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
+                ArrayType arrayType = (ArrayType) fieldType;
+                if (arrayType.getSize() != -1
+                        && arrayType.getSize() != ((BArray) currentMapValue.get(
+                        StringUtils.fromString(fieldName))).getLength()) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.ARRAY_SIZE_MISMATCH);
+                }
+                continue;
+            }
+
             if (SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.REQUIRED)) {
-                throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_FIELD_NOT_PRESENT, field.getFieldName());
+                throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_FIELD_NOT_PRESENT, fieldName);
             }
         }
 
-        for (Field attribute : analyzerData.attributeHierarchy.peek().getMembers().values()) {
-            if (!SymbolFlags.isFlagOn(attribute.getFlags(), SymbolFlags.OPTIONAL)) {
-                throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_ATTRIBUTE_NOT_PRESENT, attribute.getFieldName());
+        Map<QualifiedName, Field> attributes = analyzerData.attributeHierarchy.peek().getMembers();
+        for (QualifiedName key : attributes.keySet()) {
+            Field field = attributes.get(key);
+            if (!SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.OPTIONAL)) {
+                throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_ATTRIBUTE_NOT_PRESENT, field.getFieldName());
             }
         }
     }
@@ -957,6 +976,16 @@ public class DataUtils {
             case TypeTags.TYPE_REFERENCED_TYPE_TAG -> isSimpleType(((ReferenceType) type).getReferredType());
             default -> true;
         };
+    }
+
+    public static String generateStringFromXmlReader(Reader reader) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        char[] buffer = new char[1024];
+        int numCharsRead;
+        while ((numCharsRead = reader.read(buffer)) != -1) {
+            builder.append(buffer, 0, numCharsRead);
+        }
+        return builder.toString();
     }
 
     /**

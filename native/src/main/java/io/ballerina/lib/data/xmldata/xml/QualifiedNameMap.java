@@ -17,8 +17,17 @@ public class QualifiedNameMap<V> {
         this.stringToQNameMap = getStringToQNamesMap(fields.keySet());
     }
 
+    public QualifiedNameMap(Map<QualifiedName, V> fields, Map<String, List<QualifiedName>> stringToQNameMap) {
+        this.members = fields;
+        this.stringToQNameMap = stringToQNameMap;
+    }
+
     public Map<QualifiedName, V> getMembers() {
         return members;
+    }
+
+    public Map<String, List<QualifiedName>> getStringToQnamesMap() {
+        return stringToQNameMap;
     }
 
     public V remove(QualifiedName qName) {

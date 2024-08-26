@@ -111,7 +111,7 @@ public class XmlTraversal {
             currentNode = ValueCreator.createRecordValue(recordType.getPackage(), recordType.getName());
             BXml nextXml = validateRootElement(xml, recordType, analyzerData);
             Object resultRecordValue = traverseXml(nextXml, recordType, analyzerData);
-            DataUtils.validateRequiredFields(analyzerData);
+            DataUtils.validateRequiredFields(analyzerData, (BMap<BString, Object>) currentNode);
             return resultRecordValue;
         }
 
@@ -241,7 +241,11 @@ public class XmlTraversal {
                             currentField.getFieldName());
                 }
             } else {
-                currentField = fieldsMap.remove(elementQName);
+                currentField = fieldsMap.get(elementQName);
+                if (currentField != null
+                        && TypeUtils.getReferredType(currentField.getFieldType()).getTag() != TypeTags.ARRAY_TAG) {
+                    fieldsMap.remove(elementQName);
+                }
             }
 
             analyzerData.currentField = currentField;
@@ -392,7 +396,7 @@ public class XmlTraversal {
             RecordType prevRecord = analyzerData.rootRecord;
             analyzerData.rootRecord = elementType;
             traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
-            DataUtils.validateRequiredFields(analyzerData);
+            DataUtils.validateRequiredFields(analyzerData, (BMap<BString, Object>) currentNode);
             DataUtils.popExpectedTypeStacks(analyzerData);
             analyzerData.rootRecord = prevRecord;
             currentNode = analyzerData.nodesStack.pop();
@@ -403,7 +407,7 @@ public class XmlTraversal {
             updateNextMap(elementType, analyzerData);
             currentNode = updateNextMappingValue(elementType, fieldName, fieldType, mapValue, analyzerData);
             traverseXml(xmlItem.getChildrenSeq(), fieldType, analyzerData);
-            DataUtils.validateRequiredFields(analyzerData);
+            DataUtils.validateRequiredFields(analyzerData, (BMap<BString, Object>) currentNode);
             DataUtils.popExpectedTypeStacks(analyzerData);
             currentNode = analyzerData.nodesStack.pop();
         }
@@ -534,7 +538,9 @@ public class XmlTraversal {
                     return;
                 } catch (Exception ex) {
                     analyzerData.resetFrom(clonedAnalyzerData);
-                    mapValue.put(StringUtils.fromString(elemName), null);
+                    if (restType.getTag() != TypeTags.ARRAY_TAG) {
+                        mapValue.put(StringUtils.fromString(elemName), null);
+                    }
                     int a = 1;
                     // ignore
                 }

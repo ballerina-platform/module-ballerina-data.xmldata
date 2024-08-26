@@ -33,14 +33,18 @@ import io.ballerina.runtime.api.types.Field;
 import io.ballerina.runtime.api.types.MapType;
 import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.types.Type;
+import io.ballerina.runtime.api.types.UnionType;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.utils.TypeUtils;
+import io.ballerina.runtime.api.utils.XmlUtils;
 import io.ballerina.runtime.api.values.BArray;
 import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTypedesc;
+import io.ballerina.runtime.api.values.BXml;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -87,9 +91,10 @@ public class XmlParser {
     public static final String PARSE_ERROR = "failed to parse xml";
     public static final String PARSE_ERROR_PREFIX = PARSE_ERROR + ": ";
 
-    public XmlParser(Reader stringReader) {
+    public XmlParser(Reader stringReader, Type type) {
         try {
-            xmlStreamReader = xmlInputFactory.createXMLStreamReader(stringReader);
+            xmlStreamReader = type.getTag() != TypeTags.UNION_TAG ?
+                    xmlInputFactory.createXMLStreamReader(stringReader) : null;
         } catch (XMLStreamException e) {
             handleXMLStreamException(e);
         }
@@ -106,10 +111,11 @@ public class XmlParser {
 
     public static Object parse(Reader reader, BMap<BString, Object> options, Type type) {
         try {
+            type = TypeUtils.getReferredType(type);
             XmlParserData xmlParserData = new XmlParserData();
             updateOptions(options, xmlParserData);
-            XmlParser xmlParser = new XmlParser(reader);
-            return xmlParser.parse(type, xmlParserData);
+            XmlParser xmlParser = new XmlParser(reader, type);
+            return xmlParser.parse(reader, type, xmlParserData, options);
         } catch (BError e) {
             return e;
         } catch (Throwable e) {
@@ -132,7 +138,28 @@ public class XmlParser {
         throw DiagnosticLog.createXmlError(PARSE_ERROR_PREFIX + reason);
     }
 
-    public Object parse(Type type, XmlParserData xmlParserData) {
+    public Object parse(Reader reader, Type type, XmlParserData xmlParserData, BMap<BString, Object> options)
+            throws IOException {
+        Type referredType = TypeUtils.getReferredType(type);
+        if (referredType.getTag() == TypeTags.UNION_TAG) {
+            String xmlStr = DataUtils.generateStringFromXmlReader(reader);
+            BXml xmlValue = XmlUtils.parse(xmlStr);
+            XmlParserData clonedAnalyzerData = XmlParserData.copy(xmlParserData);
+            for (Type memberType: ((UnionType) referredType).getMemberTypes()) {
+                memberType = TypeUtils.getReferredType(memberType);
+                if (memberType.getTag() == TypeTags.ERROR_TAG) {
+                    continue;
+                }
+                try {
+                    return XmlTraversal.traverse(xmlValue, options, referredType);
+                } catch (Exception ex) {
+                    xmlParserData.resetFrom(clonedAnalyzerData);
+                    int a = 1;
+                    // ignore
+                }
+                throw DiagnosticLog.error(DiagnosticErrorCode.CANNOT_CONVERT_SOURCE_INTO_EXP_TYPE, type);
+            }
+        }
         if (type.getTag() != TypeTags.RECORD_TYPE_TAG) {
             throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_TYPE, Constants.RECORD, type.getName());
         }
@@ -300,7 +327,31 @@ public class XmlParser {
             throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_TYPE, fieldType, PredefinedTypes.TYPE_STRING);
         }
 
+        Object value = xmlParserData.currentNode.get(bFieldName);
         Object temp = xmlParserData.currentNode.get(bFieldName);
+        if (fieldType.getTag() == TypeTags.UNION_TAG) {
+            XmlParserData clonedAnalyzerData = XmlParserData.copy(xmlParserData);
+            for (Type memberType: ((UnionType) fieldType).getMemberTypes()) {
+                try {
+                    if (!(value instanceof BArray) && memberType.getTag() == TypeTags.ARRAY_TAG) {
+                        continue;
+                    }
+                    convertTextToExpType(memberType, textFieldName, fieldName, bText, xmlParserData, bFieldName, temp);
+                    return;
+                } catch (Exception ex) {
+                    int a = 1;
+                    xmlParserData.resetFrom(clonedAnalyzerData);
+                    // ignore
+                }
+            }
+            throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, fieldType);
+        } else {
+            convertTextToExpType(fieldType, textFieldName, fieldName, bText, xmlParserData, bFieldName, temp);
+        }
+    }
+
+    private void convertTextToExpType(Type fieldType, String textFieldName, String fieldName,
+                  BString bText, XmlParserData xmlParserData, BString bFieldName, Object temp) {
         if (temp instanceof BArray && !DataUtils.isAnydataOrJson(fieldType.getTag())) {
             if (fieldName.equals(textFieldName)) {
                 xmlParserData.currentNode.put(bFieldName, convertStringToRestExpType(bText, fieldType));
@@ -315,20 +366,24 @@ public class XmlParser {
                 return;
             }
 
-            ((BArray) xmlParserData.currentNode.get(bFieldName)).add(currentIndex,
-                    convertStringToRestExpType(bText, fieldType));
+            ((BArray) xmlParserData.currentNode.get(bFieldName))
+                    .add(currentIndex, convertStringToRestExpType(bText, fieldType));
             return;
         }
 
         switch (fieldType.getTag()) {
             case TypeTags.RECORD_TYPE_TAG -> handleContentFieldInRecordType((RecordType) fieldType, bText,
                     xmlParserData);
-            case TypeTags.ARRAY_TAG ->
-                addTextToCurrentNodeIfExpTypeIsArray((ArrayType) fieldType, bFieldName, bText, xmlParserData);
+            case TypeTags.ARRAY_TAG -> {
+                ArrayType arrayType = (ArrayType) fieldType;
+                addTextToCurrentNodeIfExpTypeIsArray(
+                        TypeUtils.getReferredType((arrayType.getElementType())),
+                        arrayType, bFieldName, bText, xmlParserData);
+            }
             case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG ->
-                convertTextAndUpdateCurrentNode(xmlParserData.currentNode,
-                        (BMap<BString, Object>) xmlParserData.nodesStack.pop(),
-                        bFieldName, bText, fieldType, xmlParserData);
+                    convertTextAndUpdateCurrentNode(xmlParserData.currentNode,
+                            (BMap<BString, Object>) xmlParserData.nodesStack.pop(),
+                            bFieldName, bText, fieldType, xmlParserData);
             default -> xmlParserData.currentNode.put(bFieldName, convertStringToRestExpType(bText, fieldType));
         }
     }
@@ -355,9 +410,8 @@ public class XmlParser {
     }
 
     @SuppressWarnings("unchecked")
-    private void addTextToCurrentNodeIfExpTypeIsArray(ArrayType fieldType, BString bFieldName, BString bText,
-                                                      XmlParserData xmlParserData) {
-        Type referredType = TypeUtils.getReferredType(fieldType.getElementType());
+    private void addTextToCurrentNodeIfExpTypeIsArray(Type referredType, ArrayType arrayType, BString bFieldName,
+                                                      BString bText, XmlParserData xmlParserData) {
         int elementTypeTag = referredType.getTag();
         switch (elementTypeTag) {
             case TypeTags.RECORD_TYPE_TAG -> handleContentFieldInRecordType((RecordType) referredType,
@@ -367,11 +421,25 @@ public class XmlParser {
                 HashMap<String, Integer> indexes
                         = xmlParserData.arrayIndexes.get(xmlParserData.arrayIndexes.size() - 2);
                 int currentIndex = indexes.get(bFieldName.getValue());
-                if (fieldType.getState() == ArrayType.ArrayState.CLOSED && currentIndex >= fieldType.getSize()) {
+                if (arrayType.getState() == ArrayType.ArrayState.CLOSED && currentIndex >= arrayType.getSize()) {
                     DataUtils.logArrayMismatchErrorIfProjectionNotAllowed(xmlParserData.allowDataProjection);
                     return;
                 }
-                tempArr.add(currentIndex, convertStringToRestExpType(bText, fieldType));
+                tempArr.add(currentIndex, convertStringToRestExpType(bText, referredType));
+            }
+            case TypeTags.UNION_TAG -> {
+                XmlParserData clonedAnalyzerData = XmlParserData.copy(xmlParserData);
+                for (Type memberType: ((UnionType) referredType).getMemberTypes()) {
+                    try {
+                        memberType = TypeUtils.getReferredType(memberType);
+                        addTextToCurrentNodeIfExpTypeIsArray(memberType, arrayType, bFieldName, bText, xmlParserData);
+                        return;
+                    } catch (Exception ex) {
+                        xmlParserData.resetFrom(clonedAnalyzerData);
+                        int a = 1;
+                        // ignore
+                    }
+                }
             }
         }
     }
@@ -415,6 +483,17 @@ public class XmlParser {
     private Object convertStringToExpType(BString value, Type expType) {
         if (expType.getTag() == TypeTags.ARRAY_TAG) {
             expType = ((ArrayType) expType).getElementType();
+        }
+        if (expType.getTag() == TypeTags.UNION_TAG) {
+            for (Type memberType: ((UnionType) expType).getMemberTypes()) {
+                memberType = TypeUtils.getReferredType(memberType);
+                try {
+                    return convertStringToExpType(value, memberType);
+                } catch (Exception ex) {
+                    int a = 1;
+                    // ignore
+                }
+            }
         }
         Object result = FromString.fromStringWithType(value, expType);
         if (result instanceof BError) {
@@ -559,6 +638,21 @@ public class XmlParser {
             case TypeTags.TYPE_REFERENCED_TYPE_TAG ->
                 initializeNextValueBasedOnExpectedType(fieldName, TypeUtils.getReferredType(fieldType), temp,
                         currentNode, xmlParserData);
+            case TypeTags.UNION_TAG -> {
+                XmlParserData clonedAnalyzerData = XmlParserData.copy(xmlParserData);
+                for (Type memberType: ((UnionType) fieldType).getMemberTypes()) {
+                    memberType = TypeUtils.getReferredType(memberType);
+                    try {
+                        initializeNextValueBasedOnExpectedType(fieldName, memberType, temp, currentNode, xmlParserData);
+                        return;
+                    } catch (Exception ex) {
+                        xmlParserData.resetFrom(clonedAnalyzerData);
+                        currentNode.put(StringUtils.fromString(fieldName), null);
+                        int a = 1;
+                        // ignore
+                    }
+                }
+            }
         }
     }
 
@@ -1143,23 +1237,70 @@ public class XmlParser {
      * @since 0.1.0
      */
     public static class XmlParserData {
-        private final Stack<Object> nodesStack = new Stack<>();
-        private final Stack<QualifiedNameMap<Field>> fieldHierarchy = new Stack<>();
+        private Stack<Object> nodesStack = new Stack<>();
+        private Stack<QualifiedNameMap<Field>> fieldHierarchy = new Stack<>();
         Stack<QualifiedNameMap<Field>> visitedFieldHierarchy = new Stack<>();
-        private final Stack<QualifiedNameMap<Field>> attributeHierarchy = new Stack<>();
-        private final Stack<Type> restTypes = new Stack<>();
-        private final Stack<QualifiedName> restFieldsPoints = new Stack<>();
-        private final Stack<RecordType> recordTypeStack = new Stack<>();
+        private Stack<QualifiedNameMap<Field>> attributeHierarchy = new Stack<>();
+        private Stack<Type> restTypes = new Stack<>();
+        private Stack<QualifiedName> restFieldsPoints = new Stack<>();
+        private Stack<RecordType> recordTypeStack = new Stack<>();
         Stack<HashMap<String, Integer>> arrayIndexes = new Stack<>();
         private RecordType rootRecord;
         private Field currentField;
         private QualifiedName rootElement;
-        private final Stack<QualifiedNameMap<Boolean>> parents = new Stack<>();
+        private Stack<QualifiedNameMap<Boolean>> parents = new Stack<>();
         private QualifiedNameMap<Boolean> siblings = new QualifiedNameMap<>(new LinkedHashMap<>());
         private BMap<BString, Object> currentNode;
         private String attributePrefix;
         private String textFieldName;
         private boolean allowDataProjection;
         private boolean useSemanticEquality;
+
+        @SuppressWarnings("unchecked")
+        public static XmlParserData copy(XmlParserData analyzerData) {
+            XmlParserData data = new XmlParserData();
+            data.nodesStack = (Stack<Object>) analyzerData.nodesStack.clone();
+            data.fieldHierarchy = (Stack<QualifiedNameMap<Field>>) analyzerData.fieldHierarchy.clone();
+            data.visitedFieldHierarchy = (Stack<QualifiedNameMap<Field>>) analyzerData.visitedFieldHierarchy.clone();
+            data.attributeHierarchy = (Stack<QualifiedNameMap<Field>>) analyzerData.attributeHierarchy.clone();
+            data.restTypes = (Stack<Type>) analyzerData.restTypes.clone();
+            data.restFieldsPoints = (Stack<QualifiedName>) analyzerData.restFieldsPoints.clone();
+            data.recordTypeStack = (Stack<RecordType>) analyzerData.recordTypeStack.clone();
+            data.arrayIndexes = (Stack<HashMap<String, Integer>>) analyzerData.arrayIndexes.clone();
+            data.rootRecord = analyzerData.rootRecord;
+            data.currentField = analyzerData.currentField;
+            data.rootElement = analyzerData.rootElement;
+            data.parents = (Stack<QualifiedNameMap<Boolean>>) analyzerData.parents.clone(); 
+            data.siblings = new QualifiedNameMap<>(Map.copyOf(analyzerData.siblings.getMembers()),
+                    Map.copyOf(analyzerData.siblings.getStringToQnamesMap()));
+            data.currentNode = analyzerData.currentNode;
+            data.attributePrefix = analyzerData.attributePrefix;
+            data.textFieldName = analyzerData.textFieldName;
+            data.allowDataProjection = analyzerData.allowDataProjection;
+            data.useSemanticEquality = analyzerData.useSemanticEquality;
+
+            return data;
+        }
+
+        public void resetFrom(XmlParserData analyzerData) {
+            this.nodesStack = analyzerData.nodesStack;
+            this.fieldHierarchy = analyzerData.fieldHierarchy;
+            this.visitedFieldHierarchy = analyzerData.visitedFieldHierarchy;
+            this.attributeHierarchy = analyzerData.attributeHierarchy;
+            this.restTypes = analyzerData.restTypes;
+            this.restFieldsPoints = analyzerData.restFieldsPoints;
+            this.recordTypeStack = analyzerData.recordTypeStack;
+            this.arrayIndexes = analyzerData.arrayIndexes;
+            this.rootRecord = analyzerData.rootRecord;
+            this.currentField = analyzerData.currentField;
+            this.rootElement = analyzerData.rootElement;
+            this.parents = analyzerData.parents;
+            this.siblings = analyzerData.siblings;
+            this.currentNode = analyzerData.currentNode;
+            this.attributePrefix = analyzerData.attributePrefix;
+            this.textFieldName = analyzerData.textFieldName;
+            this.allowDataProjection = analyzerData.allowDataProjection;
+            this.useSemanticEquality = analyzerData.useSemanticEquality;
+        }
     }
 }
