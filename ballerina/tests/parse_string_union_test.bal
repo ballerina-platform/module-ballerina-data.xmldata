@@ -229,7 +229,7 @@ function testParseStringUnionTypes6() {
 
 string s7 = string `<A><B b1="solid" b2="red">Brick</B><B b1="liquid" b2="blue">Water</B><C c1="gas" c2="transparent">Air</C></A>`;
 
-type S71 record {record {|string...;|}[]|string[] B;};
+type S71 record {record{[int, int] a;}|record {|string...;|}[]|string[] B;};
 type S72 record {string[]|record {|string...;|}[] B;};
 type S73 record {record {|string \@content;|}|string[] B;};
 type S74 record {|record {|string...;|}|string[]...;|};

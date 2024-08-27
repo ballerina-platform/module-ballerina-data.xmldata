@@ -528,17 +528,6 @@ public class DataUtils {
                 }
                 processTypeReferenceType(fieldType, annotations, recordValue, key, value);
             }
-            case TypeTags.UNION_TAG -> {
-                for (Type memberType : ((UnionType) fieldType).getMemberTypes()) {
-                    try {
-                        processRecordField(memberType, annotations, recordValue, entry, key, value);
-                        return;
-                    } catch (Exception ex) {
-                        //ignore
-                    }
-                    throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, fieldType);
-                }
-            }
             default -> addPrimitiveValue(addFieldNamespaceAnnotation(key, key, annotations, recordValue),
                     annotations, recordValue, value);
         }
@@ -703,17 +692,7 @@ public class DataUtils {
             processSubRecordAnnotation(annotations, annotationRecord);
         }
         BArray arrayValue = (BArray) entry.getValue();
-        if (elementType.getTag() == TypeTags.UNION_TAG) {
-            for (Type memberType : ((UnionType) elementType).getMemberTypes()) {
-                try {
-                    processArray(memberType, annotations, record, entry);
-                    return;
-                } catch (Exception ex) {
-                    //ignore
-                }
-                throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, elementType);
-            }
-        } else if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+        if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
             List<BMap<BString, Object>> records = new ArrayList<>();
             for (int i = 0; i < arrayValue.getLength(); i++) {
                 BMap<BString, Object> subRecord = addFields(((BMap<BString, Object>) arrayValue.get(i)),

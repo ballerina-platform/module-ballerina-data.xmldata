@@ -227,7 +227,7 @@ function testTraverseUnionTypes6() {
 
 xml x7 = xml `<A><B b1="solid" b2="red">Brick</B><B b1="liquid" b2="blue">Water</B><C c1="gas" c2="transparent">Air</C></A>`;
 
-type A71 record {record {|string...;|}[]|string[] B;};
+type A71 record {record{[int, int] a;}|record {|string...;|}[]|string[] B;};
 type A72 record {string[]|record {|string...;|}[] B;};
 type A73 record {record {|string \@content;|}|string[] B;};
 type A74 record {|record {|string...;|}|string[]...;|};

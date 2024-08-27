@@ -198,8 +198,7 @@ public class XmlParser {
                 return true;
             }
             case END_DOCUMENT -> buildDocument(xmlParserData);
-            case PROCESSING_INSTRUCTION, COMMENT, DTD -> {
-            } // Ignore
+            case PROCESSING_INSTRUCTION, COMMENT, DTD -> { } // Ignore
             default -> {
                 assert false;
             }
