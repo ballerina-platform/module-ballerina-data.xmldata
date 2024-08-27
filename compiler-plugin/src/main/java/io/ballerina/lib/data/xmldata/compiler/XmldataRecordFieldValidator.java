@@ -325,43 +325,11 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
     private void validateRecordFieldType(TypeSymbol typeSymbol, Optional<Location> location,
                                          SyntaxNodeAnalysisContext ctx) {
         switch (typeSymbol.typeKind()) {
-//            case UNION -> validateUnionType((UnionTypeSymbol) typeSymbol, location, ctx);
             case NIL, TUPLE -> reportDiagnosticInfo(ctx, location, XmldataDiagnosticCodes.UNSUPPORTED_TYPE);
             case ARRAY -> validateRecordFieldType(((ArrayTypeSymbol) typeSymbol).memberTypeDescriptor(), location, ctx);
             case TYPE_REFERENCE ->
                     validateRecordFieldType(((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor(), location, ctx);
         }
-    }
-
-//    private void validateUnionType(UnionTypeSymbol unionTypeSymbol, Optional<Location> location,
-//                                   SyntaxNodeAnalysisContext ctx) {
-//        int nonPrimitiveMemberCount = 0;
-//        boolean isNilPresent = false;
-//        List<TypeSymbol> memberTypeSymbols = unionTypeSymbol.memberTypeDescriptors();
-//        for (TypeSymbol memberTypeSymbol : memberTypeSymbols) {
-//            if (isPrimitiveType(memberTypeSymbol)) {
-//                continue;
-//            }
-//
-//            if (memberTypeSymbol.typeKind() == TypeDescKind.NIL) {
-//                isNilPresent = true;
-//            }
-//            nonPrimitiveMemberCount++;
-//        }
-//
-//        if (nonPrimitiveMemberCount > 1 || (memberTypeSymbols.size() > 1 && isNilPresent)) {
-//            reportDiagnosticInfo(ctx, location, XmldataDiagnosticCodes.UNSUPPORTED_UNION_TYPE);
-//        }
-//    }
-
-    private boolean isPrimitiveType(TypeSymbol typeSymbol) {
-        TypeDescKind kind = typeSymbol.typeKind();
-        if (kind == TypeDescKind.TYPE_REFERENCE) {
-            kind = ((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor().typeKind();
-        }
-
-        return kind == TypeDescKind.INT || kind == TypeDescKind.FLOAT || kind == TypeDescKind.DECIMAL
-                || kind == TypeDescKind.STRING || kind == TypeDescKind.BOOLEAN || kind == TypeDescKind.BYTE;
     }
 
     private boolean isAnnotFromXmldata(AnnotationSymbol annotationSymbol) {

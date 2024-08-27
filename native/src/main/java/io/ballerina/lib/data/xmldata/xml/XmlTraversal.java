@@ -455,11 +455,7 @@ public class XmlTraversal {
             Object temp = currentMapValue.get(StringUtils.fromString(fieldName));
             if (temp instanceof BArray tempArray) {
                 ArrayType arrayType = (ArrayType) fieldType;
-                Integer peek = analyzerData.arrayIndexes.peek().get(fieldName);
-                int currentIndex = tempArray.size();
-                if (peek != null) {
-                    currentIndex = peek;
-                }
+                int currentIndex = analyzerData.arrayIndexes.peek().get(fieldName);
 
                 if (arrayType.getState() == ArrayType.ArrayState.OPEN || currentIndex < arrayType.getSize()) {
                     tempArray.add(currentIndex, nextValue);

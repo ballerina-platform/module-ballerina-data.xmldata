@@ -1,4 +1,3 @@
-import ballerina/data.xmldata;
 import ballerina/test;
 
 xml x1 = xml `<A>42</A>`;
@@ -20,16 +19,16 @@ type A14 record {
 @test:Config
 function testTraverseUnionTypes1() {
     // // bug #3
-    A11|error a11 = xmldata:parseAsType(x1);
+    A11|error a11 = parseAsType(x1);
     test:assertEquals(a11, {"#content": "42"});
 
-    A12|error a12 = xmldata:parseAsType(x1);
+    A12|error a12 = parseAsType(x1);
     test:assertEquals(a12, {"#content":42});
 
-    A13|error a13 = xmldata:parseAsType(x1);
+    A13|error a13 = parseAsType(x1);
     test:assertEquals(a13, {"#content":"42"});
 
-    A14|error a14 = xmldata:parseAsType(x1);
+    A14|error a14 = parseAsType(x1);
     test:assertEquals(a14, {"#content": 42});
 }
 
@@ -52,25 +51,25 @@ type A26 record {int[] \#content;}|record {|int[]...;|}|record {int \#content; i
 
 @test:Config
 function testTraverseUnionTypes2() {
-    A21|error a21 = xmldata:parseAsType(x2);
+    A21|error a21 = parseAsType(x2);
     test:assertEquals(a21, {"#content":"Sample Text","a1":2024});
 
-    A22|error a22 = xmldata:parseAsType(x2);
-    test:assertTrue(a22 is xmldata:Error);
-    test:assertEquals((<error> a22).message(), "source value cannot convert into 'wso2/xml_data_dev.traverseTest:0:A22'");
+    A22|error a22 = parseAsType(x2);
+    test:assertTrue(a22 is Error);
+    test:assertEquals((<error> a22).message(), "source value cannot convert into 'ballerina/data.xmldata:1:A22'");
 
     // // bug #4
-    // A23|error a23 = xmldata:parseAsType(x2);
+    // A23|error a23 = parseAsType(x2);
     // test:assertEquals(a23, {"#content":"Sample Text","a1":2024, "a2": <decimal>3.14});
 
     // // bug #5
-    // A24|error a24 = xmldata:parseAsType(x2);
+    // A24|error a24 = parseAsType(x2);
     // test:assertEquals(a24, {"a1":2024, "a2": <float>3.14});
 
-    A25|error a25 = xmldata:parseAsType(x2);
+    A25|error a25 = parseAsType(x2);
     test:assertEquals(a25, {"#content":"Sample Text","a1":2024, "a2": <decimal>3.14});
 
-    A26|error a26 = xmldata:parseAsType(x2);
+    A26|error a26 = parseAsType(x2);
     test:assertEquals(a26, {"#content":"Sample Text"});
 }
 
@@ -81,14 +80,14 @@ type A31 record {
 };
 
 type A31P2 record {
-    @xmldata:Name {
+    @Name {
         value: "B"
     }
     string|int[] b;
 };
 
 type A32 record {
-    @xmldata:Name {
+    @Name {
         value: "B"
     }
     boolean|record{int \#content;}|int[] b;
@@ -106,22 +105,22 @@ type A35 record {|
 
 @test:Config
 function testTraverseUnionTypes3() {
-    A31|error a31 = xmldata:parseAsType(x3);
+    A31|error a31 = parseAsType(x3);
     test:assertEquals(a31, {"B":[100]});
 
-    A31P2|error a31p2 = xmldata:parseAsType(x3);
+    A31P2|error a31p2 = parseAsType(x3);
     test:assertEquals(a31p2, {"b":"100"});
 
-    A32|error a32 = xmldata:parseAsType(x3);
+    A32|error a32 = parseAsType(x3);
     test:assertEquals(a32, {"b":{"#content":100}});
 
-    A33|error a33 = xmldata:parseAsType(x3);
+    A33|error a33 = parseAsType(x3);
     test:assertEquals(a33, {"B":100});
 
-    A34|error a34 = xmldata:parseAsType(x3);
+    A34|error a34 = parseAsType(x3);
     test:assertEquals(a34, {"B":[{"#content":100}]});
 
-    A35|error a35 = xmldata:parseAsType(x3);
+    A35|error a35 = parseAsType(x3);
     test:assertEquals(a35, {"B":{"#content":"100"}});
 }
 
@@ -145,62 +144,62 @@ type A43 record{|int[]|record{|int \#content; float|decimal|int...;|} B;|}|A43P2
 @test:Config
 function testTraverseUnionTypes4() {
     // // bug #2
-    // A41|error a41 = xmldata:parseAsType(x4);
+    // A41|error a41 = parseAsType(x4);
     // test:assertEquals(a41, {"B":{"#content":"Nested Content","b1":99,"b2":"45.67"}});
 
-    A41P2|error a41p2 = xmldata:parseAsType(x4);
+    A41P2|error a41p2 = parseAsType(x4);
     test:assertEquals(a41p2, {"B":{"#content":"Nested Content","b1":99,"b2":"45.67"}});
 
-    A42|error a42 = xmldata:parseAsType(x4);
+    A42|error a42 = parseAsType(x4);
     test:assertEquals(a42, {"B":{"#content":"Nested Content","b1":99}});
 
-    A43|error a43 = xmldata:parseAsType(x4);
+    A43|error a43 = parseAsType(x4);
     test:assertEquals(a43, {"B":{"#content":"Nested Content"}});
 }
 
 xml x5 = xml `<A><B id="1" id2="2">123</B><B id="11" id2="22">456</B></A>`;
 
-type Ref record {|int...;|};
-type RefArr Ref[];
+type Ref2 record {|int...;|};
+type RefArr2 Ref2[];
 
-type A51 record {RefArr|int[] B;};
-type A52 record {int[]|RefArr B;};
-type A53 record {Ref|int[] B;};
-type A54 record {|Ref|int[]...;|};
-type A55 record {|Ref[]|int[]...;|};
-type A56 record {|(Ref|int)[]...;|};
-type A57 record {|(Ref|int)[] B;|};
-type A58 record {|(int|Ref)[]...;|};
+type A51 record {RefArr2|int[] B;};
+type A52 record {int[]|RefArr2 B;};
+type A53 record {Ref2|int[] B;};
+type A54 record {|Ref2|int[]...;|};
+type A55 record {|Ref2[]|int[]...;|};
+type A56 record {|(Ref2|int)[]...;|};
+type A57 record {|(Ref2|int)[] B;|};
+type A58 record {|(int|Ref2)[]...;|};
 
 @test:Config
 function testTraverseUnionTypes5() {
     // //bug https://github.com/ballerina-platform/ballerina-library/issues/6907
-    // A51|error a51 = xmldata:parseAsType(x5);
+    // A51|error a51 = parseAsType(x5);
     // test:assertEquals(a51, {"B":[{"#content":123},{"#content":456}]});
 
-    A52|error a52 = xmldata:parseAsType(x5);
+    A52|error a52 = parseAsType(x5);
     test:assertEquals(a52, {"B":[123,456]});
 
     // //bug https://github.com/ballerina-platform/ballerina-library/issues/6907
-    // A53|error a53 = xmldata:parseAsType(x5);
+    // A53|error a53 = parseAsType(x5);
     // test:assertEquals(a53, {);
 
     // //bug https://github.com/ballerina-platform/ballerina-library/issues/6907
-    // A54|error a54 = xmldata:parseAsType(x5);
+    // A54|error a54 = parseAsType(x5);
     // test:assertEquals(a54, {});
 
     // // bug #6
-    // A55|error a55 = xmldata:parseAsType(x5);
+    // A55|error a55 = parseAsType(x5);
     // test:assertEquals(a55, {"B":[123,456]});
 
-    A56|error a56 = xmldata:parseAsType(x5);
+    A56|error a56 = parseAsType(x5);
     test:assertEquals(a56, {"B":[{"#content":123},{"#content":456}]});
 
-    A57|error a57 = xmldata:parseAsType(x5);
+    A57|error a57 = parseAsType(x5);
     test:assertEquals(a57, {"B":[{"#content":123},{"#content":456}]});
 
     // //bug https://github.com/ballerina-platform/ballerina-library/issues/6907
-    // A58|error a58 = xmldata:parseAsType(x5);
+    // A58|error a58 = parseAsType(x5);
     // test:assertEquals(a58, {"B":[{"#content":123},{"#content":456}]});
 }
 
@@ -213,16 +212,16 @@ type A64 record {|record {|boolean|record{}|record{}[]|string \#content;|}[]|str
 
 @test:Config
 function testTraverseUnionTypes6() {
-    A61|error a61 = xmldata:parseAsType(x6);
+    A61|error a61 = parseAsType(x6);
     test:assertEquals(a61, {"C":"Yamaha","B":[{"#content":"Toyota"}]});
 
-    A62|error a62 = xmldata:parseAsType(x6);
+    A62|error a62 = parseAsType(x6);
     test:assertEquals(a62, {"B":"Toyota","C":"Yamaha"});
 
-    A63|error a63 = xmldata:parseAsType(x6);
+    A63|error a63 = parseAsType(x6);
     test:assertEquals(a63, {"B":[{"#content":"Toyota"}],"C":[{"#content":"Yamaha"}]});
 
-    A64|error a64 = xmldata:parseAsType(x6);
+    A64|error a64 = parseAsType(x6);
     test:assertEquals(a64, {"B":[{"#content":"Toyota"}]});
 }
 
@@ -240,34 +239,34 @@ type A78 record {|(string|record {|string...;|})[]...;|};
 @test:Config
 function testTraverseUnionTypes7() {
     // //bug https://github.com/ballerina-platform/ballerina-library/issues/6907
-    // A71|error a71 = xmldata:parseAsType(x7);
+    // A71|error a71 = parseAsType(x7);
     // test:assertEquals(a71, {"B":[{"#content":"Brick"},{"#content":"Water"}],"C":{"c1":"gas","c2":"transparent","#content":"Air"}});
 
-    A72|error a72 = xmldata:parseAsType(x7);
+    A72|error a72 = parseAsType(x7);
     test:assertEquals(a72, {"B":["Brick","Water"],"C":{"c1":"gas","c2":"transparent","#content":"Air"}});
 
-    A73|error a73 = xmldata:parseAsType(x7);
-    test:assertTrue(a73 is xmldata:Error);
+    A73|error a73 = parseAsType(x7);
+    test:assertTrue(a73 is Error);
     test:assertEquals((<error>a73).message(), "unsupported input type");
 
     // //bug https://github.com/ballerina-platform/ballerina-library/issues/6907
-    // A74|error a74 = xmldata:parseAsType(x7);
+    // A74|error a74 = parseAsType(x7);
     // test:assertEquals(a74, {"B":{"#content":"Water"},"C":{"#content":"Air"});
 
     // // bug #6
-    // A75|error a75 = xmldata:parseAsType(x7);
+    // A75|error a75 = parseAsType(x7);
     // test:assertEquals(a75, {"B":[{"#content":"Brick"},{"#content":"Water"}],"C":[{"#content":"Air"}]});
 
     // // //bug https://github.com/ballerina-platform/ballerina-library/issues/6907
-    // A76|error a76 = xmldata:parseAsType(x7);
+    // A76|error a76 = parseAsType(x7);
     // test:assertEquals(a76, {"B":[{"#content":"Brick"},{"#content":"Water"}],"C":[{"#content":"Air"}]});
 
     // // //bug https://github.com/ballerina-platform/ballerina-library/issues/6907
-    // A77|error a77 = xmldata:parseAsType(x7);
+    // A77|error a77 = parseAsType(x7);
     // test:assertEquals(a77, {"B":[{"#content":"Brick"},{"#content":"Water"}]});
 
     // // //bug https://github.com/ballerina-platform/ballerina-library/issues/6907
-    // A78|error a78 = xmldata:parseAsType(x7);
+    // A78|error a78 = parseAsType(x7);
     // test:assertEquals(a78, {"B":{"#content":"Water"},"C":{"#content":"Air"}});
 }
 
@@ -304,30 +303,30 @@ type A86 record{|record{}[]...;|}|record{|record{}...;|};
 
 @test:Config
 function testTraverseUnionTypes8() {
-    A81|error a81 = xmldata:parseAsType(x8);
+    A81|error a81 = parseAsType(x8);
     test:assertEquals(a81, {"B":[{"C":[{"#content":"First"}]},{"C":[{"#content":"Second"},{"#content":"Third"}]},{}]});
 
-    A81Part2|error a81p2 = xmldata:parseAsType(x8);
+    A81Part2|error a81p2 = parseAsType(x8);
     test:assertEquals(a81p2, {"B":[{"C":[{"#content":"First"}]},{"C":[{"#content":"Second"},{"#content":"Third"}]},
                             {"D":{"d1":"inner4","d2":"value","#content":"Fourth"},"E":{"e1":"inner5","e2":"value","#content":"Fifth"}}]});
 
-    A82|error a82 = xmldata:parseAsType(x8);
+    A82|error a82 = parseAsType(x8);
     test:assertEquals(a82, {"B":[{"C":[{"#content":"First"}]},{"C":[{"#content":"Second"},{"#content":"Third"}]},{}]});
 
-    A82Part2|error a82p2 = xmldata:parseAsType(x8);
+    A82Part2|error a82p2 = parseAsType(x8);
     test:assertEquals(a82p2, {"B":[{"C":[{"#content":"First"}]},{"C":[{"#content":"Second"},{"#content":"Third"}]},
                             {"D":{"d1":"inner4","d2":"value","#content":"Fourth"},"E":{"e1":"inner5","e2":"value","#content":"Fifth"}}]});
 
-    A83|error a83 = xmldata:parseAsType(x8);
+    A83|error a83 = parseAsType(x8);
     test:assertEquals(a83, {B: {}});
 
-    A84|error a84 = xmldata:parseAsType(x8);
+    A84|error a84 = parseAsType(x8);
     test:assertEquals(a84, {"B":[{"C":[{"#content":"First"}]},{"C":[{"#content":"Second"},{"#content":"Third"}]},{}]});
 
-    A85|error a85 = xmldata:parseAsType(x8);
+    A85|error a85 = parseAsType(x8);
     test:assertEquals(a85, {"B":{"D":{"d1":"inner4","d2":"value","#content":"Fourth"},"E":{"e1":"inner5","e2":"value","#content":"Fifth"}}});
 
-    A86|error a86 = xmldata:parseAsType(x8);
+    A86|error a86 = parseAsType(x8);
     test:assertEquals(a86, {"B":[{"C":{"c1":"inner1","c2":"value","#content":"First"}},{"C":[{"c1":"inner2","c2":"value","#content":"Second"},
                             {"c1":"inner3","c2":"value","#content":"Third"}]},{"D":{"d1":"inner4","d2":"value","#content":"Fourth"},
                             "E":{"e1":"inner5","e2":"value","#content":"Fifth"}}]});
@@ -357,19 +356,19 @@ type A94 record {A94P1[] B;};
 
 @test:Config
 function testTraverseUnionTypes9() {
-    A91|error a91 = xmldata:parseAsType(x9);
+    A91|error a91 = parseAsType(x9);
     test:assertEquals(a91, {"B":[{"C":["100","200","300"]},{"C":["400","500","600"]}]});
 
-    A92|error a92 = xmldata:parseAsType(x9);
+    A92|error a92 = parseAsType(x9);
     test:assertEquals(a92, {"B":[{"C":["100","200","300"]},{"C":["400","500","600"]}]});
 
-    A93|error a93 = xmldata:parseAsType(x9);
+    A93|error a93 = parseAsType(x9);
     test:assertEquals(a93, {"B":[{"C":[{"#content":"100"},
                             {"#content":"200"},{"#content":"300"}]},
                             {"C":[{"#content":"400"},{"#content":"500"},
                             {"#content":"600"}]}]});
 
-    A94|error a94 = xmldata:parseAsType(x9);
+    A94|error a94 = parseAsType(x9);
     test:assertEquals(a94, {"B":[{"C":[{"#content":"100"},
                             {"#content":"200"},{"#content":"300"}]},
                             {"C":[{"#content":"400"},{"#content":"500"},
@@ -398,17 +397,17 @@ type A104 record {A104P1[] B;};
 
 @test:Config
 function testTraverseUnionTypes10() {
-    A101|error a101 = xmldata:parseAsType(x10);
+    A101|error a101 = parseAsType(x10);
     test:assertEquals(a101, {"B":[{"C":["Deep Value1","Deep Value2"]},{"C":["Deep Value3","Deep Value4"]}]});
 
-    A102|error a102 = xmldata:parseAsType(x10);
+    A102|error a102 = parseAsType(x10);
     test:assertEquals(a102, {"B":[{"C":["Deep Value1","Deep Value2"]},{"C":["Deep Value3","Deep Value4"]}]});
 
-    A103|error a103 = xmldata:parseAsType(x10);
+    A103|error a103 = parseAsType(x10);
     test:assertEquals(a103, {"B":[{"C":[{"#content":"Deep Value1"},{"#content":"Deep Value2"}]},
                                 {"C":[{"#content":"Deep Value3"},{"#content":"Deep Value4"}]}]});
 
-    A104|error a104 = xmldata:parseAsType(x10);
+    A104|error a104 = parseAsType(x10);
     test:assertEquals(a104, {"B":[{"C":[{"#content":"Deep Value1"},{"#content":"Deep Value2"}]},
                                 {"C":[{"#content":"Deep Value3"},{"#content":"Deep Value4"}]}]});
 }
@@ -424,7 +423,7 @@ xml x11 = xml `<ns1:A xmlns:ns1="http://example.com/ns1" xmlns:ns2="http://examp
                 </ns2:B>
               </ns1:A>`;
 
-@xmldata:Namespace {
+@Namespace {
     prefix: "ns1",
     uri: "http://example.com/ns1"
 }
@@ -433,7 +432,7 @@ type A111 record {
     (B111|B112)[] B;
 };
 
-@xmldata:Namespace {
+@Namespace {
     prefix: "ns1",
     uri: "http://example.com/ns1"
 }
@@ -442,12 +441,12 @@ type A112 record {|
     (B111|B112)[]...;
 |};
 
-@xmldata:Namespace {
+@Namespace {
     prefix: "ns1",
     uri: "http://example.com/ns1"
 }
 type B111 record {
-    @xmldata:Namespace {
+    @Namespace {
         prefix: "ns1",
         uri: "http://example.com/ns1"
     }
@@ -455,12 +454,12 @@ type B111 record {
     (C111|C112)[] C;
 };
 
-@xmldata:Namespace {
+@Namespace {
     prefix: "ns2",
     uri: "http://example.com/ns2"
 }
 type B112 record {
-    @xmldata:Namespace {
+    @Namespace {
         prefix: "ns1",
         uri: "http://example.com/ns1"
     }
@@ -468,12 +467,12 @@ type B112 record {
     (C111|C112)[] C;
 };
 
-@xmldata:Namespace {
+@Namespace {
     prefix: "ns1",
     uri: "http://example.com/ns1"
 }
 type C111 record {
-    @xmldata:Namespace {
+    @Namespace {
         prefix: "ns1",
         uri: "http://example.com/ns1"
     }
@@ -481,12 +480,12 @@ type C111 record {
     string \#content;
 };
 
-@xmldata:Namespace {
+@Namespace {
     prefix: "ns1",
     uri: "http://example.com/ns1"
 }
 type C112 record {
-    @xmldata:Namespace {
+    @Namespace {
         prefix: "ns1",
         uri: "http://example.com/ns1"
     }
@@ -496,13 +495,13 @@ type C112 record {
 
 @test:Config
 function testTraverseUnionTypes11() {
-    A111|error a111 = xmldata:parseAsType(x11);
+    A111|error a111 = parseAsType(x11);
     test:assertEquals(a111, {"a1":"outer","B":[{"b1":"middle","C":[{"c1":"inner","#content":"Deep Value1"},
                             {"c1":"inner","#content":"Deep Value2"}]},
                             {"b1":"middle","C":[{"c1":"inner","#content":"Deep Value3"},
                             {"c1":"inner","#content":"Deep Value2"}]}]});
 
-    A112|error a112 = xmldata:parseAsType(x11);
+    A112|error a112 = parseAsType(x11);
     test:assertEquals(a112, {"a1":"outer","B":[{"b1":"middle","C":[{"c1":"inner","#content":"Deep Value1"},
                             {"c1":"inner","#content":"Deep Value2"}]},
                             {"b1":"middle","C":[{"c1":"inner","#content":"Deep Value3"},
@@ -520,7 +519,7 @@ xml x12 = xml `<ns1:A xmlns:ns1="http://example.com/ns1" xmlns:ns2="http://examp
                 </ns2:B>
               </ns1:A>`;
 
-@xmldata:Namespace {
+@Namespace {
     prefix: "ns1",
     uri: "http://example.com/ns1"
 }
@@ -534,7 +533,7 @@ type A122 record {|
     (B121|B122)[]...;
 |};
 
-@xmldata:Namespace {
+@Namespace {
     prefix: "ns2",
     uri: "http://example.com/ns2"
 }
@@ -543,7 +542,7 @@ type B121 record {
     C121[] C;
 };
 
-@xmldata:Namespace {
+@Namespace {
     prefix: "ns2",
     uri: "http://example.com/ns2"
 }
@@ -552,7 +551,7 @@ type B122 record {
     C121[] C;
 };
 
-@xmldata:Namespace {
+@Namespace {
     prefix: "ns3",
     uri: "http://example.com/ns3"
 }
@@ -563,11 +562,11 @@ type C121 record {
 
 @test:Config
 function testTraverseUnionTypes12() {
-    A121|error a121 = xmldata:parseAsType(x12);
+    A121|error a121 = parseAsType(x12);
     test:assertEquals(a121, {"a1":"outer","B":[{"b1":"middle", "C":[{"c1":"inner","#content":"Deep Value1"},
                             {"c1":"inner","#content":"Deep Value2"}]},{"b1":"middle",
                             "C":[{"c1":"inner","#content":"Deep Value3"},{"c1":"inner","#content":"Deep Value4"}]}]});
-    A122|error a122 = xmldata:parseAsType(x12);
+    A122|error a122 = parseAsType(x12);
     test:assertEquals(a122, {"a1":"outer","B":[{"b1":"middle", "C":[{"c1":"inner","#content":"Deep Value1"},
                             {"c1":"inner","#content":"Deep Value2"}]},{"b1":"middle",
                             "C":[{"c1":"inner","#content":"Deep Value3"},{"c1":"inner","#content":"Deep Value4"}]}]});
