@@ -58,11 +58,11 @@ function testParseStringUnionTypes2() {
     test:assertTrue(a22 is Error);
     test:assertEquals((<error> a22).message(), "source value cannot convert into 'ballerina/data.xmldata:1:S22'");
 
-    // // bug #4
+    // https://github.com/ballerina-platform/ballerina-library/issues/6925
     // S23|error a23 = parseString(s2);
     // test:assertEquals(a23, {"#content":"Sample Text","a1":2024, "a2": <decimal>3.14});
 
-    // // bug #5
+    // https://github.com/ballerina-platform/ballerina-library/issues/6925
     // S24|error a24 = parseString(s2);
     // test:assertEquals(a24, {"a1":2024, "a2": <float>3.14});
 
@@ -105,9 +105,8 @@ type S35 record {|
 
 @test:Config
 function testParseStringUnionTypes3() {
-// custom bug
-    // S31|error a31 = parseString(s3);
-    // test:assertEquals(a31, {"B":"100"});
+    S31|error a31 = parseString(s3);
+    test:assertEquals(a31, {"B":"100"});
 
     S31P2|error a31p2 = parseString(s3);
     test:assertEquals(a31p2, {"b":"100"});
@@ -121,7 +120,7 @@ function testParseStringUnionTypes3() {
     S34|error a34 = parseString(s3);
     test:assertEquals(a34, {"B":[{"#content":100}]});
 
-// custom bug
+    // https://github.com/ballerina-platform/ballerina-library/issues/6929
     // S35|error a35 = parseString(s3);
     // test:assertEquals(a35, {"B":{"#content":"100"}});
 }
@@ -145,7 +144,7 @@ type S43 record{|int[]|record{|int \#content; float|decimal|int...;|} B;|}|S43P2
 
 @test:Config
 function testParseStringUnionTypes4() {
-    // // bug #2
+    // https://github.com/ballerina-platform/ballerina-library/issues?q=is%3Aopen+is%3Aissue+author%3ASasinduDilshara+label%3Amodule%2Fdata.xmldata
     // S41|error a41 = parseString(s4);
     // test:assertEquals(a41, {"B":{"#content":"Nested Content","b1":99,"b2":"45.67"}});
 
@@ -190,7 +189,7 @@ function testParseStringUnionTypes5() {
     // S54|error a54 = parseString(s5);
     // test:assertEquals(a54, {});
 
-    // // bug #6
+    // https://github.com/ballerina-platform/ballerina-library/issues?q=is%3Aopen+is%3Aissue+author%3ASasinduDilshara+label%3Amodule%2Fdata.xmldata
     // S55|error a55 = parseString(s5);
     // test:assertEquals(a55, {"B":[123,456]});
 
@@ -249,13 +248,13 @@ function testParseStringUnionTypes7() {
 
     S73|error a73 = parseString(s7);
     test:assertTrue(a73 is Error);
-    test:assertEquals((<error>a73).message(), "unsupported input type");
+    test:assertEquals((<error>a73).message(), "field 'B' cannot convert into the type '(data.xmldata:record {| string @content; |}|string[])'");
 
     // //bug https://github.com/ballerina-platform/ballerina-library/issues/6907
     // S74|error a74 = parseString(s7);
     // test:assertEquals(a74, {"B":{"#content":"Water"},"C":{"#content":"Air"});
 
-    // // bug #6
+    // https://github.com/ballerina-platform/ballerina-library/issues?q=is%3Aopen+is%3Aissue+author%3ASasinduDilshara+label%3Amodule%2Fdata.xmldata
     // S75|error a75 = parseString(s7);
     // test:assertEquals(a75, {"B":[{"#content":"Brick"},{"#content":"Water"}],"C":[{"#content":"Air"}]});
 

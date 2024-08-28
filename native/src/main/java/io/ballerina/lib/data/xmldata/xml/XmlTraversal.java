@@ -196,7 +196,7 @@ public class XmlTraversal {
                     }
                 }
                 if (convertedValue == null) {
-                    throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, fieldType);
+                    throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, fieldName, fieldType);
                 }
             } else {
                 convertedValue = DataUtils.convertStringToExpType(StringUtils.fromString(text), fieldType);
@@ -222,7 +222,7 @@ public class XmlTraversal {
                 ((BArray) value).add(currentIndex, convertedValue);
             } else {
                 if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
-                    throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, fieldType);
+                    throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, fieldName, fieldType);
                 }
                 mapValue.put(fieldName, convertedValue);
             }
@@ -322,7 +322,7 @@ public class XmlTraversal {
                     // ignore
                 }
             }
-            throw DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE);
+            throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, fieldName, currentFieldType);
         }
 
         private void convertToArrayType(BXmlItem xmlItem, Field field, BMap<BString, Object> mapValue,
@@ -541,7 +541,7 @@ public class XmlTraversal {
                     // ignore
                 }
             }
-            throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, elementType);
+            throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, elemName, elementType);
         }
 
         private void handleArrayValueForRestType(BXmlItem xmlItem, String elemName, Type restType,

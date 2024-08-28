@@ -58,11 +58,11 @@ function testTraverseUnionTypes2() {
     test:assertTrue(a22 is Error);
     test:assertEquals((<error> a22).message(), "source value cannot convert into 'ballerina/data.xmldata:1:A22'");
 
-    // // bug #4
+    // https://github.com/ballerina-platform/ballerina-library/issues/6925
     // A23|error a23 = parseAsType(x2);
     // test:assertEquals(a23, {"#content":"Sample Text","a1":2024, "a2": <decimal>3.14});
 
-    // // bug #5
+    // https://github.com/ballerina-platform/ballerina-library/issues/6925
     // A24|error a24 = parseAsType(x2);
     // test:assertEquals(a24, {"a1":2024, "a2": <float>3.14});
 
@@ -143,7 +143,7 @@ type A43 record{|int[]|record{|int \#content; float|decimal|int...;|} B;|}|A43P2
 
 @test:Config
 function testTraverseUnionTypes4() {
-    // // bug #2
+    // https://github.com/ballerina-platform/ballerina-library/issues/6925
     // A41|error a41 = parseAsType(x4);
     // test:assertEquals(a41, {"B":{"#content":"Nested Content","b1":99,"b2":"45.67"}});
 
@@ -188,7 +188,7 @@ function testTraverseUnionTypes5() {
     // A54|error a54 = parseAsType(x5);
     // test:assertEquals(a54, {});
 
-    // // bug #6
+    // https://github.com/ballerina-platform/ballerina-library/issues?q=is%3Aopen+is%3Aissue+author%3ASasinduDilshara+label%3Amodule%2Fdata.xmldata
     // A55|error a55 = parseAsType(x5);
     // test:assertEquals(a55, {"B":[123,456]});
 
@@ -247,13 +247,13 @@ function testTraverseUnionTypes7() {
 
     A73|error a73 = parseAsType(x7);
     test:assertTrue(a73 is Error);
-    test:assertEquals((<error>a73).message(), "unsupported input type");
+    test:assertEquals((<error>a73).message(), "field 'B' cannot convert into the type '(data.xmldata:record {| string @content; |}|string[])'");
 
     // //bug https://github.com/ballerina-platform/ballerina-library/issues/6907
     // A74|error a74 = parseAsType(x7);
     // test:assertEquals(a74, {"B":{"#content":"Water"},"C":{"#content":"Air"});
 
-    // // bug #6
+    // https://github.com/ballerina-platform/ballerina-library/issues?q=is%3Aopen+is%3Aissue+author%3ASasinduDilshara+label%3Amodule%2Fdata.xmldata
     // A75|error a75 = parseAsType(x7);
     // test:assertEquals(a75, {"B":[{"#content":"Brick"},{"#content":"Water"}],"C":[{"#content":"Air"}]});
 
@@ -265,7 +265,7 @@ function testTraverseUnionTypes7() {
     // A77|error a77 = parseAsType(x7);
     // test:assertEquals(a77, {"B":[{"#content":"Brick"},{"#content":"Water"}]});
 
-    // // //bug https://github.com/ballerina-platform/ballerina-library/issues/6907
+    // //bug https://github.com/ballerina-platform/ballerina-library/issues/6907
     // A78|error a78 = parseAsType(x7);
     // test:assertEquals(a78, {"B":{"#content":"Water"},"C":{"#content":"Air"}});
 }
