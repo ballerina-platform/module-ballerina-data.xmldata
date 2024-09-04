@@ -93,21 +93,20 @@ public class XmlTraversal {
             Type referredType = TypeUtils.getReferredType(type);
             switch (referredType.getTag()) {
                 case TypeTags.RECORD_TYPE_TAG -> {
-                    return traverseXmlWithRecordAsExpectedType(xml, analyzerData, referredType);
+                    return traverseXmlWithRecordAsExpectedType(xml, analyzerData, (RecordType) referredType);
                 }
                 case TypeTags.MAP_TAG -> {
-                    return traverseXmlWithMapAsExpectedType(xml, referredType, analyzerData);
+                    return traverseXmlWithMapAsExpectedType(xml, (MapType) referredType, analyzerData);
                 }
                 case TypeTags.UNION_TAG -> {
-                    return traverseXmlToUnion(xml, analyzerData, referredType);
+                    return traverseXmlToUnion(xml, analyzerData, (UnionType) referredType);
                 }
                 default -> throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_TYPE, Constants.RECORD_OR_MAP, type);
             }
         }
         
         private Object traverseXmlWithRecordAsExpectedType(BXml xml,
-                                                           XmlAnalyzerData analyzerData, Type referredType) {
-            RecordType recordType = (RecordType) referredType;
+                                                           XmlAnalyzerData analyzerData, RecordType recordType) {
             currentNode = ValueCreator.createRecordValue(recordType.getPackage(), recordType.getName());
             BXml nextXml = validateRootElement(xml, recordType, analyzerData);
             Object resultRecordValue = traverseXml(nextXml, recordType, analyzerData);
@@ -115,15 +114,13 @@ public class XmlTraversal {
             return resultRecordValue;
         }
 
-        private Object traverseXmlWithMapAsExpectedType(BXml xml, Type referredType, XmlAnalyzerData analyzerData) {
-            MapType mapType = (MapType) referredType;
+        private Object traverseXmlWithMapAsExpectedType(BXml xml, MapType mapType, XmlAnalyzerData analyzerData) {
             RecordType anonRecType = TypeCreator.createRecordType(Constants.ANON_TYPE, mapType.getPackage(), 0,
                     new HashMap<>(), mapType.getConstrainedType(), false, 0);
             return traverseXml(xml, analyzerData, anonRecType);
         }
 
-        private Object traverseXmlToUnion(BXml xml, XmlAnalyzerData options, Type type) {
-            UnionType unionType = (UnionType) type;
+        private Object traverseXmlToUnion(BXml xml, XmlAnalyzerData options, UnionType unionType) {
             XmlAnalyzerData clonedAnalyzerData = XmlAnalyzerData.copy(options);
             for (Type memberType: unionType.getMemberTypes()) {
                 memberType = TypeUtils.getReferredType(memberType);
@@ -133,12 +130,11 @@ public class XmlTraversal {
                     }
                     return traverseXml(xml, options, memberType);
                 } catch (Exception ex) {
-                    int a = 1;
                     options.resetFrom(clonedAnalyzerData);
                     // ignore
                 }
             }
-            throw DiagnosticLog.error(DiagnosticErrorCode.CANNOT_CONVERT_SOURCE_INTO_EXP_TYPE, type);
+            throw DiagnosticLog.error(DiagnosticErrorCode.CANNOT_CONVERT_SOURCE_INTO_EXP_TYPE, unionType);
         }
 
         private Object traverseXml(BXml xml, Type type, XmlAnalyzerData analyzerData) {
@@ -190,7 +186,6 @@ public class XmlTraversal {
                         fieldType = memberType;
                         break;
                     } catch (Exception ex) {
-                        int a = 1;
                         analyzerData.resetFrom(clonedAnalyzerData);
                         // ignore
                     }
@@ -318,7 +313,6 @@ public class XmlTraversal {
                 } catch (Exception ex) {
                     analyzerData.resetFrom(clonedAnalyzerData);
                     mapValue.put(StringUtils.fromString(fieldName), null);
-                    int a = 1;
                     // ignore
                 }
             }
@@ -381,7 +375,6 @@ public class XmlTraversal {
                     return;
                 } catch (Exception ex) {
                     analyzerData.resetFrom(clonedAnalyzerData);
-                    int a = 1;
                     // ignore
                 }
             }
@@ -537,7 +530,6 @@ public class XmlTraversal {
                     if (restType.getTag() != TypeTags.ARRAY_TAG) {
                         mapValue.put(StringUtils.fromString(elemName), null);
                     }
-                    int a = 1;
                     // ignore
                 }
             }

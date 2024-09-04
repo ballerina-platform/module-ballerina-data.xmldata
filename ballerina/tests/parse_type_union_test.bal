@@ -56,7 +56,7 @@ function testTraverseUnionTypes2() {
 
     A22|error a22 = parseAsType(x2);
     test:assertTrue(a22 is Error);
-    test:assertEquals((<error> a22).message(), "source value cannot convert into 'ballerina/data.xmldata:1:A22'");
+    test:assertEquals((<error> a22).message(), "source value cannot be converted into 'ballerina/data.xmldata:1:A22'");
 
     // https://github.com/ballerina-platform/ballerina-library/issues/6925
     // A23|error a23 = parseAsType(x2);
@@ -247,7 +247,7 @@ function testTraverseUnionTypes7() {
 
     A73|error a73 = parseAsType(x7);
     test:assertTrue(a73 is Error);
-    test:assertEquals((<error>a73).message(), "field 'B' cannot convert into the type '(data.xmldata:record {| string @content; |}|string[])'");
+    test:assertEquals((<error>a73).message(), "field 'B' cannot be converted into the type '(data.xmldata:record {| string @content; |}|string[])'");
 
     // //bug https://github.com/ballerina-platform/ballerina-library/issues/6907
     // A74|error a74 = parseAsType(x7);

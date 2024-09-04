@@ -117,33 +117,33 @@ type G112 record {
 function testErrorUnion() {
     E1|error e1 = parseAsType(xe1);
     test:assertTrue(e1 is error);
-    test:assertEquals((<error>e1).message(), "field '#content' cannot convert into the type '(boolean|int|decimal|data.xmldata:record {| anydata...; |})?'");
+    test:assertEquals((<error>e1).message(), "field '#content' cannot be converted into the type '(boolean|int|decimal|data.xmldata:record {| anydata...; |})?'");
 
     E2|error e2 = parseAsType(xe2);
     test:assertTrue(e2 is error);
-    test:assertEquals((<error>e2).message(), "field '#content' cannot convert into the type '(boolean|int|decimal|data.xmldata:record {| anydata...; |})?'");
+    test:assertEquals((<error>e2).message(), "field '#content' cannot be converted into the type '(boolean|int|decimal|data.xmldata:record {| anydata...; |})?'");
 
     E22|error e22 = parseAsType(xe2);
     test:assertTrue(e22 is error);
-    test:assertEquals((<error>e22).message(), "field 'B' cannot convert into the type '(data.xmldata:record {| (boolean|int|decimal|record {| anydata...; |})? #content; anydata...; |}|data.xmldata:record {| record {| int #content; anydata...; |} #content; anydata...; |})'");
+    test:assertEquals((<error>e22).message(), "field 'B' cannot be converted into the type '(data.xmldata:record {| (boolean|int|decimal|record {| anydata...; |})? #content; anydata...; |}|data.xmldata:record {| record {| int #content; anydata...; |} #content; anydata...; |})'");
 
     E3|error e3 = parseAsType(xe3);
     test:assertTrue(e3 is error);
-    test:assertEquals((<error>e3).message(), "field 'B' cannot convert into the type '(data.xmldata:record {| int #content; anydata...; |}|data.xmldata:record {| boolean #content; anydata...; |})[]'");
+    test:assertEquals((<error>e3).message(), "field 'B' cannot be converted into the type '(data.xmldata:record {| int #content; anydata...; |}|data.xmldata:record {| boolean #content; anydata...; |})[]'");
 
     E32|error e32 = parseAsType(xe3);
     test:assertTrue(e32 is error);
-    test:assertEquals((<error>e32).message(), "field 'B' cannot convert into the type '(data.xmldata:record {| int #content; anydata...; |}[]|data.xmldata:record {| boolean #content; anydata...; |}[])'");
+    test:assertEquals((<error>e32).message(), "field 'B' cannot be converted into the type '(data.xmldata:record {| int #content; anydata...; |}[]|data.xmldata:record {| boolean #content; anydata...; |}[])'");
 
     E4|error e4 = parseAsType(xe4);
     test:assertTrue(e4 is error);
-    test:assertEquals((<error>e4).message(), "field 'C' cannot convert into the type 'data.xmldata:E4P12[]'");
+    test:assertEquals((<error>e4).message(), "field 'C' cannot be converted into the type 'data.xmldata:E4P12[]'");
 
     E42|error e42 = parseAsType(xe4);
     test:assertTrue(e42 is error);
-    test:assertEquals((<error>e42).message(), "field 'C' cannot convert into the type 'ballerina/data.xmldata:1:E4P22'");
+    test:assertEquals((<error>e42).message(), "field 'C' cannot be converted into the type 'ballerina/data.xmldata:1:E4P22'");
 
     E5|error e5 = parseAsType(xe5);
     test:assertTrue(e5 is error);
-    test:assertEquals((<error>e5).message(), "field 'B' cannot convert into the type '(data.xmldata:F111|data.xmldata:F112)[]'");
+    test:assertEquals((<error>e5).message(), "field 'B' cannot be converted into the type '(data.xmldata:F111|data.xmldata:F112)[]'");
 }

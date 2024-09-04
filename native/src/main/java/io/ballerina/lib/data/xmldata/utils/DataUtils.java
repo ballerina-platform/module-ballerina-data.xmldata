@@ -258,7 +258,6 @@ public class DataUtils {
             try {
                 return convertStringToExpType(value, memberType);
             } catch (Exception ex) {
-                int a = 1;
                 // ignore
             }
         }
