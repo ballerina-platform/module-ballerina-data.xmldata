@@ -18,7 +18,6 @@ type A14 record {
 
 @test:Config
 function testTraverseUnionTypes1() {
-    // // bug #3
     A11|error a11 = parseAsType(x1);
     test:assertEquals(a11, {"#content": "42"});
 

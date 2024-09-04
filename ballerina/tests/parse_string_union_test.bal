@@ -24,7 +24,7 @@ function testParseStringUnionTypes1() {
     S12|error a12 = parseString(s1);
     test:assertEquals(a12, {"#content":42});
 
-    // // bug #9
+    // https://github.com/ballerina-platform/ballerina-library/issues/6929
     // S13|error a13 = parseString(s1);
     // test:assertEquals(a13, {"#content":42});
 
