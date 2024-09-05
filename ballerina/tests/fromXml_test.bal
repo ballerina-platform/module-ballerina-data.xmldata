@@ -3635,3 +3635,33 @@ function testXmlToRecordWithInvalidExpectedTypeForText() {
     test:assertTrue(rec6 is Error);
     test:assertEquals((<Error>rec6).message(), "unsupported input type");
 }
+
+@test:Config {
+    groups: ["fromXml"]
+}
+function testXmlToRecordWithInvalidExpectedTypeForAttributes() {
+    xml value = xml `<a id="2">1</a>`;
+    record {int[] id;}|error rec = parseAsType(value);
+    test:assertEquals((<error>rec).message(), "attribute 'id' cannot be converted into the array type 'int[]'");
+
+    xml value2 = xml `<a id="2">
+                        <id id="2">1</id>
+                        <id id="2">2</id>
+                        <id id="2">3</id> 
+                      </a>`;
+
+    record {int[] id;}|error rec2 = parseAsType(value2);
+    test:assertEquals(rec2, {id:[1,2,3]});
+
+    xml value3 = xml `<a id="1"><b id="2">3</b></a>`;
+    record {record{int[] id;} b;}|error rec3 = parseAsType(value3);
+    test:assertEquals((<error>rec3).message(), "attribute 'id' cannot be converted into the array type 'int[]'");
+
+    xml value4 = xml `<a id="2">
+                        <id id="2">1</id>
+                        <id id="2">2</id>
+                        <id id="2">3</id> 
+                      </a>`;
+    record {record{int[] id;}[] id;}|error rec4 = parseAsType(value4);
+    test:assertEquals((<error>rec4).message(), "attribute 'id' cannot be converted into the array type 'int[]'");
+}

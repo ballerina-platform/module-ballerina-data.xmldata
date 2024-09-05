@@ -841,6 +841,11 @@ public class XmlTraversal {
                             analyzerData.rootRecord);
                 }
 
+                if (field.getFieldType().getTag() == TypeTags.ARRAY_TAG) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.ATTRIBUTE_CANNOT_CONVERT_INTO_ARRAY_TYPE,
+                            field.getFieldName(), field.getFieldType());
+                }
+
                 try {
                     currentNode.put(StringUtils.fromString(field.getFieldName()),
                             DataUtils.convertStringToExpType(attributeMap.get(key), field.getFieldType()));
