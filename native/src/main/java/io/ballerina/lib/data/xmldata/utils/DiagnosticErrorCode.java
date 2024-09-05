@@ -42,7 +42,7 @@ public enum DiagnosticErrorCode {
     STREAM_BROKEN("XML_ERROR_015", "stream.broken"),
     XML_PARSE_ERROR("XML_ERROR_016", "xml.parse.error"),
     UNDEFINED_FIELD("XML_ERROR_0017", "undefined.field"),
-    ATTRIBUTE_CANNOT_CONVERT_INTO_ARRAY_TYPE("XML_ERROR_0017",
+    ATTRIBUTE_CANNOT_CONVERT_INTO_ARRAY_TYPE("XML_ERROR_0018",
             "attributes.cannot.convert.to.array.type");
 
     String diagnosticId;
