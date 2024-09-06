@@ -141,9 +141,14 @@ public class XmlTraversal {
                 }
             }
 
-            BString fieldName = StringUtils.fromString(currentField.getFieldName());
-            Type fieldType = TypeUtils.getReferredType(currentField.getFieldType());
+            Type fieldType = currentField.getFieldType();
 
+            if (DataUtils.isRegExpType(fieldType)) {
+                throw DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE);
+            }
+
+            fieldType = TypeUtils.getReferredType(fieldType);
+            BString fieldName = StringUtils.fromString(currentField.getFieldName());
             Object convertedValue = DataUtils.convertStringToExpType(StringUtils.fromString(text), fieldType);
             Object value = mapValue.get(fieldName);
             if (value instanceof BArray) {
@@ -165,6 +170,10 @@ public class XmlTraversal {
                 }
                 ((BArray) value).add(currentIndex, convertedValue);
             } else {
+                if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.CANNOT_CONVERT_TO_EXPECTED_TYPE,
+                            PredefinedTypes.TYPE_STRING.getName(), text, fieldType);
+                }
                 mapValue.put(fieldName, convertedValue);
             }
         }
