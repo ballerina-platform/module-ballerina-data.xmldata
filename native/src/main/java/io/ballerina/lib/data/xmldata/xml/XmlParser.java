@@ -357,9 +357,10 @@ public class XmlParser {
     @SuppressWarnings("unchecked")
     private void addTextToCurrentNodeIfExpTypeIsArray(ArrayType fieldType, BString bFieldName, BString bText,
                                                       XmlParserData xmlParserData) {
-        int elementTypeTag = TypeUtils.getReferredType(fieldType.getElementType()).getTag();
+        Type referredType = TypeUtils.getReferredType(fieldType.getElementType());
+        int elementTypeTag = referredType.getTag();
         switch (elementTypeTag) {
-            case TypeTags.RECORD_TYPE_TAG -> handleContentFieldInRecordType((RecordType) fieldType.getElementType(),
+            case TypeTags.RECORD_TYPE_TAG -> handleContentFieldInRecordType((RecordType) referredType,
                     bText, xmlParserData);
             case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG -> {
                 BArray tempArr = (BArray) ((BMap<BString, Object>) xmlParserData.nodesStack.peek()).get(bFieldName);
