@@ -917,6 +917,27 @@ public class DataUtils {
         };
     }
 
+    public static boolean isSupportedTypeForAttributes(Type fieldType) {
+        if (TypeTags.isIntegerTypeTag(fieldType.getTag())) {
+            return true;
+        }
+
+        if (TypeTags.isStringTypeTag(fieldType.getTag())) {
+            return true;
+        }
+
+        if (TypeTags.isXMLTypeTag(fieldType.getTag())) {
+            return false;
+        }
+
+        return switch (fieldType.getTag()) {
+            case TypeTags.FLOAT_TAG, TypeTags.BOOLEAN_TAG, TypeTags.NULL_TAG,
+                    TypeTags.DECIMAL_TAG, TypeTags.BYTE_TAG, TypeTags.UNION_TAG, TypeTags.ANYDATA_TAG,
+                    TypeTags.ANY_TAG, TypeTags.JSON_TAG -> true;
+            default -> false;
+        };
+    }
+
     /**
      * Holds data required for the traversing.
      *
