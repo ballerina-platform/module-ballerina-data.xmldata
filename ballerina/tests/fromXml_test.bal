@@ -3642,6 +3642,7 @@ function testXmlToRecordWithInvalidExpectedTypeForText() {
 function testXmlToRecordWithInvalidExpectedTypeForAttributes() {
     xml value = xml `<a id="2">1</a>`;
     record {int[] id;}|error rec = parseAsType(value);
+    test:assertTrue(rec is Error);
     test:assertEquals((<error>rec).message(), "attribute 'id' cannot be converted into the array type 'int[]'");
 
     xml value2 = xml `<a id="2">
@@ -3655,6 +3656,7 @@ function testXmlToRecordWithInvalidExpectedTypeForAttributes() {
 
     xml value3 = xml `<a id="1"><b id="2">3</b></a>`;
     record {record{int[] id;} b;}|error rec3 = parseAsType(value3);
+    test:assertTrue(rec3 is Error);
     test:assertEquals((<error>rec3).message(), "attribute 'id' cannot be converted into the array type 'int[]'");
 
     xml value4 = xml `<a id="2">
@@ -3663,5 +3665,30 @@ function testXmlToRecordWithInvalidExpectedTypeForAttributes() {
                         <id id="2">3</id> 
                       </a>`;
     record {record{int[] id;}[] id;}|error rec4 = parseAsType(value4);
+    test:assertTrue(rec4 is Error);
     test:assertEquals((<error>rec4).message(), "attribute 'id' cannot be converted into the array type 'int[]'");
+
+    xml value5 = xml `<a id="2">1</a>`;
+    record {map<int> id;}|error rec5 = parseAsType(value5);
+    test:assertTrue(rec5 is Error);
+    test:assertEquals((<error>rec5).message(), "attribute 'id' cannot be converted into the array type 'map<int>'");
+
+    xml value6 = xml `<a id="1"><b id="2">3</b></a>`;
+    record {record{map<int> id;} b;}|error rec6 = parseAsType(value6);
+    test:assertTrue(rec6 is Error);
+    test:assertEquals((<error>rec6).message(), "attribute 'id' cannot be converted into the array type 'map<int>'");
+
+    xml value7 = xml `<a id="2">1</a>`;
+    record {string:RegExp id;}|error rec7 = parseAsType(value7);
+    test:assertTrue(rec7 is Error);
+    test:assertEquals((<error>rec7).message(), "unsupported input type");
+
+    xml value8 = xml `<a id="2">
+                    <id id="2">1</id>
+                    <id id="2">2</id>
+                    <id id="2">3</id> 
+                    </a>`;
+    record {record{string:RegExp id;}[] id;}|error rec8 = parseAsType(value8);
+    test:assertTrue(rec8 is Error);
+    test:assertEquals((<error>rec8).message(), "unsupported input type");
 }

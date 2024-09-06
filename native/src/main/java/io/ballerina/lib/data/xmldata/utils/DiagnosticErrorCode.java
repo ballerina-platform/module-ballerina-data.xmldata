@@ -56,7 +56,8 @@ public enum DiagnosticErrorCode {
     INVALID_XSD_ANNOTATION("XML_ERROR_0028", "invalid.xsd.annotation"),
     INVALID_XML("XML_ERROR_0029", "invalid.xml"),
     ATTRIBUTE_CANNOT_CONVERT_INTO_ARRAY_TYPE("XML_ERROR_0031",
-            "attributes.cannot.convert.to.array.type");
+            "attributes.cannot.convert.to.array.type"),
+    CANNOT_CONVERT_ATTRIBUTE_TO_ARRAY_TYPE("XML_ERROR_0032", "cannot.convert.attributes.to.array.type");
 
     String diagnosticId;
     String messageKey;

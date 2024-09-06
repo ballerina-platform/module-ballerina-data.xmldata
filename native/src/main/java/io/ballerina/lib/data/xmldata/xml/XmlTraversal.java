@@ -841,14 +841,20 @@ public class XmlTraversal {
                             analyzerData.rootRecord);
                 }
 
-                if (field.getFieldType().getTag() == TypeTags.ARRAY_TAG) {
-                    throw DiagnosticLog.error(DiagnosticErrorCode.ATTRIBUTE_CANNOT_CONVERT_INTO_ARRAY_TYPE,
-                            field.getFieldName(), field.getFieldType());
+                Type fieldType = field.getFieldType();
+
+                if (DataUtils.isRegExpType(fieldType)) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE);
+                }
+
+                if (!DataUtils.isSupportedTypeForAttributes(TypeUtils.getReferredType(fieldType))) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.CANNOT_CONVERT_ATTRIBUTE_TO_ARRAY_TYPE,
+                            field.getFieldName(), fieldType);
                 }
 
                 try {
                     currentNode.put(StringUtils.fromString(field.getFieldName()),
-                            DataUtils.convertStringToExpType(attributeMap.get(key), field.getFieldType()));
+                            DataUtils.convertStringToExpType(attributeMap.get(key), fieldType));
                 } catch (Exception e) {
                     // Ignore: Expected type will mismatch when element and attribute having same name.
                 }
