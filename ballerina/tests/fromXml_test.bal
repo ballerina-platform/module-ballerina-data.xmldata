@@ -3608,3 +3608,30 @@ isolated function testTypeRefArray() {
     Ports|error rec = parseString(s);
     test:assertEquals(rec, {"port":[{"#content":"1"},{"#content":"1"}]});
 }
+
+@test:Config
+function testXmlToRecordWithInvalidExpectedTypeForText() {
+    record {int[] \#content;}|error rec = parseAsType(xml `<A>42</A>`);
+    test:assertTrue(rec is Error);
+    test:assertEquals((<Error>rec).message(), "'string' value '42' cannot be converted to 'int[]'");
+
+    record {map<int> \#content;}|error rec2 = parseAsType(xml `<A>42</A>`);
+    test:assertTrue(rec2 is Error);
+    test:assertEquals((<Error>rec2).message(), "'string' value '42' cannot be converted to 'map<int>'");
+
+    record {record {string[] \#content;} B;}|error rec3 = parseAsType(xml `<A><B>Hello</B></A>`);
+    test:assertTrue(rec3 is Error);
+    test:assertEquals((<Error>rec3).message(), "'string' value 'Hello' cannot be converted to 'string[]'");
+
+    record {record {map<string> \#content;} B;}|error rec4 = parseAsType(xml `<A><B>Hello</B></A>`);
+    test:assertTrue(rec4 is Error);
+    test:assertEquals((<Error>rec4).message(), "'string' value 'Hello' cannot be converted to 'map<string>'");
+
+    record {string:RegExp \#content;}|error rec5 = parseAsType(xml `<A>42</A>`);
+    test:assertTrue(rec5 is Error);
+    test:assertEquals((<Error>rec5).message(), "unsupported input type");
+
+    record {record {string:RegExp \#content;} B;}|error rec6 = parseAsType(xml `<A><B>Hello</B></A>`);
+    test:assertTrue(rec6 is Error);
+    test:assertEquals((<Error>rec6).message(), "unsupported input type");
+}
