@@ -72,7 +72,11 @@ public class Native {
             final BObject iteratorObj = xml.getIteratorObj();
             BallerinaByteBlockInputStream byteBlockSteam = new BallerinaByteBlockInputStream(env,
                     iteratorObj, resolveNextMethod(iteratorObj), resolveCloseMethod(iteratorObj));
-            return XmlParser.parse(new InputStreamReader(byteBlockSteam), options, typed);
+            Object result = XmlParser.parse(new InputStreamReader(byteBlockSteam), options, typed);
+            if (byteBlockSteam.getError() != null) {
+                return byteBlockSteam.getError();
+            }
+            return result;
         } catch (Exception e) {
             return DiagnosticLog.error(DiagnosticErrorCode.XML_PARSE_ERROR, e.getMessage());
         }

@@ -21,9 +21,7 @@ package io.ballerina.lib.data.xmldata.io;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
 import io.ballerina.runtime.api.Environment;
-import io.ballerina.runtime.api.async.StrandMetadata;
 import io.ballerina.runtime.api.types.MethodType;
-import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.values.BArray;
 import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BMap;
@@ -33,7 +31,6 @@ import io.ballerina.runtime.api.values.BString;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -47,12 +44,9 @@ public class BallerinaByteBlockInputStream extends InputStream {
     private final BObject iterator;
     private final Environment env;
     private final String nextMethodName;
-    private final Type returnType;
-    private final String strandName;
-    private final StrandMetadata metadata;
-    private final Map<String, Object> properties;
     private final AtomicBoolean done = new AtomicBoolean(false);
     private final MethodType closeMethod;
+    private BError error = null;
 
     private byte[] currentChunk = new byte[0];
     private int nextChunkIndex = 0;
@@ -62,11 +56,7 @@ public class BallerinaByteBlockInputStream extends InputStream {
         this.env = env;
         this.iterator = iterator;
         this.nextMethodName = nextMethod.getName();
-        this.returnType = nextMethod.getReturnType();
         this.closeMethod = closeMethod;
-        this.strandName = env.getStrandName().orElse("");
-        this.metadata = env.getStrandMetadata();
-        this.properties = Map.of();
     }
 
     @Override
@@ -84,7 +74,7 @@ public class BallerinaByteBlockInputStream extends InputStream {
                 return read();
             }
         } catch (InterruptedException e) {
-            BError error = DiagnosticLog.error(DiagnosticErrorCode.CAN_NOT_READ_STREAM);
+            this.error = DiagnosticLog.error(DiagnosticErrorCode.CAN_NOT_READ_STREAM);
             return -1;
         }
         return -1;
@@ -117,12 +107,15 @@ public class BallerinaByteBlockInputStream extends InputStream {
                 currentChunk = arrayValue.getByteArray();
             } else {
                 done.set(true);
-                return true;
             }
         } catch (BError bError) {
             done.set(true);
-            return true;
+            currentChunk = new byte[0];
         }
         return !done.get();
+    }
+
+    public BError getError() {
+        return this.error;
     }
 }
