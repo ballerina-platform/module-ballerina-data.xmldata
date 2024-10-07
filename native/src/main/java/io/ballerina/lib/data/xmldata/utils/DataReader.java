@@ -26,7 +26,7 @@ import io.ballerina.runtime.api.values.BObject;
 /**
  * A class that holds util methods needed for BallerinaByteBlockInputStream class.
  *
- * @since 11.0.0
+ * @since 2.5.0
  */
 public class DataReader {
 
