@@ -9,13 +9,13 @@ license = ["Apache-2.0"]
 distribution = "2201.10.0"
 export = ["data.xmldata"]
 
-[[platform.java17.dependency]]
+[[platform.java21.dependency]]
 groupId = "io.ballerina.lib"
 artifactId = "data-native"
 version = "@toml.version@"
 path = "../native/build/libs/data.xmldata-native-@project.version@.jar"
 
-[[platform.java17.dependency]]
+[[platform.java21.dependency]]
 groupId = "io.ballerina.stdlib"
 artifactId = "constraint-native"
 version = "@constraint.version@"
