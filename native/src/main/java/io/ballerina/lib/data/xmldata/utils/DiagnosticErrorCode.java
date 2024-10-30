@@ -41,7 +41,9 @@ public enum DiagnosticErrorCode {
     UNSUPPORTED_TYPE("XML_ERROR_014", "unsupported.type"),
     STREAM_BROKEN("XML_ERROR_015", "stream.broken"),
     XML_PARSE_ERROR("XML_ERROR_016", "xml.parse.error"),
-    UNDEFINED_FIELD("XML_ERROR_0017", "undefined.field");
+    UNDEFINED_FIELD("XML_ERROR_0017", "undefined.field"),
+    CANNOT_CONVERT_SOURCE_INTO_EXP_TYPE("XML_ERROR_0018", "cannot.convert.source.into.expected.type"),
+    FIELD_CANNOT_CAST_INTO_TYPE("XML_ERROR_0019", "field.cannot.convert.into.type");
 
     String diagnosticId;
     String messageKey;

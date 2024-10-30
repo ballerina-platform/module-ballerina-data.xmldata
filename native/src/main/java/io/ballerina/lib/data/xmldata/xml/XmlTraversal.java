@@ -33,6 +33,7 @@ import io.ballerina.runtime.api.types.Field;
 import io.ballerina.runtime.api.types.MapType;
 import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.types.Type;
+import io.ballerina.runtime.api.types.UnionType;
 import io.ballerina.runtime.api.types.XmlNodeType;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.utils.TypeUtils;
@@ -83,29 +84,57 @@ public class XmlTraversal {
         private Object currentNode;
 
         public Object traverseXml(BXml xml, BMap<BString, Object> options, Type type) {
+            XmlAnalyzerData analyzerData = new XmlAnalyzerData();
+            DataUtils.updateOptions(options, analyzerData);
+            return traverseXml(xml, analyzerData, type);
+        }
+
+        public Object traverseXml(BXml xml, XmlAnalyzerData analyzerData, Type type) {
             Type referredType = TypeUtils.getReferredType(type);
             switch (referredType.getTag()) {
                 case TypeTags.RECORD_TYPE_TAG -> {
-                    XmlAnalyzerData analyzerData = new XmlAnalyzerData();
-                    DataUtils.updateOptions(options, analyzerData);
-                    RecordType recordType = (RecordType) referredType;
-                    currentNode = ValueCreator.createRecordValue(recordType.getPackage(), recordType.getName());
-                    BXml nextXml = validateRootElement(xml, recordType, analyzerData);
-                    Object resultRecordValue = traverseXml(nextXml, recordType, analyzerData);
-                    DataUtils.validateRequiredFields(analyzerData);
-                    return resultRecordValue;
+                    return traverseXmlWithRecordAsExpectedType(xml, analyzerData, (RecordType) referredType);
                 }
                 case TypeTags.MAP_TAG -> {
-                    MapType mapType = (MapType) referredType;
-                    RecordType anonRecType = TypeCreator.createRecordType(Constants.ANON_TYPE, mapType.getPackage(), 0,
-                            new HashMap<>(), mapType.getConstrainedType(), false, 0);
-                    return traverseXml(xml, options, anonRecType);
+                    return traverseXmlWithMapAsExpectedType(xml, (MapType) referredType, analyzerData);
                 }
-                default -> {
-                    return DiagnosticLog.error(DiagnosticErrorCode.INVALID_TYPE, Constants.RECORD_OR_MAP,
-                            type.getName());
+                case TypeTags.UNION_TAG -> {
+                    return traverseXmlToUnion(xml, analyzerData, (UnionType) referredType);
+                }
+                default -> throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_TYPE, Constants.RECORD_OR_MAP, type);
+            }
+        }
+        
+        private Object traverseXmlWithRecordAsExpectedType(BXml xml,
+                                                           XmlAnalyzerData analyzerData, RecordType recordType) {
+            currentNode = ValueCreator.createRecordValue(recordType.getPackage(), recordType.getName());
+            BXml nextXml = validateRootElement(xml, recordType, analyzerData);
+            Object resultRecordValue = traverseXml(nextXml, recordType, analyzerData);
+            DataUtils.validateRequiredFields(analyzerData, (BMap<BString, Object>) currentNode);
+            return resultRecordValue;
+        }
+
+        private Object traverseXmlWithMapAsExpectedType(BXml xml, MapType mapType, XmlAnalyzerData analyzerData) {
+            RecordType anonRecType = TypeCreator.createRecordType(Constants.ANON_TYPE, mapType.getPackage(), 0,
+                    new HashMap<>(), mapType.getConstrainedType(), false, 0);
+            return traverseXml(xml, analyzerData, anonRecType);
+        }
+
+        private Object traverseXmlToUnion(BXml xml, XmlAnalyzerData options, UnionType unionType) {
+            XmlAnalyzerData clonedAnalyzerData = XmlAnalyzerData.copy(options);
+            for (Type memberType: unionType.getMemberTypes()) {
+                memberType = TypeUtils.getReferredType(memberType);
+                try {
+                    if (memberType.getTag() == TypeTags.ERROR_TAG) {
+                        continue;
+                    }
+                    return traverseXml(xml, options, memberType);
+                } catch (Exception ex) {
+                    options.resetFrom(clonedAnalyzerData);
+                    // ignore
                 }
             }
+            throw DiagnosticLog.error(DiagnosticErrorCode.CANNOT_CONVERT_SOURCE_INTO_EXP_TYPE, unionType);
         }
 
         private Object traverseXml(BXml xml, Type type, XmlAnalyzerData analyzerData) {
@@ -144,8 +173,30 @@ public class XmlTraversal {
             BString fieldName = StringUtils.fromString(currentField.getFieldName());
             Type fieldType = TypeUtils.getReferredType(currentField.getFieldType());
 
-            Object convertedValue = DataUtils.convertStringToExpType(StringUtils.fromString(text), fieldType);
+            Object convertedValue = null;
             Object value = mapValue.get(fieldName);
+            if (fieldType.getTag() == TypeTags.UNION_TAG) {
+                XmlAnalyzerData clonedAnalyzerData = XmlAnalyzerData.copy(analyzerData);
+                for (Type memberType: ((UnionType) fieldType).getMemberTypes()) {
+                    try {
+                        if (!(value instanceof BArray) && memberType.getTag() == TypeTags.ARRAY_TAG) {
+                            continue;
+                        }
+                        convertedValue = DataUtils.convertStringToExpType(StringUtils.fromString(text), memberType);
+                        fieldType = memberType;
+                        break;
+                    } catch (Exception ex) {
+                        analyzerData.resetFrom(clonedAnalyzerData);
+                        // ignore
+                    }
+                }
+                if (convertedValue == null) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, fieldName, fieldType);
+                }
+            } else {
+                convertedValue = DataUtils.convertStringToExpType(StringUtils.fromString(text), fieldType);
+            }
+
             if (value instanceof BArray) {
                 if (fieldName.getValue().equals(textFieldName)) {
                     mapValue.put(fieldName, convertedValue);
@@ -165,6 +216,9 @@ public class XmlTraversal {
                 }
                 ((BArray) value).add(currentIndex, convertedValue);
             } else {
+                if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, fieldName, fieldType);
+                }
                 mapValue.put(fieldName, convertedValue);
             }
         }
@@ -177,12 +231,16 @@ public class XmlTraversal {
             if (analyzerData.visitedFieldHierarchy.peek().contains(elementQName)) {
                 currentField = analyzerData.visitedFieldHierarchy.peek().get(elementQName);
                 Type fieldType = TypeUtils.getReferredType(currentField.getFieldType());
-                if (!DataUtils.isArrayValueAssignable(fieldType.getTag())) {
+                if (!DataUtils.isArrayValueAssignable(fieldType)) {
                     throw DiagnosticLog.error(DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, fieldType,
                             currentField.getFieldName());
                 }
             } else {
-                currentField = fieldsMap.remove(elementQName);
+                currentField = fieldsMap.get(elementQName);
+                if (currentField != null
+                        && TypeUtils.getReferredType(currentField.getFieldType()).getTag() != TypeTags.ARRAY_TAG) {
+                    fieldsMap.remove(elementQName);
+                }
             }
 
             analyzerData.currentField = currentField;
@@ -235,8 +293,30 @@ public class XmlTraversal {
                 case TypeTags.TYPE_REFERENCED_TYPE_TAG ->
                     convertToFieldType(xmlItem, currentField, fieldName, TypeUtils.getReferredType(currentFieldType),
                             mapValue, analyzerData);
+                case TypeTags.UNION_TAG -> convertFieldTypeToUnion(xmlItem, currentField, fieldName,
+                        currentFieldType, mapValue, analyzerData);
                 default -> traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
             }
+        }
+
+        private void convertFieldTypeToUnion(BXmlItem xmlItem, Field currentField, String fieldName,
+                             Type currentFieldType, BMap<BString, Object> mapValue, XmlAnalyzerData analyzerData) {
+            XmlAnalyzerData clonedAnalyzerData = XmlAnalyzerData.copy(analyzerData);
+            for (Type memberType: ((UnionType) currentFieldType).getMemberTypes()) {
+                memberType = TypeUtils.getReferredType(memberType);
+                try {
+                    if (memberType.getTag() == TypeTags.ERROR_TAG) {
+                        continue;
+                    }
+                    convertToFieldType(xmlItem, currentField, fieldName, memberType, mapValue, analyzerData);
+                    return;
+                } catch (Exception ex) {
+                    analyzerData.resetFrom(clonedAnalyzerData);
+                    mapValue.put(StringUtils.fromString(fieldName), null);
+                    // ignore
+                }
+            }
+            throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, fieldName, currentFieldType);
         }
 
         private void convertToArrayType(BXmlItem xmlItem, Field field, BMap<BString, Object> mapValue,
@@ -276,8 +356,29 @@ public class XmlTraversal {
                 case TypeTags.TYPE_REFERENCED_TYPE_TAG ->
                     convertToArrayMemberType(xmlItem, fieldName, fieldType, TypeUtils.getReferredType(elementType),
                             mapValue, analyzerData);
+                case TypeTags.UNION_TAG -> convertToUnionMemberType(xmlItem, fieldName, fieldType,
+                        elementType, mapValue, analyzerData);
                 default -> traverseXml(xmlItem.getChildrenSeq(), fieldType, analyzerData);
             }
+        }
+
+        private void convertToUnionMemberType(BXmlItem xmlItem, String fieldName, ArrayType fieldType,
+                      Type elementType, BMap<BString, Object> mapValue, XmlAnalyzerData analyzerData) {
+            XmlAnalyzerData clonedAnalyzerData = XmlAnalyzerData.copy(analyzerData);
+            for (Type memberType: ((UnionType) elementType).getMemberTypes()) {
+                memberType = TypeUtils.getReferredType(memberType);
+                if (memberType.getTag() == TypeTags.ERROR_TAG) {
+                    continue;
+                }
+                try {
+                    convertToArrayMemberType(xmlItem, fieldName, fieldType, memberType, mapValue, analyzerData);
+                    return;
+                } catch (Exception ex) {
+                    analyzerData.resetFrom(clonedAnalyzerData);
+                    // ignore
+                }
+            }
+            throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, fieldName, fieldType);
         }
 
         private void convertToRecordType(BXmlItem xmlItem, Type currentFieldType, String fieldName,
@@ -288,7 +389,7 @@ public class XmlTraversal {
             RecordType prevRecord = analyzerData.rootRecord;
             analyzerData.rootRecord = elementType;
             traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
-            DataUtils.validateRequiredFields(analyzerData);
+            DataUtils.validateRequiredFields(analyzerData, (BMap<BString, Object>) currentNode);
             DataUtils.popExpectedTypeStacks(analyzerData);
             analyzerData.rootRecord = prevRecord;
             currentNode = analyzerData.nodesStack.pop();
@@ -299,7 +400,7 @@ public class XmlTraversal {
             updateNextMap(elementType, analyzerData);
             currentNode = updateNextMappingValue(elementType, fieldName, fieldType, mapValue, analyzerData);
             traverseXml(xmlItem.getChildrenSeq(), fieldType, analyzerData);
-            DataUtils.validateRequiredFields(analyzerData);
+            DataUtils.validateRequiredFields(analyzerData, (BMap<BString, Object>) currentNode);
             DataUtils.popExpectedTypeStacks(analyzerData);
             currentNode = analyzerData.nodesStack.pop();
         }
@@ -345,11 +446,12 @@ public class XmlTraversal {
             }
 
             Object temp = currentMapValue.get(StringUtils.fromString(fieldName));
-            if (temp instanceof BArray) {
+            if (temp instanceof BArray tempArray) {
                 ArrayType arrayType = (ArrayType) fieldType;
                 int currentIndex = analyzerData.arrayIndexes.peek().get(fieldName);
+
                 if (arrayType.getState() == ArrayType.ArrayState.OPEN || currentIndex < arrayType.getSize()) {
-                    ((BArray) temp).add(currentIndex, nextValue);
+                    tempArray.add(currentIndex, nextValue);
                 } else {
                     DataUtils.logArrayMismatchErrorIfProjectionNotAllowed(analyzerData.allowDataProjection);
                 }
@@ -386,6 +488,8 @@ public class XmlTraversal {
                     checkRestTypeAndConvert(xmlItem, elemName, restType, ((ArrayType) restType).getElementType(),
                             mapValue, analyzerData);
                 }
+                case TypeTags.UNION_TAG -> checkRestTypeAndConvertForUnionTypes(xmlItem, elemName, restType,
+                        elementType, mapValue, analyzerData);
                 default -> {
                     BString bElementName = StringUtils.fromString(elemName);
                     if (mapValue.containsKey(bElementName) && mapValue.get(bElementName) != null) {
@@ -407,6 +511,31 @@ public class XmlTraversal {
             }
         }
 
+        private void checkRestTypeAndConvertForUnionTypes(BXmlItem xmlItem, String elemName,
+                  Type restType, Type elementType, BMap<BString, Object> mapValue, XmlAnalyzerData analyzerData) {
+            boolean isRestTypeUnion = restType.getTag() == TypeTags.UNION_TAG;
+            XmlAnalyzerData clonedAnalyzerData = XmlAnalyzerData.copy(analyzerData);
+
+            for (Type memberType: ((UnionType) elementType).getMemberTypes()) {
+                memberType = TypeUtils.getReferredType(memberType);
+                if (memberType.getTag() == TypeTags.ERROR_TAG) {
+                    continue;
+                }
+                try {
+                    checkRestTypeAndConvert(xmlItem, elemName, isRestTypeUnion ? memberType : restType,
+                            memberType, mapValue, analyzerData);
+                    return;
+                } catch (Exception ex) {
+                    analyzerData.resetFrom(clonedAnalyzerData);
+                    if (restType.getTag() != TypeTags.ARRAY_TAG) {
+                        mapValue.put(StringUtils.fromString(elemName), null);
+                    }
+                    // ignore
+                }
+            }
+            throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, elemName, elementType);
+        }
+
         private void handleArrayValueForRestType(BXmlItem xmlItem, String elemName, Type restType,
                                                  BMap<BString, Object> mapValue, XmlAnalyzerData analyzerData) {
             BString bElementName = StringUtils.fromString(elemName);
@@ -414,7 +543,7 @@ public class XmlTraversal {
             boolean useSemanticEquality = analyzerData.useSemanticEquality;
             BArray arrayValue;
             if (!(currentElement instanceof BArray)) {
-                if (!DataUtils.isArrayValueAssignable(restType.getTag())) {
+                if (!DataUtils.isArrayValueAssignable(restType)) {
                     throw DiagnosticLog.error(DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, restType,
                             elemName);
                 }

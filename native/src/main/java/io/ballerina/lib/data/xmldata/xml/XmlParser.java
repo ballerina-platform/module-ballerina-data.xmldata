@@ -35,11 +35,13 @@ import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.utils.TypeUtils;
+import io.ballerina.runtime.api.utils.XmlUtils;
 import io.ballerina.runtime.api.values.BArray;
 import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTypedesc;
+import io.ballerina.runtime.api.values.BXml;
 
 import java.io.Reader;
 import java.util.ArrayList;
@@ -107,6 +109,12 @@ public class XmlParser {
     public static Object parse(Reader reader, BMap<BString, Object> options, Type type) {
         try {
             XmlParserData xmlParserData = new XmlParserData();
+            if (DataUtils.isContainsUnionType(type)) {
+                String xmlStr = DataUtils.generateStringFromXmlReader(reader);
+                BXml xmlValue = XmlUtils.parse(xmlStr);
+                return XmlTraversal.traverse(xmlValue, options, type);
+            }
+
             updateOptions(options, xmlParserData);
             XmlParser xmlParser = new XmlParser(reader);
             return xmlParser.parse(type, xmlParserData);
@@ -324,11 +332,10 @@ public class XmlParser {
             case TypeTags.RECORD_TYPE_TAG -> handleContentFieldInRecordType((RecordType) fieldType, bText,
                     xmlParserData);
             case TypeTags.ARRAY_TAG ->
-                addTextToCurrentNodeIfExpTypeIsArray((ArrayType) fieldType, bFieldName, bText, xmlParserData);
-            case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG ->
-                convertTextAndUpdateCurrentNode(xmlParserData.currentNode,
-                        (BMap<BString, Object>) xmlParserData.nodesStack.pop(),
-                        bFieldName, bText, fieldType, xmlParserData);
+                    addTextToCurrentNodeIfExpTypeIsArray((ArrayType) fieldType, bFieldName, bText, xmlParserData);
+            case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG -> convertTextAndUpdateCurrentNode(xmlParserData.currentNode,
+                    (BMap<BString, Object>) xmlParserData.nodesStack.pop(),
+                    bFieldName, bText, fieldType, xmlParserData);
             default -> xmlParserData.currentNode.put(bFieldName, convertStringToRestExpType(bText, fieldType));
         }
     }
@@ -344,7 +351,7 @@ public class XmlParser {
         if (currentElement == null && !currentNode.isEmpty()) { // Add text to the #content field
             currentNode.put(StringUtils.fromString(Constants.CONTENT), result);
         } else if (parent.get(currentFieldName) instanceof BArray bArray) {
-             bArray.add(bArray.getLength() - 1, result);
+            bArray.add(bArray.getLength() - 1, result);
         } else {
             parent.put(currentFieldName, result);
         }
@@ -357,10 +364,9 @@ public class XmlParser {
     @SuppressWarnings("unchecked")
     private void addTextToCurrentNodeIfExpTypeIsArray(ArrayType fieldType, BString bFieldName, BString bText,
                                                       XmlParserData xmlParserData) {
-        Type referredType = TypeUtils.getReferredType(fieldType.getElementType());
-        int elementTypeTag = referredType.getTag();
-        switch (elementTypeTag) {
-            case TypeTags.RECORD_TYPE_TAG -> handleContentFieldInRecordType((RecordType) referredType,
+        Type elementType = TypeUtils.getReferredType(fieldType.getElementType());
+        switch (elementType.getTag()) {
+            case TypeTags.RECORD_TYPE_TAG -> handleContentFieldInRecordType((RecordType) elementType,
                     bText, xmlParserData);
             case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG -> {
                 BArray tempArr = (BArray) ((BMap<BString, Object>) xmlParserData.nodesStack.peek()).get(bFieldName);
@@ -429,7 +435,7 @@ public class XmlParser {
                 return convertStringToRestExpType(value, ((ArrayType) expType).getElementType());
             }
             case TypeTags.INT_TAG, TypeTags.FLOAT_TAG, TypeTags.DECIMAL_TAG, TypeTags.STRING_TAG,
-                    TypeTags.BOOLEAN_TAG, TypeTags.UNION_TAG -> {
+                 TypeTags.BOOLEAN_TAG, TypeTags.UNION_TAG -> {
                 return convertStringToExpType(value, expType);
             }
             case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG -> {
@@ -557,8 +563,8 @@ public class XmlParser {
             case TypeTags.MAP_TAG, TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG ->
                     initializeAttributesForNextMappingValue(xmlParserData, fieldName, fieldType);
             case TypeTags.TYPE_REFERENCED_TYPE_TAG ->
-                initializeNextValueBasedOnExpectedType(fieldName, TypeUtils.getReferredType(fieldType), temp,
-                        currentNode, xmlParserData);
+                    initializeNextValueBasedOnExpectedType(fieldName, TypeUtils.getReferredType(fieldType), temp,
+                            currentNode, xmlParserData);
         }
     }
 
@@ -574,8 +580,8 @@ public class XmlParser {
             case TypeTags.MAP_TAG, TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG ->
                     initializeAttributesForNextMappingValue(xmlParserData, fieldName, fieldType);
             case TypeTags.TYPE_REFERENCED_TYPE_TAG ->
-                updateNextArrayMember(xmlStreamReader, xmlParserData, fieldName, fieldType,
-                        TypeUtils.getReferredType(type));
+                    updateNextArrayMember(xmlStreamReader, xmlParserData, fieldName, fieldType,
+                            TypeUtils.getReferredType(type));
         }
     }
 
@@ -777,7 +783,7 @@ public class XmlParser {
             handleAttributesRest(xmlStreamReader, restType, next, useSemanticEquality);
 
             Object temp = xmlParserData.currentNode.get(
-                            StringUtils.fromString(lastElement.getLocalPart()));
+                    StringUtils.fromString(lastElement.getLocalPart()));
             BMap<BString, Object> mapValue = xmlParserData.currentNode;
             if (temp == null) {
                 xmlParserData.currentNode.put(currentFieldName, next);
@@ -861,7 +867,7 @@ public class XmlParser {
         if (xmlParserData.siblings.contains(elemQName)) {
             // TODO: This place behaviour is strange need to check and fix it, Properly.
             popMappingTypeStacks(xmlParserData);
-//            xmlParserData.attributeHierarchy.pop();
+            //            xmlParserData.attributeHierarchy.pop();
             xmlParserData.arrayIndexes.pop();
         }
         xmlParserData.restFieldsPoints.pop();
@@ -899,8 +905,8 @@ public class XmlParser {
 
     @SuppressWarnings("unchecked")
     private void convertTextRestAndUpdateCurrentNodeForRestType(BMap<BString, Object> currentNode,
-                                                            BString currentFieldName,
-                                                            BString bText, Type restType, BString textFieldName) {
+                                                                BString currentFieldName,
+                                                                BString bText, Type restType, BString textFieldName) {
         Object currentElement = currentNode.get(currentFieldName);
         Object result = convertStringToRestExpType(bText, restType);
 
