@@ -44,7 +44,7 @@ public enum DiagnosticErrorCode {
     UNDEFINED_FIELD("XML_ERROR_0017", "undefined.field"),
     CANNOT_CONVERT_SOURCE_INTO_EXP_TYPE("XML_ERROR_0018", "cannot.convert.source.into.expected.type"),
     FIELD_CANNOT_CAST_INTO_TYPE("XML_ERROR_0019", "field.cannot.convert.into.type"),
-    ATTRIBUTE_CANNOT_CONVERT_INTO_ARRAY_TYPE("XML_ERROR_0020","attributes.cannot.convert.to.array.type");
+    ATTRIBUTE_CANNOT_CONVERT_INTO_ARRAY_TYPE("XML_ERROR_0020", "attributes.cannot.convert.to.array.type"),
     CANNOT_CONVERT_ATTRIBUTE_TO_ARRAY_TYPE("XML_ERROR_0021", "cannot.convert.attributes.to.array.type");
 
     String diagnosticId;
