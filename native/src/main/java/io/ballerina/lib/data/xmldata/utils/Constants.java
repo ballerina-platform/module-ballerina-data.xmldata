@@ -66,4 +66,10 @@ public class Constants {
 
     public static final MapType JSON_MAP_TYPE = TypeCreator.createMapType(PredefinedTypes.TYPE_JSON);
     public static final ArrayType JSON_ARRAY_TYPE = TypeCreator.createArrayType(PredefinedTypes.TYPE_JSON);
+
+    public static final String ELEMENT = "Element";
+    public static final String SEQUENCE = "Sequence";
+    public static final String CHOICE = "Choice";
+    public static final BString MIN_OCCURS = StringUtils.fromString("minOccurs");
+    public static final BString MAX_OCCURS = StringUtils.fromString("maxOccurs");
 }

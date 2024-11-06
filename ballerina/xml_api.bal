@@ -22,6 +22,42 @@ const ATTRIBUTE_PREFIX = "attribute_";
 const XMLNS = "xmlns";
 const EMPTY_STRING = "";
 
+public type ParticleOccurrence record {|
+  # Specifies the minimum number of occurrences.
+  int:Unsigned32 minOccurs?;
+  # Specifies the maximum number of occurrences.
+  int:Unsigned32 maxOccurs?;
+|};
+
+# Defines the configuration for an XML element in the XML schema (XSD).
+public type ElementConfig record {|
+  *ParticleOccurrence;
+  # Represents the `form` attribute in the XML schema (XSD) `element` definition.
+  "qualified"|"unqulified" form = "qualified";
+  # Specifies the id of the substitution group for the element.
+  string substitutionGroupId?;
+  # Indicates whether the element is abstract.
+  boolean 'abstract = false;
+  # Restricts how the element can be extended or restricted.
+  "extension"|"restriction"|"all"|"substitution" block?;
+  # Controls whether the element can be further extended or restricted.
+  "extension"|"restriction"|"all" 'final?;
+|};
+# Annotation to define schema rules for an XML element in Ballerina.
+public const annotation ElementConfig Element on type, record field;
+
+public type SequenceConfig record {|
+    *ParticleOccurrence;
+|};
+
+public const annotation SequenceConfig Sequence on type, record field;
+
+public type SequenceOrderConfig record {|
+    int value;
+|};
+
+public const annotation SequenceOrderConfig Order on type, record field;
+
 # Defines the name of the XML element.
 public type NameConfig record {|
     # The name of the XML element
