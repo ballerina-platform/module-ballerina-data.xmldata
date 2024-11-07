@@ -578,10 +578,10 @@ public class XmlParser {
         if (!xmlParserData.modelGroupStack.isEmpty()) {
             ModelGroupInfo modelGroup = xmlParserData.modelGroupStack.peek();
             if (modelGroup.isElementContains(elemQName.getLocalPart())) {
-                modelGroup.visit(elemQName.getLocalPart());
+                modelGroup.visit(elemQName.getLocalPart(), true);
             }
 
-            if (!modelGroup.isElementContains(elemQName.getLocalPart())) {
+            if (!modelGroup.isElementContains(elemQName.getLocalPart()) && !modelGroup.isMiddleOfModelGroup()) {
                 // TODO: Validate All model groups at the end
                 modelGroup.validate();
             }
@@ -591,6 +591,9 @@ public class XmlParser {
     private void finalizedModelStack(XmlParserData xmlParserData, QualifiedName elemQName) {
         if (!xmlParserData.modelGroupStack.isEmpty()) {
             ModelGroupInfo modelGroup = xmlParserData.modelGroupStack.peek();
+            if (modelGroup.isElementContains(elemQName.getLocalPart())) {
+                modelGroup.visit(elemQName.getLocalPart(), false);
+            }
             if (modelGroup.isCompleted()) {
                 validateModelGroup(modelGroup, xmlParserData);
             }

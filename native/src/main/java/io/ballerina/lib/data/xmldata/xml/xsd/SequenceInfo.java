@@ -19,6 +19,7 @@ public class SequenceInfo implements ModelGroupInfo {
     public Set<String> visitedElements = new HashSet<>();
     public Set<String> allElements = new HashSet<>();
     public boolean isCompleted = false;
+    public boolean isMiddleOfElement = false;
 
 
     public SequenceInfo(String fieldName, BMap<BString, Object> element, RecordType fieldType) {
@@ -69,8 +70,15 @@ public class SequenceInfo implements ModelGroupInfo {
     }
 
     @Override
-    public void visit(String element) {
+    public void visit(String element, boolean isStartElement) {
+        isMiddleOfElement = isStartElement;
+        if (isStartElement) {
+            isCompleted = false;
+            return;
+        }
+
         if (this.unvisitedElements.contains(element)) {
+            isMiddleOfElement = false;
             isCompleted = false;
             this.unvisitedElements.remove(element);
             this.visitedElements.add(element);
@@ -88,6 +96,11 @@ public class SequenceInfo implements ModelGroupInfo {
     @Override
     public boolean isElementContains(String elementName) {
         return this.allElements.contains(elementName);
+    }
+
+    @Override
+    public boolean isMiddleOfModelGroup() {
+        return isMiddleOfElement;
     }
 
     private void isCompletedSequences(String element, boolean needsUpdate) {

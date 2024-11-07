@@ -6,7 +6,8 @@ public interface ModelGroupInfo {
     public void validate();
     public void reset();
 
-    public void visit(String element);
+    public void visit(String element, boolean isStartElement);
     public boolean isCompleted();
     public boolean isElementContains(String elementName);
+    public boolean isMiddleOfModelGroup();
 }

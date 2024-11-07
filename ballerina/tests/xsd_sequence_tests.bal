@@ -583,8 +583,8 @@ function testXsdSequence10() returns error? {
     test:assertEquals(v2, {a: 2, test: {seq_XSDSequenceRecord10_1: {age: 13, salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}, seq_XSDSequenceRecord10_2: {name: {value1: "SD", value2: "AB"}, status: {value1: "Success", value2: "Fail"}}}});
     test:assertEquals((check v2).test.seq_XSDSequenceRecord10_1.age, 13);
     test:assertEquals((check v2).test.seq_XSDSequenceRecord10_1.salary, 11.1);
-    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.name, "SD");
-    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.status, "success");
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.name, {value1: "SD", value2: "AB"});
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.status, {value1: "Success", value2: "Fail"});
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
 
@@ -593,8 +593,8 @@ function testXsdSequence10() returns error? {
     test:assertEquals(v2, {a: 2, test: {seq_XSDSequenceRecord10_1: {age: 13, salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}, seq_XSDSequenceRecord10_2: {name: {value1: "SD", value2: "AB"}, status: {value1: "Success", value2: "Fail"}}}});
     test:assertEquals((check v2).test.seq_XSDSequenceRecord10_1.age, 13);
     test:assertEquals((check v2).test.seq_XSDSequenceRecord10_1.salary, 11.1);
-    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.name, "SD");
-    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.status, "success");
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.name, {value1: "SD", value2: "AB"});
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.status, {value1: "Success", value2: "Fail"});
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
 
@@ -603,8 +603,8 @@ function testXsdSequence10() returns error? {
     test:assertEquals(v2, {a: 2, test: {seq_XSDSequenceRecord10_1: {age: 13, salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}, seq_XSDSequenceRecord10_2: {name: {value1: "SD", value2: "AB"}, status: {value1: "Success", value2: "Fail"}}}});
     test:assertEquals((check v2).test.seq_XSDSequenceRecord10_1.age, 13);
     test:assertEquals((check v2).test.seq_XSDSequenceRecord10_1.salary, 11.1);
-    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.name, "SD");
-    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.status, "success");
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.name, {value1: "SD", value2: "AB"});
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.status, {value1: "Success", value2: "Fail"});
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
 
@@ -613,8 +613,8 @@ function testXsdSequence10() returns error? {
     test:assertEquals(v2, {a: 2, test: {seq_XSDSequenceRecord10_1: {age: 13, salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}, seq_XSDSequenceRecord10_2: {name: {value1: "SD", value2: "AB"}, status: {value1: "Success", value2: "Fail"}}}});
     test:assertEquals((check v2).test.seq_XSDSequenceRecord10_1.age, 13);
     test:assertEquals((check v2).test.seq_XSDSequenceRecord10_1.salary, 11.1);
-    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.name, "SD");
-    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.status, "success");
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.name, {value1: "SD", value2: "AB"});
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord10_2.status, {value1: "Success", value2: "Fail"});
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
 

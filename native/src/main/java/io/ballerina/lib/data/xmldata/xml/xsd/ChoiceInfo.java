@@ -58,7 +58,7 @@ public class ChoiceInfo implements ModelGroupInfo {
     }
 
     @Override
-    public void visit(String element) {
+    public void visit(String element, boolean isStartElement) {
         this.visitedElements.add(element);
         if (this.visitedElements.containsAll(this.allElements)) {
             updateOccurrences();
@@ -73,6 +73,11 @@ public class ChoiceInfo implements ModelGroupInfo {
 
     @Override
     public boolean isElementContains(String elementName) {
+        return false;
+    }
+
+    @Override
+    public boolean isMiddleOfModelGroup() {
         return false;
     }
 }
