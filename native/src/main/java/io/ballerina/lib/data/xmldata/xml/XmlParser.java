@@ -600,7 +600,6 @@ public class XmlParser {
         modelGroup.validate();
         xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.pop();
         xmlParserData.modelGroupStack.pop();
-        xmlParserData.recordTypeStack.pop();
         xmlParserData.rootRecord = xmlParserData.recordTypeStack.pop();
         popExpectedTypeStacks(xmlParserData);
     }

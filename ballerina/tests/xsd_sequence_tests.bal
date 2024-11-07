@@ -213,6 +213,7 @@ function testXsdSequence5() returns error? {
     test:assertEquals((check v2).seq_XSDSequenceRecord5.age, 13);
     test:assertEquals((check v2).seq_XSDSequenceRecord5.salary, 11.1);
     test:assertEquals((check v2).num, {n: {n: 3}});
+    test:assertEquals((check v2).num2, {n: {n: 3}});
 
     xmlStr = string `<Root><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary><num><n><n>3</n></n></num></Root>`;
     v2 = parseString(xmlStr);
@@ -220,6 +221,7 @@ function testXsdSequence5() returns error? {
     test:assertEquals((check v2).seq_XSDSequenceRecord5.age, 13);
     test:assertEquals((check v2).seq_XSDSequenceRecord5.salary, 11.1);
     test:assertEquals((check v2).num, {n: {n: 3}});
+    test:assertEquals((check v2).num2, {n: {n: 3}});
 
     xmlStr = string `<Root><age>13</age><salary>11.1</salary><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseString(xmlStr);
@@ -227,9 +229,148 @@ function testXsdSequence5() returns error? {
     test:assertEquals((check v2).seq_XSDSequenceRecord5.age, 13);
     test:assertEquals((check v2).seq_XSDSequenceRecord5.salary, 11.1);
     test:assertEquals((check v2).num, {n: {n: 3}});
+    test:assertEquals((check v2).num2, {n: {n: 3}});
 
     xmlStr = string `<Root><age>13</age><num2><num><n><n>3</n></n></num2><num><n><n>3</n></n></num><salary>11.1</salary></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
     test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
+}
+
+type XSDSequenceRecord6 record {|
+    record{record {int n;} n;} num;
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecord6_1 seq_XSDSequenceRecord6_1;
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecord6_2 seq_XSDSequenceRecord6_2;
+    record{record {int n;} n;} num2;
+|};
+
+type Seq_XSDSequenceRecord6_1 record {|
+    @Order {
+        value: 1
+    }
+    int age;
+
+    @Order {
+        value: 2
+    }
+    float salary;
+|};
+
+type Seq_XSDSequenceRecord6_2 record {|
+    @Order {
+        value: 1
+    }
+    string name;
+
+    @Order {
+        value: 2
+    }
+    string status;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequence6() returns error? {
+    string xmlStr = string `<Root><num><n><n>3</n></n></num><name>SD</name><status>success</status><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary></Root>`;
+    XSDSequenceRecord6|Error v2 = parseString(xmlStr);
+    test:assertEquals(v2, {seq_XSDSequenceRecord6_1: {age: 13, salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}, seq_XSDSequenceRecord6_2: {name: "SD", status: "success"}});
+    test:assertEquals((check v2).seq_XSDSequenceRecord6_1.age, 13);
+    test:assertEquals((check v2).seq_XSDSequenceRecord6_1.salary, 11.1);
+    test:assertEquals((check v2).seq_XSDSequenceRecord6_2.name, "SD");
+    test:assertEquals((check v2).seq_XSDSequenceRecord6_2.status, "success");
+    test:assertEquals((check v2).num, {n: {n: 3}});
+    test:assertEquals((check v2).num2, {n: {n: 3}});
+
+    // xmlStr = string `<Root><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary><num><n><n>3</n></n></num></Root>`;
+    // v2 = parseString(xmlStr);
+    // test:assertEquals(v2, {seq_XSDSequenceRecord5: {age: 13, salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}});
+    // test:assertEquals((check v2).seq_XSDSequenceRecord5.age, 13);
+    // test:assertEquals((check v2).seq_XSDSequenceRecord5.salary, 11.1);
+    // test:assertEquals((check v2).num, {n: {n: 3}});
+
+    // xmlStr = string `<Root><age>13</age><salary>11.1</salary><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
+    // v2 = parseString(xmlStr);
+    // test:assertEquals(v2, {seq_XSDSequenceRecord5: {age: 13, salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}});
+    // test:assertEquals((check v2).seq_XSDSequenceRecord5.age, 13);
+    // test:assertEquals((check v2).seq_XSDSequenceRecord5.salary, 11.1);
+    // test:assertEquals((check v2).num, {n: {n: 3}});
+
+    // xmlStr = string `<Root><age>13</age><num2><num><n><n>3</n></n></num2><num><n><n>3</n></n></num><salary>11.1</salary></Root>`;
+    // v2 = parseString(xmlStr);
+    // test:assertTrue(v2 is Error);
+    // test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
+}
+
+type XSDSequenceRecord7 record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecord7_1 seq_XSDSequenceRecord7_1;
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecord7_2 seq_XSDSequenceRecord7_2;
+|};
+
+type Seq_XSDSequenceRecord7_1 record {|
+    @Order {
+        value: 1
+    }
+    int age;
+
+    @Order {
+        value: 2
+    }
+    float salary;
+|};
+
+type Seq_XSDSequenceRecord7_2 record {|
+    @Order {
+        value: 1
+    }
+    string name;
+
+    @Order {
+        value: 2
+    }
+    string status;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequence7() returns error? {
+    string xmlStr = string `<Root><name>SD</name><status>success</status><age>13</age><salary>11.1</salary></Root>`;
+    XSDSequenceRecord7|Error v2 = parseString(xmlStr);
+    test:assertEquals(v2, {seq_XSDSequenceRecord7_1: {age: 13, salary: 11.1}, seq_XSDSequenceRecord7_2: {name: "SD", status: "success"}});
+    test:assertEquals((check v2).seq_XSDSequenceRecord7_1.age, 13);
+    test:assertEquals((check v2).seq_XSDSequenceRecord7_1.salary, 11.1);
+    test:assertEquals((check v2).seq_XSDSequenceRecord7_2.name, "SD");
+    test:assertEquals((check v2).seq_XSDSequenceRecord7_2.status, "success");
+
+    // xmlStr = string `<Root><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary><num><n><n>3</n></n></num></Root>`;
+    // v2 = parseString(xmlStr);
+    // test:assertEquals(v2, {seq_XSDSequenceRecord5: {age: 13, salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}});
+    // test:assertEquals((check v2).seq_XSDSequenceRecord5.age, 13);
+    // test:assertEquals((check v2).seq_XSDSequenceRecord5.salary, 11.1);
+    // test:assertEquals((check v2).num, {n: {n: 3}});
+
+    // xmlStr = string `<Root><age>13</age><salary>11.1</salary><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
+    // v2 = parseString(xmlStr);
+    // test:assertEquals(v2, {seq_XSDSequenceRecord5: {age: 13, salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}});
+    // test:assertEquals((check v2).seq_XSDSequenceRecord5.age, 13);
+    // test:assertEquals((check v2).seq_XSDSequenceRecord5.salary, 11.1);
+    // test:assertEquals((check v2).num, {n: {n: 3}});
+
+    // xmlStr = string `<Root><age>13</age><num2><num><n><n>3</n></n></num2><num><n><n>3</n></n></num><salary>11.1</salary></Root>`;
+    // v2 = parseString(xmlStr);
+    // test:assertTrue(v2 is Error);
+    // test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
 }
