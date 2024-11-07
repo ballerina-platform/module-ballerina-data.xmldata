@@ -1,25 +1,23 @@
 package io.ballerina.lib.data.xmldata.xml.xsd;
 
 import io.ballerina.lib.data.xmldata.utils.Constants;
-import io.ballerina.lib.data.xmldata.xml.QualifiedName;
-import io.ballerina.runtime.api.types.Field;
-import io.ballerina.runtime.api.types.Type;
+import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ChoiceInfo implements ModelGroupInfo {
     public String fieldName;
     public long minOccurs;
     public long maxOccurs;
     public int occurrences = 0;
+    public Set<String> allElements = new HashSet<>();
+    public Set<String> visitedElements = new HashSet<>();
 
-    // TODO: Update to a hashset<String>
-    public Map<QualifiedName, Field> elements;
 
-
-    public ChoiceInfo(String fieldName, BMap<BString, Object> element, Type fieldType) {
+    public ChoiceInfo(String fieldName, BMap<BString, Object> element, RecordType fieldType) {
         this.fieldName = fieldName;
         if (element.containsKey(Constants.MIN_OCCURS)) {
             this.minOccurs = element.getIntValue(Constants.MIN_OCCURS);
@@ -33,6 +31,7 @@ public class ChoiceInfo implements ModelGroupInfo {
             this.maxOccurs = Math.max(this.minOccurs, 1);
         }
         this.occurrences = 1;
+        this.allElements.addAll(fieldType.getFields().keySet());
     }
 
     public void updateOccurrences() {
@@ -50,17 +49,21 @@ public class ChoiceInfo implements ModelGroupInfo {
 
     @Override
     public void validate() {
-
+        validateMinOccurrences();
     }
 
     @Override
     public void reset() {
-
+        this.visitedElements.clear();
     }
 
     @Override
     public void visit(String element) {
-
+        this.visitedElements.add(element);
+        if (this.visitedElements.containsAll(this.allElements)) {
+            updateOccurrences();
+            visitedElements.clear();
+        }
     }
 
     @Override

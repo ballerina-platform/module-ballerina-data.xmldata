@@ -52,6 +52,12 @@ public type SequenceConfig record {|
 
 public const annotation SequenceConfig Sequence on type, record field;
 
+public type ChoiceConfig record {|
+    *ParticleOccurrence;
+|};
+
+public const annotation ChoiceConfig Choice on type, record field;
+
 public type SequenceOrderConfig record {|
     int value;
 |};
