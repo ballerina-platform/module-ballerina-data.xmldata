@@ -71,6 +71,7 @@ public class SequenceInfo implements ModelGroupInfo {
 
     @Override
     public void visit(String element, boolean isStartElement) {
+        // TODO: Validate Sequence Order
         isMiddleOfElement = isStartElement;
         if (isStartElement) {
             isCompleted = false;

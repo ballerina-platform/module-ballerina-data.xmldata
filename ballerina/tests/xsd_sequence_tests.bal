@@ -628,3 +628,291 @@ function testXsdSequence10() returns error? {
     test:assertTrue(v2 is Error);
     test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
 }
+
+type XSDSequenceRecord11 record {|
+    XSDSequenceRecord11P test;
+    int a;
+    XSDSequenceRecord11P2 test2;
+|};
+
+type XSDSequenceRecord11P record {|
+    record{record {int n;} n;} num;
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecord11_1 seq_XSDSequenceRecord11_1;
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecord11_2 seq_XSDSequenceRecord11_2;
+    record{record {int n;} n;} num2;
+|};
+
+type XSDSequenceRecord11P2 record {|
+    record{record {int n;} n;} num;
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecord11_1 seq_XSDSequenceRecord11_1;
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecord11_2 seq_XSDSequenceRecord11_2;
+    record{record {int n;} n;} num2;
+|};
+
+type Seq_XSDSequenceRecord11_1 record {|
+    @Order {
+        value: 1
+    }
+    int age;
+
+    @Order {
+        value: 2
+    }
+    float salary;
+|};
+
+type Seq_XSDSequenceRecord11_2 record {|
+    @Order {
+        value: 1
+    }
+    Rec11 name;
+
+    @Order {
+        value: 2
+    }
+    Rec11 status;
+|};
+
+type Rec11 record {|
+    string value1;
+    string value2;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequence11() returns error? {
+    string xmlStr = string `<Root><test><num><n><n>3</n></n></num><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary></test><a>2</a><test2><num><n><n>3</n></n></num><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary></test2></Root>`;
+    XSDSequenceRecord11|Error v2 = parseString(xmlStr);
+    test:assertEquals(v2, {a: 2, test: {seq_XSDSequenceRecord11_1: {age: 13, salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}, seq_XSDSequenceRecord11_2: {name: {value1: "SD", value2: "AB"}, status: {value1: "Success", value2: "Fail"}}}, test2: {seq_XSDSequenceRecord11_1: {age: 13, salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}, seq_XSDSequenceRecord11_2: {name: {value1: "SD", value2: "AB"}, status: {value1: "Success", value2: "Fail"}}}});
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord11_1.age, 13);
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord11_1.salary, 11.1);
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord11_2.name, {value1: "SD", value2: "AB"});
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord11_2.status, {value1: "Success", value2: "Fail"});
+    test:assertEquals((check v2).test.num, {n: {n: 3}});
+    test:assertEquals((check v2).test.num2, {n: {n: 3}});
+
+    xmlStr = string `<Root><test2><num><n><n>3</n></n></num><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary></test2><test><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary></test><a>2</a></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertEquals(v2, {a: 2, test: {seq_XSDSequenceRecord11_1: {age: 13, salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}, seq_XSDSequenceRecord11_2: {name: {value1: "SD", value2: "AB"}, status: {value1: "Success", value2: "Fail"}}}, test2: {seq_XSDSequenceRecord11_1: {age: 13, salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}, seq_XSDSequenceRecord11_2: {name: {value1: "SD", value2: "AB"}, status: {value1: "Success", value2: "Fail"}}}});
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord11_1.age, 13);
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord11_1.salary, 11.1);
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord11_2.name, {value1: "SD", value2: "AB"});
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord11_2.status, {value1: "Success", value2: "Fail"});
+    test:assertEquals((check v2).test.num, {n: {n: 3}});
+    test:assertEquals((check v2).test.num2, {n: {n: 3}});
+
+    xmlStr = string `<Root><test><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><age>13</age><salary>11.1</salary></test><test2><num><n><n>3</n></n></num><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary></test2><a>2</a></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertEquals(v2, {a: 2, test: {seq_XSDSequenceRecord11_1: {age: 13, salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}, seq_XSDSequenceRecord11_2: {name: {value1: "SD", value2: "AB"}, status: {value1: "Success", value2: "Fail"}}}, test2: {seq_XSDSequenceRecord11_1: {age: 13, salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}, seq_XSDSequenceRecord11_2: {name: {value1: "SD", value2: "AB"}, status: {value1: "Success", value2: "Fail"}}}});
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord11_1.age, 13);
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord11_1.salary, 11.1);
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord11_2.name, {value1: "SD", value2: "AB"});
+    test:assertEquals((check v2).test.seq_XSDSequenceRecord11_2.status, {value1: "Success", value2: "Fail"});
+    test:assertEquals((check v2).test.num, {n: {n: 3}});
+    test:assertEquals((check v2).test.num2, {n: {n: 3}});
+
+    xmlStr = string `<Root><test2><num><n><n>3</n></n></num><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary></test2><test><age>13</age><status><value1>Success</value1><value2>Fail</value2></status><salary>11.1</salary><name><value1>SD</value1><value2>AB</value2></name></test><a>2</a></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertTrue(v2 is Error);
+    test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
+}
+
+type XSDSequenceRecord12 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecord12_1 seq_XSDSequenceRecord12_1;
+};
+
+type Seq_XSDSequenceRecord12_1 record {
+    @Order {value: 1}
+    Seq_A field1;
+
+    @Order {value: 2}
+    Seq_B field2;
+
+    @Order {value: 3}
+    Seq_C field3;
+};
+
+type Seq_A record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq value1;
+};
+
+type Seq_B record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq value2;
+};
+
+type Seq_C record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq value3;
+};
+
+type Seq record {
+    @Order {value: 1}
+    string a;
+
+    @Order {value: 2}
+    string b;
+
+    @Order {value: 3}
+    string c;
+};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequence12() returns error? {
+    string xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><a>1</a><b>2</b><c>3</c></field2><field3><a>1</a><b>2</b><c>3</c></field3></Root>`;
+    XSDSequenceRecord12|Error v2 = parseString(xmlStr);
+    test:assertEquals(v2, {seq_XSDSequenceRecord12_1: {field1: {value1: {a: "1", b: "2", c: "3"}}, field2: {value2: {a: "1", b: "2", c: "3"}}, field3: {value3: {a: "1", b: "2", c: "3"}}}});
+}
+
+type XSDSequenceRecord13 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecord13_1 seq_XSDSequenceRecord13_1;
+
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecord13_2 Seq_XSDSequenceRecord13_2;
+};
+
+type Seq_XSDSequenceRecord13_1 record {
+    @Order {value: 1}
+    Seq_A_13 field1;
+
+    @Order {value: 2}
+    Seq_B_13 field2;
+
+    @Order {value: 3}
+    Seq_C_13 field3;
+};
+
+type Seq_XSDSequenceRecord13_2 record {
+    @Order {value: 1}
+    Seq_D_13 field4;
+
+    @Order {value: 2}
+    Seq_E_13 field5;
+
+    @Order {value: 3}
+    Seq_F_13 field6;
+};
+
+type Seq_A_13 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_13 value1;
+};
+
+type Seq_B_13 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq2_13 value2;
+};
+
+type Seq_C_13 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq3_13 value3;
+};
+
+type Seq_D_13 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_13 value1;
+};
+
+type Seq_E_13 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq2_13 value2;
+};
+
+type Seq_F_13 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq3_13 value3;
+};
+
+type Seq_13 record {
+    @Order {value: 1}
+    string a;
+
+    @Order {value: 2}
+    string b;
+
+    @Order {value: 3}
+    string c;
+};
+
+type Seq2_13 record {
+    @Order {value: 1}
+    string d;
+
+    @Order {value: 2}
+    string e;
+
+    @Order {value: 3}
+    string f;
+};
+
+type Seq3_13 record {
+    @Order {value: 1}
+    string g;
+
+    @Order {value: 2}
+    string h;
+
+    @Order {value: 3}
+    string i;
+};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequence13() returns error? {
+    string xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
+    XSDSequenceRecord13|Error v2 = parseString(xmlStr);
+    test:assertEquals(v2, {seq_XSDSequenceRecord13_1: {field1: {value1: {a: "1", b: "2", c: "3"}}, field2: {value2: {d: "1", e: "2", f: "3"}}, field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XSDSequenceRecord13_2: {field4: {value1: {a: "1", b: "2", c: "3"}}, field5: {value2: {d: "1", e: "2", f: "3"}}, field6: {value3: {g: "1", h: "2", i: "3"}}}});
+}

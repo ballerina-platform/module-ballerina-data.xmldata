@@ -57,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Stack;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
@@ -471,16 +470,25 @@ public class XmlParser {
         Stack<QualifiedNameMap<Boolean>> parents = xmlParserData.parents;
 
         // TODO: Check the conflict with L482
-        finalizedModelStack(xmlParserData, elemQName);
+//        boolean isModelGroupCompleted = finalizedModelStackAndReturnTrueIfCompleted(xmlParserData, elemQName);
 
         if (siblings.contains(elemQName) && !siblings.get(elemQName)) {
             siblings.put(elemQName, true);
         }
         if (parents.isEmpty() || !parents.peek().contains(elemQName)) {
+            finalizedModelStackAndReturnTrueIfCompleted(xmlParserData, elemQName);
             return;
         }
 
         validateRequiredFields(xmlParserData);
+
+        finalizedModelStackAndReturnTrueIfCompleted(xmlParserData, elemQName);
+
+        //TODO: Uncomment this
+//        if (!isModelGroupCompleted) {
+//            xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.pop();
+//        }
+
         xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.pop();
         popExpectedTypeStacks(xmlParserData);
         updateSiblingAndRootRecord(xmlParserData);
@@ -588,7 +596,7 @@ public class XmlParser {
         }
     }
 
-    private void finalizedModelStack(XmlParserData xmlParserData, QualifiedName elemQName) {
+    private boolean finalizedModelStackAndReturnTrueIfCompleted(XmlParserData xmlParserData, QualifiedName elemQName) {
         if (!xmlParserData.modelGroupStack.isEmpty()) {
             ModelGroupInfo modelGroup = xmlParserData.modelGroupStack.peek();
             if (modelGroup.isElementContains(elemQName.getLocalPart())) {
@@ -596,8 +604,10 @@ public class XmlParser {
             }
             if (modelGroup.isCompleted()) {
                 validateModelGroup(modelGroup, xmlParserData);
+                return true;
             }
         }
+        return false;
     }
 
     private void validateModelGroup(ModelGroupInfo modelGroup, XmlParserData xmlParserData) {
@@ -611,31 +621,37 @@ public class XmlParser {
     private void validateElementInXsdSequenceOrElement(QualifiedName elemQName, HashMap<String, ChoiceInfo> choiceInfo,
                HashMap<String, SequenceInfo> sequenceInfo, XMLStreamReader xmlStreamReader, XmlParserData xmlParserData,
                QualifiedNameMap<Field> visitedFields, QualifiedNameMap<Field> fieldMap) {
-        AtomicBoolean hasElementFound = new AtomicBoolean(false);
+        boolean hasElementFound = false;
         if (sequenceInfo != null) {
+
             // TODO: Optimize this with stream.findFirst()
-            sequenceInfo.forEach((key, sequence) -> {
+            for (Map.Entry<String, SequenceInfo> entry : sequenceInfo.entrySet()) {
+                String k = entry.getKey();
+                SequenceInfo sequence = entry.getValue();
+
                 // TODO: Validate Namespaces
                 if (sequence.isElementContains(elemQName.getLocalPart())) {
-                    hasElementFound.set(true);
                     xmlParserData.modelGroupStack.push(sequence);
-                    Field field = xmlParserData.rootRecord.getFields().get(key);
+                    Field field = xmlParserData.rootRecord.getFields().get(k);
+
                     // TODO: Test on arrays
                     fieldMap.remove(QualifiedNameFactory.createQualifiedName(
-                            "", key, "", xmlParserData.useSemanticEquality));
+                            "", k, "", xmlParserData.useSemanticEquality));
 
                     // TODO: temp != null for arrays and currentNode
                     // TODO: Check for arrays as well
                     Type referredType = TypeUtils.getReferredType(field.getFieldType());
-                    updateNextRecordForXsd(xmlParserData, key, referredType, (RecordType) referredType);
-//                    updateExpectedTypeStacks(xmlParserData.rootRecord, xmlParserData);
+                    updateNextRecordForXsd(xmlParserData, k, referredType, (RecordType) referredType);
                     readElement(xmlStreamReader, xmlParserData);
-                    int a = 1;
+                    return;
                 }
-            });
+            }
 
-            if (!hasElementFound.get() && choiceInfo != null) {
-                choiceInfo.forEach((key, choice) -> {
+            if (!hasElementFound && choiceInfo != null) {
+                for (Map.Entry<String, ChoiceInfo> entry : choiceInfo.entrySet()) {
+                    String key = entry.getKey();
+                    ChoiceInfo choice = entry.getValue();
+
                     // TODO: Validate Namespaces
                     if (choice.isElementContains(elemQName.getLocalPart())) {
                         xmlParserData.modelGroupStack.push(choice);
@@ -650,10 +666,9 @@ public class XmlParser {
                         updateNextRecordForXsd(xmlParserData, key, referredType, (RecordType) referredType);
                         updateExpectedTypeStacks(xmlParserData.rootRecord, xmlParserData);
                         readElement(xmlStreamReader, xmlParserData);
-                        int a = 1;
                         return;
                     }
-                });
+                }
             }
         }
     }
