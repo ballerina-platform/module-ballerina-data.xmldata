@@ -469,9 +469,6 @@ public class XmlParser {
         QualifiedNameMap<Boolean> siblings = xmlParserData.siblings;
         Stack<QualifiedNameMap<Boolean>> parents = xmlParserData.parents;
 
-        // TODO: Check the conflict with L482
-//        boolean isModelGroupCompleted = finalizedModelStackAndReturnTrueIfCompleted(xmlParserData, elemQName);
-
         if (siblings.contains(elemQName) && !siblings.get(elemQName)) {
             siblings.put(elemQName, true);
         }
@@ -481,14 +478,7 @@ public class XmlParser {
         }
 
         validateRequiredFields(xmlParserData);
-
         finalizedModelStackAndReturnTrueIfCompleted(xmlParserData, elemQName);
-
-        //TODO: Uncomment this
-//        if (!isModelGroupCompleted) {
-//            xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.pop();
-//        }
-
         xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.pop();
         popExpectedTypeStacks(xmlParserData);
         updateSiblingAndRootRecord(xmlParserData);
