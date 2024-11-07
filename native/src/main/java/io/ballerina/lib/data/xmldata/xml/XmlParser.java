@@ -582,6 +582,7 @@ public class XmlParser {
             }
 
             if (!modelGroup.isElementContains(elemQName.getLocalPart())) {
+                // TODO: Validate All model groups at the end
                 modelGroup.validate();
             }
         }
