@@ -5,7 +5,9 @@ import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class SequenceInfo implements ModelGroupInfo {
@@ -15,11 +17,13 @@ public class SequenceInfo implements ModelGroupInfo {
     public int occurrences;
 
     // TODO: Update to a hashset<String>
-    public Set<String> unvisitedElements = new HashSet<>();
-    public Set<String> visitedElements = new HashSet<>();
-    public Set<String> allElements = new HashSet<>();
-    public boolean isCompleted = false;
-    public boolean isMiddleOfElement = false;
+    private Set<String> unvisitedElements = new HashSet<>();
+    private Set<String> visitedElements = new HashSet<>();
+    private Set<String> allElements = new HashSet<>();
+    private Map<String, Long> elementPriorityOrder = new HashMap<>();
+    private boolean isCompleted = false;
+    private boolean isMiddleOfElement = false;
+    private long currentPriority = -1L;
 
 
     public SequenceInfo(String fieldName, BMap<BString, Object> element, RecordType fieldType) {
@@ -40,6 +44,28 @@ public class SequenceInfo implements ModelGroupInfo {
         // TODO: Name Annotation not encountered
         this.allElements.addAll(fieldType.getFields().keySet());
         this.unvisitedElements.addAll(fieldType.getFields().keySet());
+        updatePriorityOrder(fieldType);
+    }
+
+    private void updatePriorityOrder(RecordType fieldType) {
+        BMap<BString, Object> annotations = fieldType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String key = annotationKey.getValue();
+            if (key.contains(Constants.FIELD)) {
+                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                    String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+                    if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+                        BMap<BString, Object> fieldAnnotationValue = null;
+                        if (fieldAnnotationKeyStr.endsWith(Constants.ORDER)) {
+                            fieldAnnotationValue = (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
+                            this.elementPriorityOrder.put(fieldName, fieldAnnotationValue.getIntValue(Constants.VALUE));
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void updateOccurrences() {
@@ -71,8 +97,13 @@ public class SequenceInfo implements ModelGroupInfo {
 
     @Override
     public void visit(String element, boolean isStartElement) {
-        // TODO: Validate Sequence Order
+        if (isMiddleOfElement && isStartElement) {
+            return;
+        }
+
         isMiddleOfElement = isStartElement;
+        compareSequencePriorityOrder(element);
+
         if (isStartElement) {
             isCompleted = false;
             return;
@@ -81,12 +112,24 @@ public class SequenceInfo implements ModelGroupInfo {
         if (this.unvisitedElements.contains(element)) {
             isMiddleOfElement = false;
             isCompleted = false;
+
+            //TODO: Remove unvisitedElements variable and get it using set substraction
             this.unvisitedElements.remove(element);
             this.visitedElements.add(element);
-            isCompletedSequences(element, false);
+            isCompletedSequences(element);
             return;
         }
         throw new RuntimeException("Unexpected element " + element + " found in " + fieldName);
+    }
+
+    private void compareSequencePriorityOrder(String element) {
+        Long elementPriority = elementPriorityOrder.get(element);
+        if (elementPriority != null) {
+            if (elementPriority < currentPriority) {
+                throw new RuntimeException("Element " + element + " is not in the correct order in " + fieldName);
+            }
+            currentPriority = elementPriority;
+        }
     }
 
     @Override
@@ -104,15 +147,11 @@ public class SequenceInfo implements ModelGroupInfo {
         return isMiddleOfElement;
     }
 
-    private void isCompletedSequences(String element, boolean needsUpdate) {
+    private void isCompletedSequences(String element) {
         if (unvisitedElements.isEmpty() && visitedElements.contains(element)) {
             isCompleted = true;
             reset();
             updateOccurrences();
-            if (needsUpdate) {
-                visitedElements.add(element);
-                unvisitedElements.remove(element);
-            }
         }
     }
 }

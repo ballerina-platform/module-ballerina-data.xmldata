@@ -72,4 +72,5 @@ public class Constants {
     public static final String CHOICE = "Choice";
     public static final BString MIN_OCCURS = StringUtils.fromString("minOccurs");
     public static final BString MAX_OCCURS = StringUtils.fromString("maxOccurs");
+    public static final String ORDER = "Order";
 }

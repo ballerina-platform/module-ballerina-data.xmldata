@@ -38,7 +38,6 @@ function testXsdSequence() returns error? {
     xmlStr = string `<Root><age>13</age></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    // test:assertTrue((<Error>v).message().includes("Element salary not found in"), msg = (<Error>v).message());
     test:assertTrue((<Error>v).message().includes("required field 'salary' not present in XML"), msg = (<Error>v).message());
 
     xmlStr = string `<Root></Root>`;
@@ -47,6 +46,17 @@ function testXsdSequence() returns error? {
 
     // TODO: Change the error message in validate Fields function
     test:assertTrue((<Error>v).message().includes("required field 'seq_XSDSequenceRecord' not present in XML"), msg = (<Error>v).message());
+
+    xmlStr = string `<Root><salary>11.1</salary><age>13</age></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertTrue((<Error>v).message().includes("Element age is not in the correct order in"), msg = (<Error>v).message());
+
+    // TODO: Create an issue
+    // xmlStr = string `<Root><salary><age>13</age></salary></Root>`;
+    // v = parseString(xmlStr);
+    // test:assertTrue(v is Error);
+    // test:assertTrue((<Error>v).message().includes("Element age is not in the correct order in"), msg = (<Error>v).message());
 }
 
 // TODO: Test with open records.
@@ -327,6 +337,21 @@ function testXsdSequence6() returns error? {
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
     test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
+
+    xmlStr = string `<Root><status>success</status><name>SD</name><age>13</age><salary>11.1</salary><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertTrue(v2 is Error);
+    test:assertTrue((<Error>v2).message().includes("Element name is not in the correct order in"), msg = (<Error>v2).message());
+
+    xmlStr = string `<Root><name>SD</name><status>success</status><salary>11.1</salary><age>13</age><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertTrue(v2 is Error);
+    test:assertTrue((<Error>v2).message().includes("Element age is not in the correct order in"), msg = (<Error>v2).message());
+
+    xmlStr = string `<Root><name>SD</name><status>success</status><salary>11.1</salary><num><n><n>3</n></n></num><age>13</age><num2><n><n>3</n></n></num2></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertTrue(v2 is Error);
+    test:assertTrue((<Error>v2).message().includes("Element age not found in"), (<Error>v2).message());
 }
 
 type XSDSequenceRecord7 record {|
@@ -925,4 +950,19 @@ function testXsdSequence13() returns error? {
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
     test:assertTrue((<Error>v2).message().includes("Element f not found in"), (<Error>v2).message());
+
+    xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><i>3</i><h>2</h></field6></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertTrue(v2 is Error);
+    test:assertTrue((<Error>v2).message().includes("Element h is not in the correct order in"), msg = (<Error>v2).message());
+
+    xmlStr = string `<Root><field1><a>1</a><c>3</c><b>2</b></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertTrue(v2 is Error);
+    test:assertTrue((<Error>v2).message().includes("Element b is not in the correct order in"), msg = (<Error>v2).message());
+
+    xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field5><d>1</d><e>2</e><f>3</f></field5><field4><a>1</a><b>2</b><c>3</c></field4><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertTrue(v2 is Error);
+    test:assertTrue((<Error>v2).message().includes("Element field4 is not in the correct order in"), msg = (<Error>v2).message());
 }
