@@ -33,12 +33,12 @@ function testXsdSequence() returns error? {
     test:assertTrue(v is Error);
     // TODO: Change error messageas
     // test:assertTrue((<Error>v).message().includes("Element age not found in"), msg = (<Error>v).message());
-    test:assertTrue((<Error>v).message().includes("required field 'age' not present in XML"), msg = (<Error>v).message());
+    test:assertTrue((<Error>v).message().includes("Element age not found in seq_XSDSequenceRecord"), msg = (<Error>v).message());
 
     xmlStr = string `<Root><age>13</age></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("required field 'salary' not present in XML"), msg = (<Error>v).message());
+    test:assertTrue((<Error>v).message().includes("Element salary not found in seq_XSDSequenceRecord"), msg = (<Error>v).message());
 
     xmlStr = string `<Root></Root>`;
     v = parseString(xmlStr);

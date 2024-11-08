@@ -191,8 +191,8 @@ public class XmlParser {
             handleXMLStreamException(e);
         }
 
-        validateModelGroupInfoStack(xmlParserData);
         validateElementInfoStack(xmlParserData);
+        validateModelGroupInfoStack(xmlParserData);
         return xmlParserData.currentNode;
     }
 
@@ -477,13 +477,13 @@ public class XmlParser {
             siblings.put(elemQName, true);
         }
         if (parents.isEmpty() || !parents.peek().contains(elemQName)) {
-            finalizedModelStackAndReturnTrueIfCompleted(xmlParserData, elemQName);
+            validateModelGroupStack(xmlParserData, elemQName, false);
             return;
         }
 
         validateRequiredFields(xmlParserData);
         validateElementInfoStack(xmlParserData);
-        finalizedModelStackAndReturnTrueIfCompleted(xmlParserData, elemQName);
+        validateModelGroupStack(xmlParserData, elemQName, false);
         xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.pop();
         popExpectedTypeStacks(xmlParserData);
         updateSiblingAndRootRecord(xmlParserData);
@@ -509,8 +509,8 @@ public class XmlParser {
 
     private void readElement(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
         QualifiedName elemQName = getElementName(xmlStreamReader, xmlParserData.useSemanticEquality);
-        validateModelGroupStack(xmlParserData, elemQName);
-        validateElementOccurrence(xmlParserData, elemQName);
+        updateElementOccurrence(xmlParserData, elemQName);
+        validateModelGroupStack(xmlParserData, elemQName, true);
 
         QualifiedNameMap<Field> fieldMap = xmlParserData.fieldHierarchy.peek();
         Field currentField = null;
@@ -578,7 +578,7 @@ public class XmlParser {
         initializeNextValueBasedOnExpectedType(fieldName, fieldType, temp, currentNode, xmlParserData);
     }
 
-    private void validateElementOccurrence(XmlParserData xmlParserData, QualifiedName elemQName) {
+    private void updateElementOccurrence(XmlParserData xmlParserData, QualifiedName elemQName) {
         if (!xmlParserData.xmlElementInfo.isEmpty()) {
             HashMap<String, ElementInfo> elementInfo = xmlParserData.xmlElementInfo.peek();
             if (elementInfo.containsKey(elemQName.getLocalPart())) {
@@ -587,32 +587,44 @@ public class XmlParser {
         }
     }
 
-    private void validateModelGroupStack(XmlParserData xmlParserData, QualifiedName elemQName) {
-        if (!xmlParserData.modelGroupStack.isEmpty()) {
-            ModelGroupInfo modelGroup = xmlParserData.modelGroupStack.peek();
-            if (modelGroup.isElementContains(elemQName.getLocalPart())) {
-                modelGroup.visit(elemQName.getLocalPart(), true);
-            }
+//    private void finalizedModelStackAndReturnTrueIfCompleted(XmlParserData xmlParserData, QualifiedName elemQName) {
+//        if (!xmlParserData.modelGroupStack.isEmpty()) {
+//            ModelGroupInfo modelGroup = xmlParserData.modelGroupStack.peek();
+//            if (modelGroup.isElementContains(elemQName.getLocalPart())) {
+//                modelGroup.visit(elemQName.getLocalPart(), false);
+//            }
+//        }
+//    }
+//
+//    private void validateModelGroupStack(XmlParserData xmlParserData, QualifiedName elemQName) {
+//        while (!xmlParserData.modelGroupStack.isEmpty()) {
+//            ModelGroupInfo modelGroup = xmlParserData.modelGroupStack.peek();
+//            if ((!modelGroup.isElementContains(elemQName.getLocalPart())
+//                    && !modelGroup.isMiddleOfModelGroup())) {
+//                validateModelGroup(modelGroup, xmlParserData);
+//                continue;
+//            }
+//            if (modelGroup.isElementContains(elemQName.getLocalPart())) {
+//                modelGroup.visit(elemQName.getLocalPart(), true);
+//            }
+//            return;
+//        }
+//    }
 
-            if (!modelGroup.isElementContains(elemQName.getLocalPart()) && !modelGroup.isMiddleOfModelGroup()) {
-                // TODO: Validate All model groups at the end
-                modelGroup.validate();
-            }
-        }
-    }
-
-    private boolean finalizedModelStackAndReturnTrueIfCompleted(XmlParserData xmlParserData, QualifiedName elemQName) {
-        if (!xmlParserData.modelGroupStack.isEmpty()) {
+    private void validateModelGroupStack(XmlParserData xmlParserData,
+                                             QualifiedName elemQName, boolean isStartElement) {
+        while (!xmlParserData.modelGroupStack.isEmpty()) {
             ModelGroupInfo modelGroup = xmlParserData.modelGroupStack.peek();
-            if (modelGroup.isElementContains(elemQName.getLocalPart())) {
-                modelGroup.visit(elemQName.getLocalPart(), false);
-            }
-            if (modelGroup.isCompleted()) {
+            if ((!modelGroup.isElementContains(elemQName.getLocalPart())
+                    && !modelGroup.isMiddleOfModelGroup())) {
                 validateModelGroup(modelGroup, xmlParserData);
-                return true;
+                continue;
             }
+            if (modelGroup.isElementContains(elemQName.getLocalPart())) {
+                modelGroup.visit(elemQName.getLocalPart(), isStartElement);
+            }
+            return;
         }
-        return false;
     }
 
     private void validateModelGroup(ModelGroupInfo modelGroup, XmlParserData xmlParserData) {
@@ -620,7 +632,15 @@ public class XmlParser {
         xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.pop();
         xmlParserData.modelGroupStack.pop();
         xmlParserData.rootRecord = xmlParserData.recordTypeStack.pop();
-        popExpectedTypeStacks(xmlParserData);
+        popElementStacksForValidatingGroup(xmlParserData);
+    }
+
+    private void popElementStacksForValidatingGroup(XmlParserData xmlParserData) {
+        popMappingTypeStacks(xmlParserData);
+        xmlParserData.attributeHierarchy.pop();
+        xmlParserData.arrayIndexes.pop();
+        xmlParserData.xsdSequenceInfo.pop();
+        xmlParserData.xsdChoiceInfo.pop();
     }
 
     private void validateElementInXsdSequenceOrElement(QualifiedName elemQName, HashMap<String, ChoiceInfo> choiceInfo,
@@ -1314,7 +1334,8 @@ public class XmlParser {
                                     .getFields().get(fieldName).getFieldType());
                             if (fieldType instanceof RecordType recType) {
                                 parserData.xsdSequenceInfo.peek().put(fieldName,
-                                        new SequenceInfo(fieldName, fieldAnnotationValue, recType));
+                                        new SequenceInfo(fieldName,
+                                                fieldAnnotationValue, recType, parserData.xmlElementInfo));
                             } else {
                                 throw new RuntimeException("Cannot include Sequence annotation into "
                                         + fieldName + " of type " + fieldType);
@@ -1344,8 +1365,9 @@ public class XmlParser {
     }
 
     private void validateModelGroupInfoStack(XmlParserData xmlParserData) {
-        if (!xmlParserData.modelGroupStack.isEmpty()) {
-            xmlParserData.modelGroupStack.peek().validate();
+        while (!xmlParserData.modelGroupStack.isEmpty()) {
+            ModelGroupInfo modelGroup = xmlParserData.modelGroupStack.peek();
+            validateModelGroup(modelGroup, xmlParserData);
         }
     }
 

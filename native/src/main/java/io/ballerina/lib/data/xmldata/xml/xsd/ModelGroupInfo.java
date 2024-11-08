@@ -1,5 +1,8 @@
 package io.ballerina.lib.data.xmldata.xml.xsd;
 
+import java.util.HashMap;
+import java.util.Stack;
+
 public interface ModelGroupInfo {
     public void updateOccurrences();
     public void validateMinOccurrences();
@@ -10,4 +13,5 @@ public interface ModelGroupInfo {
     public boolean isCompleted();
     public boolean isElementContains(String elementName);
     public boolean isMiddleOfModelGroup();
+    public boolean isContainsAllRemaining(Stack<HashMap<String, ElementInfo>> elementInfoStack);
 }

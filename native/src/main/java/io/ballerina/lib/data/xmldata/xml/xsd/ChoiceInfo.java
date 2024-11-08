@@ -5,8 +5,10 @@ import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Stack;
 
 public class ChoiceInfo implements ModelGroupInfo {
     public String fieldName;
@@ -68,7 +70,7 @@ public class ChoiceInfo implements ModelGroupInfo {
 
     @Override
     public boolean isCompleted() {
-        return false;
+        return occurrences <= maxOccurs && occurrences >= minOccurs;
     }
 
     @Override
@@ -78,6 +80,11 @@ public class ChoiceInfo implements ModelGroupInfo {
 
     @Override
     public boolean isMiddleOfModelGroup() {
+        return false;
+    }
+
+    @Override
+    public boolean isContainsAllRemaining(Stack<HashMap<String, ElementInfo>> elementInfoStack) {
         return false;
     }
 }

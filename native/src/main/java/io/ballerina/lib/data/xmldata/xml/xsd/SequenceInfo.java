@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 public class SequenceInfo implements ModelGroupInfo {
     public String fieldName;
@@ -24,9 +25,10 @@ public class SequenceInfo implements ModelGroupInfo {
     private boolean isCompleted = false;
     private boolean isMiddleOfElement = false;
     private long currentPriority = -1L;
+    private Stack<HashMap<String, ElementInfo>> xmlElementInfo;
 
-
-    public SequenceInfo(String fieldName, BMap<BString, Object> element, RecordType fieldType) {
+    public SequenceInfo(String fieldName, BMap<BString, Object> element, RecordType fieldType,
+                        Stack<HashMap<String, ElementInfo>> xmlElementInfo) {
         this.fieldName = fieldName;
         if (element.containsKey(Constants.MIN_OCCURS)) {
             this.minOccurs = element.getIntValue(Constants.MIN_OCCURS);
@@ -45,6 +47,7 @@ public class SequenceInfo implements ModelGroupInfo {
         this.allElements.addAll(fieldType.getFields().keySet());
         this.unvisitedElements.addAll(fieldType.getFields().keySet());
         updatePriorityOrder(fieldType);
+        this.xmlElementInfo = xmlElementInfo;
     }
 
     private void updatePriorityOrder(RecordType fieldType) {
@@ -83,10 +86,31 @@ public class SequenceInfo implements ModelGroupInfo {
 
     @Override
     public void validate() {
-        if (!isCompleted) {
+        if (!isCompleted && !containsAllOptionalElements(this.xmlElementInfo)) {
             throw new RuntimeException("Element " + unvisitedElements.iterator().next() + " not found in " + fieldName);
         }
         validateMinOccurrences();
+    }
+
+    private boolean containsAllOptionalElements(Stack<HashMap<String, ElementInfo>> elementInfoStack) {
+        if (elementInfoStack.isEmpty()) {
+            return false;
+        }
+
+        HashMap<String, ElementInfo> elementInfo = elementInfoStack.peek();
+        Set<String> unvisitedElementsTemp = new HashSet<>(unvisitedElements);
+        unvisitedElementsTemp.forEach(element -> {
+            if (elementInfo.containsKey(element)) {
+                ElementInfo elem = elementInfo.get(element);
+                if (elem.minOccurs == 0) {
+                    unvisitedElements.remove(element);
+                }
+            }
+        });
+        if (unvisitedElements.isEmpty()) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -117,6 +141,10 @@ public class SequenceInfo implements ModelGroupInfo {
             this.unvisitedElements.remove(element);
             this.visitedElements.add(element);
             validateCompletedSequences();
+            return;
+        }
+
+        if (this.visitedElements.contains(element)) {
             return;
         }
         throw new RuntimeException("Unexpected element " + element + " found in " + fieldName);
@@ -153,5 +181,9 @@ public class SequenceInfo implements ModelGroupInfo {
             reset();
             updateOccurrences();
         }
+    }
+
+    public boolean isContainsAllRemaining(Stack<HashMap<String, ElementInfo>> elementInfoStack) {
+        return containsAllOptionalElements(elementInfoStack);
     }
 }
