@@ -8,7 +8,7 @@ public class ElementInfo {
     String name;
     public long minOccurs;
     public long maxOccurs;
-    public int occurrences = 0;
+    public int occurrences;
 
     public ElementInfo(String name, BMap<BString, Object> element) {
         this.name = name;
@@ -19,11 +19,11 @@ public class ElementInfo {
         }
 
         if (element.containsKey(Constants.MAX_OCCURS)) {
-            this.minOccurs = element.getIntValue(Constants.MAX_OCCURS);
+            this.maxOccurs = element.getIntValue(Constants.MAX_OCCURS);
         } else {
             this.maxOccurs = Math.max(this.minOccurs, 1);
         }
-        this.occurrences = 1;
+        this.occurrences = 0;
     }
 
     public void updateOccurrences() {
@@ -33,7 +33,11 @@ public class ElementInfo {
         }
     }
 
-    public void validateMinOccurrences() {
+    public void validate() {
+        validateMinOccurrences();
+    }
+
+    private void validateMinOccurrences() {
         if (this.occurrences < this.minOccurs) {
             throw new RuntimeException(name + " Element occurs less than the min required times");
         }

@@ -116,7 +116,7 @@ public class SequenceInfo implements ModelGroupInfo {
             //TODO: Remove unvisitedElements variable and get it using set substraction
             this.unvisitedElements.remove(element);
             this.visitedElements.add(element);
-            isCompletedSequences(element);
+            validateCompletedSequences();
             return;
         }
         throw new RuntimeException("Unexpected element " + element + " found in " + fieldName);
@@ -147,8 +147,8 @@ public class SequenceInfo implements ModelGroupInfo {
         return isMiddleOfElement;
     }
 
-    private void isCompletedSequences(String element) {
-        if (unvisitedElements.isEmpty() && visitedElements.contains(element)) {
+    private void validateCompletedSequences() {
+        if (unvisitedElements.isEmpty()) {
             isCompleted = true;
             reset();
             updateOccurrences();

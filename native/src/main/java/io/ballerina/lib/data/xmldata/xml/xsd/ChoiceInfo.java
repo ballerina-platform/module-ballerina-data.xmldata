@@ -12,7 +12,7 @@ public class ChoiceInfo implements ModelGroupInfo {
     public String fieldName;
     public long minOccurs;
     public long maxOccurs;
-    public int occurrences = 0;
+    public int occurrences;
     public Set<String> allElements = new HashSet<>();
     public Set<String> visitedElements = new HashSet<>();
 
@@ -26,7 +26,7 @@ public class ChoiceInfo implements ModelGroupInfo {
         }
 
         if (element.containsKey(Constants.MAX_OCCURS)) {
-            this.minOccurs = element.getIntValue(Constants.MAX_OCCURS);
+            this.maxOccurs = element.getIntValue(Constants.MAX_OCCURS);
         } else {
             this.maxOccurs = Math.max(this.minOccurs, 1);
         }
