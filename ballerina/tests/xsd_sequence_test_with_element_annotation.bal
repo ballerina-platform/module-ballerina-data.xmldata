@@ -204,22 +204,141 @@ function testXsdSequenceWithElementAnnotation2() returns error? {
     test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
 }
 
+type XsdSequenceWithElementAnnotation3 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XsdSequenceWithElementAnnotation3_1 seq_XsdSequenceWithElementAnnotation3_1;
+
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XsdSequenceWithElementAnnotation3_2 seq_XsdSequenceWithElementAnnotation3_2;
+};
+
+type Seq_XsdSequenceWithElementAnnotation3_1 record {
+    @Element {
+        minOccurs: 1,
+        maxOccurs: 3
+    }
+    @Order {value: 1}
+    Seq_A_3[] field1;
+
+    @Element {
+        minOccurs: 0,
+        maxOccurs: 3
+    }
+    @Order {value: 2}
+    Seq_B_3[] field2?;
+
+    @Order {value: 3}
+    Seq_C_3 field3;
+};
+
+type Seq_XsdSequenceWithElementAnnotation3_2 record {
+    @Order {value: 1}
+    Seq_D_3 field4;
+
+    @Order {value: 2}
+    Seq_E_3 field5;
+
+    @Order {value: 3}
+    Seq_F_3 field6;
+};
+
+type Seq_A_3 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_3 value1;
+};
+
+type Seq_B_3 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq2_3 value2;
+};
+
+type Seq_C_3 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq3_3 value3;
+};
+
+type Seq_D_3 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_3 value1;
+};
+
+type Seq_E_3 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq2_3 value2;
+};
+
+type Seq_F_3 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq3_3 value3;
+};
+
+type Seq_3 record {
+    @Order {value: 1}
+    string a;
+
+    @Order {value: 2}
+    string b;
+
+    @Order {value: 3}
+    string c;
+};
+
+type Seq2_3 record {
+    @Order {value: 1}
+    string d;
+
+    @Order {value: 2}
+    string e;
+
+    @Order {value: 3}
+    string f;
+};
+
+type Seq3_3 record {
+    @Order {value: 1}
+    string g;
+
+    @Order {value: 2}
+    string h;
+
+    @Order {value: 3}
+    string i;
+};
+
 @test:Config {groups: ["xsd", "xsd_sequence", "xsd_element", "xsd_element_and_sequence"]}
-function test110() returns error? {
-    // string xmlStr;
-    // // XsdSequenceWithElementAnnotation|Error v;
+function testXsdSequenceWithElementAnnotation3() returns error? {
+    string xmlStr;
+    XsdSequenceWithElementAnnotation3|Error v2;
 
-    // string xmlStr;
-    // XSDSequenceRecord2|Error v;
+    // xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
+    // v2 = parseString(xmlStr);
+    // test:assertEquals(v2, {seq_XsdSequenceWithElementAnnotation3_1: {field1: [{value1: {a: "1", b: "2", c: "3"}}, {value1: {a: "1", b: "2", c: "3"}}], field2: [{value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}], field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XsdSequenceWithElementAnnotation3_2: {field4: {value1: {a: "1", b: "2", c: "3"}}, field5: {value2: {d: "1", e: "2", f: "3"}}, field6: {value3: {g: "1", h: "2", i: "3"}}}});
 
-    // // xmlStr = string `<Root><EA1>ABC</EA1><EA2>ABC</EA2><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></Root>`;
-    // // v = parseString(xmlStr);
-    // // test:assertEquals(v, {seq_EA1: {EA1: "ABC", EA2: "ABC", EA3: ["AB", "AB", "AB"]}});
-
-    // xmlStr = string `<Root><age>13</age><salary>11.1</salary><num>3</num></Root>`;
-    // v = parseString(xmlStr);
-    // test:assertEquals(v, {seq_XSDSequenceRecord2: {age: 13, salary: 11.1}, num: 3});
-    // test:assertEquals((check v).seq_XSDSequenceRecord2.age, 13);
-    // test:assertEquals((check v).seq_XSDSequenceRecord2.salary, 11.1);
-    // test:assertEquals((check v).num, 3);
+    xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertEquals(v2, {seq_XsdSequenceWithElementAnnotation3_1: {field1: [{value1: {a: "1", b: "2", c: "3"}}, {value1: {a: "1", b: "2", c: "3"}}], field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XsdSequenceWithElementAnnotation3_2: {field4: {value1: {a: "1", b: "2", c: "3"}}, field5: {value2: {d: "1", e: "2", f: "3"}}, field6: {value3: {g: "1", h: "2", i: "3"}}}});
 }

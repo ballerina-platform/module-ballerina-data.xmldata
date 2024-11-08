@@ -86,10 +86,12 @@ public class SequenceInfo implements ModelGroupInfo {
 
     @Override
     public void validate() {
+        validateCompletedSequences();
         if (!isCompleted && !containsAllOptionalElements(this.xmlElementInfo)) {
             throw new RuntimeException("Element " + unvisitedElements.iterator().next() + " not found in " + fieldName);
         }
         validateMinOccurrences();
+        reset();
     }
 
     private boolean containsAllOptionalElements(Stack<HashMap<String, ElementInfo>> elementInfoStack) {
@@ -108,6 +110,7 @@ public class SequenceInfo implements ModelGroupInfo {
             }
         });
         if (unvisitedElements.isEmpty()) {
+            updateOccurrences();
             return true;
         }
         return false;
@@ -140,7 +143,6 @@ public class SequenceInfo implements ModelGroupInfo {
             //TODO: Remove unvisitedElements variable and get it using set substraction
             this.unvisitedElements.remove(element);
             this.visitedElements.add(element);
-            validateCompletedSequences();
             return;
         }
 
@@ -178,7 +180,6 @@ public class SequenceInfo implements ModelGroupInfo {
     private void validateCompletedSequences() {
         if (unvisitedElements.isEmpty()) {
             isCompleted = true;
-            reset();
             updateOccurrences();
         }
     }
