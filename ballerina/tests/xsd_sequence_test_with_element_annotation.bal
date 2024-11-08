@@ -1,5 +1,6 @@
 import ballerina/test;
 
+// TODO: Add tests with attributes
 type XsdSequenceWithElementAnnotation record {
     @Sequence {
         minOccurs: 0,
@@ -215,7 +216,7 @@ type XsdSequenceWithElementAnnotation3 record {
         minOccurs: 1,
         maxOccurs: 1
     }
-    Seq_XsdSequenceWithElementAnnotation3_2 seq_XsdSequenceWithElementAnnotation3_2;
+    Seq_XsdSequenceWithElementAnnotation3_2 seq_XsdSequenceWithElementAnnotation3_2?;
 };
 
 type Seq_XsdSequenceWithElementAnnotation3_1 record {
@@ -233,19 +234,35 @@ type Seq_XsdSequenceWithElementAnnotation3_1 record {
     @Order {value: 2}
     Seq_B_3[] field2?;
 
+    @Element {
+        minOccurs: 1,
+        maxOccurs: 3
+    }
     @Order {value: 3}
     Seq_C_3 field3;
 };
 
 type Seq_XsdSequenceWithElementAnnotation3_2 record {
     @Order {value: 1}
-    Seq_D_3 field4;
+    @Element {
+        minOccurs: 0,
+        maxOccurs: 3
+    }
+    Seq_D_3[] field4?;
 
+    @Element {
+        minOccurs: 0,
+        maxOccurs: 3
+    }
     @Order {value: 2}
-    Seq_E_3 field5;
+    Seq_E_3[] field5?;
 
+    @Element {
+        minOccurs: 0,
+        maxOccurs: 3
+    }
     @Order {value: 3}
-    Seq_F_3 field6;
+    Seq_F_3[] field6?;
 };
 
 type Seq_A_3 record {
@@ -297,11 +314,19 @@ type Seq_F_3 record {
 };
 
 type Seq_3 record {
+    @Element {
+        minOccurs: 0,
+        maxOccurs: 3
+    }
     @Order {value: 1}
-    string a;
+    string[] a?;
 
+    @Element {
+        minOccurs: 0,
+        maxOccurs: 3
+    }
     @Order {value: 2}
-    string b;
+    string[] b?;
 
     @Order {value: 3}
     string c;
@@ -334,11 +359,43 @@ function testXsdSequenceWithElementAnnotation3() returns error? {
     string xmlStr;
     XsdSequenceWithElementAnnotation3|Error v2;
 
-    // xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
-    // v2 = parseString(xmlStr);
-    // test:assertEquals(v2, {seq_XsdSequenceWithElementAnnotation3_1: {field1: [{value1: {a: "1", b: "2", c: "3"}}, {value1: {a: "1", b: "2", c: "3"}}], field2: [{value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}], field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XsdSequenceWithElementAnnotation3_2: {field4: {value1: {a: "1", b: "2", c: "3"}}, field5: {value2: {d: "1", e: "2", f: "3"}}, field6: {value3: {g: "1", h: "2", i: "3"}}}});
-
-    xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
+    xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseString(xmlStr);
-    test:assertEquals(v2, {seq_XsdSequenceWithElementAnnotation3_1: {field1: [{value1: {a: "1", b: "2", c: "3"}}, {value1: {a: "1", b: "2", c: "3"}}], field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XsdSequenceWithElementAnnotation3_2: {field4: {value1: {a: "1", b: "2", c: "3"}}, field5: {value2: {d: "1", e: "2", f: "3"}}, field6: {value3: {g: "1", h: "2", i: "3"}}}});
+    test:assertEquals(v2, {seq_XsdSequenceWithElementAnnotation3_1: {field1: [{value1: {a: ["1"], b: ["2"], c: "3"}}, {value1: {a: ["1"], b: ["2"], c: "3"}}], field2: [{value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}], field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XsdSequenceWithElementAnnotation3_2: {field4: [{value1: {a: ["1"], b: ["2"], c: "3"}}], field5: [{value2: {d: "1", e: "2", f: "3"}}], field6: [{value3: {g: "1", h: "2", i: "3"}}, {value3: {g: "1", h: "2", i: "3"}}]}});
+
+    xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertEquals(v2, {seq_XsdSequenceWithElementAnnotation3_1: {field1: [{value1: {a: ["1"], b: ["2"], c: "3"}}, {value1: {a: ["1"], b: ["2"], c: "3"}}], field2: [{value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}], field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XsdSequenceWithElementAnnotation3_2: {field4: [{value1: {a: ["1"], b: ["2"], c: "3"}}], field5: [{value2: {d: "1", e: "2", f: "3"}}]}});
+
+    xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertEquals(v2, {seq_XsdSequenceWithElementAnnotation3_1: {field1: [{value1: {a: ["1"], b: ["2"], c: "3"}}, {value1: {a: ["1"], b: ["2"], c: "3"}}], field2: [{value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}], field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XsdSequenceWithElementAnnotation3_2: {field5: [{value2: {d: "1", e: "2", f: "3"}}], field6: [{value3: {g: "1", h: "2", i: "3"}}]}});
+
+    xmlStr = string `<Root><field1><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><a>2</a><a>3</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertEquals(v2, {seq_XsdSequenceWithElementAnnotation3_1: {field1: [{value1: {b: ["2"], c: "3"}}, {value1: {a: ["1"], b: ["2"], c: "3"}}], field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XsdSequenceWithElementAnnotation3_2: {field4: [{value1: {a: ["1", "2", "3"], b: ["2"], c: "3"}}], field5: [{value2: {d: "1", e: "2", f: "3"}}], field6: [{value3: {g: "1", h: "2", i: "3"}}]}});
+
+    xmlStr = string `<Root><field1><c>3</c></field1><field1><c>3</c></field1><field3><g>1</g><h>2</h><i>3</i></field3></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertEquals(v2, {seq_XsdSequenceWithElementAnnotation3_1: {field1: [{value1: {c: "3"}}, {value1: {c: "3"}}], field3: {value3: {g: "1", h: "2", i: "3"}}}});
+
+    xmlStr = string `<Root><field1><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field4><a>1</a><a>2</a><a>3</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertTrue(v2 is Error);
+    test:assertTrue((<Error>v2).message().includes("Element field3 not found in seq_XsdSequenceWithElementAnnotation3_1"), (<Error>v2).message());
+
+    xmlStr = string `<Root><field1><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><a>2</a><a>3</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h></field6></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertTrue(v2 is Error);
+    test:assertTrue((<Error>v2).message().includes("required field 'i' not present in XML"), (<Error>v2).message());
+
+    xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field5><d>1</d><e>2</e><f>3</f></field5><field5><d>1</d><e>2</e><f>3</f></field5><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertTrue(v2 is Error);
+    test:assertTrue((<Error>v2).message().includes("field5 Element occurs more than the max allowed times"), (<Error>v2).message());
+
+    xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><b>2</b><b>2</b><b>2</b><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertTrue(v2 is Error);
+    test:assertTrue((<Error>v2).message().includes("b Element occurs more than the max allowed times"), (<Error>v2).message());
 }
