@@ -88,10 +88,95 @@ public class SequenceInfo implements ModelGroupInfo {
     public void validate() {
         validateCompletedSequences();
         if (!isCompleted && !containsAllOptionalElements(this.xmlElementInfo)) {
-            throw new RuntimeException("Element " + unvisitedElements.iterator().next() + " not found in " + fieldName);
+            throw new RuntimeException("Element " + getUnvisitedElements() + " not found in " + fieldName);
         }
         validateMinOccurrences();
         reset();
+    }
+
+    @Override
+    public void reset() {
+        this.unvisitedElements.addAll(allElements);
+        this.visitedElements.clear();
+        this.currentPriority = -1L;
+        this.isCompleted = false;
+        this.isMiddleOfElement = false;
+    }
+
+    @Override
+    public void visit(String element, boolean isStartElement) {
+        if (isMiddleOfElement && isStartElement) {
+            return;
+        }
+
+        isMiddleOfElement = isStartElement;
+        compareSequencePriorityOrder(element);
+
+        if (isStartElement) {
+            isCompleted = false;
+            return;
+        }
+
+        if (this.unvisitedElements.contains(element)) {
+            isMiddleOfElement = false;
+            isCompleted = false;
+            this.unvisitedElements.remove(element);
+            this.visitedElements.add(element);
+            return;
+        }
+
+        if (this.visitedElements.contains(element)) {
+            return;
+        }
+        throw new RuntimeException("Unexpected element " + element + " found in " + fieldName);
+    }
+
+    @Override
+    public int getOccurences() {
+        return this.occurrences;
+    }
+
+    @Override
+    public boolean isElementContains(String elementName) {
+        return this.allElements.contains(elementName);
+    }
+
+    @Override
+    public boolean isMiddleOfModelGroup() {
+        return isMiddleOfElement;
+    }
+
+    private void validateCompletedSequences() {
+        if (unvisitedElements.isEmpty()) {
+            isCompleted = true;
+            updateOccurrences();
+        }
+    }
+
+    private void compareSequencePriorityOrder(String element) {
+        Long elementPriority = elementPriorityOrder.get(element);
+        if (elementPriority != null) {
+            if (elementPriority < currentPriority) {
+                throw new RuntimeException("Element " + element + " is not in the correct order in " + fieldName);
+            }
+            currentPriority = elementPriority;
+        }
+    }
+
+    //TODO: Check
+    public boolean checkAndStartNewModelGroup(String element) {
+        if (!isElementContains(element)) {
+            return false;
+        }
+        Long elementPriority = elementPriorityOrder.get(element);
+        if (elementPriority != null) {
+            // TODO: Priority orders should be start from 1.
+            if (!isMiddleOfElement && elementPriority < currentPriority
+                    && elementPriority == 1) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean containsAllOptionalElements(Stack<HashMap<String, ElementInfo>> elementInfoStack) {
@@ -116,75 +201,11 @@ public class SequenceInfo implements ModelGroupInfo {
         return false;
     }
 
-    @Override
-    public void reset() {
-        this.unvisitedElements.addAll(allElements);
-        this.visitedElements.clear();
-    }
-
-    @Override
-    public void visit(String element, boolean isStartElement) {
-        if (isMiddleOfElement && isStartElement) {
-            return;
-        }
-
-        isMiddleOfElement = isStartElement;
-        compareSequencePriorityOrder(element);
-
-        if (isStartElement) {
-            isCompleted = false;
-            return;
-        }
-
-        if (this.unvisitedElements.contains(element)) {
-            isMiddleOfElement = false;
-            isCompleted = false;
-
-            //TODO: Remove unvisitedElements variable and get it using set substraction
-            this.unvisitedElements.remove(element);
-            this.visitedElements.add(element);
-            return;
-        }
-
-        if (this.visitedElements.contains(element)) {
-            return;
-        }
-        throw new RuntimeException("Unexpected element " + element + " found in " + fieldName);
-    }
-
-    private void compareSequencePriorityOrder(String element) {
-        Long elementPriority = elementPriorityOrder.get(element);
-        if (elementPriority != null) {
-            if (elementPriority < currentPriority) {
-                throw new RuntimeException("Element " + element + " is not in the correct order in " + fieldName);
-            }
-            currentPriority = elementPriority;
-        }
-    }
-
-    @Override
-    public boolean isCompleted() {
-        return this.isCompleted;
-    }
-
-    @Override
-    public boolean isElementContains(String elementName) {
-        return this.allElements.contains(elementName);
-    }
-
-    @Override
-    public boolean isMiddleOfModelGroup() {
-        return isMiddleOfElement;
-    }
-
-    private void validateCompletedSequences() {
-        if (unvisitedElements.isEmpty()) {
-            isCompleted = true;
-            updateOccurrences();
-        }
-    }
-
-    public boolean isContainsAllRemaining(Stack<HashMap<String, ElementInfo>> elementInfoStack) {
-        return containsAllOptionalElements(elementInfoStack);
+    private String getUnvisitedElements() {
+        StringBuilder unvisitedElementsStr = new StringBuilder();
+        unvisitedElements.forEach(element -> unvisitedElementsStr.append(element).append(", "));
+        String result = unvisitedElementsStr.toString();
+        result = result.substring(0, result.length() - 2);
+        return result;
     }
 }

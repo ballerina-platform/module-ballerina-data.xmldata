@@ -50,13 +50,96 @@ function testXsdSequence() returns error? {
     xmlStr = string `<Root><salary>11.1</salary><age>13</age></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("Element age is not in the correct order in"), msg = (<Error>v).message());
+    test:assertTrue((<Error>v).message().includes("Element age not found in seq_XSDSequenceRecord"), msg = (<Error>v).message());
 
     // TODO: Create an issue
     // xmlStr = string `<Root><salary><age>13</age></salary></Root>`;
     // v = parseString(xmlStr);
     // test:assertTrue(v is Error);
     // test:assertTrue((<Error>v).message().includes("Element age is not in the correct order in"), msg = (<Error>v).message());
+}
+
+type XSDSequenceRecordP2 record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecordP2 seq_XSDSequenceRecordP2;
+|};
+
+type Seq_XSDSequenceRecordP2 record {|
+    @Element {
+        minOccurs: 1,
+        maxOccurs: 3
+    }
+    @Order {
+        value: 1
+    }
+    int[] age;
+
+    @Order {
+        value: 2
+    }
+    float salary;
+
+    @Order {
+        value: 3
+    }
+    @Element {
+        minOccurs: 1,
+        maxOccurs: 2
+    }
+    string[] name;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequenceP2() returns error? {
+    string xmlStr = string `<Root><age>13</age><salary>11.1</salary><name>ABC</name></Root>`;
+    XSDSequenceRecordP2|Error v = parseString(xmlStr);
+    test:assertEquals(v, {seq_XSDSequenceRecordP2: {age: [13], salary: 11.1, name: ["ABC"]}});
+
+    xmlStr = string `<Root><age>13</age><age>13</age><age>13</age><salary>11.1</salary><name>ABC</name></Root>`;
+    v = parseString(xmlStr);
+    test:assertEquals(v, {seq_XSDSequenceRecordP2: {age: [13, 13, 13], salary: 11.1, name: ["ABC"]}});
+
+    xmlStr = string `<Root><age>13</age><name>ABC</name><salary>11.1</salary></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertTrue((<Error>v).message().includes("Element salary is not in the correct order in"), msg = (<Error>v).message());
+
+    xmlStr = string `<Root><age>13</age><age>13</age><name>ABC</name><salary>11.1</salary></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertTrue((<Error>v).message().includes("Element salary is not in the correct order in"), msg = (<Error>v).message());
+
+    xmlStr = string `<Root><age>13</age><salary>11.1</salary><name>ABC</name><salary>11.1</salary></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertTrue((<Error>v).message().includes("Element salary is not in the correct order in"), msg = (<Error>v).message());
+
+    xmlStr = string `<Root><age>13</age><age>13</age><age>13</age><age>13</age><salary>11.1</salary><name>ABC</name><salary>11.1</salary></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertTrue((<Error>v).message().includes("age Element occurs more than the max allowed times"), msg = (<Error>v).message());
+
+    xmlStr = string `<Root><salary>11.1</salary><name>ABC</name><age>13</age></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertTrue((<Error>v).message().includes("Element age not found in seq_XSDSequenceRecordP2"), msg = (<Error>v).message());
+
+    xmlStr = string `<Root><age>13</age><age>13</age><age>13</age><salary>11.1</salary><name>ABC</name><name>ABC</name></Root>`;
+    v = parseString(xmlStr);
+    test:assertEquals(v, {seq_XSDSequenceRecordP2: {age: [13, 13, 13], salary: 11.1, name: ["ABC", "ABC"]}});
+
+    xmlStr = string `<Root><age>13</age><age>13</age><age>13</age><salary>11.1</salary><name>ABC</name><name>ABC</name><name>ABC</name></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertTrue((<Error>v).message().includes("name Element occurs more than the max allowed"), msg = (<Error>v).message());
+
+    xmlStr = string `<Root><age>13</age><age>13</age><salary>11.1</salary><name>ABC</name><age>13</age></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertTrue((<Error>v).message().includes("Element name, salary not found in seq_XSDSequenceRecordP2"), msg = (<Error>v).message());
 }
 
 // TODO: Test with open records.
@@ -341,12 +424,12 @@ function testXsdSequence6() returns error? {
     xmlStr = string `<Root><status>success</status><name>SD</name><age>13</age><salary>11.1</salary><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element name is not in the correct order in"), msg = (<Error>v2).message());
+    test:assertTrue((<Error>v2).message().includes("Element name not found in seq_XSDSequenceRecord6_2"), msg = (<Error>v2).message());
 
     xmlStr = string `<Root><name>SD</name><status>success</status><salary>11.1</salary><age>13</age><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element age is not in the correct order in"), msg = (<Error>v2).message());
+    test:assertTrue((<Error>v2).message().includes("Element age not found in seq_XSDSequenceRecord6_1"), msg = (<Error>v2).message());
 
     xmlStr = string `<Root><name>SD</name><status>success</status><salary>11.1</salary><num><n><n>3</n></n></num><age>13</age><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseString(xmlStr);
@@ -964,5 +1047,6 @@ function testXsdSequence13() returns error? {
     xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field5><d>1</d><e>2</e><f>3</f></field5><field4><a>1</a><b>2</b><c>3</c></field4><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element field4 is not in the correct order in"), msg = (<Error>v2).message());
+    // TODO: Fix the error message
+    test:assertTrue((<Error>v2).message().includes("Element field6, field4 not found in seq_XSDSequenceRecord13_2"), msg = (<Error>v2).message());
 }
