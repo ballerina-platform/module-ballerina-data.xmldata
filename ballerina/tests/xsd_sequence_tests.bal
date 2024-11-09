@@ -903,10 +903,10 @@ function testXsdSequence12() returns error? {
 
 type XSDSequenceRecord13 record {
     @Sequence {
-        minOccurs: 1,
+        minOccurs: 0,
         maxOccurs: 1
     }
-    Seq_XSDSequenceRecord13_1 seq_XSDSequenceRecord13_1;
+    Seq_XSDSequenceRecord13_1 seq_XSDSequenceRecord13_1?;
 
     @Sequence {
         minOccurs: 1,
@@ -1023,6 +1023,10 @@ function testXsdSequence13() returns error? {
     string xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     XSDSequenceRecord13|Error v2 = parseString(xmlStr);
     test:assertEquals(v2, <XSDSequenceRecord13>{seq_XSDSequenceRecord13_1: {field1: {value1: {a: "1", b: "2", c: "3"}}, field2: {value2: {d: "1", e: "2", f: "3"}}, field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XSDSequenceRecord13_2: {field4: {value1: {a: "1", b: "2", c: "3"}}, field5: {value2: {d: "1", e: "2", f: "3"}}, field6: {value3: {g: "1", h: "2", i: "3"}}}});
+
+    xmlStr = string `<Root><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
+    v2 = parseString(xmlStr);
+    test:assertEquals(v2, <XSDSequenceRecord13>{seq_XSDSequenceRecord13_2: {field4: {value1: {a: "1", b: "2", c: "3"}}, field5: {value2: {d: "1", e: "2", f: "3"}}, field6: {value3: {g: "1", h: "2", i: "3"}}}});
 
     xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><g>1</g><h>2</h><i>3</i><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseString(xmlStr);
