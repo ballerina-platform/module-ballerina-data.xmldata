@@ -55,19 +55,6 @@ public class SequenceInfo implements ModelGroupInfo {
         this.elementCount = allElements.size();
     }
 
-    private void reOrderElementNamesBasedOnTheNameAnnotation() {
-        xmlElementNameMap.forEach((key, value) -> {
-            if (allElements.contains(value)) {
-                allElements.set(allElements.indexOf(value), key);
-            }
-        });
-        allElements.forEach(element -> {
-            if (!xmlElementNameMap.containsKey(element)) {
-                xmlElementNameMap.put(element, element);
-            }
-        });
-    }
-
     public void updateOccurrences() {
         this.occurrences++;
         if (this.occurrences > this.maxOccurs) {
@@ -280,5 +267,18 @@ public class SequenceInfo implements ModelGroupInfo {
                 });
             }
         }
+    }
+
+    private void reOrderElementNamesBasedOnTheNameAnnotation() {
+        xmlElementNameMap.forEach((key, value) -> {
+            if (allElements.contains(value)) {
+                allElements.set(allElements.indexOf(value), key);
+            }
+        });
+        allElements.forEach(element -> {
+            if (!xmlElementNameMap.containsKey(element)) {
+                xmlElementNameMap.put(element, element);
+            }
+        });
     }
 }

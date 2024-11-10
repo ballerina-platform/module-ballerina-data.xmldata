@@ -379,7 +379,7 @@ type Seq2_Array_6 record {
 @test:Config {groups: ["xsd", "xsd_sequence"]}
 function testXSDSequenceArrayRecord6() returns error? {
     // TODO: Refactor sequence elements into a array
-    // string xmlStr = string `<Root><field1><a>1</a><a>1</a></field1><field2><d>1</d><d>1</d></field2><field1><a>1</a><a>1</a></field1><field2><d>1</d><d>1</d></field2><field4><a>1</a><a>1</a></field4><field5><d>1</d><d>1</d></field5><field4><a>1</a><a>1</a></field4><field5><d>1</d><d>1</d></field5></Root>`;
-    // XSDSequenceArrayRecord6|Error v2 = parseString(xmlStr);
-    // test:assertEquals(v2, {seq_XSDSequenceArrayRecord6_1: [{field1: {value1: [{a: "1", b: "2", c: "3"}]}, field2: {value2: [{d: "1", e: "2", f: "3"}]}, field3: {value3: [{g: "1", h: "2", i: "3"}]}}], seq_XSDSequenceArrayRecord6_2: [{field4: {value1: [{a: "1", b: "2", c: "3"}]}, field5: {value2: [{d: "1", e: "2", f: "3"}]}, field6: {value3: [{g: "1", h: "2", i: "3"}]}}]});
+    string xmlStr = string `<Root><field1><a>1</a><a>1</a></field1><field2><d>1</d><d>1</d></field2><field1><a>1</a><a>1</a></field1><field2><d>1</d><d>1</d></field2><field4><a>1</a><a>1</a></field4><field5><d>1</d><d>1</d></field5><field4><a>1</a><a>1</a></field4><field5><d>1</d><d>1</d></field5></Root>`;
+    XSDSequenceArrayRecord6|Error v2 = parseString(xmlStr);
+    test:assertEquals(v2, {"seq_XSDSequenceArrayRecord6_1":[{"field1":{"value1":[{"a":"1"},{"a":"1"}]},"field2":{"value2":[{"d":"1"},{"d":"1"}]}},{"field1":{"value1":[{"a":"1"},{"a":"1"}]},"field2":{"value2":[{"d":"1"},{"d":"1"}]}}],"seq_XSDSequenceArrayRecord6_2":[{"field4":{"value1":[{"a":"1"},{"a":"1"}]},"field5":{"value2":[{"d":"1"},{"d":"1"}]}},{"field4":{"value1":[{"a":"1"},{"a":"1"}]},"field5":{"value2":[{"d":"1"},{"d":"1"}]}}]});
 }

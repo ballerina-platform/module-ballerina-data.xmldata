@@ -8,19 +8,25 @@ import io.ballerina.runtime.api.values.BString;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
 public class ChoiceInfo implements ModelGroupInfo {
 
     private final Stack<HashMap<String, ElementInfo>> xmlElementInfo;
+    private final Map<String, Integer> remainingElementCount = new HashMap<>();
+    private final Map<String, Integer> minimumElementCount = new HashMap<>();
+    private final Map<String, Integer> maxElementCount = new HashMap<>();
+    private final Map<String, Boolean> elementOptionality = new HashMap<>();
     public String fieldName;
     public long minOccurs;
     public long maxOccurs;
     public int occurrences;
+    String lastElement = "";
     public final Set<String> allElements = new HashSet<>();
     public final Set<String> visitedElements = new HashSet<>();
-    private final HashMap<String, String> xmlElementNameMap = new HashMap<>();
+    private final HashMap<String, String> xmlElementNameMap;
     private boolean isMiddleOfElement = false;
 
 
@@ -39,7 +45,9 @@ public class ChoiceInfo implements ModelGroupInfo {
             this.maxOccurs = Math.max(this.minOccurs, 1);
         }
         this.occurrences = 0;
-        this.allElements.addAll(DataUtils.getXmlElementNames(fieldType, xmlElementNameMap));
+        this.allElements.addAll(DataUtils.getXmlElementNames(fieldType));
+        this.xmlElementNameMap = DataUtils.getXmlElementNameMap(fieldType);
+        reOrderElementNamesBasedOnTheNameAnnotation();
         this.xmlElementInfo = xmlElementInfo;
     }
 
@@ -52,6 +60,7 @@ public class ChoiceInfo implements ModelGroupInfo {
 
     @Override
     public void validate() {
+        generateElementOptionalityMapIfNotPresent();
         validateCompletedChoice();
         markOtherElementsAsOptional();
         reset();
@@ -75,10 +84,13 @@ public class ChoiceInfo implements ModelGroupInfo {
     public void reset() {
         this.visitedElements.clear();
         isMiddleOfElement = false;
+        this.remainingElementCount.putAll(this.maxElementCount);
+        this.lastElement = "";
     }
 
     @Override
     public void visit(String element, boolean isStartElement) {
+        generateElementOptionalityMapIfNotPresent();
         if (isMiddleOfElement && isStartElement) {
             return;
         }
@@ -89,8 +101,19 @@ public class ChoiceInfo implements ModelGroupInfo {
             return;
         }
 
+        if (visitedElements.contains(element)) {
+            if (remainingElementCount.get(element) == 0) {
+                throw new RuntimeException("Element " + xmlElementNameMap.get(element)
+                        + " occurs more than the max allowed times");
+            }
+            remainingElementCount.put(element, remainingElementCount.get(element) - 1);
+            return;
+        }
+
         if (allElements.contains(element)) {
             this.visitedElements.add(element);
+            lastElement = element;
+            remainingElementCount.put(element, remainingElementCount.get(element) - 1);
             return;
         }
 
@@ -114,11 +137,18 @@ public class ChoiceInfo implements ModelGroupInfo {
 
     @Override
     public boolean predictStartNewModelGroup(String element) {
-        return !visitedElements.isEmpty() && !isMiddleOfElement;
+        if (element.equals(lastElement) && remainingElementCount.get(element) > 0) {
+            return false;
+        }
+        return !isMiddleOfElement && !visitedElements.isEmpty();
     }
 
     private void validateCompletedChoice() {
-        if (visitedElements.size() != 1) {
+        int elementCount = maxElementCount.get(lastElement) - remainingElementCount.get(lastElement);
+        if (elementCount < minimumElementCount.get(lastElement)) {
+            return;
+        }
+        if (visitedElements.size() > 1) {
             throw new RuntimeException("Only one element in " + fieldName + " should be present");
         }
         updateOccurrences();
@@ -128,5 +158,42 @@ public class ChoiceInfo implements ModelGroupInfo {
         if (this.occurrences < this.minOccurs) {
             throw new RuntimeException(fieldName + " Element occurs less than the min required times");
         }
+    }
+
+    private void generateElementOptionalityMapIfNotPresent() {
+        if (elementOptionality.isEmpty()) {
+            if (!xmlElementInfo.isEmpty()) {
+                allElements.forEach(element -> {
+                    HashMap<String, ElementInfo> elementInfo = xmlElementInfo.peek();
+                    if (elementInfo.containsKey(element)) {
+                        ElementInfo info = elementInfo.get(element);
+                        elementOptionality.put(element, info.minOccurs == 0);
+                        remainingElementCount.put(element, (int) info.maxOccurs);
+                        maxElementCount.put(element, (int) info.maxOccurs);
+                        minimumElementCount.put(element, (int) info.minOccurs);
+                    } else {
+                        elementOptionality.put(element, false);
+                        remainingElementCount.put(element, 1);
+                        maxElementCount.put(element, 1);
+                        minimumElementCount.put(element, 1);
+                    }
+                });
+            } else {
+                allElements.forEach(element -> {
+                    elementOptionality.put(element, false);
+                    remainingElementCount.put(element, 1);
+                    maxElementCount.put(element, 1);
+                    minimumElementCount.put(element, 1);
+                });
+            }
+        }
+    }
+
+    private void reOrderElementNamesBasedOnTheNameAnnotation() {
+        allElements.forEach(element -> {
+            if (!xmlElementNameMap.containsKey(element)) {
+                xmlElementNameMap.put(element, element);
+            }
+        });
     }
 }

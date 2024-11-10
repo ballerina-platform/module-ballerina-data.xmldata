@@ -1017,8 +1017,7 @@ public class DataUtils {
     }
 
 
-    public static Collection<String> getXmlElementNames(RecordType fieldType,
-                                                        HashMap<String, String> xmlElementNameMap) {
+    public static Collection<String> getXmlElementNames(RecordType fieldType) {
         HashSet<String> elementNames = new HashSet<>(fieldType.getFields().keySet());
         BMap<BString, Object> annotations = fieldType.getAnnotations();
         for (BString annotationKey : annotations.getKeys()) {
@@ -1027,8 +1026,7 @@ public class DataUtils {
                 String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
                 Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
                 for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
-                    updateFieldSetWithName(fieldAnnotation, elementNames,
-                            fieldAnnotationKey, fieldName, xmlElementNameMap);
+                    updateFieldSetWithName(fieldAnnotation, elementNames, fieldAnnotationKey, fieldName);
                 }
             }
         }
@@ -1036,8 +1034,7 @@ public class DataUtils {
     }
 
     private static void updateFieldSetWithName(Map<BString, Object> fieldAnnotation, Set<String> elementNames,
-                                               BString fieldAnnotationKey, String fieldName,
-                                               HashMap<String, String> xmlElementNameMap) {
+                                               BString fieldAnnotationKey, String fieldName) {
         String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
         if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
             if (fieldAnnotationKeyStr.endsWith(Constants.NAME)) {
@@ -1047,10 +1044,7 @@ public class DataUtils {
                         .getStringValue(Constants.VALUE));
                 elementNames.remove(fieldName);
                 elementNames.add(xmlElementName);
-                xmlElementNameMap.put(xmlElementName, fieldName);
-                return;
             }
-            xmlElementNameMap.put(fieldName, fieldName);
         }
     }
 
