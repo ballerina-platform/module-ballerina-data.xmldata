@@ -6,12 +6,14 @@ import io.ballerina.runtime.api.values.BString;
 
 public class ElementInfo {
     String name;
+    String fieldName;
     public long minOccurs;
     public long maxOccurs;
     public int occurrences;
 
-    public ElementInfo(String name, BMap<BString, Object> element) {
+    public ElementInfo(String name, String fieldName, BMap<BString, Object> element) {
         this.name = name;
+        this.fieldName = fieldName;
         if (element.containsKey(Constants.MIN_OCCURS)) {
             this.minOccurs = element.getIntValue(Constants.MIN_OCCURS);
         } else {

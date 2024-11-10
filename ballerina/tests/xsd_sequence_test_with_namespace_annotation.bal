@@ -19,8 +19,8 @@ type Seq_EA1_NamespaceAnnotation record {
         value: 1
     }
     @Namespace {
-        uri: "example2.com",
-        prefix: "ea2"
+        uri: "example1.com",
+        prefix: "ea1"
     }
     string EA1?;
 

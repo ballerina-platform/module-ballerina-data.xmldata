@@ -2,9 +2,11 @@ package io.ballerina.lib.data.xmldata.xml.xsd;
 
 import io.ballerina.lib.data.xmldata.utils.Constants;
 import io.ballerina.runtime.api.types.RecordType;
+import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -18,14 +20,15 @@ public class SequenceInfo implements ModelGroupInfo {
     public int occurrences;
 
     // TODO: Update to a hashset<String>
-    private Set<String> unvisitedElements = new HashSet<>();
-    private Set<String> visitedElements = new HashSet<>();
-    private Set<String> allElements = new HashSet<>();
-    private Map<String, Long> elementPriorityOrder = new HashMap<>();
+    private final Set<String> unvisitedElements = new HashSet<>();
+    private final Set<String> visitedElements = new HashSet<>();
+    private final Set<String> allElements = new HashSet<>();
+    private final Map<String, Long> elementPriorityOrder = new HashMap<>();
     private boolean isCompleted = false;
     private boolean isMiddleOfElement = false;
     private long currentPriority = -1L;
-    private Stack<HashMap<String, ElementInfo>> xmlElementInfo;
+    private final Stack<HashMap<String, ElementInfo>> xmlElementInfo;
+    private final HashMap<String, String> xmlElementnameMap = new HashMap<>();
 
     public SequenceInfo(String fieldName, BMap<BString, Object> element, RecordType fieldType,
                         Stack<HashMap<String, ElementInfo>> xmlElementInfo) {
@@ -44,10 +47,44 @@ public class SequenceInfo implements ModelGroupInfo {
         this.occurrences = 0;
 
         // TODO: Name Annotation not encountered
-        this.allElements.addAll(fieldType.getFields().keySet());
-        this.unvisitedElements.addAll(fieldType.getFields().keySet());
+        this.allElements.addAll(getXmlElementNames(fieldType));
+        this.unvisitedElements.addAll(this.allElements);
         updatePriorityOrder(fieldType);
         this.xmlElementInfo = xmlElementInfo;
+    }
+
+    private Collection<String> getXmlElementNames(RecordType fieldType) {
+        HashSet<String> elementNames = new HashSet<>(fieldType.getFields().keySet());
+        BMap<BString, Object> annotations = fieldType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String key = annotationKey.getValue();
+            if (key.contains(Constants.FIELD)) {
+                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                    updateFieldSetWithName(fieldAnnotation, elementNames, fieldAnnotationKey, fieldName);
+                }
+            }
+        }
+        return elementNames;
+    }
+
+    private void updateFieldSetWithName(Map<BString, Object> fieldAnnotation, Set<String> elementNames,
+                                             BString fieldAnnotationKey, String fieldName) {
+        String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+        if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+            if (fieldAnnotationKeyStr.endsWith(Constants.NAME)) {
+                BMap<BString, Object> fieldAnnotationValue =
+                        (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
+                String xmlElementName = StringUtils.getStringValue(fieldAnnotationValue
+                        .getStringValue(Constants.VALUE));
+                elementNames.remove(fieldName);
+                elementNames.add(xmlElementName);
+                xmlElementnameMap.put(xmlElementName, fieldName);
+                return;
+            }
+            xmlElementnameMap.put(fieldName, fieldName);
+        }
     }
 
     private void updatePriorityOrder(RecordType fieldType) {
@@ -60,9 +97,9 @@ public class SequenceInfo implements ModelGroupInfo {
                 for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
                     String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
                     if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
-                        BMap<BString, Object> fieldAnnotationValue = null;
                         if (fieldAnnotationKeyStr.endsWith(Constants.ORDER)) {
-                            fieldAnnotationValue = (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
+                            BMap<BString, Object> fieldAnnotationValue =
+                                    (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
                             this.elementPriorityOrder.put(fieldName, fieldAnnotationValue.getIntValue(Constants.VALUE));
                         }
                     }
@@ -128,7 +165,7 @@ public class SequenceInfo implements ModelGroupInfo {
         if (this.visitedElements.contains(element)) {
             return;
         }
-        throw new RuntimeException("Unexpected element " + element + " found in " + fieldName);
+        throw new RuntimeException("Unexpected element " + xmlElementnameMap.get(element) + " found in " + fieldName);
     }
 
     @Override
@@ -157,7 +194,8 @@ public class SequenceInfo implements ModelGroupInfo {
         Long elementPriority = elementPriorityOrder.get(element);
         if (elementPriority != null) {
             if (elementPriority < currentPriority) {
-                throw new RuntimeException("Element " + element + " is not in the correct order in " + fieldName);
+                throw new RuntimeException("Element " + xmlElementnameMap.get(element) +
+                        " is not in the correct order in " + fieldName);
             }
             currentPriority = elementPriority;
         }
@@ -171,10 +209,8 @@ public class SequenceInfo implements ModelGroupInfo {
         Long elementPriority = elementPriorityOrder.get(element);
         if (elementPriority != null) {
             // TODO: Priority orders should be start from 1.
-            if (!isMiddleOfElement && elementPriority < currentPriority
-                    && elementPriority == 1) {
-                return true;
-            }
+            return !isMiddleOfElement && elementPriority < currentPriority
+                    && elementPriority == 1;
         }
         return false;
     }
@@ -203,7 +239,7 @@ public class SequenceInfo implements ModelGroupInfo {
 
     private String getUnvisitedElements() {
         StringBuilder unvisitedElementsStr = new StringBuilder();
-        unvisitedElements.forEach(element -> unvisitedElementsStr.append(element).append(", "));
+        unvisitedElements.forEach(element -> unvisitedElementsStr.append(xmlElementnameMap.get(element)).append(", "));
         String result = unvisitedElementsStr.toString();
         result = result.substring(0, result.length() - 2);
         return result;

@@ -220,7 +220,7 @@ public class DataUtils {
     }
 
     @SuppressWarnings("unchecked")
-    private static String getModifiedName(Map<BString, Object> fieldAnnotation, String attributeName) {
+    public static String getModifiedName(Map<BString, Object> fieldAnnotation, String attributeName) {
         for (BString key : fieldAnnotation.keySet()) {
             if (isNameAnnotationKey(key.getValue())) {
                 return ((Map<BString, Object>) fieldAnnotation.get(key)).get(Constants.VALUE).toString();

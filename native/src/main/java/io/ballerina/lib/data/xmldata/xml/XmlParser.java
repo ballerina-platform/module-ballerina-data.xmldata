@@ -646,8 +646,8 @@ public class XmlParser {
 
             // TODO: Optimize this with stream.findFirst()
             for (Map.Entry<String, SequenceInfo> entry : sequenceInfo.entrySet()) {
-                String key = entry.getKey();
                 SequenceInfo sequence = entry.getValue();
+                String key = entry.getKey();
                 QualifiedName qualifiedName = QualifiedNameFactory.createQualifiedName(
                         "", key, "", xmlParserData.useSemanticEquality);
 
@@ -1348,52 +1348,79 @@ public class XmlParser {
             if (key.contains(Constants.FIELD)) {
                 String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
                 Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+                String xmlElementName = DataUtils.getModifiedName(fieldAnnotation, fieldName);
                 for (BString fieldAnnotationKey: fieldAnnotation.keySet()) {
                     String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
                     if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
-                        BMap<BString, Object> fieldAnnotationValue;
-                        if (fieldAnnotationKeyStr.endsWith(Constants.ELEMENT)) {
-                            fieldAnnotationValue = (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
-                            parserData.xmlElementInfo.peek().put(fieldName,
-                                new ElementInfo(fieldName, fieldAnnotationValue));
-                        } else if (fieldAnnotationKeyStr.endsWith(Constants.SEQUENCE)) {
-                            fieldAnnotationValue = (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
-                            Type fieldType = TypeUtils.getReferredType(recordType
-                                    .getFields().get(fieldName).getFieldType());
-                            if (fieldType instanceof RecordType recType) {
-                                parserData.xsdSequenceInfo.peek().put(fieldName,
-                                        new SequenceInfo(fieldName,
-                                                fieldAnnotationValue, recType, parserData.xmlElementInfo));
-                            } else if (fieldType instanceof ArrayType arrayType) {
-                                Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
-                                if (elementType instanceof RecordType recType) {
-                                    //TODO: Define a separate function
-                                    parserData.xsdSequenceInfo.peek().put(fieldName,
-                                            new SequenceInfo(fieldName,
-                                                    fieldAnnotationValue, recType, parserData.xmlElementInfo));
-                                } else {
-                                    throw new RuntimeException("Cannot include Sequence annotation into "
-                                            + fieldName + " of type " + fieldType);
-                                }
-                            } else {
-                                throw new RuntimeException("Cannot include Sequence annotation into "
-                                        + fieldName + " of type " + fieldType);
-                            }
-                        } else if (fieldAnnotationKeyStr.endsWith(Constants.CHOICE)) {
-                            fieldAnnotationValue = (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
-                            Type fieldType = TypeUtils.getReferredType(recordType
-                                    .getFields().get(fieldName).getFieldType());
-                            if (fieldType instanceof RecordType recType) {
-                                parserData.xsdChoiceInfo.peek().put(fieldName,
-                                        new ChoiceInfo(fieldName, fieldAnnotationValue, recType));
-                            } else {
-                                throw new RuntimeException("Cannot include Sequence annotation into "
-                                        + fieldName + " of type " + fieldType);
-                            }
-                        }
+                        handleModuleXsdAnnotations(fieldAnnotation, fieldAnnotationKeyStr, fieldName,
+                                recordType, fieldAnnotationKey, xmlElementName, parserData);
                     }
                 }
             }
+        }
+    }
+
+    private void handleModuleXsdAnnotations(Map<BString, Object> fieldAnnotation, String fieldAnnotationKeyStr,
+                                            String fieldName, RecordType recordType, BString fieldAnnotationKey,
+                                            String xmlElementName, XmlParserData parserData) {
+        if (fieldAnnotationKeyStr.endsWith(Constants.ELEMENT)) {
+            handleModuleXsdElementAnnotation(fieldAnnotation, fieldAnnotationKey,
+                    fieldName, xmlElementName, parserData);
+        } else if (fieldAnnotationKeyStr.endsWith(Constants.SEQUENCE)) {
+            handleModuleXsdSequenceAnnotations(fieldAnnotation, fieldName, recordType,
+                    fieldAnnotationKey, xmlElementName, parserData);
+        } else if (fieldAnnotationKeyStr.endsWith(Constants.CHOICE)) {
+            handleModuleChoiceSequenceAnnotations(fieldAnnotation, fieldName, recordType,
+                    fieldAnnotationKey, xmlElementName, parserData);
+        }
+    }
+
+    private void handleModuleXsdElementAnnotation(Map<BString, Object> fieldAnnotation, BString fieldAnnotationKey,
+                                                  String fieldName, String xmlElementName, XmlParserData parserData) {
+        BMap<BString, Object> fieldAnnotationValue = (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
+        parserData.xmlElementInfo.peek().put(xmlElementName,
+                new ElementInfo(xmlElementName, fieldName, fieldAnnotationValue));
+    }
+
+    private void handleModuleXsdSequenceAnnotations(Map<BString, Object> fieldAnnotation, String fieldName,
+                                                    RecordType recordType, BString fieldAnnotationKey,
+                                                    String xmlElementName, XmlParserData parserData) {
+        BMap<BString, Object> fieldAnnotationValue = (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
+        Type fieldType = TypeUtils.getReferredType(recordType
+                .getFields().get(fieldName).getFieldType());
+        if (fieldType instanceof RecordType recType) {
+            parserData.xsdSequenceInfo.peek().put(fieldName,
+                    new SequenceInfo(fieldName,
+                            fieldAnnotationValue, recType, parserData.xmlElementInfo));
+        } else if (fieldType instanceof ArrayType arrayType) {
+            Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
+            if (elementType instanceof RecordType recType) {
+                //TODO: Define a separate function
+                parserData.xsdSequenceInfo.peek().put(fieldName,
+                        new SequenceInfo(fieldName,
+                                fieldAnnotationValue, recType, parserData.xmlElementInfo));
+            } else {
+                throw new RuntimeException("Cannot include Sequence annotation into "
+                        + fieldName + " of type " + fieldType);
+            }
+        } else {
+            throw new RuntimeException("Cannot include Sequence annotation into "
+                    + fieldName + " of type " + fieldType);
+        }
+    }
+
+    private void handleModuleChoiceSequenceAnnotations(Map<BString, Object> fieldAnnotation, String fieldName,
+                                                       RecordType recordType, BString fieldAnnotationKey,
+                                                       String xmlElementName, XmlParserData parserData) {
+        BMap<BString, Object> fieldAnnotationValue = (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
+        Type fieldType = TypeUtils.getReferredType(recordType
+                .getFields().get(fieldName).getFieldType());
+        if (fieldType instanceof RecordType recType) {
+            parserData.xsdChoiceInfo.peek().put(fieldName,
+                    new ChoiceInfo(fieldName, fieldAnnotationValue, recType));
+        } else {
+            throw new RuntimeException("Cannot include Sequence annotation into "
+                    + fieldName + " of type " + fieldType);
         }
     }
 
