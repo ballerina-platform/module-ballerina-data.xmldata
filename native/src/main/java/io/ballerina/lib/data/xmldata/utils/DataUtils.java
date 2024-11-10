@@ -1054,6 +1054,40 @@ public class DataUtils {
         }
     }
 
+    public static HashMap<String, String> getXmlElementNameMap(RecordType fieldType) {
+        HashMap<String, String> elementMap = new HashMap<>();
+        BMap<BString, Object> annotations = fieldType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String key = annotationKey.getValue();
+            if (key.contains(Constants.FIELD)) {
+                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                    getXmlElementNameFromFieldAnnotation(fieldAnnotation, fieldAnnotationKey, fieldName, elementMap);
+                }
+            }
+        }
+        return elementMap;
+    }
+
+    private static void getXmlElementNameFromFieldAnnotation(Map<BString, Object> fieldAnnotation,
+                                               BString fieldAnnotationKey, String fieldName,
+                                               HashMap<String, String> xmlElementNameMap) {
+        String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+        if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+            if (fieldAnnotationKeyStr.endsWith(Constants.NAME)) {
+                BMap<BString, Object> fieldAnnotationValue =
+                        (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
+                String xmlElementName = StringUtils.getStringValue(fieldAnnotationValue
+                        .getStringValue(Constants.VALUE));
+                if (xmlElementNameMap.containsKey(fieldName)) {
+                    xmlElementNameMap.remove(fieldName);
+                }
+                xmlElementNameMap.put(xmlElementName, fieldName);
+            }
+        }
+    }
+
     /**
      * Holds data required for the traversing.
      *

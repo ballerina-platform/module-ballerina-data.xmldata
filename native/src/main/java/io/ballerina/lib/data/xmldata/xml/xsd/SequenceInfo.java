@@ -6,11 +6,12 @@ import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 public class SequenceInfo implements ModelGroupInfo {
     public String fieldName;
@@ -19,15 +20,18 @@ public class SequenceInfo implements ModelGroupInfo {
     public int occurrences;
 
     // TODO: Update to a hashset<String>
-    private final Set<String> unvisitedElements = new HashSet<>();
-    private final Set<String> visitedElements = new HashSet<>();
-    private final Set<String> allElements = new HashSet<>();
-    private final Map<String, Long> elementPriorityOrder = new HashMap<>();
+    private final Map<String, Integer> remainingElementCount = new HashMap<>();
+    private final Map<String, Integer> minimumElementCount = new HashMap<>();
+    private final Map<String, Integer> maxElementCount = new HashMap<>();
+    private Map<String, Boolean> elementOptionality = new HashMap<>();
+    private final List<String> allElements = new ArrayList<>();
+    int currentIndex = 0;
+    int elementCount;
+    String lastElement = "";
     private boolean isCompleted = false;
     private boolean isMiddleOfElement = false;
-    private long currentPriority = -1L;
     private final Stack<HashMap<String, ElementInfo>> xmlElementInfo;
-    private final HashMap<String, String> xmlElementNameMap = new HashMap<>();
+    private HashMap<String, String> xmlElementNameMap = new HashMap<>();
 
     public SequenceInfo(String fieldName, BMap<BString, Object> element, RecordType fieldType,
                         Stack<HashMap<String, ElementInfo>> xmlElementInfo) {
@@ -44,12 +48,24 @@ public class SequenceInfo implements ModelGroupInfo {
             this.maxOccurs = Math.max(this.minOccurs, 1);
         }
         this.occurrences = 0;
-
-        // TODO: Name Annotation not encountered
-        this.allElements.addAll(DataUtils.getXmlElementNames(fieldType, xmlElementNameMap));
-        this.unvisitedElements.addAll(this.allElements);
-        updatePriorityOrder(fieldType);
         this.xmlElementInfo = xmlElementInfo;
+        updateUnvisitedElementsBasedOnPriorityOrder(fieldType);
+        this.xmlElementNameMap = DataUtils.getXmlElementNameMap(fieldType);
+        reOrderElementNamesBasedOnTheNameAnnotation();
+        this.elementCount = allElements.size();
+    }
+
+    private void reOrderElementNamesBasedOnTheNameAnnotation() {
+        xmlElementNameMap.forEach((key, value) -> {
+            if (allElements.contains(value)) {
+                allElements.set(allElements.indexOf(value), key);
+            }
+        });
+        allElements.forEach(element -> {
+            if (!xmlElementNameMap.containsKey(element)) {
+                xmlElementNameMap.put(element, element);
+            }
+        });
     }
 
     public void updateOccurrences() {
@@ -67,45 +83,34 @@ public class SequenceInfo implements ModelGroupInfo {
 
     @Override
     public void validate() {
+        generateElementOptionalityMapIfNotPresent();
         validateCompletedSequences();
         reset();
     }
 
     @Override
     public void reset() {
-        this.unvisitedElements.addAll(allElements);
-        this.visitedElements.clear();
-        this.currentPriority = -1L;
         this.isCompleted = false;
         this.isMiddleOfElement = false;
+        this.currentIndex = 0;
+        this.remainingElementCount.putAll(this.maxElementCount);
+        this.lastElement = "";
     }
 
     @Override
     public void visit(String element, boolean isStartElement) {
+        generateElementOptionalityMapIfNotPresent();
         if (isMiddleOfElement && isStartElement) {
             return;
         }
 
         isMiddleOfElement = isStartElement;
-        compareSequencePriorityOrder(element);
-
         if (isStartElement) {
             isCompleted = false;
             return;
         }
 
-        if (this.unvisitedElements.contains(element)) {
-            isMiddleOfElement = false;
-            isCompleted = false;
-            this.unvisitedElements.remove(element);
-            this.visitedElements.add(element);
-            return;
-        }
-
-        if (this.visitedElements.contains(element)) {
-            return;
-        }
-        throw new RuntimeException("Unexpected element " + xmlElementNameMap.get(element) + " found in " + fieldName);
+        checkElementOrderAndUpdateElementOccurences(element);
     }
 
     @Override
@@ -123,73 +128,101 @@ public class SequenceInfo implements ModelGroupInfo {
         return isMiddleOfElement;
     }
 
-    private void validateCompletedSequences() {
-        if (unvisitedElements.isEmpty()) {
-            isCompleted = true;
-            updateOccurrences();
-        }
-
-        if (!isCompleted && !containsAllOptionalElements(this.xmlElementInfo)) {
-            throw new RuntimeException("Element " + getUnvisitedElements() + " not found in " + fieldName);
-        }
-    }
-
-    private void compareSequencePriorityOrder(String element) {
-        Long elementPriority = elementPriorityOrder.get(element);
-        if (elementPriority != null) {
-            if (elementPriority < currentPriority) {
-                throw new RuntimeException("Element " + xmlElementNameMap.get(element) +
-                        " is not in the correct order in " + fieldName);
-            }
-            currentPriority = elementPriority;
-        }
-    }
-
-    //TODO: Check
+    @Override
     public boolean predictStartNewModelGroup(String element) {
+        generateElementOptionalityMapIfNotPresent();
         if (!isElementContains(element)) {
             return false;
         }
-        Long elementPriority = elementPriorityOrder.get(element);
-        if (elementPriority != null) {
-            // TODO: Priority orders should be start from 1.
-            return !isMiddleOfElement && elementPriority < currentPriority
-                    && elementPriority == 1;
-        }
-        return false;
-    }
 
-    private boolean containsAllOptionalElements(Stack<HashMap<String, ElementInfo>> elementInfoStack) {
-        if (elementInfoStack.isEmpty()) {
+        boolean isFirstElement = element.equals(allElements.get(0));
+        if (isFirstElement && currentIndex == 0 && remainingElementCount.get(allElements.get(0)) > 0) {
             return false;
         }
 
-        HashMap<String, ElementInfo> elementInfo = elementInfoStack.peek();
-        Set<String> unvisitedElementsTemp = new HashSet<>(unvisitedElements);
-        unvisitedElementsTemp.forEach(element -> {
-            if (elementInfo.containsKey(element)) {
-                ElementInfo elem = elementInfo.get(element);
-                if (elem.minOccurs == 0) {
-                    unvisitedElements.remove(element);
+        return !isMiddleOfElement && isFirstElement
+                && (isCompleted || containsAllOptionalElements())
+                && !(lastElement.equals(element) && remainingElementCount.get(element) > 0);
+    }
+
+    private void validateCompletedSequences() {
+        if (!isCompleted && !containsAllOptionalElements()) {
+            throw new RuntimeException("Element " + getUnvisitedElements() + " not found in " + fieldName);
+        }
+        updateOccurrences();
+    }
+
+    private boolean containsAllOptionalElements() {
+        for (int i = currentIndex; i < this.elementCount; i++) {
+            if (!elementOptionality.get(allElements.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void checkElementOrderAndUpdateElementOccurences(String element) {
+        String nextElement;
+        boolean isLastElement = false;
+
+        if (element.equals(lastElement)) {
+            nextElement = lastElement;
+            isLastElement = true;
+        } else {
+            nextElement = allElements.get(currentIndex == this.elementCount ? currentIndex - 1 : currentIndex);
+        }
+
+        while (!nextElement.equals(element)) {
+            if (!elementOptionality.get(nextElement)) {
+                throw new RuntimeException("Element " + xmlElementNameMap.get(element) +
+                        " is not in the correct order in " + fieldName);
+            }
+            currentIndex++;
+            nextElement = allElements.get(currentIndex);
+
+            if (currentIndex == this.elementCount) {
+                throw new RuntimeException("Element " + xmlElementNameMap.get(element) +
+                        " is not in the correct order in " + fieldName);
+            }
+        }
+
+        if (remainingElementCount.get(nextElement) == 0) {
+            throw new RuntimeException("Element " + xmlElementNameMap.get(element) +
+                    " occurs more than the max allowed times in " + fieldName);
+        } else {
+            remainingElementCount.put(element, remainingElementCount.get(nextElement) - 1);
+            int elementCount = maxElementCount.get(element) - remainingElementCount.get(element).intValue();
+
+            if (elementCount >= minimumElementCount.get(element) && !isLastElement
+                    && currentIndex != this.elementCount) {
+                currentIndex++;
+            } else {
+                if (elementCount == 1) {
+                    currentIndex++;
                 }
             }
-        });
-        if (unvisitedElements.isEmpty()) {
-            updateOccurrences();
-            return true;
+
+            if (currentIndex == this.elementCount && elementCount >= minimumElementCount.get(element)) {
+                isCompleted = true;
+            }
         }
-        return false;
+        lastElement = nextElement;
     }
 
     private String getUnvisitedElements() {
         StringBuilder unvisitedElementsStr = new StringBuilder();
-        unvisitedElements.forEach(element -> unvisitedElementsStr.append(xmlElementNameMap.get(element)).append(", "));
+        allElements.subList(currentIndex, this.elementCount).forEach(element -> {
+            if (!elementOptionality.get(element)) {
+                unvisitedElementsStr.append(xmlElementNameMap.get(element)).append(", ");
+            }
+        });
         String result = unvisitedElementsStr.toString();
         result = result.substring(0, result.length() - 2);
         return result;
     }
 
-    private void updatePriorityOrder(RecordType fieldType) {
+    private HashMap<String, Long> updatePriorityOrder(RecordType fieldType) {
+        HashMap<String, Long> elementPriorityOrder = new HashMap<>();
         BMap<BString, Object> annotations = fieldType.getAnnotations();
         for (BString annotationKey : annotations.getKeys()) {
             String key = annotationKey.getValue();
@@ -202,10 +235,49 @@ public class SequenceInfo implements ModelGroupInfo {
                         if (fieldAnnotationKeyStr.endsWith(Constants.ORDER)) {
                             BMap<BString, Object> fieldAnnotationValue =
                                     (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
-                            this.elementPriorityOrder.put(fieldName, fieldAnnotationValue.getIntValue(Constants.VALUE));
+                            elementPriorityOrder.put(fieldName, fieldAnnotationValue.getIntValue(Constants.VALUE));
                         }
                     }
                 }
+            }
+        }
+        return elementPriorityOrder;
+    }
+
+    private void updateUnvisitedElementsBasedOnPriorityOrder(RecordType fieldType) {
+        this.allElements.addAll(updatePriorityOrder(fieldType).entrySet().stream()
+                .sorted(Map.Entry.comparingByValue()) // Sort by Long values in priority order
+                .map(entry -> entry.getKey()) // Get xml element name from
+                .collect(Collectors.toList()));
+
+        this.currentIndex = 0;
+    }
+
+    private void generateElementOptionalityMapIfNotPresent() {
+        if (elementOptionality.isEmpty()) {
+            if (!xmlElementInfo.isEmpty()) {
+                allElements.forEach(element -> {
+                    HashMap<String, ElementInfo> elementInfo = xmlElementInfo.peek();
+                    if (elementInfo.containsKey(element)) {
+                        ElementInfo info = elementInfo.get(element);
+                        elementOptionality.put(element, info.minOccurs == 0);
+                        remainingElementCount.put(element, (int) info.maxOccurs);
+                        maxElementCount.put(element, (int) info.maxOccurs);
+                        minimumElementCount.put(element, (int) info.minOccurs);
+                    } else {
+                        elementOptionality.put(element, false);
+                        remainingElementCount.put(element, 1);
+                        maxElementCount.put(element, 1);
+                        minimumElementCount.put(element, 1);
+                    }
+                });
+            } else {
+                allElements.forEach(element -> {
+                    elementOptionality.put(element, false);
+                    remainingElementCount.put(element, 1);
+                    maxElementCount.put(element, 1);
+                    minimumElementCount.put(element, 1);
+                });
             }
         }
     }

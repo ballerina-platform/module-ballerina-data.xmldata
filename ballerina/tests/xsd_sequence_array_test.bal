@@ -247,17 +247,17 @@ function testXSDSequenceArrayRecord4() returns error? {
     xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><i>3</i><h>2</h></field6></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element h is not in the correct order in"), msg = (<Error>v2).message());
+    test:assertTrue((<Error>v2).message().includes("Element i is not in the correct order in"), msg = (<Error>v2).message());
 
     xmlStr = string `<Root><field1><a>1</a><c>3</c><b>2</b></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element b is not in the correct order in"), msg = (<Error>v2).message());
+    test:assertTrue((<Error>v2).message().includes("Element c is not in the correct order in"), msg = (<Error>v2).message());
 
     xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field5><d>1</d><e>2</e><f>3</f></field5><field4><a>1</a><b>2</b><c>3</c></field4><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element field6, field4 not found in seq_XSDSequenceArrayRecord13_2"), msg = (<Error>v2).message());
+    test:assertTrue((<Error>v2).message().includes("Element field5 is not in the correct order in"), msg = (<Error>v2).message());
 }
 
 type XsdSequenceArray5 record {|

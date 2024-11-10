@@ -112,6 +112,9 @@ type XsdSequenceWithNameAnnotation2 record {
 };
 
 type Seq_EA2_NameAnnotation record {
+    @Order {
+        value: 1
+    }
     record {
         @Element {
             maxOccurs: 1,
