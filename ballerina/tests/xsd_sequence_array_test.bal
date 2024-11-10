@@ -259,3 +259,127 @@ function testXSDSequenceArrayRecord4() returns error? {
     test:assertTrue(v2 is Error);
     test:assertTrue((<Error>v2).message().includes("Element field6, field4 not found in seq_XSDSequenceArrayRecord13_2"), msg = (<Error>v2).message());
 }
+
+type XsdSequenceArray5 record {|
+    @Sequence {
+        minOccurs: 2,
+        maxOccurs: 3
+    }
+    Seq_XsdSequenceArray5[] seq_XsdSequenceArray5;
+|};
+
+type Seq_XsdSequenceArray5 record {|
+    @Order {
+        value: 1
+    }
+    int age;
+
+    @Order {
+        value: 2
+    }
+    float salary;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequenceArray5() returns error? {
+    string xmlStr;
+    XsdSequenceArray5|Error v;
+
+    xmlStr = string `<Root><age>13</age><salary>11.1</salary><age>14</age><salary>15.1</salary></Root>`;
+    v = parseString(xmlStr);
+    test:assertEquals(v, {seq_XsdSequenceArray5: [{age: 13, salary: 11.1}, {age: 14, salary: 15.1}]});
+
+    xmlStr = string `<Root><age>13</age><salary>11.1</salary><age>14</age><salary>14.1</salary><age>15</age><salary>15.1</salary></Root>`;
+    v = parseString(xmlStr);
+    test:assertEquals(v, <XsdSequenceArray5>{seq_XsdSequenceArray5: [{age: 13, salary: 11.1}, {age: 14, salary: 14.1}, {age: 15, salary: 15.1}]});
+
+    xmlStr = string `<Root><age>13</age><salary>11.1</salary><age>14</age><salary>14.1</salary><age>15</age><salary>15.1</salary><age>15</age><salary>15.1</salary></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertTrue((<Error>v).message().includes("seq_XsdSequenceArray5 Element occurs more than the max allowed times"), msg = (<Error>v).message());
+
+    xmlStr = string `<Root><age>13</age><salary>11.1</salary></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertTrue((<Error>v).message().includes("seq_XsdSequenceArray5 Element occurs less than the min required times"), msg = (<Error>v).message());
+}
+
+type XSDSequenceArrayRecord6 record {
+    @Sequence {
+        minOccurs: 2,
+        maxOccurs: 3
+    }
+    Seq_XSDSequenceArrayRecord6_1[] seq_XSDSequenceArrayRecord6_1;
+
+    @Sequence {
+        minOccurs: 2,
+        maxOccurs: 3
+    }
+    Seq_XSDSequenceArrayRecord6_2[] seq_XSDSequenceArrayRecord6_2;
+};
+
+type Seq_XSDSequenceArrayRecord6_1 record {
+    @Order {value: 1}
+    Seq_Array_A_6 field1;
+
+    @Order {value: 2}
+    Seq_Array_B_6 field2;
+};
+
+type Seq_XSDSequenceArrayRecord6_2 record {
+    @Order {value: 1}
+    Seq_Array_D_6 field4;
+
+    @Order {value: 2}
+    Seq_Array_E_6 field5;
+};
+
+type Seq_Array_A_6 record {
+    @Sequence {
+        minOccurs: 2,
+        maxOccurs: 3
+    }
+    Seq_Array_6[] value1;
+};
+
+type Seq_Array_B_6 record {
+    @Sequence {
+        minOccurs: 2,
+        maxOccurs: 3
+    }
+    Seq2_Array_6[] value2;
+};
+
+type Seq_Array_D_6 record {
+    @Sequence {
+        minOccurs: 2,
+        maxOccurs: 3
+    }
+    Seq_Array_6[] value1;
+};
+
+type Seq_Array_E_6 record {
+    @Sequence {
+        minOccurs: 2,
+        maxOccurs: 3
+    }
+    Seq2_Array_6[] value2;
+};
+
+type Seq_Array_6 record {
+    @Order {value: 1}
+    string a;
+};
+
+type Seq2_Array_6 record {
+    @Order {value: 1}
+    string d;
+};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXSDSequenceArrayRecord6() returns error? {
+    // TODO: Refactor sequence elements into a array
+    // string xmlStr = string `<Root><field1><a>1</a><a>1</a></field1><field2><d>1</d><d>1</d></field2><field1><a>1</a><a>1</a></field1><field2><d>1</d><d>1</d></field2><field4><a>1</a><a>1</a></field4><field5><d>1</d><d>1</d></field5><field4><a>1</a><a>1</a></field4><field5><d>1</d><d>1</d></field5></Root>`;
+    // XSDSequenceArrayRecord6|Error v2 = parseString(xmlStr);
+    // test:assertEquals(v2, {seq_XSDSequenceArrayRecord6_1: [{field1: {value1: [{a: "1", b: "2", c: "3"}]}, field2: {value2: [{d: "1", e: "2", f: "3"}]}, field3: {value3: [{g: "1", h: "2", i: "3"}]}}], seq_XSDSequenceArrayRecord6_2: [{field4: {value1: [{a: "1", b: "2", c: "3"}]}, field5: {value2: [{d: "1", e: "2", f: "3"}]}, field6: {value3: [{g: "1", h: "2", i: "3"}]}}]});
+}

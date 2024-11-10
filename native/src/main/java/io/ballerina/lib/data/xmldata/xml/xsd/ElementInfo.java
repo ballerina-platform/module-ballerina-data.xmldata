@@ -11,6 +11,8 @@ public class ElementInfo {
     public long maxOccurs;
     public int occurrences;
 
+    public boolean isInsideChoice = false;
+
     public ElementInfo(String name, String fieldName, BMap<BString, Object> element) {
         this.name = name;
         this.fieldName = fieldName;
@@ -40,7 +42,7 @@ public class ElementInfo {
     }
 
     private void validateMinOccurrences() {
-        if (this.occurrences < this.minOccurs) {
+        if (!isInsideChoice && this.occurrences < this.minOccurs) {
             throw new RuntimeException(name + " Element occurs less than the min required times");
         }
     }

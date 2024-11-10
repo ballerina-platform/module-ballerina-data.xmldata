@@ -49,11 +49,14 @@ import io.ballerina.stdlib.constraint.Constraints;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 
 import javax.xml.namespace.QName;
@@ -1011,6 +1014,44 @@ public class DataUtils {
             return isContainsUnionType(recordType.getRestFieldType());
         }
         return false;
+    }
+
+
+    public static Collection<String> getXmlElementNames(RecordType fieldType,
+                                                        HashMap<String, String> xmlElementNameMap) {
+        HashSet<String> elementNames = new HashSet<>(fieldType.getFields().keySet());
+        BMap<BString, Object> annotations = fieldType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String key = annotationKey.getValue();
+            if (key.contains(Constants.FIELD)) {
+                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                    updateFieldSetWithName(fieldAnnotation, elementNames,
+                            fieldAnnotationKey, fieldName, xmlElementNameMap);
+                }
+            }
+        }
+        return elementNames;
+    }
+
+    private static void updateFieldSetWithName(Map<BString, Object> fieldAnnotation, Set<String> elementNames,
+                                               BString fieldAnnotationKey, String fieldName,
+                                               HashMap<String, String> xmlElementNameMap) {
+        String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+        if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+            if (fieldAnnotationKeyStr.endsWith(Constants.NAME)) {
+                BMap<BString, Object> fieldAnnotationValue =
+                        (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
+                String xmlElementName = StringUtils.getStringValue(fieldAnnotationValue
+                        .getStringValue(Constants.VALUE));
+                elementNames.remove(fieldName);
+                elementNames.add(xmlElementName);
+                xmlElementNameMap.put(xmlElementName, fieldName);
+                return;
+            }
+            xmlElementNameMap.put(fieldName, fieldName);
+        }
     }
 
     /**

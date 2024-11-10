@@ -377,7 +377,8 @@ function testXsdSequenceWithElementAnnotation3() returns error? {
 
     xmlStr = string `<Root><field1><c>3</c></field1><field1><c>3</c></field1><field3><g>1</g><h>2</h><i>3</i></field3></Root>`;
     v2 = parseString(xmlStr);
-    test:assertEquals(v2, {seq_XsdSequenceWithElementAnnotation3_1: {field1: [{value1: {c: "3"}}, {value1: {c: "3"}}], field3: {value3: {g: "1", h: "2", i: "3"}}}});
+    test:assertTrue(v2 is Error);
+    test:assertTrue((<Error>v2).message().includes("seq_XsdSequenceWithElementAnnotation3_2 Element occurs less than the min required times"), (<Error>v2).message());
 
     xmlStr = string `<Root><field1><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field4><a>1</a><a>2</a><a>3</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseString(xmlStr);

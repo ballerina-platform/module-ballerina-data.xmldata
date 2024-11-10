@@ -1,12 +1,11 @@
 package io.ballerina.lib.data.xmldata.xml.xsd;
 
 import io.ballerina.lib.data.xmldata.utils.Constants;
+import io.ballerina.lib.data.xmldata.utils.DataUtils;
 import io.ballerina.runtime.api.types.RecordType;
-import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -28,7 +27,7 @@ public class SequenceInfo implements ModelGroupInfo {
     private boolean isMiddleOfElement = false;
     private long currentPriority = -1L;
     private final Stack<HashMap<String, ElementInfo>> xmlElementInfo;
-    private final HashMap<String, String> xmlElementnameMap = new HashMap<>();
+    private final HashMap<String, String> xmlElementNameMap = new HashMap<>();
 
     public SequenceInfo(String fieldName, BMap<BString, Object> element, RecordType fieldType,
                         Stack<HashMap<String, ElementInfo>> xmlElementInfo) {
@@ -47,65 +46,10 @@ public class SequenceInfo implements ModelGroupInfo {
         this.occurrences = 0;
 
         // TODO: Name Annotation not encountered
-        this.allElements.addAll(getXmlElementNames(fieldType));
+        this.allElements.addAll(DataUtils.getXmlElementNames(fieldType, xmlElementNameMap));
         this.unvisitedElements.addAll(this.allElements);
         updatePriorityOrder(fieldType);
         this.xmlElementInfo = xmlElementInfo;
-    }
-
-    private Collection<String> getXmlElementNames(RecordType fieldType) {
-        HashSet<String> elementNames = new HashSet<>(fieldType.getFields().keySet());
-        BMap<BString, Object> annotations = fieldType.getAnnotations();
-        for (BString annotationKey : annotations.getKeys()) {
-            String key = annotationKey.getValue();
-            if (key.contains(Constants.FIELD)) {
-                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
-                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
-                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
-                    updateFieldSetWithName(fieldAnnotation, elementNames, fieldAnnotationKey, fieldName);
-                }
-            }
-        }
-        return elementNames;
-    }
-
-    private void updateFieldSetWithName(Map<BString, Object> fieldAnnotation, Set<String> elementNames,
-                                             BString fieldAnnotationKey, String fieldName) {
-        String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
-        if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
-            if (fieldAnnotationKeyStr.endsWith(Constants.NAME)) {
-                BMap<BString, Object> fieldAnnotationValue =
-                        (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
-                String xmlElementName = StringUtils.getStringValue(fieldAnnotationValue
-                        .getStringValue(Constants.VALUE));
-                elementNames.remove(fieldName);
-                elementNames.add(xmlElementName);
-                xmlElementnameMap.put(xmlElementName, fieldName);
-                return;
-            }
-            xmlElementnameMap.put(fieldName, fieldName);
-        }
-    }
-
-    private void updatePriorityOrder(RecordType fieldType) {
-        BMap<BString, Object> annotations = fieldType.getAnnotations();
-        for (BString annotationKey : annotations.getKeys()) {
-            String key = annotationKey.getValue();
-            if (key.contains(Constants.FIELD)) {
-                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
-                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
-                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
-                    String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
-                    if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
-                        if (fieldAnnotationKeyStr.endsWith(Constants.ORDER)) {
-                            BMap<BString, Object> fieldAnnotationValue =
-                                    (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
-                            this.elementPriorityOrder.put(fieldName, fieldAnnotationValue.getIntValue(Constants.VALUE));
-                        }
-                    }
-                }
-            }
-        }
     }
 
     public void updateOccurrences() {
@@ -124,10 +68,6 @@ public class SequenceInfo implements ModelGroupInfo {
     @Override
     public void validate() {
         validateCompletedSequences();
-        if (!isCompleted && !containsAllOptionalElements(this.xmlElementInfo)) {
-            throw new RuntimeException("Element " + getUnvisitedElements() + " not found in " + fieldName);
-        }
-        validateMinOccurrences();
         reset();
     }
 
@@ -165,7 +105,7 @@ public class SequenceInfo implements ModelGroupInfo {
         if (this.visitedElements.contains(element)) {
             return;
         }
-        throw new RuntimeException("Unexpected element " + xmlElementnameMap.get(element) + " found in " + fieldName);
+        throw new RuntimeException("Unexpected element " + xmlElementNameMap.get(element) + " found in " + fieldName);
     }
 
     @Override
@@ -188,13 +128,17 @@ public class SequenceInfo implements ModelGroupInfo {
             isCompleted = true;
             updateOccurrences();
         }
+
+        if (!isCompleted && !containsAllOptionalElements(this.xmlElementInfo)) {
+            throw new RuntimeException("Element " + getUnvisitedElements() + " not found in " + fieldName);
+        }
     }
 
     private void compareSequencePriorityOrder(String element) {
         Long elementPriority = elementPriorityOrder.get(element);
         if (elementPriority != null) {
             if (elementPriority < currentPriority) {
-                throw new RuntimeException("Element " + xmlElementnameMap.get(element) +
+                throw new RuntimeException("Element " + xmlElementNameMap.get(element) +
                         " is not in the correct order in " + fieldName);
             }
             currentPriority = elementPriority;
@@ -202,7 +146,7 @@ public class SequenceInfo implements ModelGroupInfo {
     }
 
     //TODO: Check
-    public boolean checkAndStartNewModelGroup(String element) {
+    public boolean predictStartNewModelGroup(String element) {
         if (!isElementContains(element)) {
             return false;
         }
@@ -239,9 +183,30 @@ public class SequenceInfo implements ModelGroupInfo {
 
     private String getUnvisitedElements() {
         StringBuilder unvisitedElementsStr = new StringBuilder();
-        unvisitedElements.forEach(element -> unvisitedElementsStr.append(xmlElementnameMap.get(element)).append(", "));
+        unvisitedElements.forEach(element -> unvisitedElementsStr.append(xmlElementNameMap.get(element)).append(", "));
         String result = unvisitedElementsStr.toString();
         result = result.substring(0, result.length() - 2);
         return result;
+    }
+
+    private void updatePriorityOrder(RecordType fieldType) {
+        BMap<BString, Object> annotations = fieldType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String key = annotationKey.getValue();
+            if (key.contains(Constants.FIELD)) {
+                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                    String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+                    if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+                        if (fieldAnnotationKeyStr.endsWith(Constants.ORDER)) {
+                            BMap<BString, Object> fieldAnnotationValue =
+                                    (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
+                            this.elementPriorityOrder.put(fieldName, fieldAnnotationValue.getIntValue(Constants.VALUE));
+                        }
+                    }
+                }
+            }
+        }
     }
 }
