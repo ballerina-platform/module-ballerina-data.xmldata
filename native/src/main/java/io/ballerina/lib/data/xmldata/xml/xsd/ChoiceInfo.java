@@ -26,6 +26,7 @@ public class ChoiceInfo implements ModelGroupInfo {
     String lastElement = "";
     public final Set<String> allElements = new HashSet<>();
     public final Set<String> visitedElements = new HashSet<>();
+    public final Set<String> containElements = new HashSet<>();
     private final HashMap<String, String> xmlElementNameMap;
     private boolean isMiddleOfElement = false;
 
@@ -67,10 +68,10 @@ public class ChoiceInfo implements ModelGroupInfo {
     }
 
     private void markOtherElementsAsOptional() {
-        if (!xmlElementInfo.isEmpty()) {
+        if (!allElements.isEmpty()) {
             HashMap<String, ElementInfo> elementInfo = xmlElementInfo.peek();
             for (String element : allElements) {
-                if (!visitedElements.contains(element)) {
+                if (!containElements.contains(element)) {
                     ElementInfo eleInfo = elementInfo.get(element);
                     if (eleInfo != null) {
                         eleInfo.isInsideChoice = true;
@@ -86,6 +87,7 @@ public class ChoiceInfo implements ModelGroupInfo {
         isMiddleOfElement = false;
         this.remainingElementCount.putAll(this.maxElementCount);
         this.lastElement = "";
+        this.containElements.clear();
     }
 
     @Override
@@ -102,6 +104,7 @@ public class ChoiceInfo implements ModelGroupInfo {
         }
 
         remainingElementCount.put(element, remainingElementCount.get(element) - 1);
+        containElements.add(element);
 
         if (visitedElements.contains(element)) {
             if (remainingElementCount.get(element) == 0) {
@@ -149,6 +152,7 @@ public class ChoiceInfo implements ModelGroupInfo {
     }
 
     private void validateCompletedChoice() {
+
     }
 
     public void validateMinOccurrences() {

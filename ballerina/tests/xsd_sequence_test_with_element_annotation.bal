@@ -44,10 +44,10 @@ function testXsdSequenceWithElementAnnotation() returns error? {
     string xmlStr;
     XsdSequenceWithElementAnnotation|Error v;
 
-    // xmlStr = string `<Root><EA1>ABC</EA1><EA2>ABC</EA2></Root>`;
-    // v = parseString(xmlStr);
-    // test:assertTrue(v is Error);
-    // test:assertTrue((<Error>v).message().includes("Element EA3 not found in seq_EA1"), (<Error>v).message());
+    xmlStr = string `<Root><EA1>ABC</EA1><EA2>ABC</EA2></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertTrue((<Error>v).message().includes("Element EA3 not found in seq_EA1"), (<Error>v).message());
     
     xmlStr = string `<Root><EA1>ABC</EA1><EA2>ABC</EA2><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseString(xmlStr);
