@@ -23,6 +23,8 @@ import io.ballerina.lib.data.xmldata.xml.QualifiedName;
 import io.ballerina.lib.data.xmldata.xml.QualifiedNameFactory;
 import io.ballerina.lib.data.xmldata.xml.QualifiedNameMap;
 import io.ballerina.lib.data.xmldata.xml.QualifiedNameSemantic;
+import io.ballerina.lib.data.xmldata.xml.xsd.ElementInfo;
+import io.ballerina.lib.data.xmldata.xml.xsd.ModelGroupInfo;
 import io.ballerina.runtime.api.Module;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
@@ -61,6 +63,7 @@ import java.util.Stack;
 
 import javax.xml.namespace.QName;
 
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.popXsdValidationStacks;
 import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ATTRIBUTE;
 import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ELEMENT;
 import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.NOT_DEFINED;
@@ -348,6 +351,8 @@ public class DataUtils {
         analyzerData.fieldHierarchy.push(new QualifiedNameMap<>(getAllFieldsInRecordType(recordType, analyzerData)));
         analyzerData.visitedFieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
         analyzerData.restTypes.push(recordType.getRestFieldType());
+        analyzerData.xsdModelGroupInfo.push(new HashMap<>());
+        analyzerData.xmlElementInfo.push(new HashMap<>());
     }
 
     public static void popExpectedTypeStacks(XmlAnalyzerData analyzerData) {
@@ -356,6 +361,7 @@ public class DataUtils {
         analyzerData.restTypes.pop();
         analyzerData.attributeHierarchy.pop();
         analyzerData.arrayIndexes.pop();
+        popXsdValidationStacks(analyzerData);
     }
 
     public static boolean isAnydataOrJson(int typeTag) {
@@ -1082,26 +1088,38 @@ public class DataUtils {
         }
     }
 
+    public static void popMappingTypeStacks(XmlAnalyzerMetaData xmlParserData) {
+        xmlParserData.fieldHierarchy.pop();
+        xmlParserData.visitedFieldHierarchy.pop();
+        xmlParserData.restTypes.pop();
+    }
+
+    public static class XmlAnalyzerMetaData {
+        public Stack<QualifiedNameMap<Field>> attributeHierarchy = new Stack<>();
+        public Stack<HashMap<String, Integer>> arrayIndexes = new Stack<>();
+        public Stack<HashMap<String, ElementInfo>> xmlElementInfo = new Stack<>();
+        public Stack<HashMap<String, ModelGroupInfo>> xsdModelGroupInfo = new Stack<>();
+        public Stack<ModelGroupInfo> modelGroupStack = new Stack<>();
+
+        public Stack<Object> nodesStack = new Stack<>();
+        public Stack<QualifiedNameMap<Field>> fieldHierarchy = new Stack<>();
+        public Stack<QualifiedNameMap<Field>> visitedFieldHierarchy = new Stack<>();
+        public Stack<Type> restTypes = new Stack<>();
+        public RecordType rootRecord;
+        public Field currentField;
+        public boolean allowDataProjection;
+        public boolean useSemanticEquality;
+        public String attributePrefix;
+        public String textFieldName;
+        public BMap<BString, Object> currentNode;
+    }
+
     /**
      * Holds data required for the traversing.
      *
      * @since 0.1.0
      */
-    public static class XmlAnalyzerData {
-        public Stack<Object> nodesStack = new Stack<>();
-        public Stack<QualifiedNameMap<Field>> fieldHierarchy = new Stack<>();
-        public Stack<QualifiedNameMap<Field>> visitedFieldHierarchy = new Stack<>();
-        public Stack<QualifiedNameMap<Field>> attributeHierarchy = new Stack<>();
-        public Stack<Type> restTypes = new Stack<>();
-        public Stack<HashMap<String, Integer>> arrayIndexes = new Stack<>();
-        public RecordType rootRecord;
-        public Field currentField;
-        public QualifiedName rootElement;
-        public String attributePrefix;
-        public String textFieldName;
-        public boolean allowDataProjection;
-        public boolean useSemanticEquality;
-
+    public static class XmlAnalyzerData extends XmlAnalyzerMetaData {
         @SuppressWarnings("unchecked")
         public static XmlAnalyzerData copy(XmlAnalyzerData analyzerData) {
             XmlAnalyzerData data = new XmlAnalyzerData();
@@ -1113,11 +1131,13 @@ public class DataUtils {
             data.arrayIndexes = (Stack<HashMap<String, Integer>>) analyzerData.arrayIndexes.clone();
             data.rootRecord = analyzerData.rootRecord;
             data.currentField = analyzerData.currentField;
-            data.rootElement = analyzerData.rootElement;
             data.attributePrefix = analyzerData.attributePrefix;
             data.textFieldName = analyzerData.textFieldName;
             data.allowDataProjection = analyzerData.allowDataProjection;
             data.useSemanticEquality = analyzerData.useSemanticEquality;
+            data.xmlElementInfo = (Stack<HashMap<String, ElementInfo>>) analyzerData.xmlElementInfo.clone();
+            data.xsdModelGroupInfo = (Stack<HashMap<String, ModelGroupInfo>>) analyzerData.xsdModelGroupInfo.clone();
+            data.modelGroupStack = (Stack<ModelGroupInfo>) analyzerData.modelGroupStack.clone();
 
             return data;
         }
@@ -1131,11 +1151,25 @@ public class DataUtils {
             this.arrayIndexes = analyzerData.arrayIndexes;
             this.rootRecord = analyzerData.rootRecord;
             this.currentField = analyzerData.currentField;
-            this.rootElement = analyzerData.rootElement;
             this.attributePrefix = analyzerData.attributePrefix;
             this.textFieldName = analyzerData.textFieldName;
             this.allowDataProjection = analyzerData.allowDataProjection;
             this.useSemanticEquality = analyzerData.useSemanticEquality;
+            this.xmlElementInfo = analyzerData.xmlElementInfo;
+            this.xsdModelGroupInfo = analyzerData.xsdModelGroupInfo;
+            this.modelGroupStack = analyzerData.modelGroupStack;
         }
+    }
+
+    /**
+     * Holds data required for the parsing.
+     *
+     * @since 0.1.0
+     */
+    public static class XmlParserData extends XmlAnalyzerMetaData {
+        public final Stack<QualifiedName> restFieldsPoints = new Stack<>();
+        public final Stack<RecordType> recordTypeStack = new Stack<>();
+        public final Stack<QualifiedNameMap<Boolean>> parents = new Stack<>();
+        public QualifiedNameMap<Boolean> siblings = new QualifiedNameMap<>(new LinkedHashMap<>());
     }
 }

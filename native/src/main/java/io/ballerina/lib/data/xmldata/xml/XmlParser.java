@@ -23,10 +23,7 @@ import io.ballerina.lib.data.xmldata.utils.Constants;
 import io.ballerina.lib.data.xmldata.utils.DataUtils;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
-import io.ballerina.lib.data.xmldata.xml.xsd.ChoiceInfo;
-import io.ballerina.lib.data.xmldata.xml.xsd.ElementInfo;
 import io.ballerina.lib.data.xmldata.xml.xsd.ModelGroupInfo;
-import io.ballerina.lib.data.xmldata.xml.xsd.SequenceInfo;
 import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.TypeTags;
 import io.ballerina.runtime.api.creators.TypeCreator;
@@ -64,6 +61,13 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import static io.ballerina.lib.data.xmldata.utils.Constants.ENABLE_CONSTRAINT_VALIDATION;
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.initializeXsdInformation;
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.popXsdValidationStacks;
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.updateElementOccurrence;
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.validateCurrentElementInfo;
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.validateElementInfoStack;
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.validateModelGroupInfoStack;
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.validateModelGroupStack;
 import static javax.xml.stream.XMLStreamConstants.CDATA;
 import static javax.xml.stream.XMLStreamConstants.CHARACTERS;
 import static javax.xml.stream.XMLStreamConstants.COMMENT;
@@ -72,6 +76,7 @@ import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static javax.xml.stream.XMLStreamConstants.PROCESSING_INSTRUCTION;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import static io.ballerina.lib.data.xmldata.utils.DataUtils.XmlParserData;
 import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ATTRIBUTE;
 import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ELEMENT;
 import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.NOT_DEFINED;
@@ -274,8 +279,7 @@ public class XmlParser {
 
     @SuppressWarnings("unchecked")
     private void readText(XMLStreamReader xmlStreamReader,
-                          boolean isCData,
-                          XmlParserData xmlParserData) throws XMLStreamException {
+                          boolean isCData, XmlParserData xmlParserData) throws XMLStreamException {
         Field currentField = xmlParserData.currentField;
         TextValue textValue = new TextValue();
         String text;
@@ -585,64 +589,6 @@ public class XmlParser {
         initializeNextValueBasedOnExpectedType(fieldName, fieldType, temp, currentNode, xmlParserData);
     }
 
-    private void updateElementOccurrence(XmlParserData xmlParserData, QualifiedName elemQName) {
-        if (!xmlParserData.xmlElementInfo.isEmpty()) {
-            HashMap<String, ElementInfo> elementInfo = xmlParserData.xmlElementInfo.peek();
-            if (elementInfo.containsKey(elemQName.getLocalPart())) {
-                elementInfo.get(elemQName.getLocalPart()).updateOccurrences();
-            }
-        }
-    }
-
-    private void validateModelGroupStack(XmlParserData xmlParserData,
-                                             QualifiedName elemQName, boolean isStartElement) {
-        String localPart = elemQName.getLocalPart();
-        while (!xmlParserData.modelGroupStack.isEmpty()) {
-            ModelGroupInfo modelGroup = xmlParserData.modelGroupStack.peek();
-            if ((!modelGroup.isElementContains(localPart)
-                    && !modelGroup.isMiddleOfModelGroup())) {
-                validateModelGroup(modelGroup, xmlParserData);
-                continue;
-            }
-
-            if (isStartElement && modelGroup.predictStartNewModelGroup(localPart)) {
-                validateModelGroup(modelGroup, xmlParserData, false);
-                return;
-            }
-
-            if (modelGroup.isElementContains(localPart)) {
-                modelGroup.visit(localPart, isStartElement);
-            }
-            return;
-        }
-    }
-
-    private void validateModelGroup(ModelGroupInfo modelGroup, XmlParserData xmlParserData) {
-        validateModelGroup(modelGroup, xmlParserData, true);
-    }
-
-    private void validateModelGroup(ModelGroupInfo modelGroup, XmlParserData xmlParserData,  boolean isTerminated) {
-        modelGroup.validate();
-        if (isTerminated) {
-            modelGroup.validateMinOccurrences();
-        }
-        xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.pop();
-        xmlParserData.modelGroupStack.pop();
-        xmlParserData.rootRecord = xmlParserData.recordTypeStack.pop();
-        validateCurrentElementInfo(xmlParserData);
-        popElementStacksForValidatingGroup(xmlParserData);
-    }
-
-    private void popElementStacksForValidatingGroup(XmlParserData xmlParserData) {
-        popMappingTypeStacks(xmlParserData);
-        xmlParserData.attributeHierarchy.pop();
-        xmlParserData.arrayIndexes.pop();
-        xmlParserData.xsdModelGroupInfo.pop().forEach((key, value) -> {
-            value.validateMinOccurrences();
-        });;
-        xmlParserData.xmlElementInfo.pop();
-    }
-
     private void validateElementInXsdSequenceOrElement(QualifiedName elemQName,
                HashMap<String, ModelGroupInfo> modelGroupInfo, XMLStreamReader xmlStreamReader,
                XmlParserData xmlParserData, QualifiedNameMap<Field> visitedFields, QualifiedNameMap<Field> fieldMap) {
@@ -654,7 +600,6 @@ public class XmlParser {
                 QualifiedName qualifiedName = QualifiedNameFactory
                         .createQualifiedName("", key, "", xmlParserData.useSemanticEquality);
 
-                // TODO: Validate Namespaces
                 if (modelGroupValue.isElementContains(elemQName.getLocalPart())) {
                     Object temp = null;
                     Field field = xmlParserData.rootRecord.getFields().get(key);
@@ -662,13 +607,8 @@ public class XmlParser {
                         temp = xmlParserData.currentNode.get(StringUtils.fromString(key));
                     }
                     xmlParserData.modelGroupStack.push(modelGroupValue);
-
-                    // TODO: Test on arrays
                     visitedFields.put(qualifiedName, field);
                     fieldMap.remove(qualifiedName);
-
-                    // TODO: temp != null for arrays and currentNode
-                    // TODO: Check for arrays as well
                     Type referredType = TypeUtils.getReferredType(field.getFieldType());
                     updateNextRecordForXsd(xmlParserData, key, referredType, temp, xmlParserData.currentNode);
                     readElement(xmlStreamReader, xmlParserData);
@@ -863,17 +803,8 @@ public class XmlParser {
         popXsdValidationStacks(xmlParserData);
     }
 
-    private void popXsdValidationStacks(XmlParserData xmlParserData) {
-        xmlParserData.xsdModelGroupInfo.pop().forEach((key, value) -> {
-            value.validateMinOccurrences();
-        });;
-        xmlParserData.xmlElementInfo.pop();
-    }
-
     private void popMappingTypeStacks(XmlParserData xmlParserData) {
-        xmlParserData.fieldHierarchy.pop();
-        xmlParserData.visitedFieldHierarchy.pop();
-        xmlParserData.restTypes.pop();
+        DataUtils.popMappingTypeStacks(xmlParserData);
     }
 
     private void updateSiblingAndRootRecord(XmlParserData xmlParserData) {
@@ -1316,107 +1247,6 @@ public class XmlParser {
                 qName.getPrefix(), ELEMENT, useSemanticEquality);
     }
 
-    private void initializeXsdInformation(RecordType recordType, XmlParserData parserData) {
-        BMap<BString, Object> annotations = recordType.getAnnotations();
-        for (BString annotationKey : annotations.getKeys()) {
-            String key = annotationKey.getValue();
-            if (key.contains(Constants.FIELD)) {
-                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
-                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
-                String xmlElementName = DataUtils.getModifiedName(fieldAnnotation, fieldName);
-                for (BString fieldAnnotationKey: fieldAnnotation.keySet()) {
-                    String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
-                    if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
-                        handleModuleXsdAnnotations(fieldAnnotation, fieldAnnotationKeyStr, fieldName,
-                                recordType, fieldAnnotationKey, xmlElementName, parserData);
-                    }
-                }
-            }
-        }
-    }
-
-    private void handleModuleXsdAnnotations(Map<BString, Object> fieldAnnotation, String fieldAnnotationKeyStr,
-                                            String fieldName, RecordType recordType, BString fieldAnnotationKey,
-                                            String xmlElementName, XmlParserData parserData) {
-        if (fieldAnnotationKeyStr.endsWith(Constants.ELEMENT)) {
-            handleModuleXsdElementAnnotation(fieldAnnotation, fieldAnnotationKey,
-                    fieldName, xmlElementName, parserData);
-        } else if (fieldAnnotationKeyStr.endsWith(Constants.SEQUENCE)) {
-            handleModuleXsdSequenceAnnotations(fieldAnnotation, fieldName, recordType,
-                    fieldAnnotationKey, parserData);
-        } else if (fieldAnnotationKeyStr.endsWith(Constants.CHOICE)) {
-            handleModuleChoiceSequenceAnnotations(fieldAnnotation, fieldName, recordType,
-                    fieldAnnotationKey, parserData);
-        }
-    }
-
-    private void handleModuleXsdElementAnnotation(Map<BString, Object> fieldAnnotation, BString fieldAnnotationKey,
-                                                  String fieldName, String xmlElementName, XmlParserData parserData) {
-        BMap<BString, Object> fieldAnnotationValue = (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
-        parserData.xmlElementInfo.peek().put(xmlElementName,
-                new ElementInfo(xmlElementName, fieldName, fieldAnnotationValue));
-    }
-
-    private void handleModuleXsdSequenceAnnotations(Map<BString, Object> fieldAnnotation, String fieldName,
-                                        RecordType recordType, BString fieldAnnotationKey, XmlParserData parserData) {
-        BMap<BString, Object> fieldAnnotationValue = (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
-        Type fieldType = TypeUtils.getReferredType(recordType
-                .getFields().get(fieldName).getFieldType());
-        if (fieldType instanceof RecordType recType) {
-            parserData.xsdModelGroupInfo.peek().put(fieldName,
-                    new SequenceInfo(fieldName,
-                            fieldAnnotationValue, recType, parserData.xmlElementInfo));
-        } else if (fieldType instanceof ArrayType arrayType) {
-            Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
-            if (elementType instanceof RecordType recType) {
-                //TODO: Define a separate function
-                parserData.xsdModelGroupInfo.peek().put(fieldName,
-                        new SequenceInfo(fieldName,
-                                fieldAnnotationValue, recType, parserData.xmlElementInfo));
-            } else {
-                throw new RuntimeException("Cannot include Sequence annotation into "
-                        + fieldName + " of type " + fieldType);
-            }
-        } else {
-            throw new RuntimeException("Cannot include Sequence annotation into "
-                    + fieldName + " of type " + fieldType);
-        }
-    }
-
-    private void handleModuleChoiceSequenceAnnotations(Map<BString, Object> fieldAnnotation, String fieldName,
-                                       RecordType recordType, BString fieldAnnotationKey, XmlParserData parserData) {
-        BMap<BString, Object> fieldAnnotationValue = (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
-        Type fieldType = TypeUtils.getReferredType(recordType
-                .getFields().get(fieldName).getFieldType());
-        if (fieldType instanceof RecordType recType) {
-            parserData.xsdModelGroupInfo.peek().put(fieldName,
-                    new ChoiceInfo(fieldName, fieldAnnotationValue, recType, parserData.xmlElementInfo));
-        } else {
-            throw new RuntimeException("Cannot include Sequence annotation into "
-                    + fieldName + " of type " + fieldType);
-        }
-    }
-
-    private void validateCurrentElementInfo(XmlParserData xmlParserData) {
-        if (!xmlParserData.xmlElementInfo.isEmpty()) {
-            xmlParserData.xmlElementInfo.peek().forEach((key, value) -> value.validate());
-        }
-    }
-
-    private void validateElementInfoStack(XmlParserData xmlParserData) {
-        while (!xmlParserData.xmlElementInfo.isEmpty()) {
-            xmlParserData.xmlElementInfo.pop().forEach((key, value) -> value.validate());
-        }
-    }
-
-    private void validateModelGroupInfoStack(XmlParserData xmlParserData) {
-        while (!xmlParserData.xsdModelGroupInfo.isEmpty()) {
-            xmlParserData.xsdModelGroupInfo.pop().forEach((key, value) -> {
-                value.validateMinOccurrences();
-            });
-        }
-    }
-
     /**
      * Represents the content of an XML element.
      *
@@ -1425,33 +1255,5 @@ public class XmlParser {
     static class TextValue {
         String text;
         boolean isCommentInTheMiddle = false;
-    }
-
-    /**
-     * Holds data required for the parsing.
-     *
-     * @since 0.1.0
-     */
-    public static class XmlParserData {
-        private final Stack<Object> nodesStack = new Stack<>();
-        private final Stack<QualifiedNameMap<Field>> fieldHierarchy = new Stack<>();
-        Stack<QualifiedNameMap<Field>> visitedFieldHierarchy = new Stack<>();
-        private final Stack<QualifiedNameMap<Field>> attributeHierarchy = new Stack<>();
-        private final Stack<Type> restTypes = new Stack<>();
-        private final Stack<QualifiedName> restFieldsPoints = new Stack<>();
-        private final Stack<RecordType> recordTypeStack = new Stack<>();
-        Stack<HashMap<String, Integer>> arrayIndexes = new Stack<>();
-        private RecordType rootRecord;
-        private Field currentField;
-        private final Stack<QualifiedNameMap<Boolean>> parents = new Stack<>();
-        private QualifiedNameMap<Boolean> siblings = new QualifiedNameMap<>(new LinkedHashMap<>());
-        private BMap<BString, Object> currentNode;
-        private String attributePrefix;
-        private String textFieldName;
-        private boolean allowDataProjection;
-        private boolean useSemanticEquality;
-        Stack<HashMap<String, ElementInfo>> xmlElementInfo = new Stack<>();
-        Stack<HashMap<String, ModelGroupInfo>> xsdModelGroupInfo = new Stack<>();
-        Stack<ModelGroupInfo> modelGroupStack = new Stack<>();
     }
 }
