@@ -101,19 +101,26 @@ public class ChoiceInfo implements ModelGroupInfo {
             return;
         }
 
+        remainingElementCount.put(element, remainingElementCount.get(element) - 1);
+
         if (visitedElements.contains(element)) {
             if (remainingElementCount.get(element) == 0) {
-                throw new RuntimeException("Element " + xmlElementNameMap.get(element)
-                        + " occurs more than the max allowed times");
+                remainingElementCount.putAll(maxElementCount);
+                visitedElements.remove(element);
             }
-            remainingElementCount.put(element, remainingElementCount.get(element) - 1);
             return;
         }
 
         if (allElements.contains(element)) {
-            this.visitedElements.add(element);
-            lastElement = element;
-            remainingElementCount.put(element, remainingElementCount.get(element) - 1);
+            int count = maxElementCount.get(element) - remainingElementCount.get(element);
+            if (count >= minimumElementCount.get(element)) {
+                this.visitedElements.add(element);
+                updateOccurrences();
+            }
+            if (remainingElementCount.get(element) == 0) {
+                remainingElementCount.putAll(maxElementCount);
+                visitedElements.remove(element);
+            }
             return;
         }
 
@@ -137,21 +144,11 @@ public class ChoiceInfo implements ModelGroupInfo {
 
     @Override
     public boolean predictStartNewModelGroup(String element) {
-        if (element.equals(lastElement) && remainingElementCount.get(element) > 0) {
-            return false;
-        }
-        return !isMiddleOfElement && !visitedElements.isEmpty();
+        generateElementOptionalityMapIfNotPresent();
+        return !isMiddleOfElement && !isElementContains(element);
     }
 
     private void validateCompletedChoice() {
-        int elementCount = maxElementCount.get(lastElement) - remainingElementCount.get(lastElement);
-        if (elementCount < minimumElementCount.get(lastElement)) {
-            return;
-        }
-        if (visitedElements.size() > 1) {
-            throw new RuntimeException("Only one element in " + fieldName + " should be present");
-        }
-        updateOccurrences();
     }
 
     public void validateMinOccurrences() {
