@@ -439,7 +439,7 @@ function testXsdChoice8() returns error? {
     xmlStr = string `<Root><test><age>10</age></test><a>2</a></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("failed to parse xml: choice_XSDChoiceRecord8_2 Element occurs less than the min required times"));
+    test:assertTrue((<Error>v2).message().includes("choice_XSDChoiceRecord8_2 Element occurs less than the min required times"));
 
     xmlStr = string `<Root><test><status><value1>Success</value1><value2>Fail</value2></status></test><a>2</a></Root>`;
     v2 = parseString(xmlStr);
