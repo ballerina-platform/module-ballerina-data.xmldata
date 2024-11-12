@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import java.util.stream.Collectors;
 
 public class SequenceInfo implements ModelGroupInfo {
     public String fieldName;
@@ -23,7 +22,7 @@ public class SequenceInfo implements ModelGroupInfo {
     private final Map<String, Integer> remainingElementCount = new HashMap<>();
     private final Map<String, Integer> minimumElementCount = new HashMap<>();
     private final Map<String, Integer> maxElementCount = new HashMap<>();
-    private Map<String, Boolean> elementOptionality = new HashMap<>();
+    private final Map<String, Boolean> elementOptionality = new HashMap<>();
     private final List<String> allElements = new ArrayList<>();
     int currentIndex = 0;
     int elementCount;
@@ -75,8 +74,7 @@ public class SequenceInfo implements ModelGroupInfo {
         reset();
     }
 
-    @Override
-    public void reset() {
+    private void reset() {
         this.isCompleted = false;
         this.isMiddleOfElement = false;
         this.currentIndex = 0;
@@ -98,11 +96,6 @@ public class SequenceInfo implements ModelGroupInfo {
         }
 
         checkElementOrderAndUpdateElementOccurences(element);
-    }
-
-    @Override
-    public int getOccurences() {
-        return this.occurrences;
     }
 
     @Override
@@ -178,7 +171,7 @@ public class SequenceInfo implements ModelGroupInfo {
                     " occurs more than the max allowed times in " + fieldName);
         } else {
             remainingElementCount.put(element, remainingElementCount.get(nextElement) - 1);
-            int elementCount = maxElementCount.get(element) - remainingElementCount.get(element).intValue();
+            int elementCount = maxElementCount.get(element) - remainingElementCount.get(element);
 
             if (elementCount >= minimumElementCount.get(element) && !isLastElement
                     && currentIndex != this.elementCount) {
@@ -234,8 +227,8 @@ public class SequenceInfo implements ModelGroupInfo {
     private void updateUnvisitedElementsBasedOnPriorityOrder(RecordType fieldType) {
         this.allElements.addAll(updatePriorityOrder(fieldType).entrySet().stream()
                 .sorted(Map.Entry.comparingByValue()) // Sort by Long values in priority order
-                .map(entry -> entry.getKey()) // Get xml element name from
-                .collect(Collectors.toList()));
+                .map(Map.Entry::getKey) // Get xml element name from
+                .toList());
 
         this.currentIndex = 0;
     }

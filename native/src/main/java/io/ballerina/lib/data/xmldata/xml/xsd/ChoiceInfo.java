@@ -62,7 +62,6 @@ public class ChoiceInfo implements ModelGroupInfo {
     @Override
     public void validate() {
         generateElementOptionalityMapIfNotPresent();
-        validateCompletedChoice();
         markOtherElementsAsOptional();
         reset();
     }
@@ -81,8 +80,7 @@ public class ChoiceInfo implements ModelGroupInfo {
         }
     }
 
-    @Override
-    public void reset() {
+    private void reset() {
         this.visitedElements.clear();
         isMiddleOfElement = false;
         this.remainingElementCount.putAll(this.maxElementCount);
@@ -131,11 +129,6 @@ public class ChoiceInfo implements ModelGroupInfo {
     }
 
     @Override
-    public int getOccurences() {
-        return occurrences;
-    }
-
-    @Override
     public boolean isElementContains(String elementName) {
         return allElements.contains(elementName);
     }
@@ -149,10 +142,6 @@ public class ChoiceInfo implements ModelGroupInfo {
     public boolean predictStartNewModelGroup(String element) {
         generateElementOptionalityMapIfNotPresent();
         return !isMiddleOfElement && !isElementContains(element);
-    }
-
-    private void validateCompletedChoice() {
-
     }
 
     public void validateMinOccurrences() {
