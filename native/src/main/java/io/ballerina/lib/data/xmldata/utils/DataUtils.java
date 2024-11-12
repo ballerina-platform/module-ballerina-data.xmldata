@@ -1112,6 +1112,7 @@ public class DataUtils {
         public String attributePrefix;
         public String textFieldName;
         public BMap<BString, Object> currentNode;
+        public final Stack<RecordType> recordTypeStack = new Stack<>();
     }
 
     /**
@@ -1168,7 +1169,6 @@ public class DataUtils {
      */
     public static class XmlParserData extends XmlAnalyzerMetaData {
         public final Stack<QualifiedName> restFieldsPoints = new Stack<>();
-        public final Stack<RecordType> recordTypeStack = new Stack<>();
         public final Stack<QualifiedNameMap<Boolean>> parents = new Stack<>();
         public QualifiedNameMap<Boolean> siblings = new QualifiedNameMap<>(new LinkedHashMap<>());
     }

@@ -118,7 +118,7 @@ public class XsdUtils {
         }
     }
 
-    public static void popXsdValidationStacks(XmlAnalyzerMetaData xmlAnalyzerMetaData) {
+public static void popXsdValidationStacks(XmlAnalyzerMetaData xmlAnalyzerMetaData) {
         xmlAnalyzerMetaData.xsdModelGroupInfo.pop().forEach((key, value) -> value.validateMinOccurrences());
         xmlAnalyzerMetaData.xmlElementInfo.pop();
     }
@@ -167,9 +167,7 @@ public class XsdUtils {
         }
         xmlAnalyzerMetaData.currentNode = (BMap<BString, Object>) xmlAnalyzerMetaData.nodesStack.pop();
         xmlAnalyzerMetaData.modelGroupStack.pop();
-        if (xmlAnalyzerMetaData instanceof DataUtils.XmlParserData xmlParserData) {
-            xmlParserData.rootRecord = xmlParserData.recordTypeStack.pop();
-        }
+        xmlAnalyzerMetaData.rootRecord = xmlAnalyzerMetaData.recordTypeStack.pop();
         validateCurrentElementInfo(xmlAnalyzerMetaData);
         popElementStacksForValidatingGroup(xmlAnalyzerMetaData);
     }

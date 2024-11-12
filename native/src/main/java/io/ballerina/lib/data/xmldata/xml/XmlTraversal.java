@@ -122,8 +122,8 @@ public class XmlTraversal {
             BXml nextXml = validateRootElement(xml, recordType, analyzerData);
             Object resultRecordValue = traverseXml(nextXml, recordType, analyzerData);
             validateModelGroupStackForRootElement(analyzerData);
-            DataUtils.validateRequiredFields(analyzerData, analyzerData.currentNode);
             validateCurrentElementInfo(analyzerData);
+            DataUtils.validateRequiredFields(analyzerData, analyzerData.currentNode);
             return resultRecordValue;
         }
 
@@ -309,7 +309,6 @@ public class XmlTraversal {
 
             convertToFieldType(xmlItem, currentField, currentField.getFieldName(), currentFieldType,
                     analyzerData.currentNode, analyzerData);
-            validateCurrentElementInfo(analyzerData);
             validateModelGroupStack(analyzerData, elementQName, false);
         }
 
@@ -428,8 +427,8 @@ public class XmlTraversal {
             RecordType prevRecord = analyzerData.rootRecord;
             analyzerData.rootRecord = elementType;
             traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
-            DataUtils.validateRequiredFields(analyzerData, analyzerData.currentNode);
             validateCurrentElementInfo(analyzerData);
+            DataUtils.validateRequiredFields(analyzerData, analyzerData.currentNode);
             DataUtils.popExpectedTypeStacks(analyzerData);
             analyzerData.rootRecord = prevRecord;
             analyzerData.currentNode = (BMap<BString, Object>) analyzerData.nodesStack.pop();
@@ -441,8 +440,8 @@ public class XmlTraversal {
             analyzerData.currentNode = updateNextMappingValue(
                     elementType, fieldName, fieldType, mapValue, analyzerData);
             traverseXml(xmlItem.getChildrenSeq(), fieldType, analyzerData);
-            DataUtils.validateRequiredFields(analyzerData, analyzerData.currentNode);
             validateCurrentElementInfo(analyzerData);
+            DataUtils.validateRequiredFields(analyzerData, analyzerData.currentNode);
             DataUtils.popExpectedTypeStacks(analyzerData);
             analyzerData.currentNode = (BMap<BString, Object>) analyzerData.nodesStack.pop();
         }
@@ -949,10 +948,12 @@ public class XmlTraversal {
         private void updateNextRecordForXsd(XmlAnalyzerData xmlAnalyzerData, String fieldName,
                                             Type fieldType, Object temp, Object currentNode) {
             if (fieldType.getTag() == TypeTags.RECORD_TYPE_TAG) {
-                DataUtils.updateExpectedTypeStacks((RecordType) fieldType, xmlAnalyzerData);
                 RecordType recType = (RecordType) fieldType;
+                DataUtils.updateExpectedTypeStacks((RecordType) fieldType, xmlAnalyzerData);
+                initializeXsdInformation(recType, xmlAnalyzerData);
                 xmlAnalyzerData.currentNode = updateNextMappingValue(recType, fieldName, fieldType,
                         (BMap<BString, Object>) currentNode, xmlAnalyzerData);
+                xmlAnalyzerData.recordTypeStack.push(xmlAnalyzerData.rootRecord);
                 xmlAnalyzerData.rootRecord = recType;
                 return;
             }
@@ -969,8 +970,10 @@ public class XmlTraversal {
                 }
 
                 if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
-                    DataUtils.updateExpectedTypeStacks((RecordType) elementType, xmlAnalyzerData);
                     RecordType recType = (RecordType) elementType;
+                    DataUtils.updateExpectedTypeStacks((RecordType) elementType, xmlAnalyzerData);
+                    initializeXsdInformation(recType, xmlAnalyzerData);
+                    xmlAnalyzerData.recordTypeStack.push(xmlAnalyzerData.rootRecord);
                     xmlAnalyzerData.rootRecord = recType;
                     xmlAnalyzerData.currentNode = updateNextMappingValue(recType, fieldName,
                             fieldType, (BMap<BString, Object>) currentNode, xmlAnalyzerData);
