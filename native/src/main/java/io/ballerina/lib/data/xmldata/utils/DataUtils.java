@@ -34,6 +34,7 @@ import io.ballerina.runtime.api.types.Field;
 import io.ballerina.runtime.api.types.MapType;
 import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.types.ReferenceType;
+import io.ballerina.runtime.api.types.TupleType;
 import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.types.UnionType;
 import io.ballerina.runtime.api.utils.StringUtils;
@@ -45,6 +46,8 @@ import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTypedesc;
 import io.ballerina.stdlib.constraint.Constraints;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -239,6 +242,7 @@ public class DataUtils {
                     result = FromString.fromStringWithType(value, PredefinedTypes.TYPE_JSON);
             case TypeTags.ARRAY_TAG -> result = convertStringToExpType(value,
                     ((ArrayType) refferedType).getElementType());
+            case TypeTags.UNION_TAG -> result = convertStringToUnionExpType(value, expType);
             default -> result = FromString.fromStringWithType(value, expType);
         }
 
@@ -248,18 +252,60 @@ public class DataUtils {
         return result;
     }
 
-    public static void validateRequiredFields(XmlAnalyzerData analyzerData) {
-        for (Field field : analyzerData.fieldHierarchy.peek().getMembers().values()) {
+    private static Object convertStringToUnionExpType(BString value, Type expType) {
+        for (Type memberType : ((UnionType) expType).getMemberTypes()) {
+            memberType = TypeUtils.getReferredType(memberType);
+            try {
+                return convertStringToExpType(value, memberType);
+            } catch (Exception ex) {
+                // ignore
+            }
+        }
+        throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, expType);
+    }
+
+    public static void validateRequiredFields(XmlAnalyzerData analyzerData, BMap<BString, Object> currentMapValue) {
+        Map<QualifiedName, Field> fields = analyzerData.fieldHierarchy.peek().getMembers();
+        for (QualifiedName key : fields.keySet()) {
+            // Validate required array size
+            Field field = fields.get(key);
+            String fieldName = field.getFieldName();
+            Type fieldType = TypeUtils.getReferredType(field.getFieldType());
+            if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
+                ArrayType arrayType = (ArrayType) fieldType;
+                if (arrayType.getSize() != -1
+                        && arrayType.getSize() != ((BArray) currentMapValue.get(
+                        StringUtils.fromString(fieldName))).getLength()) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.ARRAY_SIZE_MISMATCH);
+                }
+                continue;
+            }
+
             if (SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.REQUIRED)) {
-                throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_FIELD_NOT_PRESENT, field.getFieldName());
+                throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_FIELD_NOT_PRESENT, fieldName);
             }
         }
 
-        for (Field attribute : analyzerData.attributeHierarchy.peek().getMembers().values()) {
-            if (!SymbolFlags.isFlagOn(attribute.getFlags(), SymbolFlags.OPTIONAL)) {
-                throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_ATTRIBUTE_NOT_PRESENT, attribute.getFieldName());
+        Map<QualifiedName, Field> attributes = analyzerData.attributeHierarchy.peek().getMembers();
+        for (QualifiedName key : attributes.keySet()) {
+            Field field = attributes.get(key);
+            if (!SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.OPTIONAL)) {
+                throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_ATTRIBUTE_NOT_PRESENT, field.getFieldName());
             }
         }
+    }
+
+    public static boolean isArrayValueAssignable(Type type) {
+        int typeTag = type.getTag();
+        if (typeTag == TypeTags.UNION_TAG) {
+            for (Type memberType : ((UnionType) type).getMemberTypes()) {
+                memberType = TypeUtils.getReferredType(memberType);
+                if (isArrayValueAssignable(memberType.getTag())) {
+                    return true;
+                }
+            }
+        }
+        return isArrayValueAssignable(typeTag);
     }
 
     public static boolean isArrayValueAssignable(int typeTag) {
@@ -279,12 +325,13 @@ public class DataUtils {
             default -> throw new IllegalStateException("Unexpected value: " + type.getTag());
         };
     }
+
     public static MapType getMapTypeFromConstraintType(Type constraintType) {
         return switch (constraintType.getTag()) {
             case TypeTags.MAP_TAG -> (MapType) constraintType;
             case TypeTags.INT_TAG, TypeTags.FLOAT_TAG, TypeTags.STRING_TAG, TypeTags.BOOLEAN_TAG, TypeTags.BYTE_TAG,
-                    TypeTags.DECIMAL_TAG, TypeTags.JSON_TAG, TypeTags.RECORD_TYPE_TAG, TypeTags.OBJECT_TYPE_TAG,
-                    TypeTags.XML_TAG, TypeTags.NULL_TAG -> TypeCreator.createMapType(constraintType);
+                 TypeTags.DECIMAL_TAG, TypeTags.JSON_TAG, TypeTags.RECORD_TYPE_TAG, TypeTags.OBJECT_TYPE_TAG,
+                 TypeTags.XML_TAG, TypeTags.NULL_TAG -> TypeCreator.createMapType(constraintType);
             case TypeTags.ARRAY_TAG -> TypeCreator.createMapType(((ArrayType) constraintType).getElementType());
             case TypeTags.TYPE_REFERENCED_TYPE_TAG ->
                     getMapTypeFromConstraintType(TypeUtils.getReferredType(constraintType));
@@ -315,8 +362,8 @@ public class DataUtils {
     public static boolean isSupportedType(Type type) {
         switch (type.getTag()) {
             case TypeTags.NULL_TAG, TypeTags.INT_TAG, TypeTags.BYTE_TAG, TypeTags.FLOAT_TAG, TypeTags.DECIMAL_TAG,
-                    TypeTags.BOOLEAN_TAG, TypeTags.STRING_TAG, TypeTags.RECORD_TYPE_TAG, TypeTags.MAP_TAG,
-                    TypeTags.JSON_TAG, TypeTags.ANYDATA_TAG -> {
+                 TypeTags.BOOLEAN_TAG, TypeTags.STRING_TAG, TypeTags.RECORD_TYPE_TAG, TypeTags.MAP_TAG,
+                 TypeTags.JSON_TAG, TypeTags.ANYDATA_TAG -> {
                 return true;
             }
             case TypeTags.ARRAY_TAG -> {
@@ -334,17 +381,11 @@ public class DataUtils {
 
     private static boolean isSupportedUnionType(UnionType type) {
         for (Type memberType : type.getMemberTypes()) {
-            switch (memberType.getTag()) {
-                case TypeTags.RECORD_TYPE_TAG, TypeTags.OBJECT_TYPE_TAG, TypeTags.MAP_TAG, TypeTags.JSON_TAG,
-                        TypeTags.ANYDATA_TAG, TypeTags.XML_TAG -> {
-                    return false;
-                }
-                case TypeTags.UNION_TAG -> {
-                    return !isSupportedUnionType(type);
-                }
+            if (isSupportedType(memberType)) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     public static void updateOptions(BMap<BString, Object> options, XmlAnalyzerData analyzerData) {
@@ -402,7 +443,7 @@ public class DataUtils {
         if (describingType.getTag() == TypeTags.RECORD_TYPE_TAG &&
                 describingType.getFlags() != Constants.DEFAULT_TYPE_FLAG) {
             BArray jsonArray = ValueCreator.createArrayValue(PredefinedTypes.TYPE_JSON_ARRAY);
-            BMap<BString, Object> recordField =  addFields(input, type.getDescribingType());
+            BMap<BString, Object> recordField = addFields(input, type.getDescribingType());
             BMap<BString, Object> processedRecord = processParentAnnotation(type.getDescribingType(), recordField);
             BString rootTagName = processedRecord.getKeys()[0];
             jsonArray.append(processedRecord.get(rootTagName));
@@ -457,7 +498,7 @@ public class DataUtils {
         BMap<BString, Object> recordValue = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         Map<String, Field> fields = ((RecordType) type).getFields();
         BMap<BString, Object> annotations = ((RecordType) type).getAnnotations();
-        for (Map.Entry<BString, Object> entry: input.entrySet()) {
+        for (Map.Entry<BString, Object> entry : input.entrySet()) {
             String key = entry.getKey().getValue();
             Object value = entry.getValue();
             if (fields.containsKey(key)) {
@@ -476,7 +517,8 @@ public class DataUtils {
         switch (fieldType.getTag()) {
             case TypeTags.RECORD_TYPE_TAG -> processRecord(key, annotations, recordValue, value,
                     (RecordType) fieldType);
-            case TypeTags.ARRAY_TAG -> processArray(fieldType, annotations, recordValue, entry);
+            case TypeTags.ARRAY_TAG -> processArray(TypeUtils.getReferredType(((ArrayType) fieldType)
+                    .getElementType()), annotations, recordValue, entry);
             case TypeTags.TYPE_REFERENCED_TYPE_TAG -> {
                 Type referredType = TypeUtils.getReferredType(fieldType);
                 if (referredType.getTag() != TypeTags.RECORD_TYPE_TAG) {
@@ -506,7 +548,7 @@ public class DataUtils {
             key = qName.getPrefix().isBlank() ? localPart : qName.getPrefix() + ":" + localPart;
         }
 
-        BMap<BString, Object>  annotationRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
+        BMap<BString, Object> annotationRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         Type referredType = TypeUtils.getReferredType(fieldType);
         if (!doesNamespaceDefinedInField) {
             BMap<BString, Object> subRecordAnnotations = ((RecordType) referredType).getAnnotations();
@@ -534,7 +576,7 @@ public class DataUtils {
             return;
         }
 
-        for (Map.Entry<BString, Object> nsAnnotEntry: ((BMap<BString, Object>) value).entrySet()) {
+        for (Map.Entry<BString, Object> nsAnnotEntry : ((BMap<BString, Object>) value).entrySet()) {
             subRecord.put(nsAnnotEntry.getKey(), nsAnnotEntry.getValue());
         }
     }
@@ -597,7 +639,7 @@ public class DataUtils {
     @SuppressWarnings("unchecked")
     private static void processRecord(String key, BMap<BString, Object> parentAnnotations,
                                       BMap<BString, Object> record, Object value, RecordType childType) {
-        BMap<BString, Object>  parentRecordAnnotations = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
+        BMap<BString, Object> parentRecordAnnotations = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         BMap<BString, Object> annotation = childType.getAnnotations();
         if (parentAnnotations.size() > 0) {
             annotation.merge(getFieldNamespaceAndNameAnnotations(key, parentAnnotations), true);
@@ -622,7 +664,7 @@ public class DataUtils {
         BString key = qName.getPrefix().isBlank() ?
                 localPart : StringUtils.fromString(qName.getPrefix() + ":" + localPart);
         BString annotationKey = StringUtils.fromString(Constants.FIELD
-                        + (localPart.getValue().replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0")));
+                + (localPart.getValue().replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0")));
         BMap<BString, Object> currentValue;
         if (record.containsKey(key)) {
             currentValue = (BMap<BString, Object>) record.get(key);
@@ -640,12 +682,11 @@ public class DataUtils {
     }
 
     @SuppressWarnings("unchecked")
-    private static void processArray(Type childType, BMap<BString, Object> annotations,
+    private static void processArray(Type elementType, BMap<BString, Object> annotations,
                                      BMap<BString, Object> record, Map.Entry<BString, Object> entry) {
-        Type elementType = TypeUtils.getReferredType(((ArrayType) childType).getElementType());
-        BMap<BString, Object>  annotationRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
+        BMap<BString, Object> annotationRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         String keyName = entry.getKey().getValue();
-        if (annotations.size() > 0) {
+        if (!annotations.isEmpty()) {
             keyName = getKeyNameFromAnnotation(annotations, keyName);
             processSubRecordAnnotation(annotations, annotationRecord);
         }
@@ -753,7 +794,7 @@ public class DataUtils {
         return StringUtils.fromString(key);
     }
 
-    private static void processSubRecordAnnotation(BMap<BString, Object> annotation, BMap<BString, Object>  subRecord) {
+    private static void processSubRecordAnnotation(BMap<BString, Object> annotation, BMap<BString, Object> subRecord) {
         BString[] keys = annotation.getKeys();
         for (BString value : keys) {
             if (isNamespaceAnnotationKey(value.getValue())) {
@@ -799,11 +840,11 @@ public class DataUtils {
 
     @SuppressWarnings("unchecked")
     private static String processNamespaceAnnotation(BMap<BString, Object> annotation, String key, BString value,
-                                                     BMap<BString, Object>  subRecord) {
+                                                     BMap<BString, Object> subRecord) {
         BMap<BString, Object> namespaceAnnotation = (BMap<BString, Object>) annotation.get(value);
         BString uri = (BString) namespaceAnnotation.get(Constants.URI);
         BString prefix = (BString) namespaceAnnotation.get(Constants.PREFIX);
-        if (prefix ==  null) {
+        if (prefix == null) {
             subRecord.put(StringUtils.fromString(ATTRIBUTE_PREFIX + "xmlns"), uri);
         } else {
             subRecord.put(StringUtils.fromString(ATTRIBUTE_PREFIX + "xmlns:" + prefix), uri);
@@ -814,7 +855,7 @@ public class DataUtils {
 
     @SuppressWarnings("unchecked")
     private static QName processFieldNamespaceAnnotation(BMap<BString, Object> annotation, String key, BString value,
-                                                         BMap<BString, Object>  subRecord, boolean isAttributeField) {
+                                                         BMap<BString, Object> subRecord, boolean isAttributeField) {
         BMap<BString, Object> namespaceAnnotation = (BMap<BString, Object>) annotation.get(value);
         BString uri = (BString) namespaceAnnotation.get(Constants.URI);
         BString prefix = (BString) namespaceAnnotation.get(Constants.PREFIX);
@@ -831,7 +872,7 @@ public class DataUtils {
 
     private static String addAttributeToRecord(BString prefix, BString uri, String key,
                                                BMap<BString, Object> subRecord) {
-        if (prefix ==  null) {
+        if (prefix == null) {
             subRecord.put(StringUtils.fromString(ATTRIBUTE_PREFIX + "xmlns"), uri);
             return key;
         }
@@ -910,11 +951,66 @@ public class DataUtils {
     public static boolean isSimpleType(Type type) {
         return switch (type.getTag()) {
             case TypeTags.JSON_TAG, TypeTags.ANYDATA_TAG, TypeTags.MAP_TAG, TypeTags.OBJECT_TYPE_TAG,
-                    TypeTags.RECORD_TYPE_TAG, TypeTags.XML_TAG -> false;
+                 TypeTags.RECORD_TYPE_TAG, TypeTags.XML_TAG -> false;
             case TypeTags.ARRAY_TAG -> isSimpleType(((ArrayType) type).getElementType());
             case TypeTags.TYPE_REFERENCED_TYPE_TAG -> isSimpleType(((ReferenceType) type).getReferredType());
             default -> true;
         };
+    }
+
+    public static String generateStringFromXmlReader(Reader reader) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        char[] buffer = new char[1024];
+        int numCharsRead;
+        while ((numCharsRead = reader.read(buffer)) != -1) {
+            builder.append(buffer, 0, numCharsRead);
+        }
+        return builder.toString();
+    }
+
+    public static boolean isContainsUnionType(Type expType) {
+        if (expType == null) {
+            return false;
+        }
+        expType = TypeUtils.getReferredType(expType);
+        if (expType.getTag() == TypeTags.UNION_TAG) {
+            for (Type memberType : ((UnionType) expType).getMemberTypes()) {
+                if (!isSimpleType(memberType)) {
+                    return true;
+                }
+            }
+        }
+
+        if (expType.getTag() == TypeTags.ARRAY_TAG) {
+            Type memberType = TypeUtils.getReferredType(((ArrayType) expType).getElementType());
+            return isContainsUnionType(memberType);
+        }
+
+        if (expType.getTag() == TypeTags.MAP_TAG) {
+            Type memberType = TypeUtils.getReferredType(((MapType) expType).getConstrainedType());
+            return isContainsUnionType(memberType);
+        }
+
+        if (expType.getTag() == TypeTags.TUPLE_TAG) {
+            TupleType tupleType = (TupleType) expType;
+            for (Type type : tupleType.getTupleTypes()) {
+                if (isContainsUnionType(type)) {
+                    return true;
+                }
+            }
+            return isContainsUnionType(tupleType.getRestType());
+        }
+
+        if (expType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+            RecordType recordType = (RecordType) expType;
+            for (Field field : recordType.getFields().values()) {
+                if (isContainsUnionType(field.getFieldType())) {
+                    return true;
+                }
+            }
+            return isContainsUnionType(recordType.getRestFieldType());
+        }
+        return false;
     }
 
     /**
@@ -923,12 +1019,12 @@ public class DataUtils {
      * @since 0.1.0
      */
     public static class XmlAnalyzerData {
-        public final Stack<Object> nodesStack = new Stack<>();
-        public final Stack<QualifiedNameMap<Field>> fieldHierarchy = new Stack<>();
-        public final Stack<QualifiedNameMap<Field>> visitedFieldHierarchy = new Stack<>();
-        public final Stack<QualifiedNameMap<Field>> attributeHierarchy = new Stack<>();
-        public final Stack<Type> restTypes = new Stack<>();
-        public final Stack<HashMap<String, Integer>> arrayIndexes = new Stack<>();
+        public Stack<Object> nodesStack = new Stack<>();
+        public Stack<QualifiedNameMap<Field>> fieldHierarchy = new Stack<>();
+        public Stack<QualifiedNameMap<Field>> visitedFieldHierarchy = new Stack<>();
+        public Stack<QualifiedNameMap<Field>> attributeHierarchy = new Stack<>();
+        public Stack<Type> restTypes = new Stack<>();
+        public Stack<HashMap<String, Integer>> arrayIndexes = new Stack<>();
         public RecordType rootRecord;
         public Field currentField;
         public QualifiedName rootElement;
@@ -936,5 +1032,41 @@ public class DataUtils {
         public String textFieldName;
         public boolean allowDataProjection;
         public boolean useSemanticEquality;
+
+        @SuppressWarnings("unchecked")
+        public static XmlAnalyzerData copy(XmlAnalyzerData analyzerData) {
+            XmlAnalyzerData data = new XmlAnalyzerData();
+            data.nodesStack = (Stack<Object>) analyzerData.nodesStack.clone();
+            data.fieldHierarchy = (Stack<QualifiedNameMap<Field>>) analyzerData.fieldHierarchy.clone();
+            data.visitedFieldHierarchy = (Stack<QualifiedNameMap<Field>>) analyzerData.visitedFieldHierarchy.clone();
+            data.attributeHierarchy = (Stack<QualifiedNameMap<Field>>) analyzerData.attributeHierarchy.clone();
+            data.restTypes = (Stack<Type>) analyzerData.restTypes.clone();
+            data.arrayIndexes = (Stack<HashMap<String, Integer>>) analyzerData.arrayIndexes.clone();
+            data.rootRecord = analyzerData.rootRecord;
+            data.currentField = analyzerData.currentField;
+            data.rootElement = analyzerData.rootElement;
+            data.attributePrefix = analyzerData.attributePrefix;
+            data.textFieldName = analyzerData.textFieldName;
+            data.allowDataProjection = analyzerData.allowDataProjection;
+            data.useSemanticEquality = analyzerData.useSemanticEquality;
+
+            return data;
+        }
+
+        public void resetFrom(XmlAnalyzerData analyzerData) {
+            this.nodesStack = analyzerData.nodesStack;
+            this.fieldHierarchy = analyzerData.fieldHierarchy;
+            this.visitedFieldHierarchy = analyzerData.visitedFieldHierarchy;
+            this.attributeHierarchy = analyzerData.attributeHierarchy;
+            this.restTypes = analyzerData.restTypes;
+            this.arrayIndexes = analyzerData.arrayIndexes;
+            this.rootRecord = analyzerData.rootRecord;
+            this.currentField = analyzerData.currentField;
+            this.rootElement = analyzerData.rootElement;
+            this.attributePrefix = analyzerData.attributePrefix;
+            this.textFieldName = analyzerData.textFieldName;
+            this.allowDataProjection = analyzerData.allowDataProjection;
+            this.useSemanticEquality = analyzerData.useSemanticEquality;
+        }
     }
 }
