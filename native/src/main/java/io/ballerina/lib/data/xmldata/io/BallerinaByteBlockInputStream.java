@@ -31,7 +31,6 @@ import io.ballerina.runtime.api.values.BString;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -83,9 +82,8 @@ public class BallerinaByteBlockInputStream extends InputStream {
     @Override
     public void close() throws IOException {
         super.close();
-        Semaphore semaphore = new Semaphore(0);
         if (closeMethod != null) {
-            env.getRuntime().call(iterator, closeMethod.getName());
+            env.getRuntime().callMethod(iterator, closeMethod.getName(), null);
         }
     }
 
@@ -95,7 +93,7 @@ public class BallerinaByteBlockInputStream extends InputStream {
 
     private boolean readNextChunk() throws InterruptedException {
         try {
-            Object result = env.getRuntime().call(iterator, nextMethodName);
+            Object result = env.getRuntime().callMethod(iterator, nextMethodName, null);
             if (result == null) {
                 done.set(true);
                 return true;

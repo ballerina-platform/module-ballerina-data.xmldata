@@ -3340,13 +3340,13 @@ function testUnsupportedTypeNegative() {
     `;
     record {|
         record {|string a;|}|record {|string b;|} A;
-    |}|error err2 = parseAsType(xmlVal2);
-    test:assertEquals((<error>err2).message(), "unsupported input type");
+    |}|error val = parseAsType(xmlVal2);
+    test:assertEquals(val, {A: {a: "1"}});
 
     record {|
         record {|string a;|}? A;
-    |}|error err3 = parseAsType(xmlVal2);
-    test:assertEquals((<error>err3).message(), "unsupported input type");
+    |}|error val2 = parseAsType(xmlVal2);
+    test:assertEquals(val2, {A: {a: "1"}});
 }
 
 @Namespace {

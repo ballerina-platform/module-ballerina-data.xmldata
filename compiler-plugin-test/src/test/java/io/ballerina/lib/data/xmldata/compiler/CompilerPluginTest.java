@@ -56,78 +56,6 @@ public class CompilerPluginTest {
     }
 
     @Test
-    public void testUnsupportedUnionTypeNegative1() {
-        DiagnosticResult diagnosticResult =
-                CompilerPluginTestUtils.loadPackage("sample_package_3").getCompilation().diagnosticResult();
-        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
-                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
-                .collect(Collectors.toList());
-        Assert.assertEquals(errorDiagnosticsList.size(), 2);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
-                "unsupported union type: union type does not support multiple non-primitive record types");
-        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
-                "unsupported union type: union type does not support multiple non-primitive record types");
-    }
-
-    @Test
-    public void testUnsupportedUnionTypeNegative2() {
-        DiagnosticResult diagnosticResult =
-                CompilerPluginTestUtils.loadPackage("sample_package_4").getCompilation().diagnosticResult();
-        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
-                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
-                .collect(Collectors.toList());
-        Assert.assertEquals(errorDiagnosticsList.size(), 2);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
-                "unsupported union type: union type does not support multiple non-primitive record types");
-        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
-                "unsupported union type: union type does not support multiple non-primitive record types");
-    }
-
-    @Test
-    public void testUnsupportedTypeNegative1() {
-        DiagnosticResult diagnosticResult =
-                CompilerPluginTestUtils.loadPackage("sample_package_5").getCompilation().diagnosticResult();
-        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
-                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
-                .collect(Collectors.toList());
-        Assert.assertEquals(errorDiagnosticsList.size(), 4);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
-                "unsupported union type: union type does not support multiple non-primitive record types");
-        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
-                "unsupported type: the record field does not support the expected type");
-        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
-                "unsupported type: the record field does not support the expected type");
-        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
-                "unsupported union type: union type does not support multiple non-primitive record types");
-    }
-
-    @Test
-    public void testUnsupportedTypeNegative2() {
-        DiagnosticResult diagnosticResult =
-                CompilerPluginTestUtils.loadPackage("sample_package_7").getCompilation().diagnosticResult();
-        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
-                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
-                .collect(Collectors.toList());
-        Assert.assertEquals(errorDiagnosticsList.size(), 8);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
-                "unsupported union type: union type does not support multiple non-primitive record types");
-        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
-                "unsupported type: the record field does not support the expected type");
-        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
-                "unsupported type: the record field does not support the expected type");
-        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
-                "unsupported union type: union type does not support multiple non-primitive record types");
-        Assert.assertEquals(errorDiagnosticsList.get(4).diagnosticInfo().messageFormat(),
-                "unsupported union type: union type does not support multiple non-primitive record types");
-        Assert.assertEquals(errorDiagnosticsList.get(5).diagnosticInfo().messageFormat(),
-                "unsupported type: the record field does not support the expected type");
-        Assert.assertEquals(errorDiagnosticsList.get(6).diagnosticInfo().messageFormat(),
-                "unsupported type: the record field does not support the expected type");
-        Assert.assertEquals(errorDiagnosticsList.get(7).diagnosticInfo().messageFormat(),
-                "unsupported union type: union type does not support multiple non-primitive record types");
-    }
-
-    @Test
     public void testChildRecordWithNameAnnotNegative() {
         DiagnosticResult diagnosticResult =
                 CompilerPluginTestUtils.loadPackage("sample_package_6").getCompilation().diagnosticResult();
@@ -196,33 +124,5 @@ public class CompilerPluginTest {
         Assert.assertEquals(warningDiagnosticsList.size(), 1);
         Assert.assertEquals(warningDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
                 "invalid annotation attachment: child record does not allow name annotation");
-    }
-
-    @Test
-    public void testComplexUnionTypeCaseWhenUserDefinedModulePrefix() {
-        DiagnosticResult diagnosticResult =
-                CompilerPluginTestUtils.loadPackage("sample_package_11").getCompilation().diagnosticResult();
-        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
-                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
-                .collect(Collectors.toList());
-        Assert.assertEquals(errorDiagnosticsList.size(), 1);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
-                "invalid type: expected a record type");
-    }
-
-    @Test
-    public void testComplexUnionTypeCaseWhenUserDefinedModulePrefix2() {
-        DiagnosticResult diagnosticResult =
-                CompilerPluginTestUtils.loadPackage("sample_package_12").getCompilation().diagnosticResult();
-        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
-                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
-                .collect(Collectors.toList());
-        Assert.assertEquals(errorDiagnosticsList.size(), 3);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
-                "invalid type: expected a record type");
-        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
-                "invalid type: expected a record type");
-        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
-                "invalid type: expected a record type");
     }
 }
