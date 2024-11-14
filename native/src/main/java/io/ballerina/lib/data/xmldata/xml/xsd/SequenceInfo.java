@@ -201,31 +201,8 @@ public class SequenceInfo implements ModelGroupInfo {
         return result;
     }
 
-    private HashMap<String, Long> updatePriorityOrder(RecordType fieldType) {
-        HashMap<String, Long> elementPriorityOrder = new HashMap<>();
-        BMap<BString, Object> annotations = fieldType.getAnnotations();
-        for (BString annotationKey : annotations.getKeys()) {
-            String key = annotationKey.getValue();
-            if (key.contains(Constants.FIELD)) {
-                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
-                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
-                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
-                    String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
-                    if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
-                        if (fieldAnnotationKeyStr.endsWith(Constants.ORDER)) {
-                            BMap<BString, Object> fieldAnnotationValue =
-                                    (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
-                            elementPriorityOrder.put(fieldName, fieldAnnotationValue.getIntValue(Constants.VALUE));
-                        }
-                    }
-                }
-            }
-        }
-        return elementPriorityOrder;
-    }
-
     private void updateUnvisitedElementsBasedOnPriorityOrder(RecordType fieldType) {
-        this.allElements.addAll(updatePriorityOrder(fieldType).entrySet().stream()
+        this.allElements.addAll(DataUtils.getXsdSequencePriorityOrder(fieldType, true).entrySet().stream()
                 .sorted(Map.Entry.comparingByValue()) // Sort by Long values in priority order
                 .map(Map.Entry::getKey) // Get xml element name from
                 .toList());

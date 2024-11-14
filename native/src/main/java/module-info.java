@@ -23,5 +23,7 @@ module io.ballerina.lib.data {
     requires java.xml;
     requires junit;
     requires org.apache.commons.lang3;
+    requires io.ballerina.lang.xml;
     exports io.ballerina.lib.data.xmldata.xml;
+    requires io.ballerina.lang.map;
 }

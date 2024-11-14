@@ -1,5 +1,8 @@
 import ballerina/test;
 
+@Name {
+    value: "Root"
+}
 type XSDSequenceRecordWithXmlValue record {|
     @Sequence {
         minOccurs: 1,
@@ -27,6 +30,7 @@ function testXsdSequenceWithXmlValue() returns error? {
     test:assertEquals(v, {seq_XSDSequenceRecordWithXmlValue: {age: 13, salary: 11.1}});
     test:assertEquals((check v).seq_XSDSequenceRecordWithXmlValue.age, 13);
     test:assertEquals((check v).seq_XSDSequenceRecordWithXmlValue.salary, 11.1);
+    test:assertEquals(toXml(check v.ensureType(XSDSequenceRecordWithXmlValue)), xmlValue);
 
     xmlValue = xml `<Root><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
@@ -59,6 +63,9 @@ function testXsdSequenceWithXmlValue() returns error? {
     // test:assertTrue((<Error>v).message().includes("Element age is not in the correct order in"), msg = (<Error>v).message());
 }
 
+@Name {
+    value: "Root"
+}
 type XSDSequenceRecordWithXmlValueP2 record {|
     @Sequence {
         minOccurs: 1,
@@ -100,10 +107,12 @@ function testXsdSequenceWithXmlValueP2() returns error? {
     xmlValue = xml `<Root><age>13</age><salary>11.1</salary><name>ABC</name></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {seq_XSDSequenceRecordWithXmlValueP2: {age: [13], salary: 11.1, name: ["ABC"]}});
+    test:assertEquals(toXml(check v.ensureType(XSDSequenceRecordWithXmlValueP2)), xmlValue);
 
     xmlValue = xml `<Root><age>13</age><age>13</age><age>13</age><salary>11.1</salary><name>ABC</name></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {seq_XSDSequenceRecordWithXmlValueP2: {age: [13, 13, 13], salary: 11.1, name: ["ABC"]}});
+    test:assertEquals(toXml(check v.ensureType(XSDSequenceRecordWithXmlValueP2)), xmlValue);
 
     xmlValue = xml `<Root><age>13</age><name>ABC</name><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
@@ -146,6 +155,9 @@ function testXsdSequenceWithXmlValueP2() returns error? {
 }
 
 // TODO: Test with open records.
+@Name {
+    value: "Root"
+}
 type XSDSequenceRecordWithXmlValue2 record {|
     @Sequence {
         minOccurs: 1,
@@ -173,10 +185,11 @@ type Seq_XSDSequenceRecordWithXmlValue2 record {|
 function testXsdSequenceWithXmlValue2() returns error? {
     xml xmlValue = xml `<Root><num>3</num><age>13</age><salary>11.1</salary></Root>`;
     XSDSequenceRecordWithXmlValue2|Error v = parseAsType(xmlValue);
-    test:assertEquals(v, {seq_XSDSequenceRecordWithXmlValue2: {age: 13, salary: 11.1}, num: 3});
+    test:assertEquals(v, {num: 3, seq_XSDSequenceRecordWithXmlValue2: {age: 13, salary: 11.1}});
     test:assertEquals((check v).seq_XSDSequenceRecordWithXmlValue2.age, 13);
     test:assertEquals((check v).seq_XSDSequenceRecordWithXmlValue2.salary, 11.1);
     test:assertEquals((check v).num, 3);
+    test:assertEquals(toXml(check v), xml `<Root><age>13</age><salary>11.1</salary><num>3</num></Root>`);
 
     xmlValue = xml `<Root><age>13</age><salary>11.1</salary><num>3</num></Root>`;
     v = parseAsType(xmlValue);
@@ -184,6 +197,7 @@ function testXsdSequenceWithXmlValue2() returns error? {
     test:assertEquals((check v).seq_XSDSequenceRecordWithXmlValue2.age, 13);
     test:assertEquals((check v).seq_XSDSequenceRecordWithXmlValue2.salary, 11.1);
     test:assertEquals((check v).num, 3);
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><age>13</age><num>3</num><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
@@ -191,6 +205,9 @@ function testXsdSequenceWithXmlValue2() returns error? {
     test:assertTrue((<Error>v).message().includes("Element salary not found in"));
 }
 
+@Name {
+    value: "Root"
+}
 type XSDSequenceRecordWithXmlValue3 record {|
     @Sequence {
         minOccurs: 1,
@@ -218,10 +235,11 @@ type Seq_XSDSequenceRecordWithXmlValue3 record {|
 function testXsdSequenceWithXmlValue3() returns error? {
     xml xmlValue = xml `<Root><num><n>3</n></num><age>13</age><salary>11.1</salary></Root>`;
     XSDSequenceRecordWithXmlValue3|Error v2 = parseAsType(xmlValue);
-    test:assertEquals(v2, {seq_XSDSequenceRecordWithXmlValue3: {age: 13, salary: 11.1}, num: {n: 3}});
+    test:assertEquals(v2, {num: {n: 3}, seq_XSDSequenceRecordWithXmlValue3: {age: 13, salary: 11.1}});
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue3.age, 13);
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue3.salary, 11.1);
     test:assertEquals((check v2).num, {n: 3});
+    test:assertEquals(toXml(check v2), xml `<Root><age>13</age><salary>11.1</salary><num><n>3</n></num></Root>`);
 
     xmlValue = xml `<Root><age>13</age><salary>11.1</salary><num><n>3</n></num></Root>`;
     v2 = parseAsType(xmlValue);
@@ -229,6 +247,7 @@ function testXsdSequenceWithXmlValue3() returns error? {
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue3.age, 13);
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue3.salary, 11.1);
     test:assertEquals((check v2).num, {n: 3});
+    test:assertEquals(toXml(check v2), xmlValue);
 
     xmlValue = xml `<Root><age>13</age><num><n>3</n></num><salary>11.1</salary></Root>`;
     v2 = parseAsType(xmlValue);
@@ -236,6 +255,9 @@ function testXsdSequenceWithXmlValue3() returns error? {
     test:assertTrue((<Error>v2).message().includes("Element salary not found in"));
 }
 
+@Name {
+    value: "Root"
+}
 type XSDSequenceRecordWithXmlValue4 record {|
     record{record {int n;} n;} num;
     @Sequence {
@@ -265,13 +287,15 @@ function testXsdSequenceWithXmlValue4() returns error? {
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue4.age, 13);
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue4.salary, 11.1);
     test:assertEquals((check v2).num, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xmlValue);
 
-    xmlValue = xml `<Root><age>13</age><salary>11.1</salary><num><n><n>3</n></n></num></Root>`;
+    xmlValue = xml `<Root><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {seq_XSDSequenceRecordWithXmlValue4: {age: 13, salary: 11.1}, num: {n: {n: 3}}});
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue4.age, 13);
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue4.salary, 11.1);
     test:assertEquals((check v2).num, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xmlValue);
 
     xmlValue = xml `<Root><age>13</age><num><n><n>3</n></n></num><salary>11.1</salary></Root>`;
     v2 = parseAsType(xmlValue);
@@ -279,6 +303,9 @@ function testXsdSequenceWithXmlValue4() returns error? {
     test:assertTrue((<Error>v2).message().includes("Element salary not found in"));
 }
 
+@Name {
+    value: "Root"
+}
 type XSDSequenceRecordWithXmlValue5 record {|
     record{record {int n;} n;} num;
     @Sequence {
@@ -310,6 +337,7 @@ function testXsdSequenceWithXmlValue5() returns error? {
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue5.salary, 11.1);
     test:assertEquals((check v2).num, {n: {n: 3}});
     test:assertEquals((check v2).num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><num2><n><n>3</n></n></num2></Root>`);
 
     xmlValue = xml `<Root><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary><num><n><n>3</n></n></num></Root>`;
     v2 = parseAsType(xmlValue);
@@ -318,6 +346,7 @@ function testXsdSequenceWithXmlValue5() returns error? {
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue5.salary, 11.1);
     test:assertEquals((check v2).num, {n: {n: 3}});
     test:assertEquals((check v2).num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><num2><n><n>3</n></n></num2></Root>`);
 
     xmlValue = xml `<Root><age>13</age><salary>11.1</salary><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseAsType(xmlValue);
@@ -326,6 +355,7 @@ function testXsdSequenceWithXmlValue5() returns error? {
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue5.salary, 11.1);
     test:assertEquals((check v2).num, {n: {n: 3}});
     test:assertEquals((check v2).num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><num2><n><n>3</n></n></num2></Root>`);
 
     xmlValue = xml `<Root><age>13</age><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseAsType(xmlValue);
@@ -333,6 +363,9 @@ function testXsdSequenceWithXmlValue5() returns error? {
     test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
 }
 
+@Name {
+    value: "Root"
+}
 type XSDSequenceRecordWithXmlValue6 record {|
     record{record {int n;} n;} num;
     @Sequence {
@@ -383,6 +416,7 @@ function testXsdSequenceWithXmlValue6() returns error? {
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue6_2.status, "success");
     test:assertEquals((check v2).num, {n: {n: 3}});
     test:assertEquals((check v2).num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name>SD</name><status>success</status><num2><n><n>3</n></n></num2></Root>`);
 
     xmlValue = xml `<Root><name>SD</name><status>success</status><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary></Root>`;
     v2 = parseAsType(xmlValue);
@@ -393,6 +427,7 @@ function testXsdSequenceWithXmlValue6() returns error? {
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue6_2.status, "success");
     test:assertEquals((check v2).num, {n: {n: 3}});
     test:assertEquals((check v2).num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name>SD</name><status>success</status><num2><n><n>3</n></n></num2></Root>`);
 
     xmlValue = xml `<Root><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2><name>SD</name><status>success</status><age>13</age><salary>11.1</salary></Root>`;
     v2 = parseAsType(xmlValue);
@@ -403,6 +438,7 @@ function testXsdSequenceWithXmlValue6() returns error? {
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue6_2.status, "success");
     test:assertEquals((check v2).num, {n: {n: 3}});
     test:assertEquals((check v2).num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name>SD</name><status>success</status><num2><n><n>3</n></n></num2></Root>`);
 
     xmlValue = xml `<Root><name>SD</name><status>success</status><age>13</age><salary>11.1</salary><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseAsType(xmlValue);
@@ -413,6 +449,7 @@ function testXsdSequenceWithXmlValue6() returns error? {
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue6_2.status, "success");
     test:assertEquals((check v2).num, {n: {n: 3}});
     test:assertEquals((check v2).num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name>SD</name><status>success</status><num2><n><n>3</n></n></num2></Root>`);
 
     xmlValue = xml `<Root><name>SD</name><age>13</age><status>success</status><salary>11.1</salary></Root>`;
     v2 = parseAsType(xmlValue);
@@ -445,6 +482,9 @@ function testXsdSequenceWithXmlValue6() returns error? {
     test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
 }
 
+@Name {
+    value: "Root"
+}
 type XSDSequenceRecordWithXmlValue7 record {|
     @Sequence {
         minOccurs: 1,
@@ -490,9 +530,12 @@ function testXsdSequenceWithXmlValue7() returns error? {
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue7_1.age, 13);
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue7_1.salary, 11.1);
     test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue7_2.name, "SD");
-    test:assertEquals((check v2).seq_XSDSequenceRecordWithXmlValue7_2.status, "success");
+    test:assertEquals(toXml(check v2), xml `<Root><age>13</age><salary>11.1</salary><name>SD</name><status>success</status></Root>`);
 }
 
+@Name {
+    value: "Root"
+}
 type XSDSequenceRecordWithXmlValue8 record {|
     XSDSequenceRecordWithXmlValue8P2 test;
     int 'check;
@@ -539,13 +582,17 @@ type Seq_XSDSequenceRecordWithXmlValue8_2 record {|
 function testXsdSequenceWithXmlValue8() returns error? {
     xml xmlValue = xml `<Root><test><name>SD</name><status>success</status><age>13</age><salary>11.1</salary></test><check>2</check></Root>`;
     XSDSequenceRecordWithXmlValue8|Error v2 = parseAsType(xmlValue);
-    test:assertEquals(v2, {'check: 2, test: {seq_XSDSequenceRecordWithXmlValue8_1: {age: 13, salary: 11.1}, seq_XSDSequenceRecordWithXmlValue8_2: {name: "SD", status: "success"}}});
+    test:assertEquals(v2, {'check: 2, test: {seq_XSDSequenceRecordWithXmlValue8_1: {salary: 11.1, age: 13}, seq_XSDSequenceRecordWithXmlValue8_2: {name: "SD", status: "success"}}});
     test:assertEquals((check v2).test.seq_XSDSequenceRecordWithXmlValue8_1.age, 13);
     test:assertEquals((check v2).test.seq_XSDSequenceRecordWithXmlValue8_1.salary, 11.1);
     test:assertEquals((check v2).test.seq_XSDSequenceRecordWithXmlValue8_2.name, "SD");
     test:assertEquals((check v2).test.seq_XSDSequenceRecordWithXmlValue8_2.status, "success");
+    test:assertEquals(toXml(check v2), xml `<Root><test><age>13</age><salary>11.1</salary><name>SD</name><status>success</status></test><check>2</check></Root>`);
 }
 
+@Name {
+    value: "Root"
+}
 type XSDSequenceRecordWithXmlValue9 record {|
     XSDSequenceRecordWithXmlValue9P test;
     int a;
@@ -643,6 +690,9 @@ function testXsdSequenceWithXmlValue9() returns error? {
     test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
 }
 
+@Name {
+    value: "Root"
+}
 type XSDSequenceRecordWithXmlValue10 record {|
     XSDSequenceRecordWithXmlValue10P test;
     int a;
@@ -740,6 +790,9 @@ function testXsdSequenceWithXmlValue10() returns error? {
     test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
 }
 
+@Name {
+    value: "Root"
+}
 type XSDSequenceRecordWithXmlValue11 record {|
     XSDSequenceRecordWithXmlValue11P test;
     int a;
@@ -838,6 +891,9 @@ function testXsdSequenceWithXmlValue11() returns error? {
     test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
 }
 
+@Name {
+    value: "Root"
+}
 type XSDSequenceRecordWithXmlValue12 record {
     @Sequence {
         minOccurs: 1,
@@ -864,6 +920,9 @@ function testXsdSequenceWithXmlValue12() returns error? {
     test:assertEquals(v2, {seq_XSDSequenceRecordWithXmlValue12_1: {field1: {value1: {a: "1", b: "2", c: "3"}}, field2: {value2: {a: "1", b: "2", c: "3"}}, field3: {value3: {a: "1", b: "2", c: "3"}}}});
 }
 
+@Name {
+    value: "Root"
+}
 type XSDSequenceRecordWithXmlValue13 record {
     @Sequence {
         minOccurs: 0,
@@ -905,10 +964,12 @@ function testXsdSequenceWithXmlValue13() returns error? {
     xml xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     XSDSequenceRecordWithXmlValue13|Error v2 = parseAsType(xmlValue);
     test:assertEquals(v2, <XSDSequenceRecordWithXmlValue13>{seq_XSDSequenceRecordWithXmlValue13_1: {field1: {value1: {a: "1", b: "2", c: "3"}}, field2: {value2: {d: "1", e: "2", f: "3"}}, field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XSDSequenceRecordWithXmlValue13_2: {field4: {value1: {a: "1", b: "2", c: "3"}}, field5: {value2: {d: "1", e: "2", f: "3"}}, field6: {value3: {g: "1", h: "2", i: "3"}}}});
+    test:assertEquals(toXml(check v2), xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`);
 
     xmlValue = xml `<Root><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertEquals(v2, <XSDSequenceRecordWithXmlValue13>{seq_XSDSequenceRecordWithXmlValue13_2: {field4: {value1: {a: "1", b: "2", c: "3"}}, field5: {value2: {d: "1", e: "2", f: "3"}}, field6: {value3: {g: "1", h: "2", i: "3"}}}});
+    test:assertEquals(toXml(check v2), xml `<Root><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`);
 
     xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><g>1</g><h>2</h><i>3</i><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);

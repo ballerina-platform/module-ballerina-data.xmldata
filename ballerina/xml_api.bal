@@ -177,31 +177,31 @@ public isolated function toXml(map<anydata> mapValue, Options options = {}) retu
         return convertMapXml(jsonValue);
     } else if jsonValue is json[] {
         jsonOptions.rootTag = jsonValue[1].toString();
-        return fromJson(jsonValue[0], jsonOptions);
+        return fromModifiedRecordToXml(jsonValue[0], jsonOptions, inputType);
     }
-    return fromJson(jsonValue.toJson(), jsonOptions);
+    return fromModifiedRecordToXml(jsonValue.toJson(), jsonOptions, inputType);
 }
 
-isolated function convertMapXml(map<xml>|map<xml[]> mapValue) returns xml {
-    xml xNode = xml ``;
-    foreach [string, xml|xml[]] [key, xmlVal] in mapValue.entries() {
-        xml|xml[] values = xmlVal;
-        if values is xml[] {
-            foreach xml value in values {
-                xNode += xml:createElement(key, {}, value);
-            }
-        } else {
-            xNode += xml:createElement(key, {}, values);
-        }
-    }
-    return xml:createElement("root", {}, xNode);
-}
+// isolated function convertMapXml(map<xml>|map<xml[]> mapValue) returns xml {
+//     xml xNode = xml ``;
+    // foreach [string, xml|xml[]] [key, xmlVal] in mapValue.entries() {
+    //     xml|xml[] values = xmlVal;
+    //     if values is xml[] {
+    //         foreach xml value in values {
+    //             xNode += xml:createElement(key, {}, value);
+    //         }
+    //     } else {
+    //         xNode += xml:createElement(key, {}, values);
+    //     }
+    // }
+//     return xml:createElement("root", {}, xNode);
+// }
 
 isolated function getModifiedRecord(map<anydata> mapValue, string textFieldName, typedesc<(map<anydata>|json)> inputType)
     returns json|record {}|Error = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.DataUtils"} external;
 
 # Provides configurations for converting JSON to XML.
-type JsonOptions record {|
+public type JsonOptions record {|
     # The prefix of JSON elements' key which is to be treated as an attribute in the XML representation
     string attributePrefix = "@";
     # The name of the XML elements that represent a converted JSON array entry
@@ -259,217 +259,217 @@ public isolated function fromJson(json jsonValue, JsonOptions options = {}) retu
     return jsonValue is null ? xml `` : xml:createText(jsonValue.toString());
 }
 
-isolated function traverseNode(json jNode, map<string> allNamespaces, map<string> parentNamespaces, JsonOptions options,
-        string? 'key = ()) returns xml|Error {
-    map<string> namespacesOfElem = {};
-    string attributePrefix = options.attributePrefix;
-    xml xNode = xml ``;
-    if jNode is map<json> {
-        foreach [string, json] [k, value] in jNode.entries() {
-            string jsonKey = k.trim();
-            if jsonKey.startsWith(attributePrefix) {
-                continue;
-            }
+// isolated function traverseNode(json jNode, map<string> allNamespaces, map<string> parentNamespaces, JsonOptions options,
+//         string? 'key = ()) returns xml|Error {
+//     map<string> namespacesOfElem = {};
+//     string attributePrefix = options.attributePrefix;
+//     xml xNode = xml ``;
+//     if jNode is map<json> {
+//         foreach [string, json] [k, value] in jNode.entries() {
+//             string jsonKey = k.trim();
+//             if jsonKey.startsWith(attributePrefix) {
+//                 continue;
+//             }
 
-            if jsonKey == options.textFieldName {
-                xNode += xml:createText(value.toString());
-            } else {
-                namespacesOfElem = check getNamespacesMap(value, options, parentNamespaces);
-                addNamespaces(allNamespaces, namespacesOfElem);
-                if value is json[] {
-                    xNode += check traverseNode(value, allNamespaces, namespacesOfElem, options, jsonKey);
-                } else {
-                    xNode +=
-                    check getElement(jsonKey, check traverseNode(value, allNamespaces, namespacesOfElem, options),
-                                    allNamespaces, options,
-                                    check getAttributesMap(value, options, allNamespaces, parentNamespaces));
-                }
-            }
-        }
-    } else if jNode is json[] {
-        foreach var i in jNode {
-            string arrayEntryTagKey = EMPTY_STRING;
-            if 'key is string {
-                arrayEntryTagKey = 'key;
-            } else if options.arrayEntryTag != EMPTY_STRING {
-                arrayEntryTagKey = options.arrayEntryTag;
-            }
-            namespacesOfElem = check getNamespacesMap(i, options, parentNamespaces);
-            addNamespaces(allNamespaces, namespacesOfElem);
-            if options.arrayEntryTag == EMPTY_STRING {
-                xNode += check getElement(arrayEntryTagKey,
-                                        check traverseNode(i, allNamespaces, namespacesOfElem, options, 'key),
-                                        allNamespaces, options,
-                                        check getAttributesMap(i, options, allNamespaces, parentNamespaces));
-            } else {
-                xNode += check getElement(arrayEntryTagKey,
-                                        check traverseNode(i, allNamespaces, namespacesOfElem, options),
-                                        allNamespaces, options,
-                                        check getAttributesMap(i, options, allNamespaces, parentNamespaces));
-            }
-        }
-    } else {
-        xNode = xml:createText(jNode.toString());
-    }
-    return xNode;
-}
+//             if jsonKey == options.textFieldName {
+//                 xNode += xml:createText(value.toString());
+//             } else {
+//                 namespacesOfElem = check getNamespacesMap(value, options, parentNamespaces);
+//                 addNamespaces(allNamespaces, namespacesOfElem);
+//                 if value is json[] {
+//                     xNode += check traverseNode(value, allNamespaces, namespacesOfElem, options, jsonKey);
+//                 } else {
+//                     xNode +=
+//                     check getElement(jsonKey, check traverseNode(value, allNamespaces, namespacesOfElem, options),
+//                                     allNamespaces, options,
+//                                     check getAttributesMap(value, options, allNamespaces, parentNamespaces));
+//                 }
+//             }
+//         }
+//     } else if jNode is json[] {
+//         foreach var i in jNode {
+//             string arrayEntryTagKey = EMPTY_STRING;
+//             if 'key is string {
+//                 arrayEntryTagKey = 'key;
+//             } else if options.arrayEntryTag != EMPTY_STRING {
+//                 arrayEntryTagKey = options.arrayEntryTag;
+//             }
+//             namespacesOfElem = check getNamespacesMap(i, options, parentNamespaces);
+//             addNamespaces(allNamespaces, namespacesOfElem);
+//             if options.arrayEntryTag == EMPTY_STRING {
+//                 xNode += check getElement(arrayEntryTagKey,
+//                                         check traverseNode(i, allNamespaces, namespacesOfElem, options, 'key),
+//                                         allNamespaces, options,
+//                                         check getAttributesMap(i, options, allNamespaces, parentNamespaces));
+//             } else {
+//                 xNode += check getElement(arrayEntryTagKey,
+//                                         check traverseNode(i, allNamespaces, namespacesOfElem, options),
+//                                         allNamespaces, options,
+//                                         check getAttributesMap(i, options, allNamespaces, parentNamespaces));
+//             }
+//         }
+//     } else {
+//         xNode = xml:createText(jNode.toString());
+//     }
+//     return xNode;
+// }
 
-isolated function isSingleNode(json node) returns boolean {
-    map<anydata>|error jMap = node.ensureType();
-    return node !is json[] && (jMap !is map<anydata> || jMap.length() <= 1);
-}
+// isolated function isSingleNode(json node) returns boolean {
+//     map<anydata>|error jMap = node.ensureType();
+//     return node !is json[] && (jMap !is map<anydata> || jMap.length() <= 1);
+// }
 
-isolated function getElement(string name, xml children, map<string> namespaces, JsonOptions options,
-        map<string> attributes = {}) returns xml|Error {
-    string attributePrefix = options.attributePrefix;
-    string userAttributePrefix = options.userAttributePrefix;
-    xml:Element element;
-    int? index = name.indexOf(":");
-    if index is int {
-        string prefix = name.substring(0, index);
+// isolated function getElement(string name, xml children, map<string> namespaces, JsonOptions options,
+//         map<string> attributes = {}) returns xml|Error {
+//     string attributePrefix = options.attributePrefix;
+//     string userAttributePrefix = options.userAttributePrefix;
+//     xml:Element element;
+//     int? index = name.indexOf(":");
+//     if index is int {
+//         string prefix = name.substring(0, index);
 
-        string elementName;
-        if userAttributePrefix !is EMPTY_STRING {
-            elementName = removeUserAttributePrefix(name, userAttributePrefix, index);
-        } else {
-            elementName = name.substring(index + 1, name.length());
-        }
+//         string elementName;
+//         if userAttributePrefix !is EMPTY_STRING {
+//             elementName = removeUserAttributePrefix(name, userAttributePrefix, index);
+//         } else {
+//             elementName = name.substring(index + 1, name.length());
+//         }
 
-        string namespaceUrl = attributes[string `{${XMLNS_NAMESPACE_URI}}${prefix}`].toString();
-        if namespaceUrl == EMPTY_STRING {
-            namespaceUrl = namespaces[string `{${XMLNS_NAMESPACE_URI}}${prefix}`].toString();
-            if namespaceUrl != EMPTY_STRING {
-                attributes[string `{${XMLNS_NAMESPACE_URI}}${prefix}`] = namespaceUrl;
-            }
-        }
-        if namespaceUrl == EMPTY_STRING {
-            element = xml:createElement(elementName, attributes, children);
-        } else {
-            element = xml:createElement(string `{${namespaceUrl}}${elementName}`, attributes, children);
-        }
-    } else {
-        if name.startsWith(attributePrefix) {
-            return error("attribute cannot be an object or array");
-        }
-        map<string> newAttributes = attributes;
-        if newAttributes.hasKey(string `{${XMLNS_NAMESPACE_URI}}`) {
-            string value = newAttributes.get(string `{${XMLNS_NAMESPACE_URI}}`);
-            _ = newAttributes.remove(string `{${XMLNS_NAMESPACE_URI}}`);
-            newAttributes[XMLNS] = value;
-        }
-        if userAttributePrefix !is EMPTY_STRING {
-            element = xml:createElement(removeUserAttributePrefix(name, userAttributePrefix, ()), newAttributes, children);
-        } else {
-            element = xml:createElement(name, newAttributes, children);
-        }
-    }
-    return element;
-}
+//         string namespaceUrl = attributes[string `{${XMLNS_NAMESPACE_URI}}${prefix}`].toString();
+//         if namespaceUrl == EMPTY_STRING {
+//             namespaceUrl = namespaces[string `{${XMLNS_NAMESPACE_URI}}${prefix}`].toString();
+//             if namespaceUrl != EMPTY_STRING {
+//                 attributes[string `{${XMLNS_NAMESPACE_URI}}${prefix}`] = namespaceUrl;
+//             }
+//         }
+//         if namespaceUrl == EMPTY_STRING {
+//             element = xml:createElement(elementName, attributes, children);
+//         } else {
+//             element = xml:createElement(string `{${namespaceUrl}}${elementName}`, attributes, children);
+//         }
+//     } else {
+//         if name.startsWith(attributePrefix) {
+//             return error("attribute cannot be an object or array");
+//         }
+//         map<string> newAttributes = attributes;
+//         if newAttributes.hasKey(string `{${XMLNS_NAMESPACE_URI}}`) {
+//             string value = newAttributes.get(string `{${XMLNS_NAMESPACE_URI}}`);
+//             _ = newAttributes.remove(string `{${XMLNS_NAMESPACE_URI}}`);
+//             newAttributes[XMLNS] = value;
+//         }
+//         if userAttributePrefix !is EMPTY_STRING {
+//             element = xml:createElement(removeUserAttributePrefix(name, userAttributePrefix, ()), newAttributes, children);
+//         } else {
+//             element = xml:createElement(name, newAttributes, children);
+//         }
+//     }
+//     return element;
+// }
 
-isolated function removeUserAttributePrefix(string name, string userAttributePrefix, int? index) returns string {
-    int? usrAttIndex = name.indexOf(userAttributePrefix);
-    if usrAttIndex is int {
-        return name.substring(usrAttIndex + 1, name.length());
-    }
+// isolated function removeUserAttributePrefix(string name, string userAttributePrefix, int? index) returns string {
+//     int? usrAttIndex = name.indexOf(userAttributePrefix);
+//     if usrAttIndex is int {
+//         return name.substring(usrAttIndex + 1, name.length());
+//     }
 
-    if index is int {
-        return name.substring(index + 1, name.length());
-    }
-    return name;
-}
+//     if index is int {
+//         return name.substring(index + 1, name.length());
+//     }
+//     return name;
+// }
 
-isolated function getAttributesMap(json jTree, JsonOptions options, map<string> namespaces,
-        map<string> parentNamespaces = {}) returns map<string>|Error {
-    map<string> attributes = parentNamespaces.clone();
-    map<json>|error attr = jTree.ensureType();
-    string attributePrefix = options.attributePrefix;
-    if attr !is map<json> {
-        return attributes;
-    }
+// isolated function getAttributesMap(json jTree, JsonOptions options, map<string> namespaces,
+//         map<string> parentNamespaces = {}) returns map<string>|Error {
+//     map<string> attributes = parentNamespaces.clone();
+//     map<json>|error attr = jTree.ensureType();
+//     string attributePrefix = options.attributePrefix;
+//     if attr !is map<json> {
+//         return attributes;
+//     }
 
-    foreach [string, json] [k, v] in attr.entries() {
-        if !k.startsWith(attributePrefix) {
-            continue;
-        }
+//     foreach [string, json] [k, v] in attr.entries() {
+//         if !k.startsWith(attributePrefix) {
+//             continue;
+//         }
 
-        if v is map<json> || v is json[] {
-            return error("attribute cannot be an object or array");
-        }
+//         if v is map<json> || v is json[] {
+//             return error("attribute cannot be an object or array");
+//         }
 
-        int? index = k.indexOf(":");
-        if index is int {
-            string suffix = k.substring(index + 1);
-            if k.startsWith(attributePrefix + XMLNS) {
-                attributes[string `{${XMLNS_NAMESPACE_URI}}${suffix}`] = v.toString();
-            } else {
-                int startIndex = getStartIndex(attributePrefix, options.userAttributePrefix, k);
-                string prefix = k.substring(startIndex, index);
-                string namespaceUrl = namespaces.get(string `{${XMLNS_NAMESPACE_URI}}${prefix}`);
-                attributes[string `{${namespaceUrl}}${suffix}`] = v.toString();
-            }
-        } else {
-            if k == attributePrefix + XMLNS {
-                attributes[XMLNS] = v.toString();
-            } else {
-                int startIndex = getStartIndex(attributePrefix, options.userAttributePrefix, k);
-                attributes[k.substring(startIndex)] = v.toString();
-            }
-        }
-    }
-    return attributes;
-}
+//         int? index = k.indexOf(":");
+//         if index is int {
+//             string suffix = k.substring(index + 1);
+//             if k.startsWith(attributePrefix + XMLNS) {
+//                 attributes[string `{${XMLNS_NAMESPACE_URI}}${suffix}`] = v.toString();
+//             } else {
+//                 int startIndex = getStartIndex(attributePrefix, options.userAttributePrefix, k);
+//                 string prefix = k.substring(startIndex, index);
+//                 string namespaceUrl = namespaces.get(string `{${XMLNS_NAMESPACE_URI}}${prefix}`);
+//                 attributes[string `{${namespaceUrl}}${suffix}`] = v.toString();
+//             }
+//         } else {
+//             if k == attributePrefix + XMLNS {
+//                 attributes[XMLNS] = v.toString();
+//             } else {
+//                 int startIndex = getStartIndex(attributePrefix, options.userAttributePrefix, k);
+//                 attributes[k.substring(startIndex)] = v.toString();
+//             }
+//         }
+//     }
+//     return attributes;
+// }
 
-isolated function getStartIndex(string attributePrefix, string userAttributePrefix, string 'key) returns int {
-    int startIndex = 1;
-    if attributePrefix !is ATTRIBUTE_PREFIX {
-        return startIndex;
-    }
+// isolated function getStartIndex(string attributePrefix, string userAttributePrefix, string 'key) returns int {
+//     int startIndex = 1;
+//     if attributePrefix !is ATTRIBUTE_PREFIX {
+//         return startIndex;
+//     }
 
-    int? location = userAttributePrefix is EMPTY_STRING ? 'key.indexOf("_") : 'key.indexOf(userAttributePrefix);
-    if location is int {
-        startIndex = location + 1;
-    }
-    return startIndex;
-}
+//     int? location = userAttributePrefix is EMPTY_STRING ? 'key.indexOf("_") : 'key.indexOf(userAttributePrefix);
+//     if location is int {
+//         startIndex = location + 1;
+//     }
+//     return startIndex;
+// }
 
-isolated function getNamespacesMap(json jTree, JsonOptions options, map<string> parentNamespaces = {})
-                            returns map<string>|Error {
-    map<string> namespaces = parentNamespaces.clone();
-    map<json>|error attr = jTree.ensureType();
-    string attributePrefix = options.attributePrefix;
-    if attr !is map<json> {
-        return namespaces;
-    }
+// isolated function getNamespacesMap(json jTree, JsonOptions options, map<string> parentNamespaces = {})
+//                             returns map<string>|Error {
+//     map<string> namespaces = parentNamespaces.clone();
+//     map<json>|error attr = jTree.ensureType();
+//     string attributePrefix = options.attributePrefix;
+//     if attr !is map<json> {
+//         return namespaces;
+//     }
 
-    foreach [string, json] [k, v] in attr.entries() {
-        if !k.startsWith(attributePrefix) {
-            continue;
-        }
+//     foreach [string, json] [k, v] in attr.entries() {
+//         if !k.startsWith(attributePrefix) {
+//             continue;
+//         }
 
-        if v is map<json>|json[] {
-            return error("attribute cannot be an object or array.");
-        }
+//         if v is map<json>|json[] {
+//             return error("attribute cannot be an object or array.");
+//         }
 
-        if !k.startsWith(attributePrefix + XMLNS) {
-            continue;
-        }
+//         if !k.startsWith(attributePrefix + XMLNS) {
+//             continue;
+//         }
 
-        int? index = k.indexOf(":");
-        if index is int {
-            string prefix = k.substring(index + 1);
-            namespaces[string `{${XMLNS_NAMESPACE_URI}}${prefix}`] = v.toString();
-        } else {
-            namespaces[string `{${XMLNS_NAMESPACE_URI}}`] = v.toString();
-        }
-    }
-    return namespaces;
-}
+//         int? index = k.indexOf(":");
+//         if index is int {
+//             string prefix = k.substring(index + 1);
+//             namespaces[string `{${XMLNS_NAMESPACE_URI}}${prefix}`] = v.toString();
+//         } else {
+//             namespaces[string `{${XMLNS_NAMESPACE_URI}}`] = v.toString();
+//         }
+//     }
+//     return namespaces;
+// }
 
-isolated function addNamespaces(map<string> allNamespaces, map<string> namespaces) {
-    foreach [string, string] ['key, namespace] in namespaces.entries() {
-        allNamespaces['key] = namespace;
-    }
-}
+// isolated function addNamespaces(map<string> allNamespaces, map<string> namespaces) {
+//     foreach [string, string] ['key, namespace] in namespaces.entries() {
+//         allNamespaces['key] = namespace;
+//     }
+// }
 
 # Validates an XML document against a provided XML schema.
 #
@@ -495,3 +495,36 @@ isolated function addNamespaces(map<string> allNamespaces, map<string> namespace
 # ```
 public function validate(string|typedesc<record{}> schema, xml xmlValue)
     returns boolean = @java:Method {'class: "io.ballerina.lib.data.xmldata.xml.Native"} external;
+
+public isolated function isSingleNode(json node) returns boolean
+     = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;
+
+isolated function getNamespacesMap(json jTree, JsonOptions options, map<string> parentNamespaces = {})
+    returns map<string>|Error = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;
+
+public isolated function addNamespaces(map<string> allNamespaces, map<string> namespaces)
+     = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;
+
+public isolated function getStartIndex(string attributePrefix, string userAttributePrefix, string 'key) returns int
+    = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;
+
+isolated function getAttributesMap(json jTree, JsonOptions options, map<string> namespaces, 
+    map<string> parentNamespaces = {}) returns map<string>|Error 
+    = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;
+
+isolated function removeUserAttributePrefix(string name, string userAttributePrefix, int? index) returns string
+    = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;
+
+isolated function getElement(string name, xml children, map<string> namespaces, JsonOptions options,
+        map<string> attributes = {}) returns xml|Error
+    = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;
+
+isolated function traverseNode(json jNode, map<string> allNamespaces, map<string> parentNamespaces, JsonOptions options,
+        string? 'key = ()) returns xml|Error
+    = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;
+
+isolated function convertMapXml(map<xml>|map<xml[]> mapValue) returns xml
+    = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;
+
+public isolated function fromModifiedRecordToXml(json jsonValue, JsonOptions options, typedesc<anydata> inputType) returns xml|Error
+    = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;

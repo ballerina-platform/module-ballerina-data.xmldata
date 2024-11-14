@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -462,6 +463,10 @@ public class DataUtils {
         return input;
     }
 
+//    public static Object convertJsonIntoXml(Object value, BMap<BString, Object> jsonOptions, BTypedesc inputType) {
+//
+//    }
+
     @SuppressWarnings("unchecked")
     private static BMap<BString, Object> processArrayValue(BMap<BString, Object> input, ArrayType arrayType) {
         Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
@@ -519,6 +524,19 @@ public class DataUtils {
         return recordValue;
     }
 
+
+    private static BString[] getOrderedRecordKeysIfXsdSequencePresent(BMap<BString, Object> input,
+                                                                  HashMap<String, Integer> xsdSequencePriorityOrder) {
+        if (!xsdSequencePriorityOrder.isEmpty()) {
+            return xsdSequencePriorityOrder.entrySet().stream()
+                    .sorted(Comparator.comparingInt(Map.Entry::getValue))
+                    .map(entry -> StringUtils.fromString(entry.getKey()))
+                    .toArray(BString[]::new);
+        } else {
+            return input.getKeys();
+        }
+    }
+
     private static void processRecordField(Type fieldType, BMap<BString, Object> annotations,
                                            BMap<BString, Object> recordValue, Map.Entry<BString, Object> entry,
                                            String key, Object value) {
@@ -546,11 +564,11 @@ public class DataUtils {
                                                  BMap<BString, Object> recordValue, String key, Object value) {
         BMap<BString, Object> namespaceAnnotRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         boolean doesNamespaceDefinedInField = false;
-        if (annotations.size() > 0) {
+        if (!annotations.isEmpty()) {
             String fieldName = key;
             key = getKeyNameFromAnnotation(annotations, key);
             QName qName = addFieldNamespaceAnnotation(fieldName, key, annotations, namespaceAnnotRecord);
-            if (!qName.getNamespaceURI().equals("")) {
+            if (!qName.getNamespaceURI().isEmpty()) {
                 doesNamespaceDefinedInField = true;
             }
             String localPart = qName.getLocalPart();
@@ -567,7 +585,7 @@ public class DataUtils {
 
         BMap<BString, Object> subRecordValue = addFields(((BMap<BString, Object>) value), referredType);
         addNamespaceToSubRecord(key, namespaceAnnotRecord, subRecordValue);
-        if (annotationRecord.size() > 0) {
+        if (!annotationRecord.isEmpty()) {
             subRecordValue.put(annotationRecord.getKeys()[0], annotationRecord.get(annotationRecord.getKeys()[0]));
         }
         recordValue.put(StringUtils.fromString(key), subRecordValue);
@@ -650,17 +668,19 @@ public class DataUtils {
                                       BMap<BString, Object> record, Object value, RecordType childType) {
         BMap<BString, Object> parentRecordAnnotations = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         BMap<BString, Object> annotation = childType.getAnnotations();
-        if (parentAnnotations.size() > 0) {
+        if (!parentAnnotations.isEmpty()) {
             annotation.merge(getFieldNamespaceAndNameAnnotations(key, parentAnnotations), true);
             processSubRecordAnnotation(parentAnnotations, parentRecordAnnotations);
         }
         BMap<BString, Object> subRecord = addFields(((BMap<BString, Object>) value), childType);
-        if (annotation.size() > 0) {
+        if (!annotation.isEmpty()) {
             processSubRecordAnnotation(annotation, subRecord);
         }
+
         key = getElementName(annotation, key);
         record.put(StringUtils.fromString(key), subRecord);
-        if (parentRecordAnnotations.size() > 0) {
+
+        if (!parentRecordAnnotations.isEmpty()) {
             record.put(parentRecordAnnotations.getKeys()[0],
                     parentRecordAnnotations.get(parentRecordAnnotations.getKeys()[0]));
         }
@@ -703,8 +723,7 @@ public class DataUtils {
         if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
             List<BMap<BString, Object>> records = new ArrayList<>();
             for (int i = 0; i < arrayValue.getLength(); i++) {
-                BMap<BString, Object> subRecord = addFields(((BMap<BString, Object>) arrayValue.get(i)),
-                        elementType);
+                BMap<BString, Object> subRecord = addFields(((BMap<BString, Object>) arrayValue.get(i)), elementType);
                 subRecord = processParentAnnotation(elementType, subRecord);
                 records.add((BMap<BString, Object>) subRecord.get(subRecord.getKeys()[0]));
             }
@@ -720,7 +739,7 @@ public class DataUtils {
             record.put(StringUtils.fromString(keyName), ValueCreator.createArrayValue(records.toArray(),
                     TypeCreator.createArrayType(Constants.JSON_ARRAY_TYPE)));
         }
-        if (annotationRecord.size() > 0) {
+        if (!annotationRecord.isEmpty()) {
             record.put(annotationRecord.getKeys()[0],
                     annotationRecord.get(annotationRecord.getKeys()[0]));
         }
@@ -754,7 +773,7 @@ public class DataUtils {
         BMap<BString, Object> namespaces = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         BMap<BString, Object> annotations = ((RecordType) type).getAnnotations();
         BString rootName = processAnnotation(annotations, type.getName(), namespaces);
-        if (namespaces.size() > 0) {
+        if (!namespaces.isEmpty()) {
             for (Map.Entry<BString, Object> namespace : namespaces.entrySet()) {
                 record.put(namespace.getKey(), namespace.getValue());
             }
@@ -1080,9 +1099,7 @@ public class DataUtils {
                         (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
                 String xmlElementName = StringUtils.getStringValue(fieldAnnotationValue
                         .getStringValue(Constants.VALUE));
-                if (xmlElementNameMap.containsKey(fieldName)) {
-                    xmlElementNameMap.remove(fieldName);
-                }
+                xmlElementNameMap.remove(fieldName);
                 xmlElementNameMap.put(xmlElementName, fieldName);
             }
         }
@@ -1092,6 +1109,91 @@ public class DataUtils {
         xmlParserData.fieldHierarchy.pop();
         xmlParserData.visitedFieldHierarchy.pop();
         xmlParserData.restTypes.pop();
+    }
+
+    public static HashMap<String, Integer> getXsdSequencePriorityOrder(RecordType fieldType) {
+        return getXsdSequencePriorityOrder(fieldType, false);
+    }
+
+    public static HashMap<String, Integer> getXsdSequencePriorityOrder(RecordType fieldType,
+                                                                       boolean isSequenceElements) {
+        HashMap<String, Integer> elementPriorityOrder = new HashMap<>();
+        if (!isSequenceElements) {
+            return elementPriorityOrder;
+        }
+        BMap<BString, Object> annotations = fieldType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String key = annotationKey.getValue();
+            if (key.contains(Constants.FIELD)) {
+                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                    String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+                    if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+                        if (fieldAnnotationKeyStr.endsWith(Constants.ORDER)) {
+                            BMap<BString, Object> fieldAnnotationValue =
+                                    (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
+                            elementPriorityOrder.put(fieldName,
+                                    fieldAnnotationValue.getIntValue(Constants.VALUE).intValue());
+                        }
+                    }
+                }
+            }
+        }
+        return elementPriorityOrder;
+    }
+
+    public static ArrayList<String> getFieldNamesWithModelGroupAnnotations(RecordType fieldType) {
+        ArrayList<String> fieldNamesWithModelGroupAnnotations = new ArrayList<>();
+        BMap<BString, Object> annotations = fieldType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String key = annotationKey.getValue();
+            if (key.contains(Constants.FIELD)) {
+                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                    String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+                    if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+                        if (fieldAnnotationKeyStr.endsWith(Constants.SEQUENCE)
+                                || fieldAnnotationKeyStr.endsWith(Constants.CHOICE)) {
+                            fieldNamesWithModelGroupAnnotations.add(fieldName);
+                        }
+                    }
+                }
+            }
+        }
+        return fieldNamesWithModelGroupAnnotations;
+    }
+
+    public static BMap<BString, Object> getXmlElementModelGroupMap(BTypedesc typed) {
+        Type type = TypeUtils.getReferredType(typed.getDescribingType());
+        if (type.getTag() != TypeTags.RECORD_TYPE_TAG) {
+            return null;
+        }
+
+        BMap<BString, Object> xmlModelGroupMap = ValueCreator
+                .createMapValue(TypeCreator.createMapType(PredefinedTypes.TYPE_BOOLEAN));
+        RecordType recordType = (RecordType) type;
+        BMap<BString, Object> annotations = recordType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String key = annotationKey.getValue();
+            if (key.contains(Constants.FIELD)) {
+                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                    String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+                    if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+                        if (fieldAnnotationKeyStr.endsWith(Constants.SEQUENCE)
+                                || fieldAnnotationKeyStr.endsWith(Constants.CHOICE)) {
+                            xmlModelGroupMap.put(StringUtils.fromString(fieldName), true);
+                        } else {
+                            xmlModelGroupMap.put(StringUtils.fromString(fieldName), false);
+                        }
+                    }
+                }
+            }
+        }
+        return xmlModelGroupMap;
     }
 
     public static class XmlAnalyzerMetaData {
@@ -1165,7 +1267,7 @@ public class DataUtils {
     /**
      * Holds data required for the parsing.
      *
-     * @since 0.1.0
+     * @since 0.1.1
      */
     public static class XmlParserData extends XmlAnalyzerMetaData {
         public final Stack<QualifiedName> restFieldsPoints = new Stack<>();

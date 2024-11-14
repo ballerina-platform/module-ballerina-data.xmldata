@@ -28,8 +28,14 @@ function testXsdSequenceArrayWithXmlValue() returns error? {
     xmlValue = xml `<Root><age>13</age><salary>11.1</salary><age>14</age><salary>15.1</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {seq_XsdSequenceArrayWithXmlValue: [{age: 13, salary: 11.1}, {age: 14, salary: 15.1}]});
+    test:assertEquals(toXml(check v), xml `<Root><age>13</age><salary>11.1</salary><age>14</age><salary>15.1</salary></Root>`);
 
     xmlValue = xml `<Root><age>13</age><salary>11.1</salary><age>14</age><salary>14.1</salary><age>15</age><salary>15.1</salary></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is error);
+    test:assertTrue((<Error>v).message().includes("seq_XsdSequenceArrayWithXmlValue Element occurs more than the max allowed times"));
+
+    xmlValue = xml `<Root><age>13</age><age>14</age><salary>15.1</salary><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is error);
     test:assertTrue((<Error>v).message().includes("seq_XsdSequenceArrayWithXmlValue Element occurs more than the max allowed times"));

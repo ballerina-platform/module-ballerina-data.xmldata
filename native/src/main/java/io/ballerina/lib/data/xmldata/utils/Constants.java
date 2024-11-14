@@ -59,7 +59,9 @@ public class Constants {
     public static final BString PREFIX = StringUtils.fromString("prefix");
     public static final BString VALUE = StringUtils.fromString("value");
     public static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attributePrefix");
+    public static final BString USER_ATTRIBUTE_PREFIX = StringUtils.fromString("userAttributePrefix");
     public static final BString TEXT_FIELD_NAME = StringUtils.fromString("textFieldName");
+    public static final BString ARRAY_ENTRY_TAG = StringUtils.fromString("arrayEntryTag");
     public static final BString ALLOW_DATA_PROJECTION = StringUtils.fromString("allowDataProjection");
     public static final BString USE_SEMANTIC_EQUALITY = StringUtils.fromString("useSemanticEquality");
     public static final BString ENABLE_CONSTRAINT_VALIDATION = StringUtils.fromString("enableConstraintValidation");
