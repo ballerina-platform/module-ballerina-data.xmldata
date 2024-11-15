@@ -1,5 +1,8 @@
 import ballerina/test;
 
+@Name {
+    value: "Root"
+}
 type XsdSequenceArrayWithXmlValue record {|
     @Sequence {
         minOccurs: 1,
@@ -35,10 +38,15 @@ function testXsdSequenceArrayWithXmlValue() returns error? {
     test:assertTrue(v is error);
     test:assertTrue((<Error>v).message().includes("seq_XsdSequenceArrayWithXmlValue Element occurs more than the max allowed times"));
 
+    xmlValue = xml `<Root><age>13</age><salary>11.1</salary><age>14</age></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is error);
+    test:assertTrue((<Error>v).message().includes("Element salary not found in seq_XsdSequenceArrayWithXmlValue"), (<Error>v).message());
+
     xmlValue = xml `<Root><age>13</age><age>14</age><salary>15.1</salary><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is error);
-    test:assertTrue((<Error>v).message().includes("seq_XsdSequenceArrayWithXmlValue Element occurs more than the max allowed times"));
+    test:assertTrue((<Error>v).message().includes("Element age occurs more than the max allowed times in seq_XsdSequenceArrayWithXmlValue"), (<Error>v).message());
 }
 
 type XsdSequenceArrayWithXmlValue2 record {|

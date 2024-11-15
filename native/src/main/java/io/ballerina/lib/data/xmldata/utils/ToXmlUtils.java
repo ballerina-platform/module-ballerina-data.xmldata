@@ -55,11 +55,16 @@ public class ToXmlUtils {
             }
 
             BString key = jMap.getKeys()[0];
+            String keyStr = key.getValue();
+
             HashMap<String, String> elementNamesMap = DataUtils.getElementNameMap(referredType);
+            ArrayList<String> sequenceFieldNames = getSequenceFieldNames(referredType, elementNamesMap);
+            boolean isSequenceField = sequenceFieldNames.contains(keyStr);
+
             ArrayList<String> modelGroupRelatedFieldNames =
                     getModelGroupRelatedFieldNames(referredType, elementNamesMap);
-            String localJsonKeyPart = key.getValue().contains(":")
-                    ? key.getValue().substring(key.getValue().indexOf(":") + 1) : key.getValue();
+            String localJsonKeyPart = keyStr.contains(":")
+                    ? keyStr.substring(keyStr.indexOf(":") + 1) : keyStr;
 
             String recordKey = elementNamesMap.getOrDefault(localJsonKeyPart, localJsonKeyPart);
             boolean isNotContainXsdModelGroup = !modelGroupRelatedFieldNames.contains(recordKey);
@@ -72,7 +77,8 @@ public class ToXmlUtils {
                 return getElement(rootTag == null ? StringUtils.fromString("root")
                                 : StringUtils.fromString(rootTag.toString()),
                         traverseNode(value, allNamespaces, getEmptyStringMap(), options, jMap.getKeys()[0],
-                                getChildElementType(TypeUtils.getReferredType(type), key.getValue())),
+                                getChildElementType(TypeUtils.getReferredType(type), keyStr),
+                                isSequenceField, isSequenceField),
                             allNamespaces, options, getAttributesMap(value, options, allNamespaces,
                                 getEmptyStringMap()));
             }
@@ -82,7 +88,9 @@ public class ToXmlUtils {
             }
             BXml output = getElement(jMap.getKeys()[0],
                     traverseNode(value, allNamespaces, getEmptyStringMap(),
-                            options, null, getChildElementType(TypeUtils.getReferredType(type), recordKey)),
+                            options, null,
+                            getChildElementType(TypeUtils.getReferredType(type), recordKey),
+                            isSequenceField, isSequenceField),
                     allNamespaces, options, getAttributesMap(value, options, allNamespaces, getEmptyStringMap()));
             if (!isNotContainXsdModelGroup) {
                 output = output.children();
@@ -123,12 +131,19 @@ public class ToXmlUtils {
 
     public static BXml traverseNode(Object jNode, BMap<BString, BString> allNamespaces,
                     BMap<BString, BString> parentNamespaces, BMap<BString, Object> options, Object keyObj, Type type) {
-        return traverseNode(jNode, allNamespaces, parentNamespaces, options, keyObj, type, false);
+        return traverseNode(jNode, allNamespaces, parentNamespaces, options, keyObj, type, false, false);
+    }
+
+    public static BXml traverseNode(Object jNode, BMap<BString, BString> allNamespaces,
+                                BMap<BString, BString> parentNamespaces,
+                                BMap<BString, Object> options, Object keyObj, Type type, boolean isParentSequencee) {
+        return traverseNode(jNode, allNamespaces, parentNamespaces, options,
+                keyObj, type, isParentSequencee, false);
     }
 
     public static BXml traverseNode(Object jNode, BMap<BString, BString> allNamespaces,
                     BMap<BString, BString> parentNamespaces, BMap<BString, Object> options,
-                    Object keyObj, Type type, boolean isParentSequence) {
+                    Object keyObj, Type type, boolean isParentSequence, boolean isParentSequenceArray) {
         BMap<BString, BString> namespacesOfElem;
         BXml xNode = ValueCreator.createXmlValue("");
         String attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
@@ -145,14 +160,15 @@ public class ToXmlUtils {
             BString[] orderedRecordKeysIfXsdSequencePresent = DataUtils
                     .getOrderedRecordKeysIfXsdSequencePresent(mapNode,
                             DataUtils.getXsdSequencePriorityOrder(referredType, isParentSequence));
-            for (Map.Entry<BString, Object> entry : mapNode.entrySet()) {
-                BString k = entry.getKey();
-                Object value = entry.getValue();
-                String jsonKey = k.getValue().trim();
+            for (BString k : orderedRecordKeysIfXsdSequencePresent) {
+                Object value = mapNode.get(k);
+                String keyStr = k.getValue();
+                String jsonKey = keyStr.trim();
                 String localJsonKeyPart = jsonKey.contains(":")
                         ? jsonKey.substring(jsonKey.indexOf(":") + 1) : jsonKey;
                 String recordKey = elementNamesMap.getOrDefault(localJsonKeyPart, localJsonKeyPart);
                 boolean isNotContainXsdModelGroup = !modelGroupRelatedFieldNames.contains(recordKey);
+                boolean isSequenceField = sequenceFieldNames.contains(recordKey);
 
                 if (jsonKey.startsWith(attributePrefix)) {
                     continue;
@@ -167,16 +183,15 @@ public class ToXmlUtils {
                     if (value instanceof BArray) {
                         childElement = traverseNode(value,
                                 allNamespaces, namespacesOfElem, options, k,
-                                getChildElementType(referredType, recordKey));
+                                getChildElementType(referredType, recordKey), isSequenceField, isSequenceField);
                         xNode = Concat.concat(xNode, childElement);
-//                        xNode = Concat.concat(xNode, isNotContainXsdModelGroup
-//                                ? childElement : childElement.children());
                     } else {
                         childElement = getElement(k,
                                 traverseNode(value, allNamespaces, namespacesOfElem, options, null,
-                                getChildElementType(referredType, recordKey)), allNamespaces, options,
+                                getChildElementType(referredType, recordKey),
+                                        isSequenceField, isSequenceField), allNamespaces, options,
                                 getAttributesMap(value, options, allNamespaces, parentNamespaces));
-                        xNode = Concat.concat(xNode, isNotContainXsdModelGroup
+                        xNode = Concat.concat(xNode, isNotContainXsdModelGroup || isParentSequenceArray
                                 ? childElement : childElement.children());
                     }
                 }
@@ -193,23 +208,22 @@ public class ToXmlUtils {
                     arrayEntryTagKey = options.get(Constants.ARRAY_ENTRY_TAG).toString();
                 }
 
-                boolean isNotContainXsdModelGroup = !modelGroupRelatedFieldNames.contains(
-                        arrayEntryTagKey.contains(":") ?
-                                arrayEntryTagKey.substring(arrayEntryTagKey.indexOf(":") + 1)
-                                : arrayEntryTagKey);
-
                 namespacesOfElem = getNamespacesMap(i, options, parentNamespaces);
                 addNamespaces(allNamespaces, namespacesOfElem);
                 if (options.get(Constants.ARRAY_ENTRY_TAG).toString().isEmpty()) {
                     childElement = getElement(StringUtils.fromString(arrayEntryTagKey),
-                            traverseNode(i, allNamespaces, namespacesOfElem, options, keyObj, referredType),
+                            traverseNode(i, allNamespaces, namespacesOfElem,
+                                    options, keyObj, getChildElementType(referredType, null),
+                                    isParentSequence, isParentSequenceArray),
                             allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces));
-                    xNode = Concat.concat(xNode, isNotContainXsdModelGroup ? childElement : childElement.children());
+                    xNode = Concat.concat(xNode, isParentSequenceArray ? childElement.children() : childElement);
                 } else {
                     childElement = getElement(StringUtils.fromString(arrayEntryTagKey),
-                            traverseNode(i, allNamespaces, namespacesOfElem, options, null, referredType),
+                            traverseNode(i, allNamespaces, namespacesOfElem,
+                                    options, null, getChildElementType(referredType, null),
+                                    isParentSequence, isParentSequenceArray),
                             allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces));
-                    xNode = Concat.concat(xNode, isNotContainXsdModelGroup ? childElement : childElement.children());
+                    xNode = Concat.concat(xNode, isParentSequenceArray ? childElement.children() : childElement);
                 }
             }
         } else {
