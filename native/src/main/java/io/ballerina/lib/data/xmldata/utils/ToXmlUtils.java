@@ -4,7 +4,12 @@ import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.TypeTags;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
+import io.ballerina.runtime.api.types.ArrayType;
+import io.ballerina.runtime.api.types.Field;
+import io.ballerina.runtime.api.types.RecordType;
+import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.utils.StringUtils;
+import io.ballerina.runtime.api.utils.TypeUtils;
 import io.ballerina.runtime.api.utils.ValueUtils;
 import io.ballerina.runtime.api.values.BArray;
 import io.ballerina.runtime.api.values.BError;
@@ -17,106 +22,84 @@ import org.ballerinalang.langlib.xml.Concat;
 import org.ballerinalang.langlib.xml.CreateElement;
 import org.ballerinalang.langlib.xml.CreateText;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class ToXmlUtils {
     private static final BString XMLNS_NAMESPACE_URI = StringUtils.fromString("http://www.w3.org/2000/xmlns/");
     private static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attribute_");
     private static final BString XMLNS = StringUtils.fromString("xmlns");
 
-//    public isolated function fromModifiedRecordToXml(json jsonValue, JsonOptions options = {}) returns xml|Error {
-//        string? rootTag = options.rootTag;
-//        map<string> allNamespaces = {};
-//        if !isSingleNode(jsonValue) {
-//            addNamespaces(allNamespaces, check getNamespacesMap(jsonValue, options, {}));
-//            return getElement(rootTag ?: "root",
-//                    check traverseNode(jsonValue, allNamespaces, {}, options), allNamespaces, options,
-//                    check getAttributesMap(jsonValue, options, allNamespaces));
-//        }
-//
-//        map<json>|error jMap = jsonValue.ensureType();
-//        if jMap is map<json> {
-//            if jMap.length() == 0 {
-//                return xml ``;
-//            }
-//
-//            json value = jMap.toArray()[0];
-//            addNamespaces(allNamespaces, check getNamespacesMap(value, options, {}));
-//            if value is json[] {
-//                return getElement(rootTag ?: "root",
-//                        check traverseNode(value, allNamespaces, {}, options, jMap.keys()[0]),
-//                        allNamespaces, options, check getAttributesMap(value, options, allNamespaces));
-//            }
-//
-//            string key = jMap.keys()[0];
-//            if key == options.textFieldName {
-//                return xml:createText(value.toString());
-//            }
-//            xml output = check getElement(jMap.keys()[0], check traverseNode(value, allNamespaces, {}, options),
-//                    allNamespaces, options,
-//                    check getAttributesMap(value, options, allNamespaces));
-//            if rootTag is string {
-//                return xml:createElement(rootTag, {}, output);
-//            }
-//            return output;
-//        }
-//        return jsonValue is null ? xml `` : xml:createText(jsonValue.toString());
-//    }
-
     public static BXml fromModifiedRecordToXml(Object jsonValue, BMap<BString, Object> options, BTypedesc typed) {
+        Type type = typed.getDescribingType();
+        Type referredType = TypeUtils.getReferredType(type);
         Object rootTag = options.get(StringUtils.fromString("rootTag"));
-        BMap<BString, BString> allNamespaces = (BMap<BString, BString>) ((BMap<?, ?>) ValueCreator.createMapValue());
+        BMap<BString, BString> allNamespaces = getEmptyStringMap();
 
         if (!isSingleNode(jsonValue)) {
-            addNamespaces(allNamespaces, getNamespacesMap(jsonValue, options,
-                    (BMap<BString, BString>) ((BMap<?, ?>) ValueCreator.createMapValue())));
+            addNamespaces(allNamespaces, getNamespacesMap(jsonValue, options, getEmptyStringMap()));
             return getElement(rootTag == null ? StringUtils.fromString("root")
                             : StringUtils.fromString(rootTag.toString()),
-                    traverseNode(jsonValue, allNamespaces,
-                            (BMap<BString, BString>) ((BMap<?, ?>) ValueCreator.createMapValue()), options),
-                    allNamespaces, options, getAttributesMap(jsonValue, options, allNamespaces,
-                            (BMap<BString, BString>) ((BMap<?, ?>) ValueCreator.createMapValue())));
+                    traverseNode(jsonValue, allNamespaces, getEmptyStringMap(), options,
+                            null, TypeUtils.getReferredType(type)),
+                    allNamespaces, options, getAttributesMap(jsonValue, options, allNamespaces, getEmptyStringMap()));
         }
 
         try {
             BMap<BString, Object> jMap = (BMap<BString, Object>) ValueUtils.convert(jsonValue,
                     TypeCreator.createMapType(PredefinedTypes.TYPE_JSON));
-            if (jMap.size() == 0) {
+            if (jMap.isEmpty()) {
                 return ValueCreator.createXmlValue("");
             }
 
+            BString key = jMap.getKeys()[0];
+            HashMap<String, String> elementNamesMap = DataUtils.getElementNameMap(referredType);
+            ArrayList<String> modelGroupRelatedFieldNames =
+                    getModelGroupRelatedFieldNames(referredType, elementNamesMap);
+            String localJsonKeyPart = key.getValue().contains(":")
+                    ? key.getValue().substring(key.getValue().indexOf(":") + 1) : key.getValue();
+
+            String recordKey = elementNamesMap.getOrDefault(localJsonKeyPart, localJsonKeyPart);
+            boolean isNotContainXsdModelGroup = !modelGroupRelatedFieldNames.contains(recordKey);
+
             Object value = ToArray.toArray(jMap).getValues()[0];
             addNamespaces(allNamespaces, getNamespacesMap(value, options,
-                    (BMap<BString, BString>) ((BMap<?, ?>) ValueCreator.createMapValue())));
+                    getEmptyStringMap()));
 
-            if (value instanceof BArray arrayNode) {
+            if (value instanceof BArray) {
                 return getElement(rootTag == null ? StringUtils.fromString("root")
                                 : StringUtils.fromString(rootTag.toString()),
-                        traverseNode(value, allNamespaces, (BMap<BString, BString>) ((BMap<?, ?>)
-                                ValueCreator.createMapValue()), options, jMap.getKeys()[0]),
-                                allNamespaces, options, getAttributesMap(value, options, allNamespaces,
-                                (BMap<BString, BString>) ((BMap<?, ?>) ValueCreator.createMapValue())));
+                        traverseNode(value, allNamespaces, getEmptyStringMap(), options, jMap.getKeys()[0],
+                                getChildElementType(TypeUtils.getReferredType(type), key.getValue())),
+                            allNamespaces, options, getAttributesMap(value, options, allNamespaces,
+                                getEmptyStringMap()));
             }
 
-            BString key = jMap.getKeys()[0];
             if (key.equals(options.get(StringUtils.fromString("textFieldName")))) {
                 return CreateText.createText(StringUtils.fromString(value.toString()));
             }
             BXml output = getElement(jMap.getKeys()[0],
-                    traverseNode(value, allNamespaces,
-                            (BMap<BString, BString>) ((BMap<?, ?>) ValueCreator.createMapValue()), options),
-                    allNamespaces, options, getAttributesMap(value, options, allNamespaces,
-                            (BMap<BString, BString>) ((BMap<?, ?>) ValueCreator.createMapValue())));
+                    traverseNode(value, allNamespaces, getEmptyStringMap(),
+                            options, null, getChildElementType(TypeUtils.getReferredType(type), recordKey)),
+                    allNamespaces, options, getAttributesMap(value, options, allNamespaces, getEmptyStringMap()));
+            if (!isNotContainXsdModelGroup) {
+                output = output.children();
+            }
             if (rootTag != null) {
                 return CreateElement.createElement(StringUtils.fromString(rootTag.toString()),
-                        (BMap<BString, BString>) ((BMap<?, ?>) ValueCreator.createMapValue()), output);
+                        getEmptyStringMap(), output);
             }
             return output;
         } catch (BError e) {
             return jsonValue == null ? ValueCreator.createXmlValue("")
                     : CreateText.createText(StringUtils.fromString(jsonValue.toString()));
         }
+    }
+
+    private static BMap<BString, BString> getEmptyStringMap() {
+        return (BMap<BString, BString>) ((BMap<?, ?>) ValueCreator.createMapValue());
     }
 
     public static BXml convertMapXml(BMap<BString, Object> mapValue) {
@@ -129,35 +112,48 @@ public class ToXmlUtils {
                     if (i == null) {
                         continue;
                     }
-                    xNode = Concat.concat(xNode, CreateElement.createElement(key,
-                            (BMap<BString, BString>) ((BMap<?, ?>) ValueCreator.createMapValue()), (BXml) i));
+                    xNode = Concat.concat(xNode, CreateElement.createElement(key, getEmptyStringMap(), (BXml) i));
                 }
             } else {
-                xNode = Concat.concat(xNode, CreateElement.createElement(key,
-                        (BMap<BString, BString>) ((BMap<?, ?>) ValueCreator.createMapValue()), (BXml) value));
+                xNode = Concat.concat(xNode, CreateElement.createElement(key, getEmptyStringMap(), (BXml) value));
             }
         }
-        return CreateElement.createElement(StringUtils.fromString("root"),
-                (BMap<BString, BString>) ((BMap<?, ?>) ValueCreator.createMapValue()), xNode);
+        return CreateElement.createElement(StringUtils.fromString("root"), getEmptyStringMap(), xNode);
     }
 
     public static BXml traverseNode(Object jNode, BMap<BString, BString> allNamespaces,
-                                    BMap<BString, BString> parentNamespaces, BMap<BString, Object> options) {
-        return traverseNode(jNode, allNamespaces, parentNamespaces, options, null);
+                    BMap<BString, BString> parentNamespaces, BMap<BString, Object> options, Object keyObj, Type type) {
+        return traverseNode(jNode, allNamespaces, parentNamespaces, options, keyObj, type, false);
     }
 
     public static BXml traverseNode(Object jNode, BMap<BString, BString> allNamespaces,
-                    BMap<BString, BString> parentNamespaces, BMap<BString, Object> options, Object keyObj) {
+                    BMap<BString, BString> parentNamespaces, BMap<BString, Object> options,
+                    Object keyObj, Type type, boolean isParentSequence) {
         BMap<BString, BString> namespacesOfElem;
         BXml xNode = ValueCreator.createXmlValue("");
         String attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
+        Type referredType = TypeUtils.getReferredType(type);
+        HashMap<String, String> elementNamesMap = DataUtils.getElementNameMap(referredType);
+        ArrayList<String> modelGroupRelatedFieldNames = getModelGroupRelatedFieldNames(referredType, elementNamesMap);
+        ArrayList<String> sequenceFieldNames = getSequenceFieldNames(referredType, elementNamesMap);
+
+        BXml childElement;
 
         if (jNode instanceof BMap jMap) {
             BMap<BString, Object> mapNode = (BMap<BString, Object>) jMap;
+
+            BString[] orderedRecordKeysIfXsdSequencePresent = DataUtils
+                    .getOrderedRecordKeysIfXsdSequencePresent(mapNode,
+                            DataUtils.getXsdSequencePriorityOrder(referredType, isParentSequence));
             for (Map.Entry<BString, Object> entry : mapNode.entrySet()) {
                 BString k = entry.getKey();
                 Object value = entry.getValue();
                 String jsonKey = k.getValue().trim();
+                String localJsonKeyPart = jsonKey.contains(":")
+                        ? jsonKey.substring(jsonKey.indexOf(":") + 1) : jsonKey;
+                String recordKey = elementNamesMap.getOrDefault(localJsonKeyPart, localJsonKeyPart);
+                boolean isNotContainXsdModelGroup = !modelGroupRelatedFieldNames.contains(recordKey);
+
                 if (jsonKey.startsWith(attributePrefix)) {
                     continue;
                 }
@@ -167,13 +163,21 @@ public class ToXmlUtils {
                 } else {
                     namespacesOfElem = getNamespacesMap(value, options, parentNamespaces);
                     addNamespaces(allNamespaces, namespacesOfElem);
-                    if (value instanceof BArray arrayNode) {
-                        xNode = Concat.concat(xNode, traverseNode(value, allNamespaces, namespacesOfElem, options, k));
+
+                    if (value instanceof BArray) {
+                        childElement = traverseNode(value,
+                                allNamespaces, namespacesOfElem, options, k,
+                                getChildElementType(referredType, recordKey));
+                        xNode = Concat.concat(xNode, childElement);
+//                        xNode = Concat.concat(xNode, isNotContainXsdModelGroup
+//                                ? childElement : childElement.children());
                     } else {
-                        xNode = Concat.concat(xNode, getElement(k,
-                                traverseNode(value, allNamespaces, namespacesOfElem, options),
-                                allNamespaces, options,
-                                getAttributesMap(value, options, allNamespaces, parentNamespaces)));
+                        childElement = getElement(k,
+                                traverseNode(value, allNamespaces, namespacesOfElem, options, null,
+                                getChildElementType(referredType, recordKey)), allNamespaces, options,
+                                getAttributesMap(value, options, allNamespaces, parentNamespaces));
+                        xNode = Concat.concat(xNode, isNotContainXsdModelGroup
+                                ? childElement : childElement.children());
                     }
                 }
             }
@@ -185,20 +189,27 @@ public class ToXmlUtils {
                 String arrayEntryTagKey = "";
                 if (keyObj instanceof BString key) {
                     arrayEntryTagKey = key.getValue();
-                } else if (!options.get(Constants.ARRAY_ENTRY_TAG).toString().equals("")) {
+                } else if (!options.get(Constants.ARRAY_ENTRY_TAG).toString().isEmpty()) {
                     arrayEntryTagKey = options.get(Constants.ARRAY_ENTRY_TAG).toString();
                 }
 
+                boolean isNotContainXsdModelGroup = !modelGroupRelatedFieldNames.contains(
+                        arrayEntryTagKey.contains(":") ?
+                                arrayEntryTagKey.substring(arrayEntryTagKey.indexOf(":") + 1)
+                                : arrayEntryTagKey);
+
                 namespacesOfElem = getNamespacesMap(i, options, parentNamespaces);
                 addNamespaces(allNamespaces, namespacesOfElem);
-                if (options.get(Constants.ARRAY_ENTRY_TAG).toString().equals("")) {
-                    xNode = Concat.concat(xNode, getElement(StringUtils.fromString(arrayEntryTagKey),
-                            traverseNode(i, allNamespaces, namespacesOfElem, options, keyObj),
-                            allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces)));
+                if (options.get(Constants.ARRAY_ENTRY_TAG).toString().isEmpty()) {
+                    childElement = getElement(StringUtils.fromString(arrayEntryTagKey),
+                            traverseNode(i, allNamespaces, namespacesOfElem, options, keyObj, referredType),
+                            allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces));
+                    xNode = Concat.concat(xNode, isNotContainXsdModelGroup ? childElement : childElement.children());
                 } else {
-                    xNode = Concat.concat(xNode, getElement(StringUtils.fromString(arrayEntryTagKey),
-                            traverseNode(i, allNamespaces, namespacesOfElem, options),
-                            allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces)));
+                    childElement = getElement(StringUtils.fromString(arrayEntryTagKey),
+                            traverseNode(i, allNamespaces, namespacesOfElem, options, null, referredType),
+                            allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces));
+                    xNode = Concat.concat(xNode, isNotContainXsdModelGroup ? childElement : childElement.children());
                 }
             }
         } else {
@@ -207,6 +218,70 @@ public class ToXmlUtils {
         return xNode;
     }
 
+    private static ArrayList<String> getModelGroupRelatedFieldNames(Type expType,
+                                                                    HashMap<String, String> elementNamesMap) {
+        Type referedType = TypeUtils.getReferredType(expType);
+        if (referedType instanceof RecordType recordType) {
+            return DataUtils.getFieldNamesWithModelGroupAnnotations(recordType, elementNamesMap);
+        }
+        return new ArrayList<>();
+    }
+
+    private static ArrayList<String> getSequenceFieldNames(Type expType,
+                                                                    HashMap<String, String> elementNamesMap) {
+        Type referedType = TypeUtils.getReferredType(expType);
+        if (referedType instanceof RecordType recordType) {
+            return DataUtils.getFieldNamesWithSequenceAnnotations(recordType, elementNamesMap);
+        }
+        return new ArrayList<>();
+    }
+
+
+    private static Type getChildElementType(Type type, String recordKey) {
+
+        try {
+            if (type instanceof ArrayType arrayType) {
+                return TypeUtils.getReferredType(arrayType.getElementType());
+            }
+
+            if (type instanceof RecordType recordType) {
+                Map<String, Field> fields = recordType.getFields();
+                if (fields.containsKey(recordKey)) {
+                    return fields.get(recordKey).getFieldType();
+                }
+                Optional<String> fieldName = getFieldFromRecordNameAnnotation(fields, recordKey);
+
+                if (!(fieldName.isEmpty()) && fields.containsKey(fieldName.get())) {
+                    return fields.get(fieldName.get()).getFieldType();
+                } else {
+                    assert false;
+                    throw DiagnosticLog.createXmlError("Invalid xml provided");
+                }
+            }
+
+            return type;
+        } catch (Exception e) {
+            int a = 1;
+            throw e;
+        }
+    }
+
+    private static Optional<String> getFieldFromRecordNameAnnotation(Map<String, Field> fields, String recordKey) {
+        for (Field field: fields.values()) {
+            Type fieldType = TypeUtils.getReferredType(field.getFieldType());
+            if (fieldType instanceof RecordType recordType) {
+                for (Map.Entry<BString, Object> annotation: recordType.getAnnotations().entrySet()) {
+                    if (DataUtils.isNameAnnotationKey(annotation.getKey().getValue())) {
+                        String name = ((BMap<BString, Object>) annotation.getValue()).get(Constants.VALUE).toString();
+                        if (name.equals(recordKey)) {
+                            return Optional.of(field.getFieldName());
+                        }
+                    }
+                }
+            }
+        }
+        return Optional.empty();
+    }
 
     public static boolean isSingleNode(Object node) {
         if (node instanceof BArray arrayNode) {
@@ -230,6 +305,11 @@ public class ToXmlUtils {
 
     public static BXml getElement(BString name, BXml children, BMap<BString, BString> namespaces,
                                   BMap<BString, Object> options, BMap<BString, BString> attributes) {
+        return getElement(name, children, namespaces, options, attributes, PredefinedTypes.TYPE_ANYDATA);
+    }
+
+    public static BXml getElement(BString name, BXml children, BMap<BString, BString> namespaces,
+                                  BMap<BString, Object> options, BMap<BString, BString> attributes, Type type) {
         String attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
         String userAttributePrefix = options.get(Constants.USER_ATTRIBUTE_PREFIX).toString();
         BXml element;
@@ -242,7 +322,7 @@ public class ToXmlUtils {
             String prefix = nameStr.substring(0, index);
 
             String elementName;
-            if (!userAttributePrefix.equals("")) {
+            if (!userAttributePrefix.isEmpty()) {
                 elementName = removeUserAttributePrefix(StringUtils.fromString(nameStr),
                         StringUtils.fromString(userAttributePrefix), (long) index).getValue();
             } else {
@@ -252,11 +332,11 @@ public class ToXmlUtils {
             String namespaceUrl = attributes.get(StringUtils.fromString("{" + XMLNS_NAMESPACE_URI + "}" +
                     prefix)).toString();
 
-            if (namespaceUrl.equals("")) {
+            if (namespaceUrl.isEmpty()) {
                 namespaceUrl = namespaces.get(StringUtils.fromString("{" + XMLNS_NAMESPACE_URI + "}" +
                     prefix)).toString();
 
-                if (!namespaceUrl.equals("")) {
+                if (!namespaceUrl.isEmpty()) {
                     attributes.put(StringUtils.fromString("{" + XMLNS_NAMESPACE_URI + "}" +
                         prefix), StringUtils.fromString(namespaceUrl));
                 }

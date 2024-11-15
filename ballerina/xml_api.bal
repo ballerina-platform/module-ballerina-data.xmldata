@@ -219,45 +219,45 @@ public type JsonOptions record {|
 #
 # + jsonValue - The JSON source to be converted to XML
 # + options - The `xmldata:JsonOptions` record for JSON to XML conversion properties
-# + return - XML representation of the given JSON if the JSON is successfully converted or else an `xmldata:Error`.
-public isolated function fromJson(json jsonValue, JsonOptions options = {}) returns xml|Error {
-    string? rootTag = options.rootTag;
-    map<string> allNamespaces = {};
-    if !isSingleNode(jsonValue) {
-        addNamespaces(allNamespaces, check getNamespacesMap(jsonValue, options, {}));
-        return getElement(rootTag ?: "root",
-                        check traverseNode(jsonValue, allNamespaces, {}, options), allNamespaces, options,
-                        check getAttributesMap(jsonValue, options, allNamespaces));
-    }
+// # + return - XML representation of the given JSON if the JSON is successfully converted or else an `xmldata:Error`.
+// public isolated function fromJson(json jsonValue, JsonOptions options = {}) returns xml|Error {
+//     string? rootTag = options.rootTag;
+//     map<string> allNamespaces = {};
+//     if !isSingleNode(jsonValue) {
+//         addNamespaces(allNamespaces, check getNamespacesMap(jsonValue, options, {}));
+//         return getElement(rootTag ?: "root",
+//                         check traverseNode(jsonValue, allNamespaces, {}, options), allNamespaces, options,
+//                         check getAttributesMap(jsonValue, options, allNamespaces));
+//     }
 
-    map<json>|error jMap = jsonValue.ensureType();
-    if jMap is map<json> {
-        if jMap.length() == 0 {
-            return xml ``;
-        }
+//     map<json>|error jMap = jsonValue.ensureType();
+//     if jMap is map<json> {
+//         if jMap.length() == 0 {
+//             return xml ``;
+//         }
 
-        json value = jMap.toArray()[0];
-        addNamespaces(allNamespaces, check getNamespacesMap(value, options, {}));
-        if value is json[] {
-            return getElement(rootTag ?: "root",
-                                check traverseNode(value, allNamespaces, {}, options, jMap.keys()[0]),
-                                allNamespaces, options, check getAttributesMap(value, options, allNamespaces));
-        }
+//         json value = jMap.toArray()[0];
+//         addNamespaces(allNamespaces, check getNamespacesMap(value, options, {}));
+//         if value is json[] {
+//             return getElement(rootTag ?: "root",
+//                                 check traverseNode(value, allNamespaces, {}, options, jMap.keys()[0]),
+//                                 allNamespaces, options, check getAttributesMap(value, options, allNamespaces));
+//         }
 
-        string key = jMap.keys()[0];
-        if key == options.textFieldName {
-            return xml:createText(value.toString());
-        }
-        xml output = check getElement(jMap.keys()[0], check traverseNode(value, allNamespaces, {}, options),
-                                    allNamespaces, options,
-                                    check getAttributesMap(value, options, allNamespaces));
-        if rootTag is string {
-            return xml:createElement(rootTag, {}, output);
-        }
-        return output;
-    }
-    return jsonValue is null ? xml `` : xml:createText(jsonValue.toString());
-}
+//         string key = jMap.keys()[0];
+//         if key == options.textFieldName {
+//             return xml:createText(value.toString());
+//         }
+//         xml output = check getElement(jMap.keys()[0], check traverseNode(value, allNamespaces, {}, options),
+//                                     allNamespaces, options,
+//                                     check getAttributesMap(value, options, allNamespaces));
+//         if rootTag is string {
+//             return xml:createElement(rootTag, {}, output);
+//         }
+//         return output;
+//     }
+//     return jsonValue is null ? xml `` : xml:createText(jsonValue.toString());
+// }
 
 // isolated function traverseNode(json jNode, map<string> allNamespaces, map<string> parentNamespaces, JsonOptions options,
 //         string? 'key = ()) returns xml|Error {
@@ -519,9 +519,9 @@ isolated function getElement(string name, xml children, map<string> namespaces, 
         map<string> attributes = {}) returns xml|Error
     = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;
 
-isolated function traverseNode(json jNode, map<string> allNamespaces, map<string> parentNamespaces, JsonOptions options,
-        string? 'key = ()) returns xml|Error
-    = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;
+// isolated function traverseNode(json jNode, map<string> allNamespaces, map<string> parentNamespaces, JsonOptions options,
+//         string? 'key = ()) returns xml|Error
+//     = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;
 
 isolated function convertMapXml(map<xml>|map<xml[]> mapValue) returns xml
     = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;
