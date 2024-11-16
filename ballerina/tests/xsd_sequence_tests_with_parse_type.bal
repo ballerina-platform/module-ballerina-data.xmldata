@@ -634,6 +634,7 @@ function testXsdSequenceWithXmlValue9() returns error? {
     test:assertEquals((check v2).test.seq_XSDSequenceRecordWithXmlValue9_2.status, "success");
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><test><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name>SD</name><status>success</status><num2><n><n>3</n></n></num2></test><a>2</a></Root>`);
 
     xmlValue = xml `<Root><test><name>SD</name><status>success</status><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
@@ -644,6 +645,7 @@ function testXsdSequenceWithXmlValue9() returns error? {
     test:assertEquals((check v2).test.seq_XSDSequenceRecordWithXmlValue9_2.status, "success");
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><test><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name>SD</name><status>success</status><num2><n><n>3</n></n></num2></test><a>2</a></Root>`);
 
     xmlValue = xml `<Root><test><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2><name>SD</name><status>success</status><age>13</age><salary>11.1</salary></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
@@ -654,6 +656,7 @@ function testXsdSequenceWithXmlValue9() returns error? {
     test:assertEquals((check v2).test.seq_XSDSequenceRecordWithXmlValue9_2.status, "success");
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><test><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name>SD</name><status>success</status><num2><n><n>3</n></n></num2></test><a>2</a></Root>`);
 
     xmlValue = xml `<Root><test><name>SD</name><status>success</status><age>13</age><salary>11.1</salary><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
@@ -664,6 +667,7 @@ function testXsdSequenceWithXmlValue9() returns error? {
     test:assertEquals((check v2).test.seq_XSDSequenceRecordWithXmlValue9_2.status, "success");
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><test><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name>SD</name><status>success</status><num2><n><n>3</n></n></num2></test><a>2</a></Root>`);
 
     xmlValue = xml `<Root><test><name>SD</name><age>13</age><status>success</status><salary>11.1</salary></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
@@ -734,6 +738,7 @@ function testXsdSequenceWithXmlValue10() returns error? {
     test:assertEquals((check v2).test.seq_XSDSequenceRecordWithXmlValue10_2.status, {value1: "Success", value2: "Fail"});
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><test><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2></test><a>2</a></Root>`);
 
     xmlValue = xml `<Root><test><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
@@ -744,6 +749,7 @@ function testXsdSequenceWithXmlValue10() returns error? {
     test:assertEquals((check v2).test.seq_XSDSequenceRecordWithXmlValue10_2.status, {value1: "Success", value2: "Fail"});
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><test><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2></test><a>2</a></Root>`);
 
     xmlValue = xml `<Root><test><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><age>13</age><salary>11.1</salary></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
@@ -754,6 +760,7 @@ function testXsdSequenceWithXmlValue10() returns error? {
     test:assertEquals((check v2).test.seq_XSDSequenceRecordWithXmlValue10_2.status, {value1: "Success", value2: "Fail"});
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><test><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2></test><a>2</a></Root>`);
 
     xmlValue = xml `<Root><test><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><age>13</age><salary>11.1</salary><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
@@ -764,6 +771,7 @@ function testXsdSequenceWithXmlValue10() returns error? {
     test:assertEquals((check v2).test.seq_XSDSequenceRecordWithXmlValue10_2.status, {value1: "Success", value2: "Fail"});
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><test><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2></test><a>2</a></Root>`);
 
     xmlValue = xml `<Root><test><name><value1>SD</value1><value2>AB</value2></name><age>13</age><status><value1>Success</value1><value2>Fail</value2></status><salary>11.1</salary></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
@@ -850,6 +858,7 @@ function testXsdSequenceWithXmlValue11() returns error? {
     test:assertEquals((check v2).test.seq_XSDSequenceRecordWithXmlValue11_2.status, {value1: "Success", value2: "Fail"});
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><test><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2></test><a>2</a><test2><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2></test2></Root>`);
 
     xmlValue = xml `<Root><test2><num><n><n>3</n></n></num><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary></test2><test><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
@@ -860,6 +869,7 @@ function testXsdSequenceWithXmlValue11() returns error? {
     test:assertEquals((check v2).test.seq_XSDSequenceRecordWithXmlValue11_2.status, {value1: "Success", value2: "Fail"});
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><test><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2></test><a>2</a><test2><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2></test2></Root>`);
 
     xmlValue = xml `<Root><test><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><age>13</age><salary>11.1</salary></test><test2><num><n><n>3</n></n></num><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary></test2><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
@@ -870,6 +880,7 @@ function testXsdSequenceWithXmlValue11() returns error? {
     test:assertEquals((check v2).test.seq_XSDSequenceRecordWithXmlValue11_2.status, {value1: "Success", value2: "Fail"});
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><test><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2></test><a>2</a><test2><num><n><n>3</n></n></num><age>13</age><salary>11.1</salary><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2></test2></Root>`);
 
     xmlValue = xml `<Root><test2><num><n><n>3</n></n></num><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary></test2><test><age>13</age><status><value1>Success</value1><value2>Fail</value2></status><salary>11.1</salary><name><value1>SD</value1><value2>AB</value2></name></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
@@ -904,6 +915,7 @@ function testXsdSequenceWithXmlValue12() returns error? {
     xml xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><a>1</a><b>2</b><c>3</c></field2><field3><a>1</a><b>2</b><c>3</c></field3></Root>`;
     XSDSequenceRecordWithXmlValue12|Error v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {seq_XSDSequenceRecordWithXmlValue12_1: {field1: {value1: {a: "1", b: "2", c: "3"}}, field2: {value2: {a: "1", b: "2", c: "3"}}, field3: {value3: {a: "1", b: "2", c: "3"}}}});
+    test:assertEquals(toXml(check v2), xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><a>1</a><b>2</b><c>3</c></field2><field3><a>1</a><b>2</b><c>3</c></field3></Root>`);
 }
 
 @Name {
