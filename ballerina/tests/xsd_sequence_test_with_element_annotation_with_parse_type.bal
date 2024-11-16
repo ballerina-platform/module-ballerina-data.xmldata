@@ -1,5 +1,8 @@
 import ballerina/test;
 
+@Name {
+    value: "Root"
+}
 type XsdSequenceWithElementAnnotationWithXmlValue record {
     @Sequence {
         minOccurs: 0,
@@ -51,18 +54,28 @@ function testXsdSequenceWithElementAnnotationWithXmlValue() returns error? {
     xmlValue = xml `<Root><EA1>ABC</EA1><EA2>ABC</EA2><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {seq_EA1_Xml_Value: {EA1: "ABC", EA2: "ABC", EA3: ["AB", "AB", "AB"]}});
+    test:assertEquals(toXml(check v, {}), xmlValue);
 
     xmlValue = xml `<Root><EA2>ABC</EA2><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {"seq_EA1_Xml_Value":{"EA2": "ABC", EA3: ["AB", "AB"]}});
 
+    // // TODO: Check <EA1/>
+    // test:assertEquals(toXml(check v), xmlValue);
+
     xmlValue = xml `<Root><EA2>ABC</EA2><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {"seq_EA1_Xml_Value":{"EA2": "ABC", EA3: ["AB", "AB", "AB"]}});
 
+    // // TODO: Check <EA1/>
+    // test:assertEquals(toXml(check v), xmlValue);
+
     xmlValue = xml `<Root><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {"seq_EA1_Xml_Value":{EA3: ["AB", "AB"]}});
+
+    //TODO: Check <EA1/> and <EA2/>
+    // test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
@@ -99,6 +112,9 @@ function testXsdSequenceWithElementAnnotationWithXmlValue() returns error? {
     test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 }
 
+@Name {
+    value: "Root"
+}
 type XsdSequenceWithElementAnnotationWithXmlValue2 record {
     @Sequence {
         minOccurs: 0,
@@ -159,6 +175,7 @@ function testXsdSequenceWithElementAnnotationWithXmlValue2() returns error? {
     xmlValue = xml `<Root><EA><EA1>ABC</EA1><EA2>ABC</EA2><EA3>AB</EA3><EA3>CD</EA3></EA></Root>`;
     v = parseAsType(xmlValue);    
     test:assertEquals(v, {seq_EA2_With_Xml_Value:  {EA: {EA1: "ABC", EA2: "ABC", EA3: ["AB", "CD"]}}});
+    test:assertEquals(toXml(check v, {}), xmlValue);
 
     xmlValue = xml `<Root><EA><EA2>ABC</EA2><EA3>AB</EA3><EA3>AB</EA3></EA></Root>`;
     v = parseAsType(xmlValue);
@@ -207,6 +224,9 @@ function testXsdSequenceWithElementAnnotationWithXmlValue2() returns error? {
     test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 }
 
+@Name {
+    value: "Root"
+}
 type XsdSequenceWithElementAnnotationWithXmlValue3 record {
     @Sequence {
         minOccurs: 1,
@@ -275,18 +295,25 @@ function testXsdSequenceWithElementAnnotationWithXmlValue3() returns error? {
     xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {seq_XsdSequenceWithElementAnnotationWithXmlValue3_1: {field1: [{value1: {a: ["1"], b: ["2"], c: "3"}}, {value1: {a: ["1"], b: ["2"], c: "3"}}], field2: [{value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}], field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XsdSequenceWithElementAnnotationWithXmlValue3_2: {field4: [{value1: {a: ["1"], b: ["2"], c: "3"}}], field5: [{value2: {d: "1", e: "2", f: "3"}}], field6: [{value3: {g: "1", h: "2", i: "3"}}, {value3: {g: "1", h: "2", i: "3"}}]}});
+    test:assertEquals(toXml(check v2, {}), xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6><field6><g>1</g><h>2</h><i>3</i></field6></Root>`);
 
     xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {seq_XsdSequenceWithElementAnnotationWithXmlValue3_1: {field1: [{value1: {a: ["1"], b: ["2"], c: "3"}}, {value1: {a: ["1"], b: ["2"], c: "3"}}], field2: [{value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}], field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XsdSequenceWithElementAnnotationWithXmlValue3_2: {field4: [{value1: {a: ["1"], b: ["2"], c: "3"}}], field5: [{value2: {d: "1", e: "2", f: "3"}}]}});
+    // TODO: Check
+    // test:assertEquals(toXml(check v2, {}), xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5></Root>`);
 
     xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {seq_XsdSequenceWithElementAnnotationWithXmlValue3_1: {field1: [{value1: {a: ["1"], b: ["2"], c: "3"}}, {value1: {a: ["1"], b: ["2"], c: "3"}}], field2: [{value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}], field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XsdSequenceWithElementAnnotationWithXmlValue3_2: {field5: [{value2: {d: "1", e: "2", f: "3"}}], field6: [{value3: {g: "1", h: "2", i: "3"}}]}});
+    // TODO: Check
+    // test:assertEquals(toXml(check v2, {}), xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6><field6><g>1</g><h>2</h><i>3</i></field6></Root>`);
 
     xmlValue = xml `<Root><field1><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><a>2</a><a>3</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {seq_XsdSequenceWithElementAnnotationWithXmlValue3_1: {field1: [{value1: {b: ["2"], c: "3"}}, {value1: {a: ["1"], b: ["2"], c: "3"}}], field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XsdSequenceWithElementAnnotationWithXmlValue3_2: {field4: [{value1: {a: ["1", "2", "3"], b: ["2"], c: "3"}}], field5: [{value2: {d: "1", e: "2", f: "3"}}], field6: [{value3: {g: "1", h: "2", i: "3"}}]}});
+    // TODO: Check
+    // test:assertEquals(toXml(check v2, {}), xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6><field6><g>1</g><h>2</h><i>3</i></field6></Root>`);
 
     xmlValue = xml `<Root><field1><c>3</c></field1><field1><c>3</c></field1><field3><g>1</g><h>2</h><i>3</i></field3></Root>`;
     v2 = parseAsType(xmlValue);

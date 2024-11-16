@@ -30,7 +30,7 @@ function testXsdSequenceWithXmlValue() returns error? {
     test:assertEquals(v, {seq_XSDSequenceRecordWithXmlValue: {age: 13, salary: 11.1}});
     test:assertEquals((check v).seq_XSDSequenceRecordWithXmlValue.age, 13);
     test:assertEquals((check v).seq_XSDSequenceRecordWithXmlValue.salary, 11.1);
-    test:assertEquals(toXml(check v.ensureType(XSDSequenceRecordWithXmlValue)), xmlValue);
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
@@ -97,12 +97,12 @@ function testXsdSequenceWithXmlValueP2() returns error? {
     xmlValue = xml `<Root><age>13</age><salary>11.1</salary><name>ABC</name></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {seq_XSDSequenceRecordWithXmlValueP2: {age: [13], salary: 11.1, name: ["ABC"]}});
-    test:assertEquals(toXml(check v.ensureType(XSDSequenceRecordWithXmlValueP2)), xmlValue);
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><age>13</age><age>13</age><age>13</age><salary>11.1</salary><name>ABC</name></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {seq_XSDSequenceRecordWithXmlValueP2: {age: [13, 13, 13], salary: 11.1, name: ["ABC"]}});
-    test:assertEquals(toXml(check v.ensureType(XSDSequenceRecordWithXmlValueP2)), xmlValue);
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><age>13</age><name>ABC</name><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
