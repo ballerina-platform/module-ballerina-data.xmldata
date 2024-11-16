@@ -47,7 +47,7 @@ function testXsdSequenceWithElementAnnotation() returns error? {
     xmlStr = string `<Root><EA1>ABC</EA1><EA2>ABC</EA2></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("Element EA3 not found in seq_EA1"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "Element(s) 'EA3' is not found in 'seq_EA1'");
     
     xmlStr = string `<Root><EA1>ABC</EA1><EA2>ABC</EA2><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseString(xmlStr);
@@ -68,7 +68,7 @@ function testXsdSequenceWithElementAnnotation() returns error? {
     xmlStr = string `<Root><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs more than the max allowed times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs more than the max allowed times");
 
     xmlStr = string `<Root><EA1>ABC</EA1><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseString(xmlStr);
@@ -77,27 +77,27 @@ function testXsdSequenceWithElementAnnotation() returns error? {
     xmlStr = string `<Root><EA1>ABC</EA1><EA2>ABC</EA2><EA3>AB</EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA2>ABC</EA2><EA3>AB</EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA2>ABC</EA2><EA3>AB</EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA3>AB</EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA1>ABC</EA1><EA3>AB</EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 }
 
 type XsdSequenceWithElementAnnotation2 record {
@@ -150,12 +150,12 @@ function testXsdSequenceWithElementAnnotation2() returns error? {
     xmlStr = string `<Root><EA><EA1>ABC</EA1><EA2>ABC</EA2></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
     
     xmlStr = string `<Root><EA><EA1>ABC</EA1><EA2>ABC</EA2><EA3>AB</EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA><EA1>ABC</EA1><EA2>ABC</EA2><EA3>AB</EA3><EA3>CD</EA3></EA></Root>`;
     v = parseString(xmlStr);    
@@ -176,7 +176,7 @@ function testXsdSequenceWithElementAnnotation2() returns error? {
     xmlStr = string `<Root><EA><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs more than the max allowed times");
 
     xmlStr = string `<Root><EA><EA1>ABC</EA1><EA3>AB</EA3><EA3>AB</EA3></EA></Root>`;
     v = parseString(xmlStr);
@@ -185,27 +185,27 @@ function testXsdSequenceWithElementAnnotation2() returns error? {
     xmlStr = string `<Root><EA><EA1>ABC</EA1><EA2>ABC</EA2><EA3>CD</EA3></EA></Root>`;
     v = parseString(xmlStr);    
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA><EA2>ABC</EA2><EA3>AB</EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA><EA2>ABC</EA2><EA3>AB</EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA><EA3>AB</EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA><EA1>ABC</EA1><EA3>AB</EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 }
 
 type XsdSequenceWithElementAnnotation3 record {
@@ -381,25 +381,25 @@ function testXsdSequenceWithElementAnnotation3() returns error? {
     xmlStr = string `<Root><field1><c>3</c></field1><field1><c>3</c></field1><field3><g>1</g><h>2</h><i>3</i></field3></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("seq_XsdSequenceWithElementAnnotation3_2 Element occurs less than the min required times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'seq_XsdSequenceWithElementAnnotation3_2' occurs less than the min required times");
 
     xmlStr = string `<Root><field1><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field4><a>1</a><a>2</a><a>3</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element field3 not found in seq_XsdSequenceWithElementAnnotation3_1"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element(s) 'field3' is not found in 'seq_XsdSequenceWithElementAnnotation3_1'");
 
     xmlStr = string `<Root><field1><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><a>2</a><a>3</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h></field6></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("required field 'i' not present in XML"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "required field 'i' not present in XML");
 
     xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field5><d>1</d><e>2</e><f>3</f></field5><field5><d>1</d><e>2</e><f>3</f></field5><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("field5 Element occurs more than the max allowed times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'field5' occurs more than the max allowed times");
 
     xmlStr = string `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><b>2</b><b>2</b><b>2</b><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("b Element occurs more than the max allowed times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'b' occurs more than the max allowed times");
 }

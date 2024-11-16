@@ -39,6 +39,9 @@ public class Constants {
     public static final int DEFAULT_TYPE_FLAG = 2049;
 
     public static final String FIELD = "$field$.";
+    public static final String ROOT_TAG = "rootTag";
+    public static final String ROOT = "root";
+    public static final String EMPTY_STRING = "";
     public static final String NAMESPACE = "Namespace";
     public static final String UNDERSCORE = "_";
     public static final String COLON = ":";

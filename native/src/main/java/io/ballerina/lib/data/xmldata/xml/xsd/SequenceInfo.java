@@ -2,6 +2,8 @@ package io.ballerina.lib.data.xmldata.xml.xsd;
 
 import io.ballerina.lib.data.xmldata.utils.Constants;
 import io.ballerina.lib.data.xmldata.utils.DataUtils;
+import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
+import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
 import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
@@ -17,8 +19,6 @@ public class SequenceInfo implements ModelGroupInfo {
     public long minOccurs;
     public long maxOccurs;
     public int occurrences;
-
-    // TODO: Update to a hashset<String>
     private final Map<String, Integer> remainingElementCount = new HashMap<>();
     private final Map<String, Integer> minimumElementCount = new HashMap<>();
     private final Map<String, Integer> maxElementCount = new HashMap<>();
@@ -57,13 +57,13 @@ public class SequenceInfo implements ModelGroupInfo {
     public void updateOccurrences() {
         this.occurrences++;
         if (this.occurrences > this.maxOccurs) {
-            throw new RuntimeException(fieldName + " Element occurs more than the max allowed times");
+            throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_MORE_THAN_MAX_ALLOWED_TIMES, fieldName);
         }
     }
 
     public void validateMinOccurrences() {
         if (this.occurrences < this.minOccurs) {
-            throw new RuntimeException(fieldName + " Element occurs less than the min required times");
+            throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_LESS_THAN_MIN_REQUIRED_TIMES, fieldName);
         }
     }
 
@@ -127,7 +127,8 @@ public class SequenceInfo implements ModelGroupInfo {
 
     private void validateCompletedSequences() {
         if (!isCompleted && !containsAllOptionalElements()) {
-            throw new RuntimeException("Element " + getUnvisitedElements() + " not found in " + fieldName);
+            throw DiagnosticLog.error(DiagnosticErrorCode
+                    .REQUIRED_ELEMENT_NOT_FOUND, getUnvisitedElements(), fieldName);
         }
         updateOccurrences();
     }
@@ -154,21 +155,21 @@ public class SequenceInfo implements ModelGroupInfo {
 
         while (!nextElement.equals(element)) {
             if (!elementOptionality.get(nextElement)) {
-                throw new RuntimeException("Element " + xmlElementNameMap.get(element) +
-                        " is not in the correct order in " + fieldName);
+                throw DiagnosticLog.error(DiagnosticErrorCode.INCORRECT_ELEMENT_ORDER,
+                        xmlElementNameMap.get(element), fieldName);
             }
             currentIndex++;
             nextElement = allElements.get(currentIndex);
 
             if (currentIndex == this.elementCount) {
-                throw new RuntimeException("Element " + xmlElementNameMap.get(element) +
-                        " is not in the correct order in " + fieldName);
+                throw DiagnosticLog.error(DiagnosticErrorCode.INCORRECT_ELEMENT_ORDER,
+                        xmlElementNameMap.get(element), fieldName);
             }
         }
 
         if (remainingElementCount.get(nextElement) == 0) {
-            throw new RuntimeException("Element " + xmlElementNameMap.get(element) +
-                    " occurs more than the max allowed times in " + fieldName);
+            throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_MORE_THAN_MAX_ALLOWED_TIMES_IN_SEQUENCES,
+                    xmlElementNameMap.get(nextElement), fieldName);
         } else {
             remainingElementCount.put(element, remainingElementCount.get(nextElement) - 1);
             int elementCount = maxElementCount.get(element) - remainingElementCount.get(element);
@@ -203,8 +204,8 @@ public class SequenceInfo implements ModelGroupInfo {
 
     private void updateUnvisitedElementsBasedOnPriorityOrder(RecordType fieldType) {
         this.allElements.addAll(DataUtils.getXsdSequencePriorityOrder(fieldType, true).entrySet().stream()
-                .sorted(Map.Entry.comparingByValue()) // Sort by Long values in priority order
-                .map(Map.Entry::getKey) // Get xml element name from
+                .sorted(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
                 .toList());
 
         this.currentIndex = 0;

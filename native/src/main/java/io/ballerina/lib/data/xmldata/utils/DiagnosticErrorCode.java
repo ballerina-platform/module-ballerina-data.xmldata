@@ -43,7 +43,17 @@ public enum DiagnosticErrorCode {
     XML_PARSE_ERROR("XML_ERROR_016", "xml.parse.error"),
     UNDEFINED_FIELD("XML_ERROR_0017", "undefined.field"),
     CANNOT_CONVERT_SOURCE_INTO_EXP_TYPE("XML_ERROR_0018", "cannot.convert.source.into.expected.type"),
-    FIELD_CANNOT_CAST_INTO_TYPE("XML_ERROR_0019", "field.cannot.convert.into.type");
+    FIELD_CANNOT_CAST_INTO_TYPE("XML_ERROR_0019", "field.cannot.convert.into.type"),
+    ELEMENT_OCCURS_MORE_THAN_MAX_ALLOWED_TIMES("XML_ERROR_0020", "element.occurs.more.than.max.allowed.times"),
+    ELEMENT_OCCURS_LESS_THAN_MIN_REQUIRED_TIMES("XML_ERROR_0021", "element.occurs.less.than.min.required.times"),
+    INVALID_ELEMENT_FOUND("XML_ERROR_0022", "invalid.element.found"),
+    REQUIRED_ELEMENT_NOT_FOUND("XML_ERROR_0023", "required.element.not.found"),
+    ELEMENT_OCCURS_MORE_THAN_MAX_ALLOWED_TIMES_IN_SEQUENCES(
+            "XML_ERROR_0024", "element.occurs.more.than.max.allowed.times.in.sequence"),
+    INCORRECT_ELEMENT_ORDER("XML_ERROR_0025", "incorrect.element.order"),
+    INVALID_SEQUENCE_ANNOTATION("XML_ERROR_0026", "invalid.sequence.annotation"),
+    INVALID_CHOICE_ANNOTATION("XML_ERROR_0027", "invalid.choice.annotation"),
+    INVALID_XSD_ANNOTATION("XML_ERROR_0027", "invalid.xsd.annotation");
 
     String diagnosticId;
     String messageKey;

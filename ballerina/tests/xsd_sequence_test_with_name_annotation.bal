@@ -1,6 +1,5 @@
 import ballerina/test;
 
-// TODO: Add tests with attributes
 type XsdSequenceWithNameAnnotation record {
     @Sequence {
         minOccurs: 0,
@@ -50,7 +49,7 @@ function testXsdSequenceWithNameAnnotation() returns error? {
     xmlStr = string `<Root><A1>ABC</A1><A2>ABC</A2></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("Element EA3 not found in seq_EA1_NameAnnotation"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "Element(s) 'EA3' is not found in 'seq_EA1_NameAnnotation'");
     
     xmlStr = string `<Root><A1>ABC</A1><A2>ABC</A2><A3>AB</A3><A3>AB</A3><A3>AB</A3></Root>`;
     v = parseString(xmlStr);
@@ -71,7 +70,7 @@ function testXsdSequenceWithNameAnnotation() returns error? {
     xmlStr = string `<Root><A3>AB</A3><A3>AB</A3><A3>AB</A3><A3>AB</A3><A3>AB</A3><A3>AB</A3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("A3 Element occurs more than the max allowed times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'A3' occurs more than the max allowed times");
 
     xmlStr = string `<Root><A1>ABC</A1><A3>AB</A3><A3>AB</A3></Root>`;
     v = parseString(xmlStr);
@@ -80,27 +79,27 @@ function testXsdSequenceWithNameAnnotation() returns error? {
     xmlStr = string `<Root><A1>ABC</A1><A2>ABC</A2><A3>AB</A3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("A3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'A3' occurs less than the min required times");
 
     xmlStr = string `<Root><A2>ABC</A2><A3>AB</A3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("A3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'A3' occurs less than the min required times");
 
     xmlStr = string `<Root><A2>ABC</A2><A3>AB</A3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("A3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'A3' occurs less than the min required times");
 
     xmlStr = string `<Root><A3>AB</A3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("A3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'A3' occurs less than the min required times");
 
     xmlStr = string `<Root><A1>ABC</A1><A3>AB</A3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("A3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'A3' occurs less than the min required times");
 }
 
 type XsdSequenceWithNameAnnotation2 record {
@@ -157,12 +156,12 @@ function testXsdSequenceWithNameAnnotation2() returns error? {
     xmlStr = string `<Root><EA><A1>ABC</A1><A2>ABC</A2></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("A3 Element occurs less than the min required times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'A3' occurs less than the min required times");
     
     xmlStr = string `<Root><EA><A1>ABC</A1><A2>ABC</A2><A3>AB</A3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("A3 Element occurs less than the min required times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'A3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA><A1>ABC</A1><A2>ABC</A2><A3>AB</A3><A3>CD</A3></EA></Root>`;
     v = parseString(xmlStr);    
@@ -183,7 +182,7 @@ function testXsdSequenceWithNameAnnotation2() returns error? {
     xmlStr = string `<Root><EA><A3>AB</A3><A3>AB</A3><A3>AB</A3><A3>AB</A3><A3>AB</A3><A3>AB</A3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("A3 Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>v).message(), "'A3' occurs more than the max allowed times");
 
     xmlStr = string `<Root><EA><A1>ABC</A1><A3>AB</A3><A3>AB</A3></EA></Root>`;
     v = parseString(xmlStr);
@@ -192,25 +191,25 @@ function testXsdSequenceWithNameAnnotation2() returns error? {
     xmlStr = string `<Root><EA><A1>ABC</A1><A2>ABC</A2><A3>CD</A3></EA></Root>`;
     v = parseString(xmlStr);    
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("A3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'A3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA><A2>ABC</A2><A3>AB</A3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("A3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'A3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA><A2>ABC</A2><A3>AB</A3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("A3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'A3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA><A3>AB</A3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("A3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'A3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA><A1>ABC</A1><A3>AB</A3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("A3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'A3' occurs less than the min required times");
 }

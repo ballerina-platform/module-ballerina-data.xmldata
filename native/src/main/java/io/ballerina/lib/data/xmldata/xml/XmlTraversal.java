@@ -920,7 +920,6 @@ public class XmlTraversal {
                                        XmlAnalyzerData xmlAnalyzerData, QualifiedNameMap<Field> visitedFields,
                                        QualifiedNameMap<Field> fieldMap) {
             if (modelGroupInfo != null) {
-                // TODO: Optimize this with stream.findFirst()
                 for (Map.Entry<String, ModelGroupInfo> entry : modelGroupInfo.entrySet()) {
                     ModelGroupInfo modelGroupValue = entry.getValue();
                     String key = entry.getKey();
@@ -980,7 +979,7 @@ public class XmlTraversal {
                     return;
                 }
             }
-            throw new RuntimeException("Not implemented");
+            throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_XSD_ANNOTATION, fieldName, fieldType);
         }
 
         private void validateModelGroupStackForRootElement(XmlAnalyzerData analyzerData) {

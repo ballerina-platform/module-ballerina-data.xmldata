@@ -32,76 +32,69 @@ public class ToXmlUtils {
     private static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attribute_");
     private static final BString XMLNS = StringUtils.fromString("xmlns");
 
-    public static BXml fromModifiedRecordToXml(Object jsonValue, BMap<BString, Object> options, BTypedesc typed) {
+    public static BXml fromRecordToXml(Object jsonValue, BMap<BString, Object> options, BTypedesc typed) {
         Type type = typed.getDescribingType();
         Type referredType = TypeUtils.getReferredType(type);
-        Object rootTag = options.get(StringUtils.fromString("rootTag"));
+        Object rootTag = options.get(StringUtils.fromString(Constants.ROOT_TAG));
         BMap<BString, BString> allNamespaces = getEmptyStringMap();
+        BString rootTagBstring = StringUtils.fromString(rootTag == null ? Constants.EMPTY_STRING : rootTag.toString());
 
-        if (!isSingleNode(jsonValue)) {
+        if (!isSingleRecordMember(jsonValue)) {
             addNamespaces(allNamespaces, getNamespacesMap(jsonValue, options, getEmptyStringMap()));
-            return getElement(rootTag == null ? StringUtils.fromString("root")
-                            : StringUtils.fromString(rootTag.toString()),
-                    traverseNode(jsonValue, allNamespaces, getEmptyStringMap(), options,
-                            null, TypeUtils.getReferredType(type)),
+            return getElementFromRecordMember(rootTag == null ? StringUtils.fromString(Constants.ROOT) : rootTagBstring,
+                    traverseRecordAndGenerateXml(jsonValue, allNamespaces,
+                            getEmptyStringMap(), options, null, referredType, false, false),
                     allNamespaces, options, getAttributesMap(jsonValue, options, allNamespaces, getEmptyStringMap()));
         }
 
         try {
-            BMap<BString, Object> jMap = (BMap<BString, Object>) ValueUtils.convert(jsonValue,
-                    TypeCreator.createMapType(PredefinedTypes.TYPE_JSON));
+            BMap<BString, Object> jMap = (BMap<BString, Object>) ValueUtils
+                    .convert(jsonValue, TypeCreator.createMapType(PredefinedTypes.TYPE_JSON));
+
             if (jMap.isEmpty()) {
-                return ValueCreator.createXmlValue("");
+                return ValueCreator.createXmlValue(Constants.EMPTY_STRING);
             }
 
             BString key = jMap.getKeys()[0];
             String keyStr = key.getValue();
-
             HashMap<String, String> elementNamesMap = DataUtils.getElementNameMap(referredType);
             ArrayList<String> sequenceFieldNames = getSequenceFieldNames(referredType, elementNamesMap);
             boolean isSequenceField = sequenceFieldNames.contains(keyStr);
-
             ArrayList<String> modelGroupRelatedFieldNames =
                     getModelGroupRelatedFieldNames(referredType, elementNamesMap);
-            String localJsonKeyPart = keyStr.contains(":")
-                    ? keyStr.substring(keyStr.indexOf(":") + 1) : keyStr;
-
+            String localJsonKeyPart = keyStr.contains(Constants.COLON)
+                    ? keyStr.substring(keyStr.indexOf(Constants.COLON) + 1) : keyStr;
             String recordKey = elementNamesMap.getOrDefault(localJsonKeyPart, localJsonKeyPart);
-            boolean isNotContainXsdModelGroup = !modelGroupRelatedFieldNames.contains(recordKey);
+            boolean isContainsModelGroup = modelGroupRelatedFieldNames.contains(recordKey);
 
             Object value = ToArray.toArray(jMap).getValues()[0];
-            addNamespaces(allNamespaces, getNamespacesMap(value, options,
-                    getEmptyStringMap()));
+            addNamespaces(allNamespaces, getNamespacesMap(value, options, getEmptyStringMap()));
 
             if (value instanceof BArray) {
-                return getElement(rootTag == null ? StringUtils.fromString("root")
-                                : StringUtils.fromString(rootTag.toString()),
-                        traverseNode(value, allNamespaces, getEmptyStringMap(), options, jMap.getKeys()[0],
-                                getChildElementType(TypeUtils.getReferredType(type), keyStr),
-                                isSequenceField, isSequenceField),
-                            allNamespaces, options, getAttributesMap(value, options, allNamespaces,
-                                getEmptyStringMap()));
+                return getElementFromRecordMember(rootTag == null
+                                ? StringUtils.fromString(Constants.ROOT) : rootTagBstring,
+                        traverseRecordAndGenerateXml(value, allNamespaces, getEmptyStringMap(), options, key,
+                        getChildElementType(referredType, keyStr), isSequenceField, isSequenceField),
+                    allNamespaces, options, getAttributesMap(value, options, allNamespaces, getEmptyStringMap()));
             }
 
-            if (key.equals(options.get(StringUtils.fromString("textFieldName")))) {
+            if (key.equals(options.get(Constants.TEXT_FIELD_NAME))) {
                 return CreateText.createText(StringUtils.fromString(value.toString()));
             }
-            BXml output = getElement(jMap.getKeys()[0],
-                    traverseNode(value, allNamespaces, getEmptyStringMap(),
-                            options, null,
-                            getChildElementType(TypeUtils.getReferredType(type), recordKey),
-                            isSequenceField, isSequenceField),
+
+            BXml output = getElementFromRecordMember(key,
+                    traverseRecordAndGenerateXml(value, allNamespaces, getEmptyStringMap(), options, null,
+                        getChildElementType(referredType, recordKey), isSequenceField, isSequenceField),
                     allNamespaces, options, getAttributesMap(value, options, allNamespaces, getEmptyStringMap()));
-            if (!isNotContainXsdModelGroup) {
+            if (isContainsModelGroup) {
                 output = output.children();
             }
             if (rootTag != null) {
-                return CreateElement.createElement(StringUtils.fromString(rootTag.toString()),
-                        getEmptyStringMap(), output);
+                return CreateElement.createElement(rootTagBstring, getEmptyStringMap(), output);
             }
             return output;
         } catch (BError e) {
-            return jsonValue == null ? ValueCreator.createXmlValue("")
+            return jsonValue == null ? ValueCreator.createXmlValue(Constants.EMPTY_STRING)
                     : CreateText.createText(StringUtils.fromString(jsonValue.toString()));
         }
     }
@@ -110,64 +103,30 @@ public class ToXmlUtils {
         return (BMap<BString, BString>) ((BMap<?, ?>) ValueCreator.createMapValue());
     }
 
-    public static BXml convertMapXml(BMap<BString, Object> mapValue) {
-        BXml xNode = ValueCreator.createXmlValue("");
-        for (Map.Entry<BString, Object> entry : mapValue.entrySet()) {
-            BString key = entry.getKey();
-            Object value = entry.getValue();
-            if (value instanceof BArray arrayNode) {
-                for (Object i : arrayNode.getValues()) {
-                    if (i == null) {
-                        continue;
-                    }
-                    xNode = Concat.concat(xNode, CreateElement.createElement(key, getEmptyStringMap(), (BXml) i));
-                }
-            } else {
-                xNode = Concat.concat(xNode, CreateElement.createElement(key, getEmptyStringMap(), (BXml) value));
-            }
-        }
-        return CreateElement.createElement(StringUtils.fromString("root"), getEmptyStringMap(), xNode);
-    }
-
-    public static BXml traverseNode(Object jNode, BMap<BString, BString> allNamespaces,
-                    BMap<BString, BString> parentNamespaces, BMap<BString, Object> options, Object keyObj, Type type) {
-        return traverseNode(jNode, allNamespaces, parentNamespaces, options, keyObj, type, false, false);
-    }
-
-    public static BXml traverseNode(Object jNode, BMap<BString, BString> allNamespaces,
-                                BMap<BString, BString> parentNamespaces,
-                                BMap<BString, Object> options, Object keyObj, Type type, boolean isParentSequencee) {
-        return traverseNode(jNode, allNamespaces, parentNamespaces, options,
-                keyObj, type, isParentSequencee, false);
-    }
-
-    public static BXml traverseNode(Object jNode, BMap<BString, BString> allNamespaces,
+    public static BXml traverseRecordAndGenerateXml(Object jNode, BMap<BString, BString> allNamespaces,
                     BMap<BString, BString> parentNamespaces, BMap<BString, Object> options,
                     Object keyObj, Type type, boolean isParentSequence, boolean isParentSequenceArray) {
         BMap<BString, BString> namespacesOfElem;
-        BXml xNode = ValueCreator.createXmlValue("");
+        BXml xNode = ValueCreator.createXmlValue(Constants.EMPTY_STRING);
         String attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
         Type referredType = TypeUtils.getReferredType(type);
         HashMap<String, String> elementNamesMap = DataUtils.getElementNameMap(referredType);
         ArrayList<String> modelGroupRelatedFieldNames = getModelGroupRelatedFieldNames(referredType, elementNamesMap);
         ArrayList<String> sequenceFieldNames = getSequenceFieldNames(referredType, elementNamesMap);
-
         BXml childElement;
 
         if (jNode instanceof BMap jMap) {
             BMap<BString, Object> mapNode = (BMap<BString, Object>) jMap;
+            BString[] orderedRecordKeysIfXsdSequencePresent = DataUtils.getOrderedRecordKeysIfXsdSequencePresent(
+                    mapNode, DataUtils.getXsdSequencePriorityOrder(referredType, isParentSequence));
 
-            BString[] orderedRecordKeysIfXsdSequencePresent = DataUtils
-                    .getOrderedRecordKeysIfXsdSequencePresent(mapNode,
-                            DataUtils.getXsdSequencePriorityOrder(referredType, isParentSequence));
             for (BString k : orderedRecordKeysIfXsdSequencePresent) {
                 Object value = mapNode.get(k);
-                String keyStr = k.getValue();
-                String jsonKey = keyStr.trim();
-                String localJsonKeyPart = jsonKey.contains(":")
-                        ? jsonKey.substring(jsonKey.indexOf(":") + 1) : jsonKey;
+                String jsonKey = k.getValue().trim();
+                String localJsonKeyPart = jsonKey.contains(Constants.COLON) ?
+                        jsonKey.substring(jsonKey.indexOf(Constants.COLON) + 1) : jsonKey;
                 String recordKey = elementNamesMap.getOrDefault(localJsonKeyPart, localJsonKeyPart);
-                boolean isNotContainXsdModelGroup = !modelGroupRelatedFieldNames.contains(recordKey);
+                boolean isContainsModelGroup = modelGroupRelatedFieldNames.contains(recordKey);
                 boolean isSequenceField = sequenceFieldNames.contains(recordKey);
 
                 if (jsonKey.startsWith(attributePrefix)) {
@@ -181,18 +140,17 @@ public class ToXmlUtils {
                     addNamespaces(allNamespaces, namespacesOfElem);
 
                     if (value instanceof BArray) {
-                        childElement = traverseNode(value,
-                                allNamespaces, namespacesOfElem, options, k,
+                        childElement = traverseRecordAndGenerateXml(value, allNamespaces, namespacesOfElem, options, k,
                                 getChildElementType(referredType, recordKey), isSequenceField, isSequenceField);
                         xNode = Concat.concat(xNode, childElement);
                     } else {
-                        childElement = getElement(k,
-                                traverseNode(value, allNamespaces, namespacesOfElem, options, null,
-                                getChildElementType(referredType, recordKey),
-                                        isSequenceField, isSequenceField), allNamespaces, options,
-                                getAttributesMap(value, options, allNamespaces, parentNamespaces));
-                        xNode = Concat.concat(xNode, isNotContainXsdModelGroup || isParentSequenceArray
-                                ? childElement : childElement.children());
+                        childElement = getElementFromRecordMember(k, traverseRecordAndGenerateXml(
+                                    value, allNamespaces, namespacesOfElem, options, null,
+                                    getChildElementType(referredType, recordKey), isSequenceField, isSequenceField),
+                                allNamespaces, options, getAttributesMap(
+                                        value, options, allNamespaces, parentNamespaces));
+                        xNode = Concat.concat(xNode, !isContainsModelGroup || isParentSequenceArray ? childElement
+                                : childElement.children());
                     }
                 }
             }
@@ -201,7 +159,7 @@ public class ToXmlUtils {
                 if (i == null) {
                     continue;
                 }
-                String arrayEntryTagKey = "";
+                String arrayEntryTagKey = Constants.EMPTY_STRING;
                 if (keyObj instanceof BString key) {
                     arrayEntryTagKey = key.getValue();
                 } else if (!options.get(Constants.ARRAY_ENTRY_TAG).toString().isEmpty()) {
@@ -211,20 +169,19 @@ public class ToXmlUtils {
                 namespacesOfElem = getNamespacesMap(i, options, parentNamespaces);
                 addNamespaces(allNamespaces, namespacesOfElem);
                 if (options.get(Constants.ARRAY_ENTRY_TAG).toString().isEmpty()) {
-                    childElement = getElement(StringUtils.fromString(arrayEntryTagKey),
-                            traverseNode(i, allNamespaces, namespacesOfElem,
+                    childElement = getElementFromRecordMember(StringUtils.fromString(arrayEntryTagKey),
+                            traverseRecordAndGenerateXml(i, allNamespaces, namespacesOfElem,
                                     options, keyObj, getChildElementType(referredType, null),
                                     isParentSequence, isParentSequenceArray),
                             allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces));
-                    xNode = Concat.concat(xNode, isParentSequenceArray ? childElement.children() : childElement);
                 } else {
-                    childElement = getElement(StringUtils.fromString(arrayEntryTagKey),
-                            traverseNode(i, allNamespaces, namespacesOfElem,
+                    childElement = getElementFromRecordMember(StringUtils.fromString(arrayEntryTagKey),
+                            traverseRecordAndGenerateXml(i, allNamespaces, namespacesOfElem,
                                     options, null, getChildElementType(referredType, null),
                                     isParentSequence, isParentSequenceArray),
                             allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces));
-                    xNode = Concat.concat(xNode, isParentSequenceArray ? childElement.children() : childElement);
                 }
+                xNode = Concat.concat(xNode, isParentSequenceArray ? childElement.children() : childElement);
             }
         } else {
             xNode = CreateText.createText(StringUtils.fromString(StringUtils.getStringValue(jNode)));
@@ -263,8 +220,8 @@ public class ToXmlUtils {
                 if (fields.containsKey(recordKey)) {
                     return fields.get(recordKey).getFieldType();
                 }
-                Optional<String> fieldName = getFieldFromRecordNameAnnotation(fields, recordKey);
 
+                Optional<String> fieldName = getFieldFromRecordNameAnnotation(fields, recordKey);
                 if (!(fieldName.isEmpty()) && fields.containsKey(fieldName.get())) {
                     return fields.get(fieldName.get()).getFieldType();
                 } else {
@@ -272,11 +229,9 @@ public class ToXmlUtils {
                     throw DiagnosticLog.createXmlError("Invalid xml provided");
                 }
             }
-
             return type;
         } catch (Exception e) {
-            int a = 1;
-            throw e;
+            throw DiagnosticLog.createXmlError("Invalid xml provided");
         }
     }
 
@@ -297,9 +252,8 @@ public class ToXmlUtils {
         return Optional.empty();
     }
 
-    public static boolean isSingleNode(Object node) {
+    public static boolean isSingleRecordMember(Object node) {
         if (node instanceof BArray arrayNode) {
-            // TODO: Convert this into a anydata
             if (arrayNode.getElementType().getTag() == TypeTags.JSON_TAG) {
                 return false;
             }
@@ -317,25 +271,24 @@ public class ToXmlUtils {
         return true;
     }
 
-    public static BXml getElement(BString name, BXml children, BMap<BString, BString> namespaces,
+    public static BXml getElementFromRecordMember(BString name, BXml children, BMap<BString, BString> namespaces,
                                   BMap<BString, Object> options, BMap<BString, BString> attributes) {
-        return getElement(name, children, namespaces, options, attributes, PredefinedTypes.TYPE_ANYDATA);
+        return getElementFromRecordMember(
+                name, children, namespaces, options, attributes, PredefinedTypes.TYPE_ANYDATA);
     }
 
-    public static BXml getElement(BString name, BXml children, BMap<BString, BString> namespaces,
+    public static BXml getElementFromRecordMember(BString name, BXml children, BMap<BString, BString> namespaces,
                                   BMap<BString, Object> options, BMap<BString, BString> attributes, Type type) {
         String attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
         String userAttributePrefix = options.get(Constants.USER_ATTRIBUTE_PREFIX).toString();
         BXml element;
-
         String nameStr = name.getValue();
-
-        int index = nameStr.indexOf(":");
+        int index = nameStr.indexOf(Constants.COLON);
 
         if (index != -1) {
             String prefix = nameStr.substring(0, index);
-
             String elementName;
+
             if (!userAttributePrefix.isEmpty()) {
                 elementName = removeUserAttributePrefix(StringUtils.fromString(nameStr),
                         StringUtils.fromString(userAttributePrefix), (long) index).getValue();
@@ -343,20 +296,18 @@ public class ToXmlUtils {
                 elementName = nameStr.substring(index + 1, nameStr.length());
             }
 
-            String namespaceUrl = attributes.get(StringUtils.fromString("{" + XMLNS_NAMESPACE_URI + "}" +
-                    prefix)).toString();
+            String namespaceUrl = attributes.get(StringUtils.fromString(getXmlnsNameUrI() + prefix)).toString();
 
             if (namespaceUrl.isEmpty()) {
-                namespaceUrl = namespaces.get(StringUtils.fromString("{" + XMLNS_NAMESPACE_URI + "}" +
-                    prefix)).toString();
+                namespaceUrl = namespaces.get(StringUtils.fromString(getXmlnsNameUrI() + prefix)).toString();
 
                 if (!namespaceUrl.isEmpty()) {
-                    attributes.put(StringUtils.fromString("{" + XMLNS_NAMESPACE_URI + "}" +
-                        prefix), StringUtils.fromString(namespaceUrl));
+                    attributes.put(StringUtils.fromString(getXmlnsNameUrI() + prefix),
+                            StringUtils.fromString(namespaceUrl));
                 }
             }
 
-            if (namespaceUrl.equals("")) {
+            if (namespaceUrl.equals(Constants.EMPTY_STRING)) {
                 element = CreateElement.createElement(StringUtils.fromString(elementName), attributes, children);
             } else {
                 element = CreateElement.createElement(StringUtils.fromString("{" + namespaceUrl + "}" + elementName),
@@ -368,19 +319,17 @@ public class ToXmlUtils {
             }
 
             BMap<BString, BString> newAttributes = attributes;
-            if (newAttributes.containsKey(StringUtils.fromString("{" + XMLNS_NAMESPACE_URI + "}"))) {
-                String value = newAttributes.get(StringUtils.fromString("{" + XMLNS_NAMESPACE_URI + "}")).toString();
-                newAttributes.remove(StringUtils.fromString("{" + XMLNS_NAMESPACE_URI + "}"));
+            if (newAttributes.containsKey(StringUtils.fromString(getXmlnsNameUrI()))) {
+                String value = newAttributes.get(StringUtils.fromString(getXmlnsNameUrI())).toString();
+                newAttributes.remove(StringUtils.fromString(getXmlnsNameUrI()));
                 newAttributes.put(XMLNS, StringUtils.fromString(value));
             }
-            if (!userAttributePrefix.equals("")) {
-                element = CreateElement.createElement(
-                        removeUserAttributePrefix(StringUtils.fromString(nameStr),
-                                StringUtils.fromString(userAttributePrefix), null), newAttributes, children);
+            if (!userAttributePrefix.equals(Constants.EMPTY_STRING)) {
+                element = CreateElement.createElement(removeUserAttributePrefix(StringUtils.fromString(nameStr),
+                        StringUtils.fromString(userAttributePrefix), null), newAttributes, children);
             } else {
                 element = CreateElement.createElement(StringUtils.fromString(nameStr), newAttributes, children);
             }
-
         }
         return element;
     }
@@ -389,8 +338,8 @@ public class ToXmlUtils {
     public static BString removeUserAttributePrefix(BString name, BString userAttributePrefix, Object index) {
         String nameStr = name.getValue();
         String userAttributePrefixStr = userAttributePrefix.getValue();
-
         int usrAttIndex = nameStr.indexOf(userAttributePrefixStr);
+
         if (usrAttIndex != -1) {
             return StringUtils.fromString(nameStr.substring(usrAttIndex + 1, nameStr.length()));
         }
@@ -407,8 +356,8 @@ public class ToXmlUtils {
                                                           BMap<BString, BString> parentNamespaces) {
         BMap<BString, BString> attributes = (BMap<BString, BString>) parentNamespaces.copy(new HashMap<>());
         try {
-            BMap<BString, Object> attr = (BMap<BString, Object>) ValueUtils
-                    .convert(jsonTree, TypeCreator.createMapType(PredefinedTypes.TYPE_JSON));
+            BMap<BString, Object> attr = (BMap<BString, Object>) ValueUtils.convert(
+                    jsonTree, TypeCreator.createMapType(PredefinedTypes.TYPE_JSON));
 
             String attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
             for (Map.Entry<BString, Object> entry : attr.entrySet()) {
@@ -422,20 +371,17 @@ public class ToXmlUtils {
                     DiagnosticLog.createXmlError("attribute cannot be an object or array.");
                 }
 
-                int index = key.indexOf(":");
+                int index = key.indexOf(Constants.COLON);
                 if (index != -1) {
                     String suffix = key.substring(index + 1);
                     if (key.startsWith(attributePrefix + XMLNS)) {
-                        attributes.put(StringUtils.fromString("{" + XMLNS_NAMESPACE_URI + "}" + suffix),
+                        attributes.put(StringUtils.fromString(getXmlnsNameUrI() + suffix),
                                 StringUtils.fromString(StringUtils.getStringValue(value)));
                     } else {
-                        Long startIndex =
-                                getStartIndex(StringUtils.fromString(attributePrefix), StringUtils
-                                        .fromString(options.get(Constants.USER_ATTRIBUTE_PREFIX).toString()),
-                                        StringUtils.fromString(key));
+                        Long startIndex = getStartIndex(StringUtils.fromString(attributePrefix), StringUtils.fromString(
+                                options.get(Constants.USER_ATTRIBUTE_PREFIX).toString()), StringUtils.fromString(key));
                         String prefix = key.substring(startIndex.intValue(), index);
-                        BString namespaceUrl =
-                                namespaces.get(StringUtils.fromString("{" + XMLNS_NAMESPACE_URI + "}" + prefix));
+                        BString namespaceUrl = namespaces.get(StringUtils.fromString(getXmlnsNameUrI() + prefix));
                         attributes.put(StringUtils.fromString("{" + namespaceUrl + "}" + suffix),
                                 StringUtils.fromString(StringUtils.getStringValue(value)));
                     }
@@ -443,9 +389,8 @@ public class ToXmlUtils {
                     if (key.equals(attributePrefix + XMLNS)) {
                         attributes.put(XMLNS, StringUtils.fromString(StringUtils.getStringValue(value)));
                     } else {
-                        Long startIndex =
-                                getStartIndex(StringUtils.fromString(attributePrefix),
-                                    StringUtils.fromString(options.get(Constants.USER_ATTRIBUTE_PREFIX).toString()),
+                        Long startIndex = getStartIndex(StringUtils.fromString(attributePrefix),
+                            StringUtils.fromString(options.get(Constants.USER_ATTRIBUTE_PREFIX).toString()),
                                         StringUtils.fromString(key));
                         attributes.put(StringUtils.fromString(key.substring(startIndex.intValue())),
                                 StringUtils.fromString(StringUtils.getStringValue(value)));
@@ -468,8 +413,8 @@ public class ToXmlUtils {
             return (long) startIndex;
         }
 
-        int location = userAttributePrefixStr.equals("")
-                ? keyStr.indexOf("_") : keyStr.indexOf(userAttributePrefixStr);
+        int location = userAttributePrefixStr.equals(Constants.EMPTY_STRING) ? keyStr.indexOf("_")
+                : keyStr.indexOf(userAttributePrefixStr);
         if (location != -1) {
             startIndex = location + 1;
         }
@@ -480,11 +425,8 @@ public class ToXmlUtils {
                                                            BMap<BString, Object> options,
                                                            BMap<BString, BString> parentNamespaces) {
         BMap<BString, BString> namespaces = (BMap<BString, BString>) parentNamespaces.copy(new HashMap<>());
-
         try {
-            Object jsonTreeObject = ValueUtils
-                    .convert(jsonTree, TypeCreator.createMapType(PredefinedTypes.TYPE_JSON));
-
+            Object jsonTreeObject = ValueUtils.convert(jsonTree, TypeCreator.createMapType(PredefinedTypes.TYPE_JSON));
             BMap<BString, Object> attr = (BMap<BString, Object>) jsonTreeObject;
             String attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
 
@@ -496,24 +438,20 @@ public class ToXmlUtils {
                 }
 
                 if (value instanceof BMap || value instanceof BArray) {
-                    // TODO: Add error messages
                     throw DiagnosticLog.createXmlError("attribute cannot be an object or array.");
                 }
 
-                // TODO: Make this as a constant
                 if (!key.getValue().startsWith(attributePrefix + XMLNS)) {
                     continue;
                 }
 
-                int index = key.getValue().indexOf(":");
+                int index = key.getValue().indexOf(Constants.COLON);
                 if (index != -1) {
                     String prefix = key.getValue().substring(index + 1);
-
-                    // TODO: Add constants
-                    namespaces.put(StringUtils.fromString("{" + XMLNS_NAMESPACE_URI + "}" + prefix),
+                    namespaces.put(StringUtils.fromString(getXmlnsNameUrI() + prefix),
                             StringUtils.fromString(StringUtils.getStringValue(value)));
                 } else {
-                    namespaces.put(StringUtils.fromString("{" + XMLNS_NAMESPACE_URI + "}"),
+                    namespaces.put(StringUtils.fromString(getXmlnsNameUrI()),
                             StringUtils.fromString(StringUtils.getStringValue(value)));
                 }
             }
@@ -521,6 +459,10 @@ public class ToXmlUtils {
         } catch (BError e) {
             return namespaces;
         }
+    }
+
+    private static String getXmlnsNameUrI() {
+        return "{" + XMLNS_NAMESPACE_URI + "}";
     }
 
     public static void addNamespaces(BMap<BString, BString> allNamespaces, BMap<BString, BString> namespaces) {

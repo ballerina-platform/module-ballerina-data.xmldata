@@ -18,9 +18,12 @@
 
 package io.ballerina.lib.data.xmldata.xml;
 
+import io.ballerina.runtime.api.PredefinedTypes;
+import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.utils.StringUtils;
-import io.ballerina.runtime.api.values.BMap;
+import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BString;
+import io.ballerina.runtime.api.values.BTypedesc;
 import io.ballerina.runtime.api.values.BXml;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -41,7 +44,7 @@ public class XSDValidator {
         if (xsd instanceof BString) {
             return validateXmlFromXsdFile(xsd.toString(), xml);
         }
-        return validateXsdFromXsdRecord((BMap<BString, Object>) xsd);
+        return validateXsdFromXsdRecord((BTypedesc) xsd, xml);
     }
 
     private static boolean validateXmlFromXsdFile(String xsdFilePath, BXml xml) {
@@ -62,7 +65,16 @@ public class XSDValidator {
         }
     }
 
-    private static boolean validateXsdFromXsdRecord(BMap<BString, Object> xsdRecord) {
-        return false;
+    private static boolean validateXsdFromXsdRecord(BTypedesc xsdRecord, BXml xml) {
+        try {
+            Object result =  XmlTraversal.traverse(xml,
+                    ValueCreator.createMapValue(PredefinedTypes.TYPE_STRING), xsdRecord);
+            if (result instanceof BError) {
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

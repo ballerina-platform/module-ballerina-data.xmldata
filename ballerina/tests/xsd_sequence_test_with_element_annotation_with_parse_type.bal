@@ -1,6 +1,5 @@
 import ballerina/test;
 
-// TODO: Add tests with attributes
 type XsdSequenceWithElementAnnotationWithXmlValue record {
     @Sequence {
         minOccurs: 0,
@@ -47,7 +46,7 @@ function testXsdSequenceWithElementAnnotationWithXmlValue() returns error? {
     xmlValue = xml `<Root><EA1>ABC</EA1><EA2>ABC</EA2></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("Element EA3 not found in seq_EA1_Xml_Value"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "Element(s) 'EA3' is not found in 'seq_EA1_Xml_Value'");
     
     xmlValue = xml `<Root><EA1>ABC</EA1><EA2>ABC</EA2><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
@@ -68,7 +67,7 @@ function testXsdSequenceWithElementAnnotationWithXmlValue() returns error? {
     xmlValue = xml `<Root><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs more than the max allowed times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs more than the max allowed times");
 
     xmlValue = xml `<Root><EA1>ABC</EA1><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
@@ -77,27 +76,27 @@ function testXsdSequenceWithElementAnnotationWithXmlValue() returns error? {
     xmlValue = xml `<Root><EA1>ABC</EA1><EA2>ABC</EA2><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlValue = xml `<Root><EA2>ABC</EA2><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlValue = xml `<Root><EA2>ABC</EA2><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlValue = xml `<Root><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlValue = xml `<Root><EA1>ABC</EA1><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 }
 
 type XsdSequenceWithElementAnnotationWithXmlValue2 record {
@@ -150,12 +149,12 @@ function testXsdSequenceWithElementAnnotationWithXmlValue2() returns error? {
     xmlValue = xml `<Root><EA><EA1>ABC</EA1><EA2>ABC</EA2></EA></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
     
     xmlValue = xml `<Root><EA><EA1>ABC</EA1><EA2>ABC</EA2><EA3>AB</EA3></EA></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlValue = xml `<Root><EA><EA1>ABC</EA1><EA2>ABC</EA2><EA3>AB</EA3><EA3>CD</EA3></EA></Root>`;
     v = parseAsType(xmlValue);    
@@ -176,7 +175,7 @@ function testXsdSequenceWithElementAnnotationWithXmlValue2() returns error? {
     xmlValue = xml `<Root><EA><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></EA></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs more than the max allowed times");
 
     xmlValue = xml `<Root><EA><EA1>ABC</EA1><EA3>AB</EA3><EA3>AB</EA3></EA></Root>`;
     v = parseAsType(xmlValue);
@@ -185,27 +184,27 @@ function testXsdSequenceWithElementAnnotationWithXmlValue2() returns error? {
     xmlValue = xml `<Root><EA><EA1>ABC</EA1><EA2>ABC</EA2><EA3>CD</EA3></EA></Root>`;
     v = parseAsType(xmlValue);    
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlValue = xml `<Root><EA><EA2>ABC</EA2><EA3>AB</EA3></EA></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlValue = xml `<Root><EA><EA2>ABC</EA2><EA3>AB</EA3></EA></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlValue = xml `<Root><EA><EA3>AB</EA3></EA></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlValue = xml `<Root><EA><EA1>ABC</EA1><EA3>AB</EA3></EA></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 }
 
 type XsdSequenceWithElementAnnotationWithXmlValue3 record {
@@ -292,25 +291,25 @@ function testXsdSequenceWithElementAnnotationWithXmlValue3() returns error? {
     xmlValue = xml `<Root><field1><c>3</c></field1><field1><c>3</c></field1><field3><g>1</g><h>2</h><i>3</i></field3></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("seq_XsdSequenceWithElementAnnotationWithXmlValue3_2 Element occurs less than the min required times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'seq_XsdSequenceWithElementAnnotationWithXmlValue3_2' occurs less than the min required times");
 
     xmlValue = xml `<Root><field1><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field4><a>1</a><a>2</a><a>3</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element field3 not found in seq_XsdSequenceWithElementAnnotationWithXmlValue3_1"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element(s) 'field3' is not found in 'seq_XsdSequenceWithElementAnnotationWithXmlValue3_1'");
 
     xmlValue = xml `<Root><field1><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><a>2</a><a>3</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("required field 'i' not present in XML"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "required field 'i' not present in XML");
 
     xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field5><d>1</d><e>2</e><f>3</f></field5><field5><d>1</d><e>2</e><f>3</f></field5><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("field5 Element occurs more than the max allowed times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'field5' occurs more than the max allowed times");
 
     xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><b>2</b><b>2</b><b>2</b><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("b Element occurs more than the max allowed times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'b' occurs more than the max allowed times");
 }

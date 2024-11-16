@@ -1,6 +1,5 @@
 import ballerina/test;
 
-// TODO: Add tests with attributes
 type XsdSequenceWithNamespaceAnnotation record {
     @Sequence {
         minOccurs: 0,
@@ -59,7 +58,7 @@ function testXsdSequenceWithNamespaceAnnotation() returns error? {
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><ea1:EA1>ABC</ea1:EA1><ea2:EA2>ABC</ea2:EA2></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("Element EA3 not found in seq_EA1_NamespaceAnnotation"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "Element(s) 'EA3' is not found in 'seq_EA1_NamespaceAnnotation'");
     
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><ea1:EA1>ABC</ea1:EA1><ea2:EA2>ABC</ea2:EA2><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3></Root>`;
     v = parseString(xmlStr);
@@ -80,7 +79,7 @@ function testXsdSequenceWithNamespaceAnnotation() returns error? {
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs more than the max allowed times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs more than the max allowed times");
 
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><ea1:EA1>ABC</ea1:EA1><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3></Root>`;
     v = parseString(xmlStr);
@@ -89,27 +88,27 @@ function testXsdSequenceWithNamespaceAnnotation() returns error? {
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><ea1:EA1>ABC</ea1:EA1><ea2:EA2>ABC</ea2:EA2><ea3:EA3>AB</ea3:EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><ea2:EA2>ABC</ea2:EA2><ea3:EA3>AB</ea3:EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><ea2:EA2>ABC</ea2:EA2><ea3:EA3>AB</ea3:EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><ea3:EA3>AB</ea3:EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><ea1:EA1>ABC</ea1:EA1><ea3:EA3>AB</ea3:EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 }
 
 type XsdSequenceWithNamespaceAnnotation2 record {
@@ -175,12 +174,12 @@ function testXsdSequenceWithNamespaceAnnotation2() returns error? {
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><EA><ea1:EA1>ABC</ea1:EA1><ea2:EA2>ABC</ea2:EA2></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
     
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><EA><ea1:EA1>ABC</ea1:EA1><ea2:EA2>ABC</ea2:EA2><ea3:EA3>AB</ea3:EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><EA><ea1:EA1>ABC</ea1:EA1><ea2:EA2>ABC</ea2:EA2><ea3:EA3>AB</ea3:EA3><ea3:EA3>CD</ea3:EA3></EA></Root>`;
     v = parseString(xmlStr);    
@@ -201,7 +200,7 @@ function testXsdSequenceWithNamespaceAnnotation2() returns error? {
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><EA><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs more than the max allowed times");
 
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><EA><ea1:EA1>ABC</ea1:EA1><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3></EA></Root>`;
     v = parseString(xmlStr);
@@ -210,25 +209,25 @@ function testXsdSequenceWithNamespaceAnnotation2() returns error? {
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><EA><ea1:EA1>ABC</ea1:EA1><ea2:EA2>ABC</ea2:EA2><ea3:EA3>CD</ea3:EA3></EA></Root>`;
     v = parseString(xmlStr);    
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><EA><ea2:EA2>ABC</ea2:EA2><ea3:EA3>AB</ea3:EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><EA><ea2:EA2>ABC</ea2:EA2><ea3:EA3>AB</ea3:EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><EA><ea3:EA3>AB</ea3:EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><EA><ea1:EA1>ABC</ea1:EA1><ea3:EA3>AB</ea3:EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 }

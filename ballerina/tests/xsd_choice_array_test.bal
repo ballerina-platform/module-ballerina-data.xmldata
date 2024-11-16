@@ -33,7 +33,7 @@ function testXsdChoiceArray() returns error? {
     xmlStr = string `<Root><age>13</age><salary>11.1</salary><age>14</age><salary>14.1</salary><age>15</age><salary>15.1</salary></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is error);
-    test:assertTrue((<Error>v).message().includes("choice_XsdChoiceArray Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>v).message(), "'choice_XsdChoiceArray' occurs more than the max allowed times");
 }
 
 type XsdChoiceArray2 record {|
@@ -80,12 +80,12 @@ function testXsdChoiceArray2() returns error? {
     xmlStr = string `<Root><age>13</age><age>13</age><age2>13</age2><salary2>11.1</salary2><age2>14</age2><age2>15</age2></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is error);
-    test:assertTrue((<Error>v).message().includes("choice_XsdChoiceArray2_2 Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>v).message(), "'choice_XsdChoiceArray2_2' occurs more than the max allowed times");
 
     xmlStr = string `<Root><age>13</age><age>13</age><age>13</age><age2>13</age2></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is error);
-    test:assertTrue((<Error>v).message().includes("choice_XsdChoiceArray2 Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>v).message(), "'choice_XsdChoiceArray2' occurs more than the max allowed times");
 
     xmlStr = string `<Root><age>13</age><age>13</age></Root>`;
     v = parseString(xmlStr);
@@ -94,7 +94,7 @@ function testXsdChoiceArray2() returns error? {
     xmlStr = string `<Root><age2>13</age2><age2>13</age2></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is error);
-    test:assertTrue((<Error>v).message().includes("choice_XsdChoiceArray2' not present in XML"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "required field 'choice_XsdChoiceArray2' not present in XML");
 }
 
 type XSDChoiceArrayRecord13 record {
@@ -202,12 +202,12 @@ function testXSDChoiceArrayRecord4() returns error? {
     xmlStr = string `<Root><field1><b>2</b><b>2</b></field1><field1><a>1</a><b>2</b><c>3</c></field1><field3><h>2</h><i>3</i><i>3</i></field3><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is error);
-    test:assertTrue((<Error>v2).message().includes("choice_XSDChoiceArrayRecord13_2 Element occurs less than the min required times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceArrayRecord13_2' occurs less than the min required times");
 
     xmlStr = string `<Root><field1><b>2</b><b>2</b></field1><field1><a>1</a><b>2</b><c>3</c></field1><field3><h>2</h><i>3</i><i>3</i></field3><field5><d>1</d></field5><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is error);
-    test:assertTrue((<Error>v2).message().includes("value2 Element occurs less than the min required times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'value2' occurs less than the min required times");
 }
 
 type XsdChoiceArray5 record {|
@@ -239,12 +239,12 @@ function testXsdChoiceArray5() returns error? {
     xmlStr = string `<Root><age>13</age><salary>11.1</salary><age>14</age><salary>14.1</salary><age>15</age><salary>15.1</salary><age>15</age><salary>15.1</salary></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("choice_XsdChoiceArray5 Element occurs more than the max allowed times"), msg = (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'choice_XsdChoiceArray5' occurs more than the max allowed times");
 
     xmlStr = string `<Root><age>13</age></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("choice_XsdChoiceArray5 Element occurs less than the min required times"), msg = (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'choice_XsdChoiceArray5' occurs less than the min required times");
 }
 
 type XSDChoiceArrayRecord6 record {

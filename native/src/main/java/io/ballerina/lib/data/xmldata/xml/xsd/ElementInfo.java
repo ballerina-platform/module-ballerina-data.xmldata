@@ -1,6 +1,8 @@
 package io.ballerina.lib.data.xmldata.xml.xsd;
 
 import io.ballerina.lib.data.xmldata.utils.Constants;
+import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
+import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 
@@ -33,7 +35,7 @@ public class ElementInfo {
     public void updateOccurrences() {
         this.occurrences++;
         if (this.occurrences > this.maxOccurs) {
-            throw new RuntimeException(name + " Element occurs more than the max allowed times");
+            throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_MORE_THAN_MAX_ALLOWED_TIMES, name);
         }
     }
 
@@ -43,7 +45,7 @@ public class ElementInfo {
 
     private void validateMinOccurrences() {
         if (!isInsideChoice && this.occurrences < this.minOccurs) {
-            throw new RuntimeException(name + " Element occurs less than the min required times");
+            throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_LESS_THAN_MIN_REQUIRED_TIMES, name);
         }
     }
 }

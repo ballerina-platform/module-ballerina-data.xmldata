@@ -29,17 +29,17 @@ function testXsdChoice() returns error? {
     xmlStr = string `<Root><age>10</age><salary>11.1</salary></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("choice_XSDChoiceRecord Element occurs more than the max allowed times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'choice_XSDChoiceRecord' occurs more than the max allowed times");
 
     xmlStr = string `<Root><salary>11.1</salary><salary>11.1</salary></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("choice_XSDChoiceRecord Element occurs more than the max allowed times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'choice_XSDChoiceRecord' occurs more than the max allowed times");
 
     xmlStr = string `<Root></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("choice_XSDChoiceRecord Element occurs less than the min required times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'choice_XSDChoiceRecord' occurs less than the min required times");
 }
 
 type XSDChoiceRecordP2 record {|
@@ -93,12 +93,12 @@ function testXsdChoiceP1() returns error? {
     xmlStr = string `<Root><age>10</age><salary>11.1</salary></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("choice_XSDChoiceP1Record Element occurs more than the max allowed times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'choice_XSDChoiceP1Record' occurs more than the max allowed times");
 
     xmlStr = string `<Root><salary>11.1</salary><salary>11.1</salary></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("choice_XSDChoiceP1Record Element occurs more than the max allowed times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'choice_XSDChoiceP1Record' occurs more than the max allowed times");
 
     xmlStr = string `<Root></Root>`;
     v = parseString(xmlStr);
@@ -122,12 +122,12 @@ function testXsdChoiceP2() returns error? {
     xmlStr = string `<Root><age>10</age><age>10</age><age>10</age><salary>11.1</salary><name>ABC</name></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("choice_XSDChoiceRecordP2 Element occurs more than the max allowed times"), msg = (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'choice_XSDChoiceRecordP2' occurs more than the max allowed times");
 
     xmlStr = string `<Root><age>10</age><name>ABC</name><salary>11.1</salary></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("choice_XSDChoiceRecordP2 Element occurs more than the max allowed times"), msg = (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'choice_XSDChoiceRecordP2' occurs more than the max allowed times");
 }
 
 type XSDChoiceRecord2 record {|
@@ -162,12 +162,12 @@ function testXsdChoice2() returns error? {
     xmlStr = string `<Root><salary>11.1</salary><age>10</age><num>3</num></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("choice_XSDChoiceRecord2 Element occurs more than the max allowed times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'choice_XSDChoiceRecord2' occurs more than the max allowed times");
 
     xmlStr = string `<Root><age>10</age><num>3</num><salary>11.1</salary></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("choice_XSDChoiceRecord2 Element occurs more than the max allowed times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'choice_XSDChoiceRecord2' occurs more than the max allowed times");
 }
 
 type XSDChoiceRecord3 record {|
@@ -200,12 +200,12 @@ function testXsdChoice3() returns error? {
     xmlStr = string `<Root><age>10</age><num><n>3</n></num><salary>11.1</salary></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("choice_XSDChoiceRecord3 Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceRecord3' occurs more than the max allowed times");
 
     xmlStr = string `<Root><num><n>3</n></num><age>10</age><salary>11.1</salary></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("choice_XSDChoiceRecord3 Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceRecord3' occurs more than the max allowed times");
 }
 
 type XSDChoiceRecord4 record {|
@@ -237,12 +237,12 @@ function testXsdChoice4() returns error? {
     xmlStr = string `<Root><age>10</age><num><n><n>3</n></n></num><salary>11.1</salary></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("choice_XSDChoiceRecord4 Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceRecord4' occurs more than the max allowed times");
 
     xmlStr = string `<Root><num><n><n>3</n></n></num><age>10</age><salary>11.1</salary></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("choice_XSDChoiceRecord4 Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceRecord4' occurs more than the max allowed times");
 }
 
 type XSDChoiceRecord5 record {|
@@ -277,12 +277,12 @@ function testXsdChoice5() returns error? {
     xmlStr = string `<Root><age>10</age><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2><salary>11.1</salary></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("choice_XSDChoiceRecord5 Element occurs more than the max allowed times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceRecord5' occurs more than the max allowed times");
 
     xmlStr = string `<Root><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("required field 'choice_XSDChoiceRecord5' not present in XML"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "required field 'choice_XSDChoiceRecord5' not present in XML");
 }
 
 type XSDChoiceRecord6 record {|
@@ -323,17 +323,17 @@ function testXsdChoice6() returns error? {
     xmlStr = string `<Root><name>SD</name><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("required field 'choice_XSDChoiceRecord6_1' not present in XML"), msg = (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "required field 'choice_XSDChoiceRecord6_1' not present in XML");
 
     xmlStr = string `<Root><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2><name>SD</name></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("required field 'choice_XSDChoiceRecord6_1' not present in XML"), msg = (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "required field 'choice_XSDChoiceRecord6_1' not present in XML");
 
     xmlStr = string `<Root><name>SD</name><status>success</status><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("choice_XSDChoiceRecord6_2 Element occurs more than the max allowed times"), msg = (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceRecord6_2' occurs more than the max allowed times");
 }
 
 type XSDChoiceRecord7 record {|
@@ -429,22 +429,22 @@ function testXsdChoice8() returns error? {
     xmlStr = string `<Root><test><name><value1>SD</value1><value2>AB</value2></name><age>10</age><status><value1>Success</value1><value2>Fail</value2></status><salary>11.1</salary></test><a>2</a></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("choice_XSDChoiceRecord8_2 Element occurs more than the max allowed times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceRecord8_2' occurs more than the max allowed times");
 
     xmlStr = string `<Root><test><age>10</age><status><value1>Success</value1><value2>Fail</value2></status><salary>11.1</salary></test><a>2</a></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("choice_XSDChoiceRecord8_1 Element occurs more than the max allowed times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceRecord8_1' occurs more than the max allowed times");
 
     xmlStr = string `<Root><test><age>10</age></test><a>2</a></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("choice_XSDChoiceRecord8_2 Element occurs less than the min required times"));
+    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceRecord8_2' occurs less than the min required times");
 
     xmlStr = string `<Root><test><status><value1>Success</value1><value2>Fail</value2></status></test><a>2</a></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("choice_XSDChoiceRecord8_1 Element occurs less than the min required times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceRecord8_1' occurs less than the min required times");
 }
 
 type XSDChoiceRecord9 record {
@@ -507,12 +507,12 @@ function testXsdChoice9() returns error? {
     xmlStr = string `<Root><field1><c>1</c></field1><field1><c>1</c></field1></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("choice_XSDChoiceRecord9_1 Element occurs more than the max allowed times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceRecord9_1' occurs more than the max allowed times");
 
     xmlStr = string `<Root><field1><b>1</b><c>1</c></field1></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("value1 Element occurs more than the max allowed times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'value1' occurs more than the max allowed times");
 }
 
 type XSDChoiceRecord10 record {
@@ -616,15 +616,15 @@ function testXsdChoice10() returns error? {
     xmlStr = string `<Root><field1><a>1</a></field1><field2><d>1</d></field2><field5><d>2</d></field5></Root>`;
     v2 = parseString(xmlStr); 
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("choice_XSDChoiceRecord10_1 Element occurs more than the max allowed times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceRecord10_1' occurs more than the max allowed times");
 
     xmlStr = string `<Root><field1><a>1</a></field1><field5><d>2</d></field5><field6><h>2</h></field6></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("choice_XSDChoiceRecord10_2 Element occurs more than the max allowed times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceRecord10_2' occurs more than the max allowed times");
 
     xmlStr = string `<Root><field2><d>1</d><e>1</e></field2><field5><d>2</d></field5></Root>`;
     v2 = parseString(xmlStr);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("value2 Element occurs more than the max allowed times"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "'value2' occurs more than the max allowed times");
 }

@@ -495,8 +495,6 @@ public class XmlParser {
     }
 
     private void validateRequiredFields(XmlParserData xmlParserData) {
-        // TODO: Validate Sequence and Choice Fields
-
         Map<QualifiedName, Field> remainingFields = xmlParserData.fieldHierarchy.peek().getMembers();
         for (Field field : remainingFields.values()) {
             if (SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.REQUIRED)) {
@@ -514,7 +512,6 @@ public class XmlParser {
 
     private void readElement(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
         QualifiedName elemQName = getElementName(xmlStreamReader, xmlParserData.useSemanticEquality);
-        // TODO: Check + 1, when seq present
         updateElementOccurrence(xmlParserData, elemQName);
         validateModelGroupStack(xmlParserData, elemQName, true);
 
@@ -593,7 +590,6 @@ public class XmlParser {
                HashMap<String, ModelGroupInfo> modelGroupInfo, XMLStreamReader xmlStreamReader,
                XmlParserData xmlParserData, QualifiedNameMap<Field> visitedFields, QualifiedNameMap<Field> fieldMap) {
         if (modelGroupInfo != null) {
-            // TODO: Optimize this with stream.findFirst()
             for (Map.Entry<String, ModelGroupInfo> entry : modelGroupInfo.entrySet()) {
                 ModelGroupInfo modelGroupValue = entry.getValue();
                 String key = entry.getKey();
@@ -647,7 +643,7 @@ public class XmlParser {
                 return;
             }
         }
-        throw new RuntimeException("Not implemented");
+        throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_XSD_ANNOTATION, fieldName, fieldType);
     }
 
     private void initializeNextValueBasedOnExpectedType(String fieldName, Type fieldType, Object temp,

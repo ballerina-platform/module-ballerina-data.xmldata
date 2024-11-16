@@ -72,17 +72,14 @@ public class XsdUtils {
         } else if (fieldType instanceof ArrayType arrayType) {
             Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
             if (elementType instanceof RecordType recType) {
-                //TODO: Define a separate function
                 parserData.xsdModelGroupInfo.peek().put(fieldName,
                         new SequenceInfo(fieldName,
                                 fieldAnnotationValue, recType, parserData.xmlElementInfo));
             } else {
-                throw new RuntimeException("Cannot include Sequence annotation into "
-                        + fieldName + " of type " + fieldType);
+                throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_SEQUENCE_ANNOTATION, fieldName, fieldType);
             }
         } else {
-            throw new RuntimeException("Cannot include Sequence annotation into "
-                    + fieldName + " of type " + fieldType);
+            throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_SEQUENCE_ANNOTATION, fieldName, fieldType);
         }
     }
 
@@ -95,8 +92,7 @@ public class XsdUtils {
             parserData.xsdModelGroupInfo.peek().put(fieldName,
                     new ChoiceInfo(fieldName, fieldAnnotationValue, recType, parserData.xmlElementInfo));
         } else {
-            throw new RuntimeException("Cannot include Sequence annotation into "
-                    + fieldName + " of type " + fieldType);
+            throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_CHOICE_ANNOTATION, fieldName, fieldType);
         }
     }
 

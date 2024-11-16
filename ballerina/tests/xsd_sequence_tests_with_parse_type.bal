@@ -35,32 +35,22 @@ function testXsdSequenceWithXmlValue() returns error? {
     xmlValue = xml `<Root><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    // TODO: Change error messageas
-    // test:assertTrue((<Error>v).message().includes("Element age not found in"), msg = (<Error>v).message());
-    test:assertTrue((<Error>v).message().includes("Element salary is not in the correct order in seq_XSDSequenceRecordWithXmlValue"), msg = (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "Element 'salary' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValue'");
 
     xmlValue = xml `<Root><age>13</age></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("Element salary not found in seq_XSDSequenceRecordWithXmlValue"), msg = (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "Element(s) 'salary' is not found in 'seq_XSDSequenceRecordWithXmlValue'");
 
     xmlValue = xml `<Root></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-
-    // TODO: Change the error message in validate Fields function
-    test:assertTrue((<Error>v).message().includes("required field 'seq_XSDSequenceRecordWithXmlValue' not present in XML"), msg = (<Error>v).message());
+    test:assertEquals((<Error>v).message(), ("required field 'seq_XSDSequenceRecordWithXmlValue' not present in XML"), msg = (<Error>v).message());
 
     xmlValue = xml `<Root><salary>11.1</salary><age>13</age></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("Element salary is not in the correct order in seq_XSDSequenceRecordWithXmlValue"), msg = (<Error>v).message());
-
-    // TODO: Create an issue
-    // xmlValue = xml `<Root><salary><age>13</age></salary></Root>`;
-    // v = parseAsType(xmlValue);
-    // test:assertTrue(v is Error);
-    // test:assertTrue((<Error>v).message().includes("Element age is not in the correct order in"), msg = (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "Element 'salary' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValue'");
 }
 
 @Name {
@@ -117,27 +107,27 @@ function testXsdSequenceWithXmlValueP2() returns error? {
     xmlValue = xml `<Root><age>13</age><name>ABC</name><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("Element name is not in the correct order in"), msg = (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "Element 'name' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValueP2'");
 
     xmlValue = xml `<Root><age>13</age><age>13</age><name>ABC</name><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("Element name is not in the correct order in"), msg = (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "Element 'name' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValueP2'");
 
     xmlValue = xml `<Root><age>13</age><salary>11.1</salary><name>ABC</name><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("Element salary is not in the correct order in"), msg = (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "Element 'salary' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValueP2'");
 
     xmlValue = xml `<Root><age>13</age><age>13</age><age>13</age><age>13</age><salary>11.1</salary><name>ABC</name><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("age Element occurs more than the max allowed times"), msg = (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'age' occurs more than the max allowed times");
 
     xmlValue = xml `<Root><salary>11.1</salary><name>ABC</name><age>13</age></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("Element salary is not in the correct order in"), msg = (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "Element 'salary' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValueP2'");
 
     xmlValue = xml `<Root><age>13</age><age>13</age><age>13</age><salary>11.1</salary><name>ABC</name><name>ABC</name></Root>`;
     v = parseAsType(xmlValue);
@@ -146,15 +136,14 @@ function testXsdSequenceWithXmlValueP2() returns error? {
     xmlValue = xml `<Root><age>13</age><age>13</age><age>13</age><salary>11.1</salary><name>ABC</name><name>ABC</name><name>ABC</name></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("name Element occurs more than the max allowed"), msg = (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'name' occurs more than the max allowed times");
 
     xmlValue = xml `<Root><age>13</age><age>13</age><salary>11.1</salary><name>ABC</name><age>13</age></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("Element salary, name not found in seq_XSDSequenceRecordWithXmlValueP2"), msg = (<Error>v).message());
+    test:assertEquals((<Error>v).message(), ("Element(s) 'salary, name' is not found in 'seq_XSDSequenceRecordWithXmlValueP2'"), msg = (<Error>v).message());
 }
 
-// TODO: Test with open records.
 @Name {
     value: "Root"
 }
@@ -164,8 +153,6 @@ type XSDSequenceRecordWithXmlValue2 record {|
         maxOccurs: 1
     }
     Seq_XSDSequenceRecordWithXmlValue2 seq_XSDSequenceRecordWithXmlValue2;
-
-    // TODO: After adding XSD validation for traverse, check union fields as well
     int num;
 |};
 
@@ -202,7 +189,7 @@ function testXsdSequenceWithXmlValue2() returns error? {
     xmlValue = xml `<Root><age>13</age><num>3</num><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("Element salary not found in"));
+    test:assertEquals((<Error>v).message(), "Element(s) 'salary' is not found in 'seq_XSDSequenceRecordWithXmlValue2'");
 }
 
 @Name {
@@ -214,8 +201,7 @@ type XSDSequenceRecordWithXmlValue3 record {|
         maxOccurs: 1
     }
     Seq_XSDSequenceRecordWithXmlValue3 seq_XSDSequenceRecordWithXmlValue3;
-    
-    // TODO: After adding XSD validation for traverse, check union fields as well
+
     record{int n;} num;
 |};
 
@@ -252,7 +238,7 @@ function testXsdSequenceWithXmlValue3() returns error? {
     xmlValue = xml `<Root><age>13</age><num><n>3</n></num><salary>11.1</salary></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element salary not found in"));
+    test:assertEquals((<Error>v2).message(), "Element(s) 'salary' is not found in 'seq_XSDSequenceRecordWithXmlValue3'");
 }
 
 @Name {
@@ -300,7 +286,7 @@ function testXsdSequenceWithXmlValue4() returns error? {
     xmlValue = xml `<Root><age>13</age><num><n><n>3</n></n></num><salary>11.1</salary></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element salary not found in"));
+    test:assertEquals((<Error>v2).message(), "Element(s) 'salary' is not found in 'seq_XSDSequenceRecordWithXmlValue4'");
 }
 
 @Name {
@@ -360,7 +346,7 @@ function testXsdSequenceWithXmlValue5() returns error? {
     xmlValue = xml `<Root><age>13</age><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element(s) 'salary' is not found in 'seq_XSDSequenceRecordWithXmlValue5'");
 }
 
 @Name {
@@ -454,32 +440,32 @@ function testXsdSequenceWithXmlValue6() returns error? {
     xmlValue = xml `<Root><name>SD</name><age>13</age><status>success</status><salary>11.1</salary></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element status not found in"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element(s) 'status' is not found in 'seq_XSDSequenceRecordWithXmlValue6_2'");
 
     xmlValue = xml `<Root><age>13</age><status>success</status><salary>11.1</salary><name>SD</name></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element(s) 'salary' is not found in 'seq_XSDSequenceRecordWithXmlValue6_1'");
 
     xmlValue = xml `<Root><status>success</status><name>SD</name><age>13</age><salary>11.1</salary><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element status is not in the correct order in"), msg = (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element 'status' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValue6_2'");
 
     xmlValue = xml `<Root><name>SD</name><status>success</status><salary>11.1</salary><age>13</age><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element salary is not in the correct order in"), msg = (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element 'salary' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValue6_1'");
 
     xmlValue = xml `<Root><name>SD</name><status>success</status><salary>11.1</salary><num><n><n>3</n></n></num><age>13</age><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element salary is not in the correct order in"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element 'salary' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValue6_1'");
 
     xmlValue = xml `<Root><name>SD</name><status>success</status><age>11</age><num><n><n>3</n></n></num><salary>13.1</salary><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element(s) 'salary' is not found in 'seq_XSDSequenceRecordWithXmlValue6_1'");
 }
 
 @Name {
@@ -682,12 +668,12 @@ function testXsdSequenceWithXmlValue9() returns error? {
     xmlValue = xml `<Root><test><name>SD</name><age>13</age><status>success</status><salary>11.1</salary></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element status not found in"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element(s) 'status' is not found in 'seq_XSDSequenceRecordWithXmlValue9_2'");
 
     xmlValue = xml `<Root><test><age>13</age><status>success</status><salary>11.1</salary><name>SD</name></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element(s) 'salary' is not found in 'seq_XSDSequenceRecordWithXmlValue9_1'");
 }
 
 @Name {
@@ -782,12 +768,12 @@ function testXsdSequenceWithXmlValue10() returns error? {
     xmlValue = xml `<Root><test><name><value1>SD</value1><value2>AB</value2></name><age>13</age><status><value1>Success</value1><value2>Fail</value2></status><salary>11.1</salary></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element status not found in"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element(s) 'status' is not found in 'seq_XSDSequenceRecordWithXmlValue10_2'");
 
     xmlValue = xml `<Root><test><age>13</age><status><value1>Success</value1><value2>Fail</value2></status><salary>11.1</salary><name><value1>SD</value1><value2>AB</value2></name></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element(s) 'salary' is not found in 'seq_XSDSequenceRecordWithXmlValue10_1'");
 }
 
 @Name {
@@ -888,7 +874,7 @@ function testXsdSequenceWithXmlValue11() returns error? {
     xmlValue = xml `<Root><test2><num><n><n>3</n></n></num><name><value1>SD</value1><value2>AB</value2></name><status><value1>Success</value1><value2>Fail</value2></status><num2><n><n>3</n></n></num2><age>13</age><salary>11.1</salary></test2><test><age>13</age><status><value1>Success</value1><value2>Fail</value2></status><salary>11.1</salary><name><value1>SD</value1><value2>AB</value2></name></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element salary not found in"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element(s) 'salary' is not found in 'seq_XSDSequenceRecordWithXmlValue11_1'");
 }
 
 @Name {
@@ -974,26 +960,25 @@ function testXsdSequenceWithXmlValue13() returns error? {
     xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><g>1</g><h>2</h><i>3</i><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element field6 not found in"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element(s) 'field6' is not found in 'seq_XSDSequenceRecordWithXmlValue13_2'");
 
     xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><g>1</g><h>2</h><i>3</i><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element f not found in"), (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element(s) 'f' is not found in 'value2'");
 
     xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><i>3</i><h>2</h></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element i is not in the correct order in"), msg = (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element 'i' is not in the correct order in 'value3'");
 
     xmlValue = xml `<Root><field1><a>1</a><c>3</c><b>2</b></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertTrue((<Error>v2).message().includes("Element c is not in the correct order in"), msg = (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), "Element 'c' is not in the correct order in 'value1'");
 
     xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field5><d>1</d><e>2</e><f>3</f></field5><field4><a>1</a><b>2</b><c>3</c></field4><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    // TODO: Fix the error message
-    test:assertTrue((<Error>v2).message().includes("Element field5 is not in the correct order in seq_XSDSequenceRecordWithXmlValue13_2"), msg = (<Error>v2).message());
+    test:assertEquals((<Error>v2).message(), ("Element 'field5' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValue13_2'"), msg = (<Error>v2).message());
 }

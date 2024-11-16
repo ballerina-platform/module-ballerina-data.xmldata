@@ -48,7 +48,7 @@ function testXsdElementWithXmlValue2() returns error? {
     xmlStr = xml `<Root><name>John</name></Root>`;
     rec = parseAsType(xmlStr);
     test:assertTrue(rec is error);
-    test:assertTrue((<Error>rec).message().includes("age Element occurs less than the min required times"));
+    test:assertEquals((<Error>rec).message(), "'age' occurs less than the min required times");
 
     xmlStr = xml `<Root><age>25</age></Root>`;
     rec = parseAsType(xmlStr);
@@ -57,22 +57,22 @@ function testXsdElementWithXmlValue2() returns error? {
     xmlStr = xml `<Root><age>11</age><age>12</age><age>13</age><age>14</age><age>15</age></Root>`;
     rec = parseAsType(xmlStr);
     test:assertTrue(rec is error);
-    test:assertTrue((<Error>rec).message().includes("age Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
 
     xmlStr = xml `<Root><age>11</age><name>Abc</name><age>12</age><age>13</age><age>14</age><age>15</age></Root>`;
     rec = parseAsType(xmlStr);
     test:assertTrue(rec is error);
-    test:assertTrue((<Error>rec).message().includes("age Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
 
     xmlStr = xml `<Root><name>Abc</name><name>Abc</name><name>Abc</name><name>Abc</name><name>Abc</name><age>11</age><age>12</age><age>13</age><age>14</age><age>15</age></Root>`;
     rec = parseAsType(xmlStr);
     test:assertTrue(rec is error);
-    test:assertTrue((<Error>rec).message().includes("age Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
 
     xmlStr = xml `<Root><age>11</age><name>Abc</name><name>Abc</name><age>12</age><name>Abc</name><age>13<name>Abc</name></age><age>14</age><age>15</age></Root>`;
     rec = parseAsType(xmlStr);
     test:assertTrue(rec is error);
-    test:assertTrue((<Error>rec).message().includes("age Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
 }
 
 type ElementRecordWithXmlValue3 record {
@@ -115,7 +115,7 @@ function testXsdElementWithXmlValue3() returns error? {
     xmlStr = xml `<Root><user><name>John</name><id>1</id><id>2</id></user><status>3</status></Root>`;
     rec = parseAsType(xmlStr);
     test:assertTrue(rec is error);
-    test:assertTrue((<Error>rec).message().includes("age Element occurs less than the min required times"), (<Error>rec).message());
+    test:assertEquals((<Error>rec).message(), "'age' occurs less than the min required times");
 
     xmlStr = xml `<Root><user><id>1</id><id>2</id><age>35</age></user><status>3</status></Root>`;
     rec = parseAsType(xmlStr);
@@ -124,22 +124,22 @@ function testXsdElementWithXmlValue3() returns error? {
     xmlStr = xml `<Root><user><id>1</id><id>2</id><age>11</age><age>13</age><age>13</age><age>14</age><age>15</age></user><status>3</status></Root>`;
     rec = parseAsType(xmlStr);
     test:assertTrue(rec is error);
-    test:assertTrue((<Error>rec).message().includes("age Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
 
     xmlStr = xml `<Root><user><id>1</id><id>2</id><age>11</age><name>Abc</name><age>13</age><age>13</age><age>14</age><age>15</age></user><status>3</status></Root>`;
     rec = parseAsType(xmlStr);
     test:assertTrue(rec is error);
-    test:assertTrue((<Error>rec).message().includes("age Element occurs more than the max allowed times"), (<Error>rec).message());
+    test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
 
     xmlStr = xml `<Root><user><id>1</id><id>2</id><name>Abc</name><name>Abc</name><name>Abc</name><name>Abc</name><name>Abc</name><age>11</age><age>13</age><age>13</age><age>14</age><age>15</age></user><status>3</status></Root>`;
     rec = parseAsType(xmlStr);
     test:assertTrue(rec is error);
-    test:assertTrue((<Error>rec).message().includes("age Element occurs more than the max allowed times"), (<Error>rec).message());
+    test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
 
     xmlStr = xml `<Root><user><id>1</id><id>2</id><age>11</age><name>Abc</name><name>Abc</name><age>13</age><name>Abc</name><age>13<name>Abc</name></age><age>14</age><age>15</age></user><status>3</status></Root>`;
     rec = parseAsType(xmlStr);
     test:assertTrue(rec is error);
-    test:assertTrue((<Error>rec).message().includes("age Element occurs more than the max allowed times"), (<Error>rec).message());
+    test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
 }
 
 type ElementRecordWithXmlValue4 record {
@@ -187,20 +187,20 @@ function testXsdElementWithXmlValue4() returns error? {
     xmlStr = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><status>4</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
     rec = parseAsType(xmlStr);
     test:assertTrue(rec is error);
-    test:assertTrue((<Error>rec).message().includes("name Element occurs less than the min required times"));
+    test:assertEquals((<Error>rec).message(), "'name' occurs less than the min required times");
 
     xmlStr = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><status>4</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
     rec = parseAsType(xmlStr);
     test:assertTrue(rec is error);
-    test:assertTrue((<Error>rec).message().includes("name Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>rec).message(), "'name' occurs more than the max allowed times");
 
     xmlStr = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName><lastName>Brown</lastName><lastName>Brown</lastName><lastName>Brown</lastName><lastName>Brown</lastName><lastName>Brown</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><status>4</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
     rec = parseAsType(xmlStr);
     test:assertTrue(rec is error);
-    test:assertTrue((<Error>rec).message().includes("lastName Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>rec).message(), "'lastName' occurs more than the max allowed times");
 
     xmlStr = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
     rec = parseAsType(xmlStr);
     test:assertTrue(rec is error);
-    test:assertTrue((<Error>rec).message().includes("firstName Element occurs more than the max allowed times"), (<Error>rec).message());
+    test:assertEquals((<Error>rec).message(), "'firstName' occurs more than the max allowed times");
 }

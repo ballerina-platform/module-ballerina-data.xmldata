@@ -53,7 +53,7 @@ function testXsdChoiceWithElementAnnotation() returns error? {
     xmlStr = string `<Root><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs more than the max allowed times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs more than the max allowed times");
 
     xmlStr = string `<Root><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseString(xmlStr);
@@ -62,12 +62,12 @@ function testXsdChoiceWithElementAnnotation() returns error? {
     xmlStr = string `<Root><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs more than the max allowed times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs more than the max allowed times");
 
     xmlStr = string `<Root><EA3>AB</EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA1>ABC</EA1><EA1>ABC</EA1></Root>`;
     v = parseString(xmlStr);
@@ -80,22 +80,22 @@ function testXsdChoiceWithElementAnnotation() returns error? {
     xmlStr = string `<Root><EA2>ABC</EA2><EA3>AB</EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA3>AB</EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA1>ABC</EA1><EA1>ABC</EA1><EA1>ABC</EA1></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA1 Element occurs more than the max allowed times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA1' occurs more than the max allowed times");
 
     xmlStr = string `<Root><EA1>ABC</EA1><EA1>ABC</EA1><EA3>ABC</EA3><EA3>ABC</EA3><EA3>ABC</EA3></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("seq_EA1 Element occurs more than the max allowed times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'seq_EA1' occurs more than the max allowed times");
 }
 
 type XsdChoiceWithElementAnnotation2 record {
@@ -145,12 +145,12 @@ function testXsdChoiceWithElementAnnotation2() returns error? {
     xmlStr = string `<Root><EA><EA1>ABC</EA1><EA2>ABC</EA2></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
     
     xmlStr = string `<Root><EA><EA1>ABC</EA1><EA2>ABC</EA2><EA3>AB</EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required times"), (<Error>v).message());
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA><EA1>ABC</EA1><EA2>ABC</EA2><EA3>AB</EA3><EA3>CD</EA3></EA></Root>`;
     v = parseString(xmlStr);    
@@ -171,7 +171,7 @@ function testXsdChoiceWithElementAnnotation2() returns error? {
     xmlStr = string `<Root><EA><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs more than the max allowed times"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs more than the max allowed times");
 
     xmlStr = string `<Root><EA><EA1>ABC</EA1><EA3>AB</EA3><EA3>AB</EA3></EA></Root>`;
     v = parseString(xmlStr);
@@ -180,27 +180,27 @@ function testXsdChoiceWithElementAnnotation2() returns error? {
     xmlStr = string `<Root><EA><EA1>ABC</EA1><EA2>ABC</EA2><EA3>CD</EA3></EA></Root>`;
     v = parseString(xmlStr);    
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA><EA2>ABC</EA2><EA3>AB</EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA><EA2>ABC</EA2><EA3>AB</EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA><EA3>AB</EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 
     xmlStr = string `<Root><EA><EA1>ABC</EA1><EA3>AB</EA3></EA></Root>`;
     v = parseString(xmlStr);
     test:assertTrue(v is Error);
-    test:assertTrue((<Error>v).message().includes("EA3 Element occurs less than the min required"));
+    test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 }
 
 type XsdChoiceWithElementAnnotation3 record {

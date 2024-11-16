@@ -2,6 +2,8 @@ package io.ballerina.lib.data.xmldata.xml.xsd;
 
 import io.ballerina.lib.data.xmldata.utils.Constants;
 import io.ballerina.lib.data.xmldata.utils.DataUtils;
+import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
+import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
 import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
@@ -55,7 +57,7 @@ public class ChoiceInfo implements ModelGroupInfo {
     public void updateOccurrences() {
         this.occurrences++;
         if (occurrences > maxOccurs) {
-            throw new RuntimeException(fieldName + " Element occurs more than the max allowed times");
+            throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_MORE_THAN_MAX_ALLOWED_TIMES, fieldName);
         }
     }
 
@@ -118,6 +120,7 @@ public class ChoiceInfo implements ModelGroupInfo {
                 this.visitedElements.add(element);
                 updateOccurrences();
             }
+
             if (remainingElementCount.get(element) == 0) {
                 remainingElementCount.putAll(maxElementCount);
                 visitedElements.remove(element);
@@ -125,7 +128,7 @@ public class ChoiceInfo implements ModelGroupInfo {
             return;
         }
 
-        throw new RuntimeException("Unexpected element " + xmlElementNameMap.get(element) + " found in " + fieldName);
+        throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_ELEMENT_FOUND, xmlElementNameMap.get(element), fieldName);
     }
 
     @Override
@@ -146,7 +149,7 @@ public class ChoiceInfo implements ModelGroupInfo {
 
     public void validateMinOccurrences() {
         if (this.occurrences < this.minOccurs) {
-            throw new RuntimeException(fieldName + " Element occurs less than the min required times");
+            throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_LESS_THAN_MIN_REQUIRED_TIMES, fieldName);
         }
     }
 
