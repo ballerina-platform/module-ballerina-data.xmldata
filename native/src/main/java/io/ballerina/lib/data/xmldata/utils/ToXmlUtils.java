@@ -209,7 +209,6 @@ public class ToXmlUtils {
 
 
     private static Type getChildElementType(Type type, String recordKey) {
-
         try {
             if (type instanceof ArrayType arrayType) {
                 return TypeUtils.getReferredType(arrayType.getElementType());
