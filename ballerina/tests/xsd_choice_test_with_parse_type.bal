@@ -1,5 +1,8 @@
 import ballerina/test;
 
+@Name {
+    value: "Root"
+}
 type XSDChoiceWithXmlValueRecord record {|
     @Choice {
         minOccurs: 1,
@@ -21,10 +24,12 @@ function testXsdChoiceWithXmlValue() returns error? {
     xmlValue = xml `<Root><age>10</age></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XSDChoiceWithXmlValueRecord: {age: 10}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><salary>10.5</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XSDChoiceWithXmlValueRecord: {salary: 10.5}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><age>10</age><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
@@ -42,6 +47,9 @@ function testXsdChoiceWithXmlValue() returns error? {
     test:assertEquals((<Error>v).message(), "'choice_XSDChoiceWithXmlValueRecord' occurs less than the min required times");
 }
 
+@Name {
+    value: "Root"
+}
 type XSDChoiceWithXmlValueRecordP2 record {|
     @Choice {
         minOccurs: 1,
@@ -64,6 +72,9 @@ type Choice_XSDChoiceWithXmlValueRecordP2 record {|
     string[] name?;
 |};
 
+@Name {
+    value: "Root"
+}
 type XSDChoiceWithXmlValueP1Record record {|
     @Choice {
         minOccurs: 0,
@@ -85,10 +96,12 @@ function testXsdChoiceWithXmlValueP1() returns error? {
     xmlValue = xml `<Root><age>10</age></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XSDChoiceWithXmlValueP1Record: {age: 10}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><salary>10.5</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XSDChoiceWithXmlValueP1Record: {salary: 10.5}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><age>10</age><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
@@ -110,14 +123,17 @@ function testXsdChoiceWithXmlValueP2() returns error? {
     xml xmlValue = xml `<Root><age>10</age></Root>`;
     XSDChoiceWithXmlValueRecordP2|Error v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XSDChoiceWithXmlValueRecordP2: {age: [10]}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><name>ABC</name></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XSDChoiceWithXmlValueRecordP2: {name: ["ABC"]}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XSDChoiceWithXmlValueRecordP2: {salary: 11.1}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><age>10</age><age>10</age><age>10</age><salary>11.1</salary><name>ABC</name></Root>`;
     v = parseAsType(xmlValue);
@@ -130,6 +146,9 @@ function testXsdChoiceWithXmlValueP2() returns error? {
     test:assertEquals((<Error>v).message(), "'choice_XSDChoiceWithXmlValueRecordP2' occurs more than the max allowed times");
 }
 
+@Name {
+    value: "Root"
+}
 type XSDChoiceWithXmlValueRecord2 record {|
     @Choice {
         minOccurs: 1,
@@ -152,12 +171,14 @@ function testXsdChoiceWithXmlValue2() returns error? {
     test:assertEquals(v, {choice_XSDChoiceWithXmlValueRecord2: {age: 10}, num: 3});
     test:assertEquals((check v).choice_XSDChoiceWithXmlValueRecord2.age, 10);
     test:assertEquals((check v).num, 3);
+    test:assertEquals(toXml(check v), xml `<Root><age>10</age><num>3</num></Root>`);
 
     xmlValue = xml `<Root><salary>11.1</salary><num>3</num></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XSDChoiceWithXmlValueRecord2: {salary: 11.1}, num: 3});
     test:assertEquals((check v).choice_XSDChoiceWithXmlValueRecord2.salary, 11.1);
     test:assertEquals((check v).num, 3);
+    test:assertEquals(toXml(check v), xml `<Root><salary>11.1</salary><num>3</num></Root>`);
 
     xmlValue = xml `<Root><salary>11.1</salary><age>10</age><num>3</num></Root>`;
     v = parseAsType(xmlValue);
@@ -170,6 +191,9 @@ function testXsdChoiceWithXmlValue2() returns error? {
     test:assertEquals((<Error>v).message(), "'choice_XSDChoiceWithXmlValueRecord2' occurs more than the max allowed times");
 }
 
+@Name {
+    value: "Root"
+}
 type XSDChoiceWithXmlValueRecord3 record {|
     @Choice {
         minOccurs: 1,
@@ -192,10 +216,12 @@ function testXsdChoiceWithXmlValue3() returns error? {
     test:assertEquals(v2, {choice_XSDChoiceWithXmlValueRecord3: {age: 10}, num: {n: 3}});
     test:assertEquals((check v2).choice_XSDChoiceWithXmlValueRecord3.age, 10);
     test:assertEquals((check v2).num, {n: 3});
+    test:assertEquals(toXml(check v2), xml `<Root><age>10</age><num><n>3</n></num></Root>`);
 
     xmlValue = xml `<Root><salary>11.1</salary><num><n>3</n></num></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {choice_XSDChoiceWithXmlValueRecord3: {salary: 11.1}, num: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><salary>11.1</salary><num><n>3</n></num></Root>`);
 
     xmlValue = xml `<Root><age>10</age><num><n>3</n></num><salary>11.1</salary></Root>`;
     v2 = parseAsType(xmlValue);
@@ -208,6 +234,9 @@ function testXsdChoiceWithXmlValue3() returns error? {
     test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceWithXmlValueRecord3' occurs more than the max allowed times");
 }
 
+@Name {
+    value: "Root"
+}
 type XSDChoiceWithXmlValueRecord4 record {|
     record{record {int n;} n;} num;
     @Choice {
@@ -229,10 +258,12 @@ function testXsdChoiceWithXmlValue4() returns error? {
     test:assertEquals(v2, {choice_XSDChoiceWithXmlValueRecord4: {age: 10}, num: {n: {n: 3}}});
     test:assertEquals((check v2).choice_XSDChoiceWithXmlValueRecord4.age, 10);
     test:assertEquals((check v2).num, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xmlValue);
 
     xmlValue = xml `<Root><salary>11.1</salary><num><n><n>3</n></n></num></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {choice_XSDChoiceWithXmlValueRecord4: {salary: 11.1}, num: {n: {n: 3}}});
+    test:assertEquals(toXml(check v2), xml `<Root><num><n><n>3</n></n></num><salary>11.1</salary></Root>`);
 
     xmlValue = xml `<Root><age>10</age><num><n><n>3</n></n></num><salary>11.1</salary></Root>`;
     v2 = parseAsType(xmlValue);
@@ -245,6 +276,9 @@ function testXsdChoiceWithXmlValue4() returns error? {
     test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceWithXmlValueRecord4' occurs more than the max allowed times");
 }
 
+@Name {
+    value: "Root"
+}
 type XSDChoiceWithXmlValueRecord5 record {|
     record{record {int n;} n;} num;
     @Choice {
@@ -265,14 +299,17 @@ function testXsdChoiceWithXmlValue5() returns error? {
     xml xmlValue = xml `<Root><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2><age>10</age></Root>`;
     XSDChoiceWithXmlValueRecord5|Error v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {choice_XSDChoiceWithXmlValueRecord5: {age: 10}, num: {n: {n: 3}}, num2: {n: {n: 3}}});
+    test:assertEquals(toXml(check v2), xml `<Root><num><n><n>3</n></n></num><age>10</age><num2><n><n>3</n></n></num2></Root>`);
 
     xmlValue = xml `<Root><num2><n><n>3</n></n></num2><salary>11.1</salary><num><n><n>3</n></n></num></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {choice_XSDChoiceWithXmlValueRecord5: {salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}});
+    test:assertEquals(toXml(check v2), xml `<Root><num><n><n>3</n></n></num><salary>11.1</salary><num2><n><n>3</n></n></num2></Root>`);
 
     xmlValue = xml `<Root><salary>11.1</salary><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {choice_XSDChoiceWithXmlValueRecord5: {salary: 11.1}, num: {n: {n: 3}}, num2: {n: {n: 3}}});
+    test:assertEquals(toXml(check v2), xml `<Root><num><n><n>3</n></n></num><salary>11.1</salary><num2><n><n>3</n></n></num2></Root>`);
 
     xmlValue = xml `<Root><age>10</age><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2><salary>11.1</salary></Root>`;
     v2 = parseAsType(xmlValue);
@@ -285,6 +322,9 @@ function testXsdChoiceWithXmlValue5() returns error? {
     test:assertEquals((<Error>v2).message(), "required field 'choice_XSDChoiceWithXmlValueRecord5' not present in XML");
 }
 
+@Name {
+    value: "Root"
+}
 type XSDChoiceWithXmlValueRecord6 record {|
     record{record {int n;} n;} num;
     @Choice {
@@ -319,6 +359,7 @@ function testXsdChoiceWithXmlValue6() returns error? {
     test:assertEquals((check v2).choice_XSDChoiceWithXmlValueRecord6_2.status, "success");
     test:assertEquals((check v2).num, {n: {n: 3}});
     test:assertEquals((check v2).num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><num><n><n>3</n></n></num><age>10</age><status>success</status><num2><n><n>3</n></n></num2></Root>`);
 
     xmlValue = xml `<Root><name>SD</name><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2></Root>`;
     v2 = parseAsType(xmlValue);
@@ -336,6 +377,9 @@ function testXsdChoiceWithXmlValue6() returns error? {
     test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceWithXmlValueRecord6_2' occurs more than the max allowed times");
 }
 
+@Name {
+    value: "Root"
+}
 type XSDChoiceWithXmlValueRecord7 record {|
     @Choice {
         minOccurs: 1,
@@ -364,8 +408,12 @@ function testXsdChoiceWithXmlValue7() returns error? {
     xml xmlValue = xml `<Root><status>success</status><salary>11.1</salary></Root>`;
     XSDChoiceWithXmlValueRecord7|Error v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {choice_XSDChoiceWithXmlValueRecord7_1: {salary: 11.1}, choice_XSDChoiceWithXmlValueRecord7_2: {status: "success"}});
+    test:assertEquals(toXml(check v2), xml `<Root><salary>11.1</salary><status>success</status></Root>`);
 }
 
+@Name {
+    value: "Root"
+}
 type XSDChoiceWithXmlValueRecord8 record {|
     XSDChoiceWithXmlValueRecord8P test;
     int a;
@@ -409,6 +457,7 @@ function testXsdChoiceWithXmlValue8() returns error? {
     test:assertEquals((check v2).test.choice_XSDChoiceWithXmlValueRecord8_2.name, {value1: "SD", value2: "AB"});
     test:assertEquals((check v2).test.num, {n: {n: 3}});
     test:assertEquals((check v2).test.num2, {n: {n: 3}});
+    test:assertEquals(toXml(check v2), xml `<Root><test><num><n><n>3</n></n></num><age>10</age><name><value1>SD</value1><value2>AB</value2></name><num2><n><n>3</n></n></num2></test><a>2</a></Root>`);
 
     xmlValue = xml `<Root><test><status><value1>Success</value1><value2>Fail</value2></status><num><n><n>3</n></n></num><num2><n><n>3</n></n></num2><salary>11.1</salary></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
@@ -442,6 +491,9 @@ function testXsdChoiceWithXmlValue8() returns error? {
     test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceWithXmlValueRecord8_1' occurs less than the min required times");
 }
 
+@Name {
+    value: "Root"
+}
 type XSDChoiceWithXmlValueRecord9 record {
     @Choice {
         minOccurs: 1,
@@ -464,10 +516,12 @@ function testXsdChoiceWithXmlValue9() returns error? {
     xmlValue = xml `<Root><field2><a>1</a></field2></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {choice_XSDChoiceWithXmlValueRecord9_1: {field2: {value2: {a: "1"}}}});
+    test:assertEquals(toXml(check v2), xmlValue);
 
     xmlValue = xml `<Root><field3><c>1</c></field3></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {choice_XSDChoiceWithXmlValueRecord9_1: {field3: {value3: {c: "1"}}}});
+    test:assertEquals(toXml(check v2), xmlValue);
 
     xmlValue = xml `<Root><field1><c>1</c></field1><field1><c>1</c></field1></Root>`;
     v2 = parseAsType(xmlValue);
@@ -480,6 +534,9 @@ function testXsdChoiceWithXmlValue9() returns error? {
     test:assertEquals((<Error>v2).message(), "'value1' occurs more than the max allowed times");
 }
 
+@Name {
+    value: "Root"
+}
 type XSDChoiceWithXmlValueRecord10 record {
     @Choice {
         minOccurs: 0,
@@ -511,6 +568,7 @@ function testXsdChoiceWithXmlValue10() returns error? {
     xml xmlValue = xml `<Root><field1><a>1</a></field1><field5><d>2</d></field5></Root>`;
     XSDChoiceWithXmlValueRecord10|Error v2 = parseAsType(xmlValue);
     test:assertEquals(v2, <XSDChoiceWithXmlValueRecord10>{choice_XSDChoiceWithXmlValueRecord10_1: {field1: {value1: {a: "1"}}}, choice_XSDChoiceWithXmlValueRecord10_2: {field5: {value2: {"d": "2"}}}});
+    test:assertEquals(toXml(check v2), xmlValue);
 
     xmlValue = xml `<Root><field1><a>1</a></field1><field2><d>1</d></field2><field5><d>2</d></field5></Root>`;
     v2 = parseAsType(xmlValue); 
