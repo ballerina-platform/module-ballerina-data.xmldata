@@ -1,5 +1,8 @@
 import ballerina/test;
 
+@Name {
+    value: "Root"
+}
 type XsdChoiceArrayWithXmlValue record {|
     @Choice {
         minOccurs: 1,
@@ -21,14 +24,17 @@ function testXsdChoiceArrayWithXmlValue() returns error? {
     xmlValue = xml `<Root><age>13</age><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XsdChoiceArrayWithXmlValue: {age: [13], salary: [11.1]}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><age>13</age><age>12</age></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XsdChoiceArrayWithXmlValue: {age: [13, 12]}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><salary>11.1</salary><salary>12.1</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XsdChoiceArrayWithXmlValue: {salary: [11.1, 12.1]}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><age>13</age><salary>11.1</salary><age>14</age><salary>14.1</salary><age>15</age><salary>15.1</salary></Root>`;
     v = parseAsType(xmlValue);
@@ -36,6 +42,9 @@ function testXsdChoiceArrayWithXmlValue() returns error? {
     test:assertEquals((<Error>v).message(), "'choice_XsdChoiceArrayWithXmlValue' occurs more than the max allowed times");
 }
 
+@Name {
+    value: "Root"
+}
 type XsdChoiceArrayWithXmlValue2 record {|
     @Choice {
         minOccurs: 1,
@@ -68,14 +77,17 @@ function testXsdChoiceArrayWithXmlValue2() returns error? {
     xmlValue = xml `<Root><age>13</age><salary>11.1</salary><age2>13</age2><salary2>11.1</salary2></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XsdChoiceArrayWithXmlValue2: {age: [13], salary: [11.1]}, choice_XsdChoiceArrayWithXmlValue2_2: {age2: [13], salary2: [11.1]}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><age>13</age><age>13</age><age2>13</age2><age2>13</age2></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XsdChoiceArrayWithXmlValue2: {age: [13, 13]}, choice_XsdChoiceArrayWithXmlValue2_2: {age2: [13, 13]}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><age>13</age><age>13</age><age2>13</age2><salary2>11.1</salary2></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XsdChoiceArrayWithXmlValue2: {age: [13, 13]}, choice_XsdChoiceArrayWithXmlValue2_2: {age2: [13], salary2: [11.1]}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><age>13</age><age>13</age><age2>13</age2><salary2>11.1</salary2><age2>14</age2><age2>15</age2></Root>`;
     v = parseAsType(xmlValue);
@@ -97,6 +109,9 @@ function testXsdChoiceArrayWithXmlValue2() returns error? {
     test:assertEquals((<Error>v).message(), "required field 'choice_XsdChoiceArrayWithXmlValue2' not present in XML");
 }
 
+@Name {
+    value: "Root"
+}
 type XSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord13 record {
     @Choice {
         minOccurs: 1,
@@ -128,10 +143,12 @@ function testXSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord4() retur
     xml xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     XSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord13|Error v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {choice_XSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord13_1: {field1: [{value1: {a: ["1"], b:["2"], c: ["3"]}}],field2: [{value2: {d: ["1"], e: ["2"], f: ["3"]}}], field3: [{value3: {g: ["1"], h: ["2"], i: ["3"]}}]}, choice_XSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord13_2: {field4: [{value1: {a: ["1"], b: ["2"], c: ["3"]}}], field5: [{value2: {d: ["1"], e: ["2"], f:["3"]}}], field6: [{value3: {g: ["1"], h: ["2"], i: ["3"]}}]}});
+    test:assertEquals(toXml(check v2), xmlValue);
 
     xmlValue = xml `<Root><field1><b>2</b><b>2</b></field1><field1><a>1</a><b>2</b><c>3</c></field1><field3><h>2</h><i>3</i><i>3</i></field3><field5><d>1</d><e>2</e><f>3</f></field5><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {choice_XSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord13_1: {field1: [{value1: {b:["2", "2"]}}, {value1: {a: ["1"], b:["2"], c: ["3"]}}], field3: [{value3: {h: ["2"], i: ["3", "3"]}}]}, choice_XSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord13_2: {field5: [{value2: {d: ["1"], e: ["2"], f:["3"]}}, {value2: {d: ["1"], e: ["2"], f:["3"]}}], field6: [{value3: {g: ["1"], h: ["2"], i: ["3"]}}]}});
+    test:assertEquals(toXml(check v2), xmlValue);
 
     xmlValue = xml `<Root><field1><b>2</b><b>2</b></field1><field1><a>1</a><b>2</b><c>3</c></field1><field3><h>2</h><i>3</i><i>3</i></field3><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
@@ -144,6 +161,9 @@ function testXSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord4() retur
     test:assertEquals((<Error>v2).message(), "'value2' occurs less than the min required times");
 }
 
+@Name {
+    value: "Root"
+}
 type XsdChoiceArrayWithXmlValue5 record {|
     @Choice {
         minOccurs: 2,
@@ -165,10 +185,12 @@ function testXsdChoiceArrayWithXmlValue5() returns error? {
     xmlValue = xml `<Root><age>13</age><salary>11.1</salary><age>14</age></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XsdChoiceArrayWithXmlValue5: {age: [13, 14], salary: [11.1]}});
+    test:assertEquals(toXml(check v), xml `<Root><age>13</age><age>14</age><salary>11.1</salary></Root>`);
 
     xmlValue = xml `<Root><age>13</age><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {choice_XsdChoiceArrayWithXmlValue5: {age: [13], salary: [11.1]}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><age>13</age><salary>11.1</salary><age>14</age><salary>14.1</salary><age>15</age><salary>15.1</salary><age>15</age><salary>15.1</salary></Root>`;
     v = parseAsType(xmlValue);
@@ -181,6 +203,9 @@ function testXsdChoiceArrayWithXmlValue5() returns error? {
     test:assertEquals((<Error>v).message(), "'choice_XsdChoiceArrayWithXmlValue5' occurs less than the min required times");
 }
 
+@Name {
+    value: "Root"
+}
 type XSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord6 record {
     @Choice {
         minOccurs: 2,
@@ -210,4 +235,5 @@ function testXSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord6() retur
     xml xmlValue = xml `<Root><field1><a>1</a><a>1</a></field1><field2><d>1</d><d>1</d></field2><field1><a>1</a><a>1</a></field1><field2><d>1</d><d>1</d></field2><field4><a>1</a><a>1</a></field4><field5><d>1</d><d>1</d></field5><field4><a>1</a><a>1</a></field4><field5><d>1</d><d>1</d></field5></Root>`;
     XSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord6|Error v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {choice_XSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord6_1: {field1: [{value1: {a: ["1", "1"]}}, {value1: {a:["1", "1"]}}], field2: [{value2: {d: ["1", "1"]}}, {value2: {d: ["1", "1"]}}]}, choice_XSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord6_2: {field4: [{value1: {a: ["1", "1"]}}, {value1: {a:["1", "1"]}}], field5: [{value2: {d: ["1", "1"]}}, {value2: {d: ["1","1"]}}]}});
+    test:assertEquals(toXml(check v2), xml `<Root><field1><a>1</a><a>1</a></field1><field1><a>1</a><a>1</a></field1><field2><d>1</d><d>1</d></field2><field2><d>1</d><d>1</d></field2><field4><a>1</a><a>1</a></field4><field4><a>1</a><a>1</a></field4><field5><d>1</d><d>1</d></field5><field5><d>1</d><d>1</d></field5></Root>`);
 }

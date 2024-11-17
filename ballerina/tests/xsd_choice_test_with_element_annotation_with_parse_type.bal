@@ -1,5 +1,8 @@
 import ballerina/test;
 
+@Name {
+    value: "Root"
+}
 type XsdChoiceWithElementAnnotationWithXmlValue record {
     @Choice {
         minOccurs: 0,
@@ -16,6 +19,7 @@ function testXsdChoiceWithElementAnnotationWithXmlValue() returns error? {
     xmlValue = xml `<Root><EA1>ABC</EA1></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {seq_EA1: {EA1: ["ABC"]}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root></Root>`;
     v = parseAsType(xmlValue);
@@ -28,6 +32,8 @@ function testXsdChoiceWithElementAnnotationWithXmlValue() returns error? {
     xmlValue = xml `<Root><EA2>ABC</EA2></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {"seq_EA1":{"EA2": "ABC"}});
+    // TODO: Empty element
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
@@ -77,6 +83,9 @@ function testXsdChoiceWithElementAnnotationWithXmlValue() returns error? {
     test:assertEquals((<Error>v).message(), "'seq_EA1' occurs more than the max allowed times");
 }
 
+@Name {
+    value: "Root"
+}
 type XsdChoiceWithElementAnnotationWithXmlValue2 record {
     @Choice {
         minOccurs: 0,
@@ -103,6 +112,7 @@ function testXsdChoiceWithElementAnnotationWithXmlValue2() returns error? {
     xmlValue = xml `<Root><EA><EA1>ABC</EA1><EA2>ABC</EA2><EA3>AB</EA3><EA3>CD</EA3></EA></Root>`;
     v = parseAsType(xmlValue);    
     test:assertEquals(v, {seq_EA2:  {EA: {EA1: "ABC", EA2: "ABC", EA3: ["AB", "CD"]}}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><EA><EA2>ABC</EA2><EA3>AB</EA3><EA3>AB</EA3></EA></Root>`;
     v = parseAsType(xmlValue);
@@ -151,6 +161,9 @@ function testXsdChoiceWithElementAnnotationWithXmlValue2() returns error? {
     test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
 }
 
+@Name {
+    value: "Root"
+}
 type XsdChoiceWithElementAnnotationWithXmlValue3 record {
     @Choice {
         minOccurs: 1,
@@ -213,4 +226,5 @@ function testXsdChoiceWithElementAnnotationWithXmlValue3() returns error? {
     xmlValue = xml `<Root><field1><a>ABC</a></field1><field1><a>ABC</a><a>ABC</a></field1><field1><a>ABC</a><a>ABC</a><a>ABC</a></field1><field5><d>ABC</d></field5><field5><d>ABC</d></field5><field5><d>ABC</d></field5></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertEquals(v2, {seq_XsdChoiceWithElementAnnotationWithXmlValue3_1: {field1: [{value1: {a: ["ABC"]}}, {value1: {a: ["ABC", "ABC"]}}, {value1: {a: ["ABC", "ABC", "ABC"]}}]}, seq_XsdChoiceWithElementAnnotationWithXmlValue3_2: {field5: [{value2: {d: "ABC"}}, {value2: {d: "ABC"}}, {value2: {d: "ABC"}}]}});
+    test:assertEquals(toXml(check v2), xmlValue);
 }
