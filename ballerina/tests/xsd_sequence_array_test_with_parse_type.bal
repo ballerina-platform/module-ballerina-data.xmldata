@@ -176,9 +176,12 @@ function testXSDSequenceArrayWithXmlValueRecord4() returns error? {
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
     test:assertEquals((<Error>v2).message(), "'value3' occurs more than the max allowed times");
+}
 
-    xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><g>1</g><h>2</h><i>3</i><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
-    v2 = parseAsType(xmlValue);
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXSDSequenceArrayWithXmlValueRecord4P2() returns error? {
+    xml xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><g>1</g><h>2</h><i>3</i><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
+    XSDSequenceArrayWithXmlValueRecord13|Error v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
     test:assertEquals((<Error>v2).message(), "Element(s) 'field6' is not found in 'seq_XSDSequenceArrayWithXmlValueRecord13_2'");
 

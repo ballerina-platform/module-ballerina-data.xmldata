@@ -32,7 +32,6 @@ function testXsdChoiceWithElementAnnotationWithXmlValue() returns error? {
     xmlValue = xml `<Root><EA2>ABC</EA2></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {"seq_EA1":{"EA2": "ABC"}});
-    // TODO: Empty element
     test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></Root>`;
@@ -43,6 +42,7 @@ function testXsdChoiceWithElementAnnotationWithXmlValue() returns error? {
     xmlValue = xml `<Root><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {"seq_EA1":{EA3: ["AB", "AB"]}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
@@ -61,6 +61,7 @@ function testXsdChoiceWithElementAnnotationWithXmlValue() returns error? {
     xmlValue = xml `<Root><EA1>ABC</EA1></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {seq_EA1: {EA1: ["ABC"]}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><EA2>ABC</EA2><EA3>AB</EA3></Root>`;
     v = parseAsType(xmlValue);
@@ -113,18 +114,22 @@ function testXsdChoiceWithElementAnnotationWithXmlValue2() returns error? {
     v = parseAsType(xmlValue);    
     test:assertEquals(v, {seq_EA2:  {EA: {EA1: "ABC", EA2: "ABC", EA3: ["AB", "CD"]}}});
     test:assertEquals(toXml(check v), xmlValue);
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><EA><EA2>ABC</EA2><EA3>AB</EA3><EA3>AB</EA3></EA></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {"seq_EA2": {EA: {"EA2": "ABC", EA3: ["AB", "AB"]}}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><EA><EA2>ABC</EA2><EA3>AB</EA3><EA3>AB</EA3></EA></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {"seq_EA2": {EA: {"EA2": "ABC", EA3: ["AB", "AB"]}}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><EA><EA3>AB</EA3><EA3>AB</EA3></EA></Root>`;
     v = parseAsType(xmlValue);
     test:assertEquals(v, {"seq_EA2": {EA: {EA3: ["AB", "AB"]}}});
+    test:assertEquals(toXml(check v), xmlValue);
 
     xmlValue = xml `<Root><EA><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></EA></Root>`;
     v = parseAsType(xmlValue);
