@@ -18,22 +18,28 @@
 
 package io.ballerina.lib.data.xmldata.xml;
 
-import io.ballerina.runtime.api.PredefinedTypes;
+import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
+import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
+import io.ballerina.lib.data.xmldata.utils.ModuleUtils;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BError;
+import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTypedesc;
 import io.ballerina.runtime.api.values.BXml;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.StringReader;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -45,14 +51,23 @@ import javax.xml.validation.Validator;
  * @since 1.1.0
  */
 public class XSDValidator {
-    public static boolean validate(Object xsd, BXml xml) {
-        if (xsd instanceof BString) {
-            return validateXmlFromXsdFile(xsd.toString(), xml);
+    private static final String SOURCE_OPTIONS = "SourceOptions";
+    private static final String CONTENT_FIELD = "#content";
+    private static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attributePrefix");
+    private static final BString TEXT_FIELD_NAME = StringUtils.fromString("textFieldName");
+    public static Object validate(Object xsd, BXml xml) throws ParserConfigurationException, IOException, SAXException {
+        try {
+            if (xsd instanceof BString) {
+                return validateXmlFromXsdFile(xsd.toString(), xml);
+            }
+            return validateXsdFromXsdRecord((BTypedesc) xsd, xml);
+        } catch (Exception e) {
+            throw e;
         }
-        return validateXsdFromXsdRecord((BTypedesc) xsd, xml);
     }
 
-    private static boolean validateXmlFromXsdFile(String xsdFilePath, BXml xml) {
+    private static Object validateXmlFromXsdFile(String xsdFilePath, BXml xml)
+            throws ParserConfigurationException, IOException, SAXException {
         try {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             dbFactory.setIgnoringComments(true); // Ignore comments in the XML
@@ -64,22 +79,29 @@ public class XSDValidator {
             Schema schema = factory.newSchema(new File(xsdFilePath));
             Validator validator = schema.newValidator();
             validator.validate(source);
-            return true;
+            return null;
         } catch (Exception e) {
-            return false;
+            throw e;
         }
     }
 
-    private static boolean validateXsdFromXsdRecord(BTypedesc xsdRecord, BXml xml) {
+    private static Object validateXsdFromXsdRecord(BTypedesc xsdRecord, BXml xml) {
         try {
-            Object result =  XmlTraversal.traverse(xml,
-                    ValueCreator.createMapValue(PredefinedTypes.TYPE_STRING), xsdRecord);
-            if (result instanceof BError) {
-                return false;
+            Object result =  XmlTraversal.traverse(xml, getDefaultSourceOptions(), xsdRecord);
+            if (result instanceof BError e) {
+                throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_XML, e.getMessage());
             }
-            return true;
         } catch (Exception e) {
-            return false;
+            throw e;
         }
+        return null;
+    }
+
+    private static BMap<BString, Object> getDefaultSourceOptions() {
+        BMap<BString, Object> sourceOptions = ValueCreator
+                .createRecordValue(ModuleUtils.getModule(), SOURCE_OPTIONS);
+        sourceOptions.put(ATTRIBUTE_PREFIX, StringUtils.fromString(""));
+        sourceOptions.put(TEXT_FIELD_NAME, StringUtils.fromString(CONTENT_FIELD));
+        return sourceOptions;
     }
 }

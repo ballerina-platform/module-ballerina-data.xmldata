@@ -86,7 +86,7 @@ public class Native {
         try {
             return XSDValidator.validate(xsd, xml);
         } catch (Exception e) {
-            return DiagnosticLog.error(DiagnosticErrorCode.XML_PARSE_ERROR, e.getMessage());
+            return DiagnosticLog.error(DiagnosticErrorCode.INVALID_XML, e.getMessage());
         }
     }
 }

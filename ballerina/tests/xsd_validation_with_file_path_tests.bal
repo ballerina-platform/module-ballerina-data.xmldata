@@ -30,11 +30,12 @@ function testValidateSchema1() returns error? {
     xml validXml = check readXmlFile(validXmlPath);
     xml invalidXml = check readXmlFile(invalidXmlPath);
 
-    boolean isValid = validate(xsdPath, validXml);
-    test:assertTrue(isValid, msg = "Valid XML should pass validation");
+    Error? e = validate(xsdPath, validXml);
+    test:assertTrue(e is (), msg = "Valid XML should pass validation");
 
-    boolean isInvalid = validate(xsdPath, invalidXml);
-    test:assertFalse(isInvalid, msg = "Invalid XML should fail validation");
+    e = validate(xsdPath, invalidXml);
+    test:assertTrue(e is Error, msg = "Invalid XML should fail validation");
+    test:assertTrue((<Error>e).message().includes("Invalid XML found"), msg = "Invalid XML should fail validation");
 }
 
 @test:Config {groups: ["xsd"]}
@@ -46,11 +47,12 @@ function testValidateSchema2() returns error? {
     xml validXml = check readXmlFile(validXmlPath);
     xml invalidXml = check readXmlFile(invalidXmlPath);
 
-    boolean isValid = validate(xsdPath, validXml);
-    test:assertTrue(isValid, msg = "Valid XML should pass validation");
+    Error? e = validate(xsdPath, validXml);
+    test:assertTrue(e is (), msg = "Valid XML should pass validation");
 
-    boolean isInvalid = validate(xsdPath, invalidXml);
-    test:assertFalse(isInvalid, msg = "Invalid XML should fail validation");
+    e = validate(xsdPath, invalidXml);
+    test:assertTrue(e is Error, msg = "Invalid XML should fail validation");
+    test:assertTrue((<Error>e).message().includes("Invalid XML found"), msg = "Invalid XML should fail validation");
 }
 
 @test:Config {groups: ["xsd"]}
@@ -62,11 +64,12 @@ function testValidateSchema3() returns error? {
     xml validXml = check readXmlFile(validXmlPath);
     xml invalidXml = check readXmlFile(invalidXmlPath);
 
-    boolean isValid = validate(xsdPath, validXml);
-    test:assertTrue(isValid, msg = "Valid XML should pass validation");
+    Error? e = validate(xsdPath, validXml);
+    test:assertTrue(e is (), msg = "Valid XML should pass validation");
 
-    boolean isInvalid = validate(xsdPath, invalidXml);
-    test:assertFalse(isInvalid, msg = "Invalid XML should fail validation");
+    e = validate(xsdPath, invalidXml);
+    test:assertTrue(e is Error, msg = "Invalid XML should fail validation");
+    test:assertTrue((<Error>e).message().includes("Invalid XML found"), msg = "Invalid XML should fail validation");
 }
 
 @test:Config {groups: ["xsd"]}
@@ -78,11 +81,12 @@ function testValidateSchema4() returns error? {
     xml validXml = check readXmlFile(validXmlPath);
     xml invalidXml = check readXmlFile(invalidXmlPath);
 
-    boolean isValid = validate(xsdPath, validXml);
-    test:assertTrue(isValid, msg = "Valid XML should pass validation");
+    Error? e = validate(xsdPath, validXml);
+    test:assertTrue(e is (), msg = "Valid XML should pass validation");
 
-    boolean isInvalid = validate(xsdPath, invalidXml);
-    test:assertFalse(isInvalid, msg = "Invalid XML should fail validation");
+    e = validate(xsdPath, invalidXml);
+    test:assertTrue(e is Error, msg = "Invalid XML should fail validation");
+    test:assertTrue((<Error>e).message().includes("Invalid XML found"), msg = "Invalid XML should fail validation");
 }
 
 @test:Config {groups: ["xsd"]}
@@ -94,9 +98,10 @@ function testValidateSchema5() returns error? {
     xml validXml = check readXmlFile(validXmlPath);
     xml invalidXml = check readXmlFile(invalidXmlPath);
 
-    boolean isValid = validate(xsdPath, validXml);
-    test:assertTrue(isValid, msg = "Valid XML should pass validation");
+    Error? e = validate(xsdPath, validXml);
+    test:assertTrue(e is (), msg = "Valid XML should pass validation");
 
-    boolean isInvalid = validate(xsdPath, invalidXml);
-    test:assertFalse(isInvalid, msg = "Invalid XML should fail validation");
+    e = validate(xsdPath, invalidXml);
+    test:assertTrue(e is Error, msg = "Invalid XML should fail validation");
+    test:assertTrue((<Error>e).message().includes("Invalid XML found"), msg = "Invalid XML should fail validation");
 }
