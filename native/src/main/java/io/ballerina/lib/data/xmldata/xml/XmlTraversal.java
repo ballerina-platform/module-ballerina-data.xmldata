@@ -24,8 +24,6 @@ import io.ballerina.lib.data.xmldata.utils.DataUtils.XmlAnalyzerData;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
 import io.ballerina.lib.data.xmldata.xml.xsd.ModelGroupInfo;
-import io.ballerina.runtime.api.PredefinedTypes;
-import io.ballerina.runtime.api.TypeTags;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.flags.SymbolFlags;
