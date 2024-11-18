@@ -227,7 +227,7 @@ public class DataUtils {
     }
 
     @SuppressWarnings("unchecked")
-    public static String getModifiedName(Map<BString, Object> fieldAnnotation, String attributeName) {
+    static String getModifiedName(Map<BString, Object> fieldAnnotation, String attributeName) {
         for (BString key : fieldAnnotation.keySet()) {
             if (isNameAnnotationKey(key.getValue())) {
                 return ((Map<BString, Object>) fieldAnnotation.get(key)).get(Constants.VALUE).toString();
@@ -462,10 +462,6 @@ public class DataUtils {
         }
         return input;
     }
-
-//    public static Object convertJsonIntoXml(Object value, BMap<BString, Object> jsonOptions, BTypedesc inputType) {
-//
-//    }
 
     @SuppressWarnings("unchecked")
     private static BMap<BString, Object> processArrayValue(BMap<BString, Object> input, ArrayType arrayType) {
@@ -1258,6 +1254,11 @@ public class DataUtils {
         return xmlModelGroupMap;
     }
 
+    /**
+     * Holds data required for the processing.
+     *
+     * @since 1.1.0
+     */
     public static class XmlAnalyzerMetaData {
         public Stack<QualifiedNameMap<Field>> attributeHierarchy = new Stack<>();
         public Stack<HashMap<String, Integer>> arrayIndexes = new Stack<>();

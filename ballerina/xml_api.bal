@@ -32,17 +32,8 @@ public type ParticleOccurrence record {|
 # Defines the configuration for an XML element in the XML schema (XSD).
 public type ElementConfig record {|
   *ParticleOccurrence;
-  # Represents the `form` attribute in the XML schema (XSD) `element` definition.
-  "qualified"|"unqulified" form = "qualified";
-  # Specifies the id of the substitution group for the element.
-  string substitutionGroupId?;
-  # Indicates whether the element is abstract.
-  boolean 'abstract = false;
-  # Restricts how the element can be extended or restricted.
-  "extension"|"restriction"|"all"|"substitution" block?;
-  # Controls whether the element can be further extended or restricted.
-  "extension"|"restriction"|"all" 'final?;
 |};
+
 # Annotation to define schema rules for an XML element in Ballerina.
 public const annotation ElementConfig Element on type, record field;
 

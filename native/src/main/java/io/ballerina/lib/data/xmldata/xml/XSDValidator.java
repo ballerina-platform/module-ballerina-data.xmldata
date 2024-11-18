@@ -39,6 +39,11 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
+/**
+ * Represent native APIS for validating XML against a XSD.
+ *
+ * @since 1.1.0
+ */
 public class XSDValidator {
     public static boolean validate(Object xsd, BXml xml) {
         if (xsd instanceof BString) {
