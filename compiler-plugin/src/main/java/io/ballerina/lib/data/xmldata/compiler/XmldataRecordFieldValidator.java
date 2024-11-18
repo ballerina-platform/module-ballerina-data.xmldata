@@ -155,7 +155,10 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
 
     private void validateAnnotationUsageInAllInlineExpectedTypes(TypeSymbol typeSymbol, SyntaxNodeAnalysisContext ctx) {
         switch (typeSymbol.typeKind()) {
-            case RECORD -> validateRecordFieldNames((RecordTypeSymbol) typeSymbol, ctx);
+            case RECORD -> {
+                validateRecordFieldNames((RecordTypeSymbol) typeSymbol, ctx);
+                validateXsdModelGroupAnnotations((RecordTypeSymbol) typeSymbol, ctx);
+            }
             case UNION -> {
                 for (TypeSymbol memberTSymbol : ((UnionTypeSymbol) typeSymbol).memberTypeDescriptors()) {
                     validateAnnotationUsageInAllInlineExpectedTypes(memberTSymbol, ctx);
@@ -174,6 +177,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             case RECORD -> {
                 RecordTypeSymbol recordSymbol = (RecordTypeSymbol) typeSymbol;
                 validateRecordFieldNames(recordSymbol, ctx);
+                validateXsdModelGroupAnnotations(recordSymbol, ctx);
                 processRecordFieldsType(recordSymbol, ctx);
             }
             case TYPE_REFERENCE -> validateExpectedType(((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor(),
@@ -264,6 +268,68 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         }
         TypeDefinitionSymbol typeDefinitionSymbol = (TypeDefinitionSymbol) symbol.get();
         validateRecordFieldNames((RecordTypeSymbol) typeDefinitionSymbol.typeDescriptor(), ctx);
+        validateXsdModelGroupAnnotations((RecordTypeSymbol) typeDefinitionSymbol.typeDescriptor(), ctx);
+    }
+
+    private void validateXsdModelGroupAnnotations(RecordTypeSymbol recordTypeSymbol, SyntaxNodeAnalysisContext ctx) {
+        for (Map.Entry<String, RecordFieldSymbol> entry : recordTypeSymbol.fieldDescriptors().entrySet()) {
+            RecordFieldSymbol fieldSymbol = entry.getValue();
+            boolean isUniqueAnnotationHasValue = false;
+            for (AnnotationAttachmentSymbol annotationAttachmentSymbol : fieldSymbol.annotAttachments()) {
+                AnnotationSymbol annotationSymbol = annotationAttachmentSymbol.typeDescriptor();
+                if (!isAnnotFromXmldata(annotationSymbol)) {
+                    continue;
+                }
+                Optional<String> annotName = annotationSymbol.getName();
+                if (annotName.isEmpty()) {
+                    continue;
+                }
+                String name = annotName.get();
+
+                if (isModelGroupAnnotation(name) || name.equals(Constants.ELEMENT)
+                        || name.equals(Constants.ATTRIBUTE)) {
+                    if (isUniqueAnnotationHasValue) {
+                        reportDiagnosticInfo(ctx, fieldSymbol.getLocation(),
+                                XmldataDiagnosticCodes.INVALID_ANNOTATIONS);
+                        continue;
+                    }
+                    isUniqueAnnotationHasValue = true;
+                }
+
+                if (!isModelGroupAnnotation(name)) {
+                    continue;
+                }
+                validateXsdModelGroupAnnotation(fieldSymbol.typeDescriptor(), fieldSymbol.getLocation(), ctx);
+            }
+        }
+    }
+
+    private boolean isModelGroupAnnotation(String annotationName) {
+        return annotationName.equals(Constants.SEQUENCE) || annotationName.equals(Constants.CHOICE);
+    }
+
+    private void validateXsdModelGroupAnnotation(TypeSymbol typeSymbol, Optional<Location> location,
+                                                 SyntaxNodeAnalysisContext ctx) {
+        if (typeSymbol.typeKind() == TypeDescKind.TYPE_REFERENCE) {
+            validateXsdModelGroupAnnotation(((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor(), location, ctx);
+            return;
+        }
+
+        if (typeSymbol.typeKind() == TypeDescKind.RECORD) {
+            return;
+        }
+
+        if (typeSymbol.typeKind() == TypeDescKind.ARRAY) {
+            TypeSymbol memberTypeSymbol = ((ArrayTypeSymbol) typeSymbol).memberTypeDescriptor();
+            if (memberTypeSymbol.typeKind() == TypeDescKind.TYPE_REFERENCE) {
+                memberTypeSymbol = ((TypeReferenceTypeSymbol) memberTypeSymbol).typeDescriptor();
+            }
+            if (memberTypeSymbol.typeKind() == TypeDescKind.RECORD) {
+                return;
+            }
+        }
+
+        reportDiagnosticInfo(ctx, location, XmldataDiagnosticCodes.INVALID_XSD_MODEL_GROUP_ANNOTATION);
     }
 
     private void validateRecordFieldNames(RecordTypeSymbol recordTypeSymbol, SyntaxNodeAnalysisContext ctx) {

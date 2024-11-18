@@ -36,7 +36,11 @@ public enum XmldataDiagnosticCodes {
     UNSUPPORTED_TYPE("XML_ERROR_203", "unsupported type: the record field does not support the expected type", ERROR),
     EXPECTED_RECORD_TYPE("XML_ERROR_204", "invalid type: expected a record type", ERROR),
     NAME_ANNOTATION_NOT_ALLOWED("XML_ERROR_205",
-            "invalid annotation attachment: child record does not allow name annotation", WARNING);
+            "invalid annotation attachment: child record does not allow name annotation", WARNING),
+    INVALID_XSD_MODEL_GROUP_ANNOTATION("XML_ERROR_206",
+            "invalid xsd annotation: record type or record array type expected", ERROR),
+    INVALID_ANNOTATIONS("XML_ERROR_207", "A record field cannot contains " +
+            "sequence/choice/element/attribute annotations simultaneously", ERROR);
 
     private final String code;
     private final String message;

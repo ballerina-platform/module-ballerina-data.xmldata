@@ -125,4 +125,44 @@ public class CompilerPluginTest {
         Assert.assertEquals(warningDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
                 "invalid annotation attachment: child record does not allow name annotation");
     }
+
+    @Test
+    public void testCompilerPluginWithXsdAnnotation() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_11").getCompilation().diagnosticResult();
+        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
+                .collect(Collectors.toList());
+        Assert.assertEquals(errorDiagnosticsList.size(), 15);
+        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(4).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(5).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(6).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(7).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(8).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(9).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(10).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(11).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(12).diagnosticInfo().messageFormat(),
+                "A record field cannot contains sequence/choice/element/attribute annotations simultaneously");
+        Assert.assertEquals(errorDiagnosticsList.get(13).diagnosticInfo().messageFormat(),
+                "A record field cannot contains sequence/choice/element/attribute annotations simultaneously");
+        Assert.assertEquals(errorDiagnosticsList.get(14).diagnosticInfo().messageFormat(),
+                "A record field cannot contains sequence/choice/element/attribute annotations simultaneously");
+    }
 }

@@ -6,6 +6,7 @@ package io.ballerina.lib.data.xmldata.compiler;
  * @since 0.1.0
  */
 public class Constants {
+    public static final String ELEMENT = "Element";
     static final String PARSE_STRING = "parseString";
     static final String PARSE_BYTES = "parseBytes";
     static final String PARSE_STREAM = "parseStream";
@@ -17,4 +18,6 @@ public class Constants {
     static final String XMLDATA = "xmldata";
     static final String BALLERINA = "ballerina";
     static final String DATA_XMLDATA = "data.xmldata";
+    static final String SEQUENCE = "Sequence";
+    static final String CHOICE = "Choice";
 }
