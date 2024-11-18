@@ -20,4 +20,5 @@ public class Constants {
     static final String DATA_XMLDATA = "data.xmldata";
     static final String SEQUENCE = "Sequence";
     static final String CHOICE = "Choice";
+    static final String ORDER = "Order";
 }

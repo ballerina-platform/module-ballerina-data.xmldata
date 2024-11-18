@@ -291,15 +291,71 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
                     if (isUniqueAnnotationHasValue) {
                         reportDiagnosticInfo(ctx, fieldSymbol.getLocation(),
                                 XmldataDiagnosticCodes.INVALID_ANNOTATIONS);
-                        continue;
+                    } else {
+                        isUniqueAnnotationHasValue = true;
                     }
-                    isUniqueAnnotationHasValue = true;
                 }
 
-                if (!isModelGroupAnnotation(name)) {
-                    continue;
+                if (isModelGroupAnnotation(name)) {
+                    validateXsdModelGroupAnnotation(fieldSymbol.typeDescriptor(), fieldSymbol.getLocation(), ctx);
                 }
-                validateXsdModelGroupAnnotation(fieldSymbol.typeDescriptor(), fieldSymbol.getLocation(), ctx);
+
+                if (name.equals(Constants.SEQUENCE)) {
+                    validateSequenceAnnotation(fieldSymbol.typeDescriptor(), fieldSymbol.getLocation(), ctx);
+                }
+            }
+        }
+    }
+
+    private void validateSequenceAnnotation(TypeSymbol typeSymbol,
+                                            Optional<Location> location, SyntaxNodeAnalysisContext ctx) {
+        RecordTypeSymbol recordTypeSymbol = null;
+        if (typeSymbol.typeKind() == TypeDescKind.TYPE_REFERENCE) {
+            validateSequenceAnnotation(((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor(), location, ctx);
+            return;
+        }
+
+        if (typeSymbol.typeKind() == TypeDescKind.RECORD) {
+            recordTypeSymbol = (RecordTypeSymbol) typeSymbol;
+        }
+
+        if (typeSymbol.typeKind() == TypeDescKind.ARRAY) {
+            TypeSymbol memberTypeSymbol = ((ArrayTypeSymbol) typeSymbol).memberTypeDescriptor();
+            if (memberTypeSymbol.typeKind() == TypeDescKind.TYPE_REFERENCE) {
+                memberTypeSymbol = ((TypeReferenceTypeSymbol) memberTypeSymbol).typeDescriptor();
+            }
+            if (memberTypeSymbol.typeKind() == TypeDescKind.RECORD) {
+                recordTypeSymbol = (RecordTypeSymbol) memberTypeSymbol;
+            }
+        }
+
+        if (recordTypeSymbol != null) {
+            Optional<Location> loctaion = recordTypeSymbol.getLocation();
+            recordTypeSymbol.restTypeDescriptor().ifPresent(restTypeSymbol -> {
+                reportDiagnosticInfo(ctx, loctaion, XmldataDiagnosticCodes.INVALID_SEQUENCE_REST_TYPE);
+            });
+
+            for (Map.Entry<String, RecordFieldSymbol> entry : recordTypeSymbol.fieldDescriptors().entrySet()) {
+                RecordFieldSymbol fieldSymbol = entry.getValue();
+                if (fieldSymbol.annotAttachments().isEmpty()) {
+                    reportDiagnosticInfo(ctx,
+                            fieldSymbol.getLocation(), XmldataDiagnosticCodes.INVALID_SEQUENCE_TYPE);
+                }
+                for (AnnotationAttachmentSymbol annotSymbol : fieldSymbol.annotAttachments()) {
+                    AnnotationSymbol annotationSymbol = annotSymbol.typeDescriptor();
+                    if (!isAnnotFromXmldata(annotationSymbol)) {
+                        continue;
+                    }
+                    Optional<String> annotName = annotationSymbol.getName();
+                    if (annotName.isEmpty()) {
+                        continue;
+                    }
+                    String name = annotName.get();
+                    if (!name.equals(Constants.ORDER)) {
+                        reportDiagnosticInfo(ctx, fieldSymbol
+                                .getLocation(), XmldataDiagnosticCodes.INVALID_SEQUENCE_TYPE);
+                    }
+                }
             }
         }
     }

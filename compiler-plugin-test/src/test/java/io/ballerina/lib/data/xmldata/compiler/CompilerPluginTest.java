@@ -165,4 +165,48 @@ public class CompilerPluginTest {
         Assert.assertEquals(errorDiagnosticsList.get(14).diagnosticInfo().messageFormat(),
                 "A record field cannot contains sequence/choice/element/attribute annotations simultaneously");
     }
+
+    @Test
+    public void testCompilerPluginWithXsdAnnotation2() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_12").getCompilation().diagnosticResult();
+        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
+                .collect(Collectors.toList());
+        Assert.assertEquals(errorDiagnosticsList.size(), 6);
+        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(4).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(5).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+    }
+
+    @Test
+    public void testCompilerPluginWithXsdAnnotation3() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_13").getCompilation().diagnosticResult();
+        List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
+                .collect(Collectors.toList());
+        Assert.assertEquals(errorDiagnosticsList.size(), 6);
+        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+                "Invalid sequence member: Order should be defined in in all fields");
+        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
+                "Invalid sequence member: Sequence members should be defined in a closed record");
+        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
+                "Invalid sequence member: Order should be defined in in all fields");
+        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
+                "Invalid sequence member: Sequence members should be defined in a closed record");
+        Assert.assertEquals(errorDiagnosticsList.get(4).diagnosticInfo().messageFormat(),
+                "Invalid sequence member: Order should be defined in in all fields");
+        Assert.assertEquals(errorDiagnosticsList.get(5).diagnosticInfo().messageFormat(),
+                "Invalid sequence member: Order should be defined in in all fields");
+    }
 }

@@ -39,7 +39,11 @@ public enum XmldataDiagnosticCodes {
             "invalid annotation attachment: child record does not allow name annotation", WARNING),
     INVALID_XSD_MODEL_GROUP_ANNOTATION("XML_ERROR_206",
             "invalid xsd annotation: record type or record array type expected", ERROR),
-    INVALID_ANNOTATIONS("XML_ERROR_207", "A record field cannot contains " +
+    INVALID_SEQUENCE_TYPE("XML_ERROR_207",
+            "Invalid sequence member: Order should be defined in in all fields", ERROR),
+    INVALID_SEQUENCE_REST_TYPE("XML_ERROR_207",
+            "Invalid sequence member: Sequence members should be defined in a closed record", ERROR),
+    INVALID_ANNOTATIONS("XML_ERROR_208", "A record field cannot contains " +
             "sequence/choice/element/attribute annotations simultaneously", ERROR);
 
     private final String code;
