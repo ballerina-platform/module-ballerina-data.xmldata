@@ -18,12 +18,10 @@
 
 package io.ballerina.lib.data.xmldata.xml;
 
-import io.ballerina.lib.data.xmldata.io.DataReaderTask;
-import io.ballerina.lib.data.xmldata.io.DataReaderThreadPool;
+import io.ballerina.lib.data.xmldata.io.BallerinaByteBlockInputStream;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
 import io.ballerina.runtime.api.Environment;
-import io.ballerina.runtime.api.Future;
 import io.ballerina.runtime.api.values.BArray;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BObject;
@@ -35,6 +33,9 @@ import io.ballerina.runtime.api.values.BXml;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+
+import static io.ballerina.lib.data.xmldata.utils.DataReader.resolveCloseMethod;
+import static io.ballerina.lib.data.xmldata.utils.DataReader.resolveNextMethod;
 
 /**
  * Xml conversion.
@@ -69,10 +70,13 @@ public class Native {
     public static Object parseStream(Environment env, BStream xml, BMap<BString, Object> options, BTypedesc typed) {
         try {
             final BObject iteratorObj = xml.getIteratorObj();
-            final Future future = env.markAsync();
-            DataReaderTask task = new DataReaderTask(env, iteratorObj, future, typed, options);
-            DataReaderThreadPool.EXECUTOR_SERVICE.submit(task);
-            return null;
+            BallerinaByteBlockInputStream byteBlockSteam = new BallerinaByteBlockInputStream(env,
+                    iteratorObj, resolveNextMethod(iteratorObj), resolveCloseMethod(iteratorObj));
+            Object result = XmlParser.parse(new InputStreamReader(byteBlockSteam), options, typed);
+            if (byteBlockSteam.getError() != null) {
+                return byteBlockSteam.getError();
+            }
+            return result;
         } catch (Exception e) {
             return DiagnosticLog.error(DiagnosticErrorCode.XML_PARSE_ERROR, e.getMessage());
         }
