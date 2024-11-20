@@ -20,6 +20,7 @@ package io.ballerina.lib.data.xmldata.utils;
 
 import io.ballerina.lib.data.xmldata.xml.xsd.ElementInfo;
 import io.ballerina.lib.data.xmldata.xml.xsd.ModelGroupInfo;
+import io.ballerina.lib.data.xmldata.xml.xsd.SequenceInfo;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.types.ArrayType;
@@ -94,7 +95,6 @@ public class ToXmlUtils {
             String keyStr = key.getValue();
             HashMap<String, String> elementNamesMap = DataUtils.getElementNameMap(referredType);
             ArrayList<String> sequenceFieldNames = getSequenceFieldNames(referredType, elementNamesMap);
-            boolean isSequenceField = sequenceFieldNames.contains(keyStr);
             HashMap<String, ModelGroupInfo> modelGroupRelatedFieldNames =
                     getModelGroupRelatedFieldNames(referredType, elementNamesMap);
             HashMap<String, ElementInfo> elementInfoRelatedFieldNames =
@@ -102,6 +102,7 @@ public class ToXmlUtils {
             String localJsonKeyPart = keyStr.contains(Constants.COLON)
                     ? keyStr.substring(keyStr.indexOf(Constants.COLON) + 1) : keyStr;
             String recordKey = elementNamesMap.getOrDefault(localJsonKeyPart, localJsonKeyPart);
+            boolean isSequenceField = sequenceFieldNames.contains(recordKey);
             boolean isContainsModelGroup = modelGroupRelatedFieldNames.containsKey(recordKey);
             ModelGroupInfo parentModelGroupInfo = modelGroupRelatedFieldNames.get(recordKey);
             ElementInfo elementInfo = elementInfoRelatedFieldNames.get(recordKey);
@@ -202,7 +203,7 @@ public class ToXmlUtils {
             }
         } else if (jNode instanceof BArray arrayNode) {
             int size = arrayNode.size();
-            if (isParentSequenceArray && parentModelGroupInfo != null) {
+            if (isParentSequenceArray && parentModelGroupInfo != null && parentModelGroupInfo instanceof SequenceInfo) {
                 if (size < parentModelGroupInfo.getMinOccurs()) {
                     throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_LESS_THAN_MIN_REQUIRED_TIMES,
                             parentModelGroupInfo.getFieldName());

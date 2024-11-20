@@ -524,15 +524,33 @@ public class DataUtils {
 
     static BString[] getOrderedRecordKeysIfXsdSequencePresent(BMap<BString, Object> input,
                                                               HashMap<String, Integer> xsdSequencePriorityOrder) {
+        HashMap<String, String> localPartKeys = getLocalPartKeys(input);
         if (!xsdSequencePriorityOrder.isEmpty()) {
             return xsdSequencePriorityOrder.entrySet().stream()
-                    .filter(entry -> input.containsKey(StringUtils.fromString(entry.getKey())))
+                    .filter(entry -> localPartKeys.containsKey(entry.getKey()))
                     .sorted(Comparator.comparingInt(Map.Entry::getValue))
-                    .map(entry -> StringUtils.fromString(entry.getKey()))
+                    .map(entry -> StringUtils.fromString(localPartKeys.get(entry.getKey())))
                     .toArray(BString[]::new);
         } else {
             return input.getKeys();
         }
+    }
+
+    private static HashMap<String, String> getLocalPartKeys(BMap<BString, Object> input) {
+        HashMap<String, String> localPartKeys = new HashMap<>();
+        for (Map.Entry<BString, Object> entry : input.entrySet()) {
+            String k = entry.getKey().getValue();
+            if (k.contains(ATTRIBUTE_PREFIX)) {
+                continue;
+            }
+            int i = k.indexOf(Constants.COLON);
+            if (i != -1) {
+                localPartKeys.put(k.substring(i + 1), k);
+            } else {
+                localPartKeys.put(k, k);
+            }
+        }
+        return localPartKeys;
     }
 
     private static void processRecordField(Type fieldType, BMap<BString, Object> annotations,
