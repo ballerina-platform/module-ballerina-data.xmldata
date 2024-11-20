@@ -210,6 +210,17 @@ type ToXml6 record {
     Seq_XSDSequenceRecord13_2 seq_XSDSequenceRecord13_2;
 };
 
+@Name {
+    value: "A"
+}
+type ToXml7 record {
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 2
+    }
+    Seq_A_toXml[] seq_a;
+};
+
 @test:Config {groups: ["xsd", "to_xml"], dataProvider: testToXmlWithXsdProvider}
 function testToXmlWithXsd(typedesc<record{}> recordType, record{} value, xml expected) returns error?{
     xml|Error xmlResult = toXml(check value.ensureType(recordType), {});
@@ -246,6 +257,171 @@ function testToXmlWithXsdProvider() returns [typedesc<record{}>, record{}, xml][
             ToXml6,
             <ToXml6>{seq_XSDSequenceRecord13_1: {field1: {value1: {a: "1", b: "2", c: "3"}}, field2: {value2: {d: "1", e: "2", f: "3"}}, field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XSDSequenceRecord13_2: {field4: {value1: {a: "1", b: "2", c: "3"}}, field5: {value2: {d: "1", e: "2", f: "3"}}, field6: {value3: {g: "1", h: "2", i: "3"}}}},
             xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`
+        ],
+        [
+            ToXml7,
+            <ToXml7>{seq_a: [{b: "B", a: "A", c: "C"}, {b: "B", a: "A", c: "C"}]},
+            xml `<A><a>A</a><b>B</b><c>C</c><a>A</a><b>B</b><c>C</c></A>`
+        ]
+    ];
+}
+
+@Name {
+    value: "A"
+}
+type ToXmlChoice1 record {
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Choice_A_toXml choice_a;
+};
+
+type Choice_A_toXml record {
+    string c?;
+    string a?;
+    string b?;
+};
+
+@Name {
+    value: "A"
+}
+type ToXmlChoice2 record {
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Choice_A_toXml2 choice_a;
+
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 3
+    }
+    Choice_A_toXml3 choice_b;
+};
+
+type Choice_A_toXml2 record {
+    @Element {
+        minOccurs: 2,
+        maxOccurs: 3
+    }
+    string c?;
+
+    @Element {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    string a?;
+
+    @Element {
+        minOccurs: 1,
+        maxOccurs: 5
+    }
+    string b?;
+};
+
+type Choice_A_toXml3 record {
+    @Element {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    string c?;
+
+    @Element {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    string a?;
+
+    @Element {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    string b?;
+};
+
+@Name {
+    value: "A"
+}
+type ToXmlChoice4 record {
+    record {
+        @Choice {
+            minOccurs: 2,
+            maxOccurs: 3
+        }
+        Choice_A_toXml4 choice_a;
+    } nestedName;
+
+    record {
+        @Choice {
+            minOccurs: 2,
+            maxOccurs: 2
+        }
+        Choice_A_toXml4 choice_a;
+    } nestedName2;
+};
+
+type Choice_A_toXml4 record {
+    @Element {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    string c?;
+
+    @Element {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    string a?;
+
+    @Element {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    string b?;
+};
+
+type Choice_A_toXml5 record {
+    @Element {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    string c?;
+
+    @Element {
+        minOccurs: 1,
+        maxOccurs: 2
+    }
+    string a?;
+
+    @Element {
+        minOccurs: 2,
+        maxOccurs: 3
+    }
+    string b?;
+};
+
+@test:Config {groups: ["xsd", "to_xml"], dataProvider: testToXmlWithXsdProvider2}
+function testToXmlWithXsd2(typedesc<record{}> recordType, record{} value, xml expected) returns error?{
+    xml|Error xmlResult = toXml(check value.ensureType(recordType), {});
+    test:assertEquals(xmlResult, expected);
+}
+
+function testToXmlWithXsdProvider2() returns [typedesc<record{}>, record{}, xml][] {
+    return [[
+            ToXmlChoice1,
+            <ToXmlChoice1>{choice_a: {b: "B"}},
+            xml `<A><b>B</b></A>`
+        ], 
+        [
+            ToXmlChoice2,
+            <ToXmlChoice2>{choice_a: {c: "C"}, choice_b: {b: "B", a: "A", c: "C"}},
+            xml `<A><c>C</c><c>C</c><a>A</a><b>B</b></A>`
+        ],
+        [
+            ToXmlChoice4,
+            <ToXmlChoice4>{nestedName: {choice_a: {b: "B", a: "A"}}, nestedName2: {choice_a: {b: "B", a: "A"}}},
+            xml `<A><nestedName><a>A</a><b>B</b></nestedName><nestedName2><a>A</a><b>B</b></nestedName2></A>`
         ]
     ];
 }

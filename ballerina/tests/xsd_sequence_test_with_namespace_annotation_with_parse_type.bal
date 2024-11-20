@@ -16,6 +16,9 @@
 
 import ballerina/test;
 
+@Name {
+    value: "Root"
+}
 type XsdSequenceWithNamespaceAnnotationWithXmlValue record {
     @Sequence {
         minOccurs: 0,
@@ -70,15 +73,21 @@ type Seq_EA1_NamespaceAnnotationWithXmlValue record {
 function testXsdSequenceWithNamespaceAnnotationWithXmlValue() returns error? {
     xml xmlStr;
     XsdSequenceWithNamespaceAnnotationWithXmlValue|Error v;
+    xml|Error toXmlResult;
 
     xmlStr = xml `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><ea1:EA1>ABC</ea1:EA1><ea2:EA2>ABC</ea2:EA2></Root>`;
     v = parseAsType(xmlStr);
     test:assertTrue(v is Error);
     test:assertEquals((<Error>v).message(), "Element(s) 'EA3' is not found in 'seq_EA1_NamespaceAnnotationWithXmlValue'");
+    toXmlResult = toXml(<XsdSequenceWithNamespaceAnnotationWithXmlValue>{seq_EA1_NamespaceAnnotationWithXmlValue: {EA1: "ABC", EA2: "ABC", EA3: []}});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'EA3' occurs less than the min required times");
     
     xmlStr = xml `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><ea1:EA1>ABC</ea1:EA1><ea2:EA2>ABC</ea2:EA2><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3></Root>`;
     v = parseAsType(xmlStr);
     test:assertEquals(v, {seq_EA1_NamespaceAnnotationWithXmlValue: {EA1: "ABC", EA2: "ABC", EA3: ["AB", "AB", "AB"]}});
+    // // BUG: https://github.com/ballerina-platform/ballerina-library/issues/7389
+    // test:assertEquals(toXml(check v), xml `<Root><ea1:EA1 xmlns:ea1="example1.com">ABC</ea1:EA1><ea2:EA2 xmlns:ea2="example2.com">ABC</ea2:EA2><EA3>AB</EA3><EA3>AB</EA3><EA3>AB</EA3></Root>`);
 
     xmlStr = xml `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><ea2:EA2>ABC</ea2:EA2><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3></Root>`;
     v = parseAsType(xmlStr);
@@ -96,6 +105,9 @@ function testXsdSequenceWithNamespaceAnnotationWithXmlValue() returns error? {
     v = parseAsType(xmlStr);
     test:assertTrue(v is Error);
     test:assertEquals((<Error>v).message(), "'EA3' occurs more than the max allowed times");
+    toXmlResult = toXml(<XsdSequenceWithNamespaceAnnotationWithXmlValue>{seq_EA1_NamespaceAnnotationWithXmlValue: {EA3: ["AB", "AB", "AB", "AB", "AB", "AB"]}});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), (<Error>v).message());
 
     xmlStr = xml `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><ea1:EA1>ABC</ea1:EA1><ea3:EA3>AB</ea3:EA3><ea3:EA3>AB</ea3:EA3></Root>`;
     v = parseAsType(xmlStr);
@@ -110,6 +122,9 @@ function testXsdSequenceWithNamespaceAnnotationWithXmlValue() returns error? {
     v = parseAsType(xmlStr);
     test:assertTrue(v is Error);
     test:assertEquals((<Error>v).message(), "'EA3' occurs less than the min required times");
+    toXmlResult = toXml(<XsdSequenceWithNamespaceAnnotationWithXmlValue>{seq_EA1_NamespaceAnnotationWithXmlValue: {EA3: ["AB"]}});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), (<Error>v).message());
 
     xmlStr = xml `<Root xmlns:ea1="example1.com" xmlns:ea2="example2.com" xmlns:ea3="example3.com"><ea2:EA2>ABC</ea2:EA2><ea3:EA3>AB</ea3:EA3></Root>`;
     v = parseAsType(xmlStr);
@@ -170,7 +185,6 @@ type Seq_EA2_NamespaceAnnotationWithXmlValue record {
             maxOccurs: 4,
             minOccurs: 2
         }
-
         @Namespace {
             uri: "example3.com",
             prefix: "ea3"
