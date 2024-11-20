@@ -212,4 +212,16 @@ public class ChoiceInfo implements ModelGroupInfo {
             }
         });
     }
+
+    public long getMinOccurs() {
+        return minOccurs;
+    }
+
+    public long getMaxOccurs() {
+        return maxOccurs;
+    }
+
+    public String getFieldName() {
+        return fieldName;
+    }
 }

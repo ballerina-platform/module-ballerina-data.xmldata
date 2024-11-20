@@ -66,6 +66,10 @@ type Seq_XSDSequenceRecord2 record {|
         value: 2
     }
     float salary;
+
+    @xmldata:Element {
+        minOccurs: 2
+    }
     string name;
 |};
 
@@ -99,9 +103,42 @@ type Seq_XSDSequenceRecord4 record {
     }
     int age2;
 
+    @xmldata:Element {
+        minOccurs: 2
+    }
     @xmldata:Order {
         value: 2
     }
     float salary;
+
+    @xmldata:Element {
+        minOccurs: 2
+    }
     string address;
+};
+
+type ChoiceRecord record {
+    @xmldata:Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    record {} age;
+
+    @xmldata:Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    int salary;
+
+    @xmldata:Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    ChoiceRec1 choiceRec1;
+};
+
+type ChoiceRec1 record {
+    record {} age?;
+    int salary?;
+    string name?;
 };

@@ -30,4 +30,7 @@ public interface ModelGroupInfo {
     boolean isMiddleOfModelGroup();
     boolean predictStartNewModelGroup(String element);
     void validateMinOccurrences();
+    long getMinOccurs();
+    long getMaxOccurs();
+    String getFieldName();
 }

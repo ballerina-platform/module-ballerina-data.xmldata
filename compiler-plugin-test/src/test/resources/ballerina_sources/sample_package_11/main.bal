@@ -165,6 +165,28 @@ type A4 record {|
     }
     @xmldata:Attribute
     Seq_XsdSequenceArray[] seq_XsdSequenceArray4;
+
+    @xmldata:Element {
+        minOccurs: 1,
+        maxOccurs: 2
+    }
+    @xmldata:Choice {
+        minOccurs: 1,
+        maxOccurs: 2
+    }
+    @xmldata:Attribute
+    Choice_XsdSequenceArray[] Choice_XsdSequenceArray5;
+
+    @xmldata:Element {
+        minOccurs: 1,
+        maxOccurs: 2
+    }
+    @xmldata:Choice {
+        minOccurs: 1,
+        maxOccurs: 2
+    }
+    @xmldata:Attribute
+    Choice_XsdSequenceArray2[] Choice_XsdSequenceArray6;
 |};
 
 type Seq_XsdSequenceArray record {|
@@ -179,3 +201,10 @@ type Seq_XsdSequenceArray record {|
     float salary;
 |};
 
+type Choice_XsdSequenceArray record {
+    int? age;
+};
+
+type Choice_XsdSequenceArray2 record {|
+    int? age;
+|};

@@ -41,9 +41,11 @@ public enum XmldataDiagnosticCodes {
             "invalid xsd annotation: record type or record array type expected", ERROR),
     INVALID_SEQUENCE_TYPE("XML_ERROR_207",
             "Invalid sequence member: Order should be defined in in all fields", ERROR),
-    INVALID_SEQUENCE_REST_TYPE("XML_ERROR_207",
+    INVALID_SEQUENCE_REST_TYPE("XML_ERROR_208",
             "Invalid sequence member: Sequence members should be defined in a closed record", ERROR),
-    INVALID_ANNOTATIONS("XML_ERROR_208", "A record field cannot contains " +
+    INVALID_CHOICE_REST_TYPE("XML_ERROR_209",
+            "Invalid choice member: Choice members should be defined in a closed record", ERROR),
+    INVALID_ANNOTATIONS("XML_ERROR_210", "A record field cannot contains " +
             "sequence/choice/element/attribute annotations simultaneously", ERROR);
 
     private final String code;

@@ -18,6 +18,8 @@
 
 package io.ballerina.lib.data.xmldata.utils;
 
+import io.ballerina.lib.data.xmldata.xml.xsd.ElementInfo;
+import io.ballerina.lib.data.xmldata.xml.xsd.ModelGroupInfo;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.types.ArrayType;
@@ -55,24 +57,34 @@ public class ToXmlUtils {
     private static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attribute_");
     private static final BString XMLNS = StringUtils.fromString("xmlns");
 
-    public static BXml fromRecordToXml(Object jsonValue, BMap<BString, Object> options, BTypedesc typed) {
-        Type type = typed.getDescribingType();
-        Type referredType = TypeUtils.getReferredType(type);
-        Object rootTag = options.get(StringUtils.fromString(Constants.ROOT_TAG));
-        BMap<BString, BString> allNamespaces = getEmptyStringMap();
-        BString rootTagBstring = StringUtils.fromString(rootTag == null ? Constants.EMPTY_STRING : rootTag.toString());
-
-        if (!isSingleRecordMember(jsonValue)) {
-            addNamespaces(allNamespaces, getNamespacesMap(jsonValue, options, getEmptyStringMap()));
-            return getElementFromRecordMember(rootTag == null ? StringUtils.fromString(Constants.ROOT) : rootTagBstring,
-                    traverseRecordAndGenerateXml(jsonValue, allNamespaces,
-                            getEmptyStringMap(), options, null, referredType, false, false),
-                    allNamespaces, options, getAttributesMap(jsonValue, options, allNamespaces, getEmptyStringMap()));
-        }
-
+    public static Object fromRecordToXml(Object jsonValue, BMap<BString, Object> options, BTypedesc typed) {
         try {
-            BMap<BString, Object> jMap = (BMap<BString, Object>) ValueUtils
-                    .convert(jsonValue, TypeCreator.createMapType(PredefinedTypes.TYPE_JSON));
+            Type type = typed.getDescribingType();
+            Type referredType = TypeUtils.getReferredType(type);
+            Object rootTag = options.get(StringUtils.fromString(Constants.ROOT_TAG));
+            BMap<BString, BString> allNamespaces = getEmptyStringMap();
+            BString rootTagBstring =
+                    StringUtils.fromString(rootTag == null ? Constants.EMPTY_STRING : rootTag.toString());
+
+            if (!isSingleRecordMember(jsonValue)) {
+                addNamespaces(allNamespaces, getNamespacesMap(jsonValue, options, getEmptyStringMap()));
+                return getElementFromRecordMember(
+                        rootTag == null ? StringUtils.fromString(Constants.ROOT) : rootTagBstring,
+                        traverseRecordAndGenerateXml(jsonValue, allNamespaces,
+                                getEmptyStringMap(), options, null, referredType,
+                                false, false, null, null),
+                        allNamespaces, options,
+                        getAttributesMap(jsonValue, options, allNamespaces, getEmptyStringMap()));
+            }
+
+            BMap<BString, Object> jMap = null;
+            try {
+                jMap = (BMap<BString, Object>) ValueUtils
+                        .convert(jsonValue, TypeCreator.createMapType(PredefinedTypes.TYPE_JSON));
+            } catch (BError e) {
+                return jsonValue == null ? ValueCreator.createXmlValue(Constants.EMPTY_STRING)
+                        : CreateText.createText(StringUtils.fromString(jsonValue.toString()));
+            }
 
             if (jMap.isEmpty()) {
                 return ValueCreator.createXmlValue(Constants.EMPTY_STRING);
@@ -83,22 +95,27 @@ public class ToXmlUtils {
             HashMap<String, String> elementNamesMap = DataUtils.getElementNameMap(referredType);
             ArrayList<String> sequenceFieldNames = getSequenceFieldNames(referredType, elementNamesMap);
             boolean isSequenceField = sequenceFieldNames.contains(keyStr);
-            ArrayList<String> modelGroupRelatedFieldNames =
+            HashMap<String, ModelGroupInfo> modelGroupRelatedFieldNames =
                     getModelGroupRelatedFieldNames(referredType, elementNamesMap);
+            HashMap<String, ElementInfo> elementInfoRelatedFieldNames =
+                    getElementInfoRelatedFieldNames(referredType, elementNamesMap);
             String localJsonKeyPart = keyStr.contains(Constants.COLON)
                     ? keyStr.substring(keyStr.indexOf(Constants.COLON) + 1) : keyStr;
             String recordKey = elementNamesMap.getOrDefault(localJsonKeyPart, localJsonKeyPart);
-            boolean isContainsModelGroup = modelGroupRelatedFieldNames.contains(recordKey);
+            boolean isContainsModelGroup = modelGroupRelatedFieldNames.containsKey(recordKey);
+            ModelGroupInfo parentModelGroupInfo = modelGroupRelatedFieldNames.get(recordKey);
+            ElementInfo elementInfo = elementInfoRelatedFieldNames.get(recordKey);
 
             Object value = ToArray.toArray(jMap).getValues()[0];
             addNamespaces(allNamespaces, getNamespacesMap(value, options, getEmptyStringMap()));
 
             if (value instanceof BArray) {
                 return getElementFromRecordMember(rootTag == null
-                                ? StringUtils.fromString(Constants.ROOT) : rootTagBstring,
-                        traverseRecordAndGenerateXml(value, allNamespaces, getEmptyStringMap(), options, key,
-                        getChildElementType(referredType, keyStr), isSequenceField, isSequenceField),
-                    allNamespaces, options, getAttributesMap(value, options, allNamespaces, getEmptyStringMap()));
+                                ? StringUtils.fromString(Constants.ROOT) : rootTagBstring, traverseRecordAndGenerateXml(
+                                value, allNamespaces, getEmptyStringMap(), options, key, getChildElementType(
+                                        referredType, keyStr), isSequenceField, isSequenceField,
+                                parentModelGroupInfo, elementInfo),
+                        allNamespaces, options, getAttributesMap(value, options, allNamespaces, getEmptyStringMap()));
             }
 
             if (key.equals(options.get(Constants.TEXT_FIELD_NAME))) {
@@ -107,7 +124,8 @@ public class ToXmlUtils {
 
             BXml output = getElementFromRecordMember(key,
                     traverseRecordAndGenerateXml(value, allNamespaces, getEmptyStringMap(), options, null,
-                        getChildElementType(referredType, recordKey), isSequenceField, isSequenceField),
+                            getChildElementType(referredType, recordKey), isSequenceField,
+                            isSequenceField, parentModelGroupInfo, elementInfo),
                     allNamespaces, options, getAttributesMap(value, options, allNamespaces, getEmptyStringMap()));
             if (isContainsModelGroup) {
                 output = output.children();
@@ -117,8 +135,7 @@ public class ToXmlUtils {
             }
             return output;
         } catch (BError e) {
-            return jsonValue == null ? ValueCreator.createXmlValue(Constants.EMPTY_STRING)
-                    : CreateText.createText(StringUtils.fromString(jsonValue.toString()));
+            return DiagnosticLog.createXmlError(e.getMessage());
         }
     }
 
@@ -127,14 +144,18 @@ public class ToXmlUtils {
     }
 
     public static BXml traverseRecordAndGenerateXml(Object jNode, BMap<BString, BString> allNamespaces,
-                    BMap<BString, BString> parentNamespaces, BMap<BString, Object> options,
-                    Object keyObj, Type type, boolean isParentSequence, boolean isParentSequenceArray) {
+            BMap<BString, BString> parentNamespaces, BMap<BString, Object> options, Object keyObj, Type type,
+            boolean isParentSequence, boolean isParentSequenceArray,
+            ModelGroupInfo parentModelGroupInfo, ElementInfo parentElementInfo) throws BError {
         BMap<BString, BString> namespacesOfElem;
         BXml xNode = ValueCreator.createXmlValue(Constants.EMPTY_STRING);
         String attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
         Type referredType = TypeUtils.getReferredType(type);
         HashMap<String, String> elementNamesMap = DataUtils.getElementNameMap(referredType);
-        ArrayList<String> modelGroupRelatedFieldNames = getModelGroupRelatedFieldNames(referredType, elementNamesMap);
+        HashMap<String, ModelGroupInfo> modelGroupRelatedFieldNames =
+                getModelGroupRelatedFieldNames(referredType, elementNamesMap);
+        HashMap<String, ElementInfo> elementInfoRelatedFieldNames =
+                getElementInfoRelatedFieldNames(referredType, elementNamesMap);
         ArrayList<String> sequenceFieldNames = getSequenceFieldNames(referredType, elementNamesMap);
         BXml childElement;
 
@@ -149,7 +170,9 @@ public class ToXmlUtils {
                 String localJsonKeyPart = jsonKey.contains(Constants.COLON) ?
                         jsonKey.substring(jsonKey.indexOf(Constants.COLON) + 1) : jsonKey;
                 String recordKey = elementNamesMap.getOrDefault(localJsonKeyPart, localJsonKeyPart);
-                boolean isContainsModelGroup = modelGroupRelatedFieldNames.contains(recordKey);
+                boolean isContainsModelGroup = modelGroupRelatedFieldNames.containsKey(recordKey);
+                ModelGroupInfo modelGroupInfo = modelGroupRelatedFieldNames.get(recordKey);
+                ElementInfo elementInfo = elementInfoRelatedFieldNames.get(recordKey);
                 boolean isSequenceField = sequenceFieldNames.contains(recordKey);
 
                 if (jsonKey.startsWith(attributePrefix)) {
@@ -164,20 +187,43 @@ public class ToXmlUtils {
 
                     if (value instanceof BArray) {
                         childElement = traverseRecordAndGenerateXml(value, allNamespaces, namespacesOfElem, options, k,
-                                getChildElementType(referredType, recordKey), isSequenceField, isSequenceField);
+                                getChildElementType(referredType, recordKey),
+                                isSequenceField, isSequenceField, modelGroupInfo, elementInfo);
                         xNode = Concat.concat(xNode, childElement);
                     } else {
                         childElement = getElementFromRecordMember(k, traverseRecordAndGenerateXml(
-                                    value, allNamespaces, namespacesOfElem, options, null,
-                                    getChildElementType(referredType, recordKey), isSequenceField, isSequenceField),
-                                allNamespaces, options, getAttributesMap(
-                                        value, options, allNamespaces, parentNamespaces));
+                                value, allNamespaces, namespacesOfElem, options, null, getChildElementType(
+                            referredType, recordKey), isSequenceField, isSequenceField, modelGroupInfo, elementInfo),
+                            allNamespaces, options, getAttributesMap(value, options, allNamespaces, parentNamespaces));
                         xNode = Concat.concat(xNode, !isContainsModelGroup || isParentSequenceArray ? childElement
                                 : childElement.children());
                     }
                 }
             }
         } else if (jNode instanceof BArray arrayNode) {
+            int size = arrayNode.size();
+            if (isParentSequenceArray && parentModelGroupInfo != null) {
+                if (size < parentModelGroupInfo.getMinOccurs()) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_LESS_THAN_MIN_REQUIRED_TIMES,
+                            parentModelGroupInfo.getFieldName());
+                }
+
+                if (size > parentModelGroupInfo.getMaxOccurs()) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_MORE_THAN_MAX_ALLOWED_TIMES,
+                            parentModelGroupInfo.getFieldName());
+                }
+            } else {
+                if (parentElementInfo != null && size > parentElementInfo.maxOccurs) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_MORE_THAN_MAX_ALLOWED_TIMES,
+                            parentElementInfo.fieldName);
+                }
+
+                if (parentElementInfo != null && size < parentElementInfo.minOccurs) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_LESS_THAN_MIN_REQUIRED_TIMES,
+                            parentElementInfo.fieldName);
+                }
+            }
+
             for (Object i : arrayNode.getValues()) {
                 if (i == null) {
                     continue;
@@ -193,16 +239,16 @@ public class ToXmlUtils {
                 addNamespaces(allNamespaces, namespacesOfElem);
                 if (options.get(Constants.ARRAY_ENTRY_TAG).toString().isEmpty()) {
                     childElement = getElementFromRecordMember(StringUtils.fromString(arrayEntryTagKey),
-                            traverseRecordAndGenerateXml(i, allNamespaces, namespacesOfElem,
-                                    options, keyObj, getChildElementType(referredType, null),
-                                    isParentSequence, isParentSequenceArray),
-                            allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces));
+                        traverseRecordAndGenerateXml(i, allNamespaces, namespacesOfElem,
+                                options, keyObj, getChildElementType(referredType, null),
+                                isParentSequence, isParentSequenceArray, parentModelGroupInfo, parentElementInfo),
+                        allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces));
                 } else {
                     childElement = getElementFromRecordMember(StringUtils.fromString(arrayEntryTagKey),
-                            traverseRecordAndGenerateXml(i, allNamespaces, namespacesOfElem,
-                                    options, null, getChildElementType(referredType, null),
-                                    isParentSequence, isParentSequenceArray),
-                            allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces));
+                        traverseRecordAndGenerateXml(i, allNamespaces, namespacesOfElem,
+                                options, null, getChildElementType(referredType, null),
+                                isParentSequence, isParentSequenceArray, parentModelGroupInfo, parentElementInfo),
+                        allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces));
                 }
                 xNode = Concat.concat(xNode, isParentSequenceArray ? childElement.children() : childElement);
             }
@@ -212,13 +258,22 @@ public class ToXmlUtils {
         return xNode;
     }
 
-    private static ArrayList<String> getModelGroupRelatedFieldNames(Type expType,
-                                                                    HashMap<String, String> elementNamesMap) {
+    private static HashMap<String, ModelGroupInfo> getModelGroupRelatedFieldNames(Type expType,
+                                                      HashMap<String, String> elementNamesMap) {
         Type referedType = TypeUtils.getReferredType(expType);
         if (referedType instanceof RecordType recordType) {
             return DataUtils.getFieldNamesWithModelGroupAnnotations(recordType, elementNamesMap);
         }
-        return new ArrayList<>();
+        return new HashMap<>();
+    }
+
+    private static HashMap<String, ElementInfo> getElementInfoRelatedFieldNames(Type expType,
+                                                                          HashMap<String, String> elementNamesMap) {
+        Type referedType = TypeUtils.getReferredType(expType);
+        if (referedType instanceof RecordType recordType) {
+            return DataUtils.getFieldNamesWithElementGroupAnnotations(recordType, elementNamesMap, null);
+        }
+        return new HashMap<>();
     }
 
     private static ArrayList<String> getSequenceFieldNames(Type expType,
@@ -231,7 +286,7 @@ public class ToXmlUtils {
     }
 
 
-    private static Type getChildElementType(Type type, String recordKey) {
+    private static Type getChildElementType(Type type, String recordKey) throws BError {
         try {
             if (type instanceof ArrayType arrayType) {
                 return TypeUtils.getReferredType(arrayType.getElementType());
@@ -292,15 +347,8 @@ public class ToXmlUtils {
         }
         return true;
     }
-
     public static BXml getElementFromRecordMember(BString name, BXml children, BMap<BString, BString> namespaces,
                                   BMap<BString, Object> options, BMap<BString, BString> attributes) {
-        return getElementFromRecordMember(
-                name, children, namespaces, options, attributes, PredefinedTypes.TYPE_ANYDATA);
-    }
-
-    public static BXml getElementFromRecordMember(BString name, BXml children, BMap<BString, BString> namespaces,
-                                  BMap<BString, Object> options, BMap<BString, BString> attributes, Type type) {
         String attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
         String userAttributePrefix = options.get(Constants.USER_ATTRIBUTE_PREFIX).toString();
         BXml element;

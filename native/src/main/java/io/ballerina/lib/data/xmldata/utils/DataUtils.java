@@ -23,8 +23,10 @@ import io.ballerina.lib.data.xmldata.xml.QualifiedName;
 import io.ballerina.lib.data.xmldata.xml.QualifiedNameFactory;
 import io.ballerina.lib.data.xmldata.xml.QualifiedNameMap;
 import io.ballerina.lib.data.xmldata.xml.QualifiedNameSemantic;
+import io.ballerina.lib.data.xmldata.xml.xsd.ChoiceInfo;
 import io.ballerina.lib.data.xmldata.xml.xsd.ElementInfo;
 import io.ballerina.lib.data.xmldata.xml.xsd.ModelGroupInfo;
+import io.ballerina.lib.data.xmldata.xml.xsd.SequenceInfo;
 import io.ballerina.runtime.api.Module;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
@@ -524,6 +526,7 @@ public class DataUtils {
                                                               HashMap<String, Integer> xsdSequencePriorityOrder) {
         if (!xsdSequencePriorityOrder.isEmpty()) {
             return xsdSequencePriorityOrder.entrySet().stream()
+                    .filter(entry -> input.containsKey(StringUtils.fromString(entry.getKey())))
                     .sorted(Comparator.comparingInt(Map.Entry::getValue))
                     .map(entry -> StringUtils.fromString(entry.getKey()))
                     .toArray(BString[]::new);
@@ -1142,25 +1145,34 @@ public class DataUtils {
         return elementPriorityOrder;
     }
 
-    public static ArrayList<String> getFieldNamesWithModelGroupAnnotations(RecordType fieldType,
+    public static HashMap<String, ModelGroupInfo> getFieldNamesWithModelGroupAnnotations(RecordType fieldType,
                                                                            HashMap<String, String> elementNamesMap) {
-        ArrayList<String> fieldNamesWithModelGroupAnnotations = new ArrayList<>();
+        HashMap<String, ModelGroupInfo> fieldNamesWithModelGroupAnnotations = new HashMap<>();
         BMap<BString, Object> annotations = fieldType.getAnnotations();
         for (BString annotationKey : annotations.getKeys()) {
             String key = annotationKey.getValue();
             if (key.contains(Constants.FIELD)) {
                 String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+                if (elementNamesMap.containsKey(fieldName)) {
+                    fieldName = elementNamesMap.get(fieldName);
+                }
+
                 Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
                 for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
                     String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
                     if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
-                        if (fieldAnnotationKeyStr.endsWith(Constants.SEQUENCE)
-                                || fieldAnnotationKeyStr.endsWith(Constants.CHOICE)) {
-                            if (elementNamesMap.containsKey(fieldName)) {
-                                fieldNamesWithModelGroupAnnotations.add(elementNamesMap.get(fieldName));
-                            } else {
-                                fieldNamesWithModelGroupAnnotations.add(fieldName);
-                            }
+                        if (fieldAnnotationKeyStr.endsWith(Constants.SEQUENCE)) {
+                            SequenceInfo sequenceInfo = new SequenceInfo(fieldName,
+                                    (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey),
+                                    fieldType, null);
+                            fieldNamesWithModelGroupAnnotations.put(fieldName, sequenceInfo);
+                        }
+
+                        if (fieldAnnotationKeyStr.endsWith(Constants.CHOICE)) {
+                            ChoiceInfo choiceInfo = new ChoiceInfo(fieldName,
+                                    (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey),
+                                    fieldType, null);
+                            fieldNamesWithModelGroupAnnotations.put(fieldName, choiceInfo);
                         }
                     }
                 }
@@ -1168,6 +1180,35 @@ public class DataUtils {
         }
         return fieldNamesWithModelGroupAnnotations;
     }
+
+    public static HashMap<String, ElementInfo> getFieldNamesWithElementGroupAnnotations(
+                    RecordType fieldType, HashMap<String, String> elementNamesMap, String xmlElementName) {
+        HashMap<String, ElementInfo> fieldNamesWithElementInfoAnnotations = new HashMap<>();
+        BMap<BString, Object> annotations = fieldType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String key = annotationKey.getValue();
+            if (key.contains(Constants.FIELD)) {
+                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+                if (elementNamesMap.containsKey(fieldName)) {
+                    fieldName = elementNamesMap.get(fieldName);
+                }
+
+                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                    String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+                    if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+                        if (fieldAnnotationKeyStr.endsWith(Constants.ELEMENT)) {
+                            ElementInfo elementInfo = new ElementInfo(xmlElementName, fieldName,
+                                    (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey));
+                            fieldNamesWithElementInfoAnnotations.put(fieldName, elementInfo);
+                        }
+                    }
+                }
+            }
+        }
+        return fieldNamesWithElementInfoAnnotations;
+    }
+
 
     public static ArrayList<String> getFieldNamesWithSequenceAnnotations(RecordType fieldType,
                                                                            HashMap<String, String> elementNamesMap) {
@@ -1223,37 +1264,36 @@ public class DataUtils {
         return names;
     }
 
-    public static BMap<BString, Object> getXmlElementModelGroupMap(BTypedesc typed) {
-        Type type = TypeUtils.getReferredType(typed.getDescribingType());
-        if (type.getTag() != TypeTags.RECORD_TYPE_TAG) {
-            return null;
-        }
-
-        BMap<BString, Object> xmlModelGroupMap = ValueCreator
-                .createMapValue(TypeCreator.createMapType(PredefinedTypes.TYPE_BOOLEAN));
-        RecordType recordType = (RecordType) type;
-        BMap<BString, Object> annotations = recordType.getAnnotations();
-        for (BString annotationKey : annotations.getKeys()) {
-            String key = annotationKey.getValue();
-            if (key.contains(Constants.FIELD)) {
-                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
-                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
-                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
-                    String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
-                    if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
-                        if (fieldAnnotationKeyStr.endsWith(Constants.SEQUENCE)
-                                || fieldAnnotationKeyStr.endsWith(Constants.CHOICE)) {
-                            xmlModelGroupMap.put(StringUtils.fromString(fieldName), true);
-                        } else {
-                            xmlModelGroupMap.put(StringUtils.fromString(fieldName), false);
-                        }
-                    }
-                }
-            }
-        }
-        return xmlModelGroupMap;
-    }
-
+//    public static BMap<BString, Object> getXmlElementModelGroupMap(BTypedesc typed) {
+//        Type type = TypeUtils.getReferredType(typed.getDescribingType());
+//        if (type.getTag() != TypeTags.RECORD_TYPE_TAG) {
+//            return null;
+//        }
+//
+//        BMap<BString, Object> xmlModelGroupMap = ValueCreator
+//                .createMapValue(TypeCreator.createMapType(PredefinedTypes.TYPE_BOOLEAN));
+//        RecordType recordType = (RecordType) type;
+//        BMap<BString, Object> annotations = recordType.getAnnotations();
+//        for (BString annotationKey : annotations.getKeys()) {
+//            String key = annotationKey.getValue();
+//            if (key.contains(Constants.FIELD)) {
+//                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+//                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+//                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+//                    String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+//                    if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+//                        if (fieldAnnotationKeyStr.endsWith(Constants.SEQUENCE)
+//                                || fieldAnnotationKeyStr.endsWith(Constants.CHOICE)) {
+//                            xmlModelGroupMap.put(StringUtils.fromString(fieldName), true);
+//                        } else {
+//                            xmlModelGroupMap.put(StringUtils.fromString(fieldName), false);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        return xmlModelGroupMap;
+//    }
     /**
      * Holds data required for the processing.
      *

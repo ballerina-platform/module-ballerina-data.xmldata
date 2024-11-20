@@ -303,7 +303,41 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
                 if (name.equals(Constants.SEQUENCE)) {
                     validateSequenceAnnotation(fieldSymbol.typeDescriptor(), fieldSymbol.getLocation(), ctx);
                 }
+
+                if (name.equals(Constants.CHOICE)) {
+                    validateChoiceAnnotation(fieldSymbol.typeDescriptor(), fieldSymbol.getLocation(), ctx);
+                }
             }
+        }
+    }
+
+    private void validateChoiceAnnotation(TypeSymbol typeSymbol,
+                                            Optional<Location> location, SyntaxNodeAnalysisContext ctx) {
+        RecordTypeSymbol recordTypeSymbol = null;
+        if (typeSymbol.typeKind() == TypeDescKind.TYPE_REFERENCE) {
+            validateChoiceAnnotation(((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor(), location, ctx);
+            return;
+        }
+
+        if (typeSymbol.typeKind() == TypeDescKind.RECORD) {
+            recordTypeSymbol = (RecordTypeSymbol) typeSymbol;
+        }
+
+        if (typeSymbol.typeKind() == TypeDescKind.ARRAY) {
+            TypeSymbol memberTypeSymbol = ((ArrayTypeSymbol) typeSymbol).memberTypeDescriptor();
+            if (memberTypeSymbol.typeKind() == TypeDescKind.TYPE_REFERENCE) {
+                memberTypeSymbol = ((TypeReferenceTypeSymbol) memberTypeSymbol).typeDescriptor();
+            }
+            if (memberTypeSymbol.typeKind() == TypeDescKind.RECORD) {
+                recordTypeSymbol = (RecordTypeSymbol) memberTypeSymbol;
+            }
+        }
+
+        if (recordTypeSymbol != null) {
+            Optional<Location> loctaion = recordTypeSymbol.getLocation();
+            recordTypeSymbol.restTypeDescriptor().ifPresent(restTypeSymbol -> {
+                reportDiagnosticInfo(ctx, loctaion, XmldataDiagnosticCodes.INVALID_CHOICE_REST_TYPE);
+            });
         }
     }
 

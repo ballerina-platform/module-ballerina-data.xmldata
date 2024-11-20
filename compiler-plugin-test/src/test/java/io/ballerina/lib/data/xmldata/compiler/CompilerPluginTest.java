@@ -133,7 +133,7 @@ public class CompilerPluginTest {
         List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
                 .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
                 .collect(Collectors.toList());
-        Assert.assertEquals(errorDiagnosticsList.size(), 15);
+        Assert.assertEquals(errorDiagnosticsList.size(), 24);
         Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
                 "invalid xsd annotation: record type or record array type expected");
         Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
@@ -143,13 +143,13 @@ public class CompilerPluginTest {
         Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
                 "invalid xsd annotation: record type or record array type expected");
         Assert.assertEquals(errorDiagnosticsList.get(4).diagnosticInfo().messageFormat(),
-                "invalid xsd annotation: record type or record array type expected");
+                "Invalid sequence member: Sequence members should be defined in a closed record");
         Assert.assertEquals(errorDiagnosticsList.get(5).diagnosticInfo().messageFormat(),
-                "invalid xsd annotation: record type or record array type expected");
+                "Invalid sequence member: Sequence members should be defined in a closed record");
         Assert.assertEquals(errorDiagnosticsList.get(6).diagnosticInfo().messageFormat(),
                 "invalid xsd annotation: record type or record array type expected");
         Assert.assertEquals(errorDiagnosticsList.get(7).diagnosticInfo().messageFormat(),
-                "invalid xsd annotation: record type or record array type expected");
+                "Invalid sequence member: Sequence members should be defined in a closed record");
         Assert.assertEquals(errorDiagnosticsList.get(8).diagnosticInfo().messageFormat(),
                 "invalid xsd annotation: record type or record array type expected");
         Assert.assertEquals(errorDiagnosticsList.get(9).diagnosticInfo().messageFormat(),
@@ -159,10 +159,28 @@ public class CompilerPluginTest {
         Assert.assertEquals(errorDiagnosticsList.get(11).diagnosticInfo().messageFormat(),
                 "invalid xsd annotation: record type or record array type expected");
         Assert.assertEquals(errorDiagnosticsList.get(12).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(13).diagnosticInfo().messageFormat(),
+                "Invalid choice member: Choice members should be defined in a closed record");
+        Assert.assertEquals(errorDiagnosticsList.get(14).diagnosticInfo().messageFormat(),
+                "Invalid choice member: Choice members should be defined in a closed record");
+        Assert.assertEquals(errorDiagnosticsList.get(15).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(16).diagnosticInfo().messageFormat(),
+                "Invalid choice member: Choice members should be defined in a closed record");
+        Assert.assertEquals(errorDiagnosticsList.get(17).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(18).diagnosticInfo().messageFormat(),
+                "A record field cannot contains sequence/choice/element/attribute annotations simultaneously");
+        Assert.assertEquals(errorDiagnosticsList.get(19).diagnosticInfo().messageFormat(),
+                "A record field cannot contains sequence/choice/element/attribute annotations simultaneously");
+        Assert.assertEquals(errorDiagnosticsList.get(20).diagnosticInfo().messageFormat(),
+                "A record field cannot contains sequence/choice/element/attribute annotations simultaneously");
+        Assert.assertEquals(errorDiagnosticsList.get(20).diagnosticInfo().messageFormat(),
                 "A record field cannot contains sequence/choice/element/attribute annotations simultaneously");
         Assert.assertEquals(errorDiagnosticsList.get(13).diagnosticInfo().messageFormat(),
-                "A record field cannot contains sequence/choice/element/attribute annotations simultaneously");
-        Assert.assertEquals(errorDiagnosticsList.get(14).diagnosticInfo().messageFormat(),
+                "Invalid choice member: Choice members should be defined in a closed record");
+        Assert.assertEquals(errorDiagnosticsList.get(20).diagnosticInfo().messageFormat(),
                 "A record field cannot contains sequence/choice/element/attribute annotations simultaneously");
     }
 
@@ -195,7 +213,7 @@ public class CompilerPluginTest {
         List<Diagnostic> errorDiagnosticsList = diagnosticResult.diagnostics().stream()
                 .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
                 .collect(Collectors.toList());
-        Assert.assertEquals(errorDiagnosticsList.size(), 6);
+        Assert.assertEquals(errorDiagnosticsList.size(), 10);
         Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
                 "Invalid sequence member: Order should be defined in in all fields");
         Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
@@ -208,5 +226,13 @@ public class CompilerPluginTest {
                 "Invalid sequence member: Order should be defined in in all fields");
         Assert.assertEquals(errorDiagnosticsList.get(5).diagnosticInfo().messageFormat(),
                 "Invalid sequence member: Order should be defined in in all fields");
+        Assert.assertEquals(errorDiagnosticsList.get(6).diagnosticInfo().messageFormat(),
+                "Invalid sequence member: Order should be defined in in all fields");
+        Assert.assertEquals(errorDiagnosticsList.get(7).diagnosticInfo().messageFormat(),
+                "Invalid choice member: Choice members should be defined in a closed record");
+        Assert.assertEquals(errorDiagnosticsList.get(8).diagnosticInfo().messageFormat(),
+                "invalid xsd annotation: record type or record array type expected");
+        Assert.assertEquals(errorDiagnosticsList.get(9).diagnosticInfo().messageFormat(),
+                "Invalid choice member: Choice members should be defined in a closed record");
     }
 }

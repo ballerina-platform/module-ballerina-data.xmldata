@@ -16,6 +16,9 @@
 
 import ballerina/test;
 
+@Name {
+    value: "Root"
+}
 type ElementRecordWithXmlValue record {
     @Element {
         maxOccurs: 1,
@@ -32,15 +35,20 @@ type ElementRecordWithXmlValue record {
 
 @test:Config{groups: ["xsd", "xsd_element"]}
 function testXsdElementWithXmlValue() returns error? {
-    xml xmlStr = xml `<Root><name>John</name><age>25</age></Root>`;
-    ElementRecordWithXmlValue|Error rec = parseAsType(xmlStr);
+    xml xmlValue = xml `<Root><name>John</name><age>25</age></Root>`;
+    ElementRecordWithXmlValue|Error rec = parseAsType(xmlValue);
     test:assertEquals(rec, {name: "John", age: 25});
+    test:assertEquals(toXml(check rec), xmlValue);
 
-    xmlStr = xml `<Root><name>John</name></Root>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<Root><name>John</name></Root>`;
+    rec = parseAsType(xmlValue);
     test:assertEquals(rec, {name: "John"});
+    test:assertEquals(toXml(check rec), xmlValue);
 }
 
+@Name {
+    value: "Root"
+}
 type ElementRecordWithXmlValue2 record {
     @Element {
         maxOccurs: 10,
@@ -52,45 +60,69 @@ type ElementRecordWithXmlValue2 record {
         maxOccurs: 3,
         minOccurs: 1
     }
-    int[] age?;
+    int[] age;
 };
 
 @test:Config{groups: ["xsd", "xsd_element"]}
 function testXsdElementWithXmlValue2() returns error? {
-    xml xmlStr = xml `<Root><name>John</name><age>25</age></Root>`;
-    ElementRecordWithXmlValue2|Error rec = parseAsType(xmlStr);
-    test:assertEquals(rec, {name: ["John"], age: [25]});
+    xml xmlValue;
+    ElementRecordWithXmlValue2|Error rec;
+    xml|Error toXmlResult;
 
-    xmlStr = xml `<Root><name>John</name></Root>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<Root><name>John</name><age>25</age></Root>`;
+    rec = parseAsType(xmlValue);
+    test:assertEquals(rec, {name: ["John"], age: [25]});
+    test:assertEquals(toXml(check rec), xmlValue);
+
+    xmlValue = xml `<Root><name>John</name></Root>`;
+    rec = parseAsType(xmlValue);
     test:assertTrue(rec is error);
     test:assertEquals((<Error>rec).message(), "'age' occurs less than the min required times");
+    toXmlResult = toXml(<ElementRecordWithXmlValue2>{name: ["John"], age: []});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'age' occurs less than the min required times");
 
-    xmlStr = xml `<Root><age>25</age></Root>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<Root><age>25</age></Root>`;
+    rec = parseAsType(xmlValue);
     test:assertEquals(rec, {age: [25]});
+    test:assertEquals(toXml(check rec), xmlValue);
 
-    xmlStr = xml `<Root><age>11</age><age>12</age><age>13</age><age>14</age><age>15</age></Root>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<Root><age>11</age><age>12</age><age>13</age><age>14</age><age>15</age></Root>`;
+    rec = parseAsType(xmlValue);
+    test:assertTrue(rec is Error);
+    test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
+    toXmlResult = toXml(<ElementRecordWithXmlValue2>{age: [11, 12, 13, 14, 15]});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'age' occurs more than the max allowed times");
+
+    xmlValue = xml `<Root><age>11</age><name>Abc</name><age>12</age><age>13</age><age>14</age><age>15</age></Root>`;
+    rec = parseAsType(xmlValue);
     test:assertTrue(rec is error);
     test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
+    toXmlResult = toXml(<ElementRecordWithXmlValue2>{name: ["Abc"], age: [11, 12, 13, 14, 15]});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'age' occurs more than the max allowed times");
 
-    xmlStr = xml `<Root><age>11</age><name>Abc</name><age>12</age><age>13</age><age>14</age><age>15</age></Root>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<Root><name>Abc</name><name>Abc</name><name>Abc</name><name>Abc</name><name>Abc</name><age>11</age><age>12</age><age>13</age><age>14</age><age>15</age></Root>`;
+    rec = parseAsType(xmlValue);
     test:assertTrue(rec is error);
     test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
+    toXmlResult = toXml(<ElementRecordWithXmlValue2>{name: ["Abc", "Abc", "Abc", "Abc", "Abc"], age: [11, 12, 13, 14, 15]});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'age' occurs more than the max allowed times");
 
-    xmlStr = xml `<Root><name>Abc</name><name>Abc</name><name>Abc</name><name>Abc</name><name>Abc</name><age>11</age><age>12</age><age>13</age><age>14</age><age>15</age></Root>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<Root><age>11</age><name>Abc</name><name>Abc</name><age>12</age><name>Abc</name><age>13<name>Abc</name></age><age>14</age><age>15</age></Root>`;
+    rec = parseAsType(xmlValue);
     test:assertTrue(rec is error);
     test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
-
-    xmlStr = xml `<Root><age>11</age><name>Abc</name><name>Abc</name><age>12</age><name>Abc</name><age>13<name>Abc</name></age><age>14</age><age>15</age></Root>`;
-    rec = parseAsType(xmlStr);
-    test:assertTrue(rec is error);
-    test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
+    toXmlResult = toXml(<ElementRecordWithXmlValue2>{name: ["Abc", "Abc", "Abc", "Abc"], age: [11, 12, 13, 14, 15]});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'age' occurs more than the max allowed times");
 }
 
+@Name {
+    value: "Root"
+}
 type ElementRecordWithXmlValue3 record {
     record {
         @Element {
@@ -103,13 +135,13 @@ type ElementRecordWithXmlValue3 record {
             maxOccurs: 3,
             minOccurs: 1
         }
-        int[] age?;
+        int[] age;
 
         @Element {
             maxOccurs: 3,
             minOccurs: 2
         }
-        int[] id?;
+        int[] id;
     } user;
     
     @Element {
@@ -121,41 +153,59 @@ type ElementRecordWithXmlValue3 record {
 
 @test:Config{groups: ["xsd", "xsd_element"]}
 function testXsdElementWithXmlValue3() returns error? {
-    xml xmlStr;
+    xml xmlValue;
     ElementRecordWithXmlValue3|Error rec;
+    xml|Error toXmlResult;
 
-    xmlStr = xml `<Root><user><name>John</name><id>1</id><id>2</id><age>35</age></user><status>3</status></Root>`;
-    rec = parseAsType(xmlStr);
-    test:assertEquals(rec, {user: {name: ["John"], age: [35], id: [1, 2]}, status: 3});
+    xmlValue = xml `<Root><user><name>John</name><id>1</id><id>2</id><age>35</age></user><status>3</status></Root>`;
+    rec = parseAsType(xmlValue);
+    test:assertEquals(rec, {user: {name: ["John"], id: [1, 2], age: [35]}, status: 3});
+    test:assertEquals(toXml(check rec), xml `<Root><user><name>John</name><age>35</age><id>1</id><id>2</id></user><status>3</status></Root>`);
 
-    xmlStr = xml `<Root><user><name>John</name><id>1</id><id>2</id></user><status>3</status></Root>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<Root><user><name>John</name><id>1</id><id>2</id></user><status>3</status></Root>`;
+    rec = parseAsType(xmlValue);
     test:assertTrue(rec is error);
     test:assertEquals((<Error>rec).message(), "'age' occurs less than the min required times");
+    toXmlResult = toXml(<ElementRecordWithXmlValue3>{user: {name: ["John"], id: [1, 2], age: []}, status: 3});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'age' occurs less than the min required times");
 
-    xmlStr = xml `<Root><user><id>1</id><id>2</id><age>35</age></user><status>3</status></Root>`;
-    rec = parseAsType(xmlStr);
-    test:assertEquals(rec, {user: {age: [35], id: [1, 2]}, status: 3});
+    xmlValue = xml `<Root><user><id>1</id><id>2</id><age>35</age></user><status>3</status></Root>`;
+    rec = parseAsType(xmlValue);
+    test:assertEquals(rec, {user: {id: [1, 2], age: [35]}, status: 3});
+    test:assertEquals(toXml(check rec), xml `<Root><user><age>35</age><id>1</id><id>2</id></user><status>3</status></Root>`);
 
-    xmlStr = xml `<Root><user><id>1</id><id>2</id><age>11</age><age>13</age><age>13</age><age>14</age><age>15</age></user><status>3</status></Root>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<Root><user><id>1</id><id>2</id><age>11</age><age>13</age><age>13</age><age>14</age><age>15</age></user><status>3</status></Root>`;
+    rec = parseAsType(xmlValue);
     test:assertTrue(rec is error);
     test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
+    toXmlResult = toXml(<ElementRecordWithXmlValue3>{user: {id: [1, 2], age: [11, 13, 13, 14, 15]}, status: 3});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'age' occurs more than the max allowed times");
 
-    xmlStr = xml `<Root><user><id>1</id><id>2</id><age>11</age><name>Abc</name><age>13</age><age>13</age><age>14</age><age>15</age></user><status>3</status></Root>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<Root><user><id>1</id><id>2</id><age>11</age><name>Abc</name><age>13</age><age>13</age><age>14</age><age>15</age></user><status>3</status></Root>`;
+    rec = parseAsType(xmlValue);
     test:assertTrue(rec is error);
     test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
+    toXmlResult = toXml(<ElementRecordWithXmlValue3>{user: {id: [1,2], age: [11, 13, 13, 14, 15], name: ["Abc"]}, status: 3});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'age' occurs more than the max allowed times");
 
-    xmlStr = xml `<Root><user><id>1</id><id>2</id><name>Abc</name><name>Abc</name><name>Abc</name><name>Abc</name><name>Abc</name><age>11</age><age>13</age><age>13</age><age>14</age><age>15</age></user><status>3</status></Root>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<Root><user><id>1</id><id>2</id><name>Abc</name><name>Abc</name><name>Abc</name><name>Abc</name><name>Abc</name><age>11</age><age>13</age><age>13</age><age>14</age><age>15</age></user><status>3</status></Root>`;
+    rec = parseAsType(xmlValue);
     test:assertTrue(rec is error);
     test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
+    toXmlResult = toXml(<ElementRecordWithXmlValue3>{user: {id: [1,2], age: [11, 13, 13, 14, 15], name: ["Abc", "Abc", "Abc", "Abc"]}, status: 3});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'age' occurs more than the max allowed times");
 
-    xmlStr = xml `<Root><user><id>1</id><id>2</id><age>11</age><name>Abc</name><name>Abc</name><age>13</age><name>Abc</name><age>13<name>Abc</name></age><age>14</age><age>15</age></user><status>3</status></Root>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<Root><user><id>1</id><id>2</id><age>11</age><name>Abc</name><name>Abc</name><age>13</age><name>Abc</name><age>13<name>Abc</name></age><age>14</age><age>15</age></user><status>3</status></Root>`;
+    rec = parseAsType(xmlValue);
     test:assertTrue(rec is error);
     test:assertEquals((<Error>rec).message(), "'age' occurs more than the max allowed times");
+    toXmlResult = toXml(<ElementRecordWithXmlValue3>{user: {id: [1,2], age: [11, 13, 13, 14, 15], name: ["Abc", "Abc", "Abc", "Abc"]}, status: 3});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'age' occurs more than the max allowed times");
 }
 
 type ElementRecordWithXmlValue4 record {
@@ -192,31 +242,47 @@ type ElementRecordWithXmlValue4 record {
 
 @test:Config{groups: ["xsd", "xsd_element"]}
 function testXsdElementWithXmlValue4() returns error? {
-    xml xmlStr = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
-    ElementRecordWithXmlValue4|Error rec = parseAsType(xmlStr);
+    xml|Error toXmlResult;
+
+    xml xmlValue = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
+    ElementRecordWithXmlValue4|Error rec = parseAsType(xmlValue);
     test:assertEquals(rec, {name: [{firstName: ["John", "Jane", "Jim"], lastName: ["Doe", "Smith", "Brown"]}, {firstName: ["John", "Jane", "Jim"], lastName: ["Doe", "Smith", "Brown"]}], status: [1, 2, 3], age: [20, 25, 30]});
+    test:assertEquals(toXml(check rec), xmlValue);
 
-    xmlStr = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><status>4</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><status>4</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
+    rec = parseAsType(xmlValue);
     test:assertEquals(rec, {name: [{firstName: ["John", "Jane", "Jim", "Anna"], lastName: ["Doe", "Smith", "Brown"]}, {firstName: ["John", "Jane", "Jim", "Anna"], lastName: ["Doe", "Smith", "Brown"]}], status: [1, 2, 3, 4], age: [20, 25, 30]});
+    test:assertEquals(toXml(check rec), xmlValue);
 
-    xmlStr = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><status>4</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><status>4</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
+    rec = parseAsType(xmlValue);
     test:assertTrue(rec is error);
     test:assertEquals((<Error>rec).message(), "'name' occurs less than the min required times");
+    toXmlResult = toXml(<ElementRecordWithXmlValue4>{name: [{firstName: ["John", "Jane", "Jim", "Anna"], lastName: ["Doe", "Smith", "Brown"]}], status: [1, 2, 3, 4], age: [20, 25, 30]});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'name' occurs less than the min required times");
 
-    xmlStr = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><status>4</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><status>4</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
+    rec = parseAsType(xmlValue);
     test:assertTrue(rec is error);
     test:assertEquals((<Error>rec).message(), "'name' occurs more than the max allowed times");
+    toXmlResult = toXml(<ElementRecordWithXmlValue4>{name: [{firstName: ["John", "Jane", "Jim", "Anna"], lastName: ["Doe", "Smith", "Brown"]}, {firstName: ["John", "Jane", "Jim", "Anna"], lastName: ["Doe", "Smith", "Brown"]}, {firstName: ["John", "Jane", "Jim", "Anna"], lastName: ["Doe", "Smith", "Brown"]}, {firstName: ["John", "Jane", "Jim", "Anna"], lastName: ["Doe", "Smith", "Brown"]}, {firstName: ["John", "Jane", "Jim", "Anna"], lastName: ["Doe", "Smith", "Brown"]}, {firstName: ["John", "Jane", "Jim", "Anna"], lastName: ["Doe", "Smith", "Brown"]}], status: [1, 2, 3, 4], age: [20, 25, 30]});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'name' occurs more than the max allowed times");
 
-    xmlStr = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName><lastName>Brown</lastName><lastName>Brown</lastName><lastName>Brown</lastName><lastName>Brown</lastName><lastName>Brown</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><status>4</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Anna</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName><lastName>Brown</lastName><lastName>Brown</lastName><lastName>Brown</lastName><lastName>Brown</lastName><lastName>Brown</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><status>4</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
+    rec = parseAsType(xmlValue);
     test:assertTrue(rec is error);
     test:assertEquals((<Error>rec).message(), "'lastName' occurs more than the max allowed times");
+    toXmlResult = toXml(<ElementRecordWithXmlValue4>{name: [{firstName: ["John", "Jane", "Jim", "Anna"], lastName: ["Doe", "Smith", "Brown"]}, {firstName: ["John", "Jane", "Jim", "Anna"], lastName: ["Doe", "Smith", "Brown", "Brown", "Brown", "Brown", "Brown", "Brown", "Brown"]}], status: [1, 2, 3, 4], age: [20, 25, 30]});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'lastName' occurs more than the max allowed times");
 
-    xmlStr = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
-    rec = parseAsType(xmlStr);
+    xmlValue = xml `<ElementRecordWithXmlValue4><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><name><firstName>John</firstName><firstName>Jane</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><firstName>Jim</firstName><lastName>Doe</lastName><lastName>Smith</lastName><lastName>Brown</lastName></name><status>1</status><status>2</status><status>3</status><age>20</age><age>25</age><age>30</age></ElementRecordWithXmlValue4>`;
+    rec = parseAsType(xmlValue);
     test:assertTrue(rec is error);
     test:assertEquals((<Error>rec).message(), "'firstName' occurs more than the max allowed times");
+    toXmlResult = toXml(<ElementRecordWithXmlValue4>{name: [{firstName: ["John", "Jane", "Jim", "Anna"], lastName: ["Doe", "Smith", "Brown"]}, {firstName: ["John", "Jane", "Jim", "Anna"], lastName: ["Doe", "Smith", "Brown"]}, {firstName: ["John", "Jane", "Jim", "Anna", "John"], lastName: ["Doe", "Smith", "Brown"]}], status: [1, 2, 3, 4], age: [20, 25, 30]});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'firstName' occurs more than the max allowed times");
 }
