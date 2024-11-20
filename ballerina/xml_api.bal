@@ -22,6 +22,7 @@ const ATTRIBUTE_PREFIX = "attribute_";
 const XMLNS = "xmlns";
 const EMPTY_STRING = "";
 
+# Define the configurations for min and max occurrences of members in the XML schema (XSD).
 public type ParticleOccurrence record {|
   # Specifies the minimum number of occurrences.
   int:Unsigned32 minOccurs?;
@@ -37,22 +38,28 @@ public type ElementConfig record {|
 # Annotation to define schema rules for an XML element in Ballerina.
 public const annotation ElementConfig Element on type, record field;
 
+# Defines the configuration for an XML sequence in the XML schema (XSD).
 public type SequenceConfig record {|
     *ParticleOccurrence;
 |};
 
+# Annotation to define schema rules for an XML sequence in Ballerina.
 public const annotation SequenceConfig Sequence on type, record field;
 
+# Defines the configuration for an XML choice in the XML schema (XSD).
 public type ChoiceConfig record {|
     *ParticleOccurrence;
 |};
 
+# Annotation to define schema rules for an XML choice in Ballerina.
 public const annotation ChoiceConfig Choice on type, record field;
 
+# Defines the configuration for the sequence order in the XML schema (XSD).
 public type SequenceOrderConfig record {|
     int value;
 |};
 
+# Annotation to define schema rules for the sequence order in Ballerina.
 public const annotation SequenceOrderConfig Order on type, record field;
 
 # Defines the name of the XML element.
@@ -487,5 +494,5 @@ isolated function addNamespaces(map<string> allNamespaces, map<string> namespace
 public function validate(string|typedesc<record{}> schema, xml xmlValue)
     returns Error? = @java:Method {'class: "io.ballerina.lib.data.xmldata.xml.Native"} external;
 
-public isolated function fromRecordToXml(json jsonValue, JsonOptions options, typedesc<anydata> inputType) returns xml|Error
+isolated function fromRecordToXml(json jsonValue, JsonOptions options, typedesc<anydata> inputType) returns xml|Error
     = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;
