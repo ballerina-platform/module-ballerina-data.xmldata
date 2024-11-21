@@ -18,6 +18,7 @@
 
 package io.ballerina.lib.data.xmldata.utils;
 
+import io.ballerina.lib.data.xmldata.xml.xsd.ChoiceInfo;
 import io.ballerina.lib.data.xmldata.xml.xsd.ElementInfo;
 import io.ballerina.lib.data.xmldata.xml.xsd.ModelGroupInfo;
 import io.ballerina.lib.data.xmldata.xml.xsd.SequenceInfo;
@@ -165,6 +166,10 @@ public class ToXmlUtils {
             BString[] orderedRecordKeysIfXsdSequencePresent = DataUtils.getOrderedRecordKeysIfXsdSequencePresent(
                     mapNode, DataUtils.getXsdSequencePriorityOrder(referredType, isParentSequence));
 
+            if (parentModelGroupInfo instanceof ChoiceInfo) {
+                validateChoiceFields(parentModelGroupInfo, jMap, elementInfoRelatedFieldNames, elementNamesMap);
+            }
+
             for (BString k : orderedRecordKeysIfXsdSequencePresent) {
                 Object value = mapNode.get(k);
                 String jsonKey = k.getValue().trim();
@@ -257,6 +262,43 @@ public class ToXmlUtils {
             xNode = CreateText.createText(StringUtils.fromString(StringUtils.getStringValue(jNode)));
         }
         return xNode;
+    }
+
+    private static void validateChoiceFields(ModelGroupInfo parentModelGroupInfo, BMap jMap,
+                                            HashMap<String, ElementInfo> elementInfoRelatedFieldNames,
+                                            HashMap<String, String> elementNamesMap) {
+        // TODO: Update this later for validate choices with multiple element occurences.
+        boolean isMeasurable = true;
+        int occurences = 0;
+
+        for (Object key : jMap.getKeys()) {
+            String jsonKey = key.toString();
+            Object value = jMap.get(key);
+            String localJsonKeyPart = jsonKey.contains(Constants.COLON) ?
+                    jsonKey.substring(jsonKey.indexOf(Constants.COLON) + 1) : jsonKey;
+            String recordKey = elementNamesMap.getOrDefault(localJsonKeyPart, localJsonKeyPart);
+            ElementInfo elementInfo = elementInfoRelatedFieldNames.get(recordKey);
+            if (elementInfo != null && elementInfo.maxOccurs != 1) {
+                isMeasurable = false;
+                break;
+            }
+
+            if (value instanceof BArray array) {
+                occurences += array.size();
+            } else {
+                occurences++;
+            }
+        }
+
+        if (isMeasurable && occurences > parentModelGroupInfo.getMaxOccurs()) {
+            throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_MORE_THAN_MAX_ALLOWED_TIMES,
+                    parentModelGroupInfo.getFieldName());
+        }
+
+        if (isMeasurable && occurences < parentModelGroupInfo.getMinOccurs()) {
+            throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_LESS_THAN_MIN_REQUIRED_TIMES,
+                    parentModelGroupInfo.getFieldName());
+        }
     }
 
     private static HashMap<String, ModelGroupInfo> getModelGroupRelatedFieldNames(Type expType,

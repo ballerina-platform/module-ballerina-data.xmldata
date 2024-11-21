@@ -57,6 +57,9 @@ function testXsdChoiceWithXmlValue() returns error? {
     test:assertEquals((<Error>v).message(), "'choice_XSDChoiceWithXmlValueRecord' occurs more than the max allowed times");
     e = validate(XSDChoiceWithXmlValueRecord, xmlValue);
     test:assertEquals((<Error>e).message(), "Invalid XML found: ''choice_XSDChoiceWithXmlValueRecord' occurs more than the max allowed times'");
+    xml|Error toXmlResult = toXml(<XSDChoiceWithXmlValueRecord>{choice_XSDChoiceWithXmlValueRecord: {age: 10, salary: 11.1}});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'choice_XSDChoiceWithXmlValueRecord' occurs more than the max allowed times");
 
     xmlValue = xml `<Root><salary>11.1</salary><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
@@ -210,11 +213,17 @@ function testXsdChoiceWithXmlValue2() returns error? {
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
     test:assertEquals((<Error>v).message(), "'choice_XSDChoiceWithXmlValueRecord2' occurs more than the max allowed times");
+    xml|Error toXmlResult = toXml(<XSDChoiceWithXmlValueRecord2>{choice_XSDChoiceWithXmlValueRecord2: {age: 10, salary: 11.1}, num: 3});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'choice_XSDChoiceWithXmlValueRecord2' occurs more than the max allowed times");
 
     xmlValue = xml `<Root><age>10</age><num>3</num><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
     test:assertEquals((<Error>v).message(), "'choice_XSDChoiceWithXmlValueRecord2' occurs more than the max allowed times");
+    toXmlResult = toXml(<XSDChoiceWithXmlValueRecord2>{num: 3, choice_XSDChoiceWithXmlValueRecord2: {age: 10, salary: 11.1}});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'choice_XSDChoiceWithXmlValueRecord2' occurs more than the max allowed times");
 }
 
 @Name {
@@ -604,6 +613,9 @@ function testXsdChoiceWithXmlValue10() returns error? {
     test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceWithXmlValueRecord10_1' occurs more than the max allowed times");
     e = validate(XSDChoiceWithXmlValueRecord10, xmlValue);
     test:assertEquals((<Error>e).message(), "Invalid XML found: ''choice_XSDChoiceWithXmlValueRecord10_1' occurs more than the max allowed times'");
+    xml|Error toXmlResult = toXml(<XSDChoiceWithXmlValueRecord10>{choice_XSDChoiceWithXmlValueRecord10_1: {field1: {value1: {a: "1"}}, field2: {value2: {d: "1"}}}, choice_XSDChoiceWithXmlValueRecord10_2: {field5: {value2: {d: "2"}}}});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'choice_XSDChoiceWithXmlValueRecord10_1' occurs more than the max allowed times");
 
     xmlValue = xml `<Root><field1><a>1</a></field1><field5><d>2</d></field5><field6><h>2</h></field6></Root>`;
     v2 = parseAsType(xmlValue);
@@ -618,4 +630,7 @@ function testXsdChoiceWithXmlValue10() returns error? {
     test:assertEquals((<Error>v2).message(), "'value2' occurs more than the max allowed times");
     e = validate(XSDChoiceWithXmlValueRecord10, xmlValue);
     test:assertEquals((<Error>e).message(), "Invalid XML found: ''value2' occurs more than the max allowed times'");
+    toXmlResult = toXml(<XSDChoiceWithXmlValueRecord10>{choice_XSDChoiceWithXmlValueRecord10_1: {field2: {value2: {d: "1", e: "1"}}}, choice_XSDChoiceWithXmlValueRecord10_2: {field5: {value2: {d: "2"}}}});
+    test:assertTrue(toXmlResult is Error);
+    test:assertEquals((<Error>toXmlResult).message(), "'value2' occurs more than the max allowed times");
 }
