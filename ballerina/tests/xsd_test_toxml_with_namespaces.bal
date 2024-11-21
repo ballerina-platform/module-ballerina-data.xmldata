@@ -34,7 +34,7 @@ type ToXmlWithNamespaces1 record {
 };
 
 type Seq_A_toXmlWithNamespaces record {
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     @Namespace {
@@ -47,12 +47,12 @@ type Seq_A_toXmlWithNamespaces record {
         uri: "http://example2.com",
         prefix: "ex2"        
     }
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string a;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     @Namespace {
@@ -75,12 +75,12 @@ type Seq_A_toXmlWithNamespaces2 record {
         uri: "http://example3.com",
         prefix: "c"        
     }
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     string c;
 
-    @Order {
+    @SequenceOrder {
         value: 1
     }
 
@@ -94,7 +94,7 @@ type Seq_A_toXmlWithNamespaces2 record {
         uri: "http://example3.com",
         prefix: "b"        
     }
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     string b;
@@ -128,7 +128,7 @@ type ToXmlWithNamespaces3 record {
 };
 
 type Seq_A_toXmlWithNamespaces3 record {
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     @Namespace {
@@ -137,12 +137,12 @@ type Seq_A_toXmlWithNamespaces3 record {
     }
     string c;
 
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string a;
 
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     @Namespace {
@@ -153,7 +153,7 @@ type Seq_A_toXmlWithNamespaces3 record {
 };
 
 type Seq_A_toXmlWithNamespaces3_2 record {
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     string c2;
@@ -162,12 +162,12 @@ type Seq_A_toXmlWithNamespaces3_2 record {
         uri: "http://example3.com",
         prefix: "a2"        
     }
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string a2;
 
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     string b2;
@@ -255,14 +255,14 @@ type ToXmlWithNamespaces6 record {
 };
 
 type Seq_XSDSequenceRecordWithNamespace13_1 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     @Namespace {
         uri: "http://example1.com",
         prefix: "field1"
     }
     Seq_A_13 field1;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     @Namespace {
         uri: "http://example2.com",
         prefix: "field2"
@@ -273,19 +273,19 @@ type Seq_XSDSequenceRecordWithNamespace13_1 record {
         uri: "http://example3.com",
         prefix: "field3"
     }
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     Seq_C_13 field3;
 };
 
 type Seq_XSDSequenceRecordWithNamespace13_2 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     @Namespace {
         uri: "http://example4.com",
         prefix: "field4"
     }
     Seq_D_13 field4;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     @Namespace {
         uri: "http://example5.com"
     }
@@ -295,7 +295,7 @@ type Seq_XSDSequenceRecordWithNamespace13_2 record {
         uri: "http://example6.com",
         prefix: "field6"
     }
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     Seq_F_13 field6;
 };
 

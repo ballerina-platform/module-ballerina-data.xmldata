@@ -24,15 +24,15 @@ const EMPTY_STRING = "";
 
 # Define the configurations for min and max occurrences of members in the XML schema (XSD).
 public type ParticleOccurrence record {|
-  # Specifies the minimum number of occurrences.
-  int:Unsigned32 minOccurs?;
-  # Specifies the maximum number of occurrences.
-  int:Unsigned32 maxOccurs?;
+    # Specifies the minimum number of occurrences.
+    int:Unsigned32 minOccurs?;
+    # Specifies the maximum number of occurrences.
+    int:Unsigned32 maxOccurs?;
 |};
 
 # Defines the configuration for an XML element in the XML schema (XSD).
 public type ElementConfig record {|
-  *ParticleOccurrence;
+    *ParticleOccurrence;
 |};
 
 # Annotation to define schema rules for an XML element in Ballerina.
@@ -56,11 +56,12 @@ public const annotation ChoiceConfig Choice on type, record field;
 
 # Defines the configuration for the sequence order in the XML schema (XSD).
 public type SequenceOrderConfig record {|
+    # The element order in the sequence
     int value;
 |};
 
 # Annotation to define schema rules for the sequence order in Ballerina.
-public const annotation SequenceOrderConfig Order on type, record field;
+public const annotation SequenceOrderConfig SequenceOrder on type, record field;
 
 # Defines the name of the XML element.
 public type NameConfig record {|
@@ -224,8 +225,8 @@ public isolated function fromJson(json jsonValue, JsonOptions options = {}) retu
     if !isSingleNode(jsonValue) {
         addNamespaces(allNamespaces, check getNamespacesMap(jsonValue, options, {}));
         return getElement(rootTag ?: "root",
-                        check traverseNode(jsonValue, allNamespaces, {}, options), allNamespaces, options,
-                        check getAttributesMap(jsonValue, options, allNamespaces));
+                check traverseNode(jsonValue, allNamespaces, {}, options), allNamespaces, options,
+                check getAttributesMap(jsonValue, options, allNamespaces));
     }
 
     map<json>|error jMap = jsonValue.ensureType();
@@ -238,8 +239,8 @@ public isolated function fromJson(json jsonValue, JsonOptions options = {}) retu
         addNamespaces(allNamespaces, check getNamespacesMap(value, options, {}));
         if value is json[] {
             return getElement(rootTag ?: "root",
-                                check traverseNode(value, allNamespaces, {}, options, jMap.keys()[0]),
-                                allNamespaces, options, check getAttributesMap(value, options, allNamespaces));
+                    check traverseNode(value, allNamespaces, {}, options, jMap.keys()[0]),
+                    allNamespaces, options, check getAttributesMap(value, options, allNamespaces));
         }
 
         string key = jMap.keys()[0];
@@ -247,8 +248,8 @@ public isolated function fromJson(json jsonValue, JsonOptions options = {}) retu
             return xml:createText(value.toString());
         }
         xml output = check getElement(jMap.keys()[0], check traverseNode(value, allNamespaces, {}, options),
-                                    allNamespaces, options,
-                                    check getAttributesMap(value, options, allNamespaces));
+                allNamespaces, options,
+                check getAttributesMap(value, options, allNamespaces));
         if rootTag is string {
             return xml:createElement(rootTag, {}, output);
         }
@@ -279,8 +280,8 @@ isolated function traverseNode(json jNode, map<string> allNamespaces, map<string
                 } else {
                     xNode +=
                     check getElement(jsonKey, check traverseNode(value, allNamespaces, namespacesOfElem, options),
-                                    allNamespaces, options,
-                                    check getAttributesMap(value, options, allNamespaces, parentNamespaces));
+                            allNamespaces, options,
+                            check getAttributesMap(value, options, allNamespaces, parentNamespaces));
                 }
             }
         }
@@ -296,14 +297,14 @@ isolated function traverseNode(json jNode, map<string> allNamespaces, map<string
             addNamespaces(allNamespaces, namespacesOfElem);
             if options.arrayEntryTag == EMPTY_STRING {
                 xNode += check getElement(arrayEntryTagKey,
-                                        check traverseNode(i, allNamespaces, namespacesOfElem, options, 'key),
-                                        allNamespaces, options,
-                                        check getAttributesMap(i, options, allNamespaces, parentNamespaces));
+                        check traverseNode(i, allNamespaces, namespacesOfElem, options, 'key),
+                        allNamespaces, options,
+                        check getAttributesMap(i, options, allNamespaces, parentNamespaces));
             } else {
                 xNode += check getElement(arrayEntryTagKey,
-                                        check traverseNode(i, allNamespaces, namespacesOfElem, options),
-                                        allNamespaces, options,
-                                        check getAttributesMap(i, options, allNamespaces, parentNamespaces));
+                        check traverseNode(i, allNamespaces, namespacesOfElem, options),
+                        allNamespaces, options,
+                        check getAttributesMap(i, options, allNamespaces, parentNamespaces));
             }
         }
     } else {
@@ -487,11 +488,11 @@ isolated function addNamespaces(map<string> allNamespaces, map<string> namespace
 # xml bookXml = xml `<Book>Sample</Book>`;
 # Error? isValid = validate(xsdContent, bookXml);
 #
-# // Using Ballerina record to represent XSD
-# type xsdRecord record {string name;};
-# Error? isValid = validate(xsdRecord, bookXml);
+# // Using a record generated from an XSD document.
+# type XsdRecord record {string name;};
+# Error? isValid = validate(XsdRecord, bookXml);
 # ```
-public function validate(string|typedesc<record{}> schema, xml xmlValue)
+public function validate(xml xmlValue, string|typedesc<record {}> schema)
     returns Error? = @java:Method {'class: "io.ballerina.lib.data.xmldata.xml.Native"} external;
 
 isolated function fromRecordToXml(json jsonValue, JsonOptions options, typedesc<anydata> inputType) returns xml|Error

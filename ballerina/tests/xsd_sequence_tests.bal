@@ -25,12 +25,12 @@ type XSDSequenceRecord record {|
 |};
 
 type Seq_XSDSequenceRecord record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
@@ -84,17 +84,17 @@ type Seq_XSDSequenceRecordP2 record {|
         minOccurs: 1,
         maxOccurs: 3
     }
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int[] age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
 
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     @Element {
@@ -169,12 +169,12 @@ type XSDSequenceRecord2 record {|
 |};
 
 type Seq_XSDSequenceRecord2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
@@ -214,12 +214,12 @@ type XSDSequenceRecord3 record {|
 |};
 
 type Seq_XSDSequenceRecord3 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
@@ -257,12 +257,12 @@ type XSDSequenceRecord4 record {|
 |};
 
 type Seq_XSDSequenceRecord4 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
@@ -301,12 +301,12 @@ type XSDSequenceRecord5 record {|
 |};
 
 type Seq_XSDSequenceRecord5 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
@@ -360,24 +360,24 @@ type XSDSequenceRecord6 record {|
 |};
 
 type Seq_XSDSequenceRecord6_1 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
 |};
 
 type Seq_XSDSequenceRecord6_2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string name;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     string status;
@@ -470,24 +470,24 @@ type XSDSequenceRecord7 record {|
 |};
 
 type Seq_XSDSequenceRecord7_1 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
 |};
 
 type Seq_XSDSequenceRecord7_2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string name;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     string status;
@@ -523,24 +523,24 @@ type XSDSequenceRecord8P2 record {|
 |};
 
 type Seq_XSDSequenceRecord8_1 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
 |};
 
 type Seq_XSDSequenceRecord8_2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string name;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     string status;
@@ -578,24 +578,24 @@ type XSDSequenceRecord9P record {|
 |};
 
 type Seq_XSDSequenceRecord9_1 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
 |};
 
 type Seq_XSDSequenceRecord9_2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string name;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     string status;
@@ -675,24 +675,24 @@ type XSDSequenceRecord10P record {|
 |};
 
 type Seq_XSDSequenceRecord10_1 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
 |};
 
 type Seq_XSDSequenceRecord10_2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     Rec10 name;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     Rec10 status;
@@ -793,24 +793,24 @@ type XSDSequenceRecord11P2 record {|
 |};
 
 type Seq_XSDSequenceRecord11_1 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
 |};
 
 type Seq_XSDSequenceRecord11_2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     Rec11 name;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     Rec11 status;
@@ -868,13 +868,13 @@ type XSDSequenceRecord12 record {
 };
 
 type Seq_XSDSequenceRecord12_1 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     Seq_A field1;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     Seq_B field2;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     Seq_C field3;
 };
 
@@ -903,13 +903,13 @@ type Seq_C record {
 };
 
 type Seq record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     string a;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     string b;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     string c;
 };
 
@@ -935,24 +935,24 @@ type XSDSequenceRecord13 record {
 };
 
 type Seq_XSDSequenceRecord13_1 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     Seq_A_13 field1;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     Seq_B_13 field2;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     Seq_C_13 field3;
 };
 
 type Seq_XSDSequenceRecord13_2 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     Seq_D_13 field4;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     Seq_E_13 field5;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     Seq_F_13 field6;
 };
 
@@ -1005,35 +1005,35 @@ type Seq_F_13 record {
 };
 
 type Seq_13 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     string a;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     string b;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     string c;
 };
 
 type Seq2_13 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     string d;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     string e;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     string f;
 };
 
 type Seq3_13 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     string g;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     string h;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     string i;
 };
 

@@ -31,7 +31,7 @@ type Seq_EA1 record {
         maxOccurs: 1,
         minOccurs: 0
     }
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string EA1?;
@@ -40,7 +40,7 @@ type Seq_EA1 record {
         maxOccurs: 1,
         minOccurs: 0
     }
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     string EA2?;
@@ -49,7 +49,7 @@ type Seq_EA1 record {
         maxOccurs: 4,
         minOccurs: 2
     }
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     string[] EA3?;
@@ -125,7 +125,7 @@ type XsdSequenceWithElementAnnotation2 record {
 };
 
 type Seq_EA2 record {
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     record {
@@ -133,7 +133,7 @@ type Seq_EA2 record {
             maxOccurs: 1,
             minOccurs: 0
         }
-        @Order {
+        @SequenceOrder {
             value: 1
         }
         string EA1?;
@@ -142,7 +142,7 @@ type Seq_EA2 record {
             maxOccurs: 1,
             minOccurs: 0
         }
-        @Order {
+        @SequenceOrder {
             value: 2
         }
         string EA2?;
@@ -151,7 +151,7 @@ type Seq_EA2 record {
             maxOccurs: 4,
             minOccurs: 2
         }
-        @Order {
+        @SequenceOrder {
             value: 3
         }
         string[] EA3?;
@@ -243,26 +243,26 @@ type Seq_XsdSequenceWithElementAnnotation3_1 record {
         minOccurs: 1,
         maxOccurs: 3
     }
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     Seq_A_3[] field1;
 
     @Element {
         minOccurs: 0,
         maxOccurs: 3
     }
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     Seq_B_3[] field2?;
 
     @Element {
         minOccurs: 1,
         maxOccurs: 3
     }
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     Seq_C_3 field3;
 };
 
 type Seq_XsdSequenceWithElementAnnotation3_2 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     @Element {
         minOccurs: 0,
         maxOccurs: 3
@@ -273,14 +273,14 @@ type Seq_XsdSequenceWithElementAnnotation3_2 record {
         minOccurs: 0,
         maxOccurs: 3
     }
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     Seq_E_3[] field5?;
 
     @Element {
         minOccurs: 0,
         maxOccurs: 3
     }
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     Seq_F_3[] field6?;
 };
 
@@ -337,39 +337,39 @@ type Seq_3 record {
         minOccurs: 0,
         maxOccurs: 3
     }
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     string[] a?;
 
     @Element {
         minOccurs: 0,
         maxOccurs: 3
     }
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     string[] b?;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     string c;
 };
 
 type Seq2_3 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     string d;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     string e;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     string f;
 };
 
 type Seq3_3 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     string g;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     string h;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     string i;
 };
 

@@ -28,17 +28,17 @@ type ToXml1 record {
 };
 
 type Seq_A_toXml record {
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     string c;
 
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string a;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     string b;
@@ -52,17 +52,17 @@ type ToXml2 record {
 };
 
 type Seq_A_toXml2 record {
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     string c;
 
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string a;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     string b;
@@ -96,34 +96,34 @@ type ToXml3 record {
 };
 
 type Seq_A_toXml3 record {
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     string c;
 
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string a;
 
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     string b?;
 };
 
 type Seq_A_toXml3_2 record {
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     string c2;
 
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string a2;
 
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     string b2;

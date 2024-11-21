@@ -82,7 +82,7 @@ public class Native {
         }
     }
 
-    public static Object validate(Object xsd, BXml xml) {
+    public static Object validate(BXml xml, Object xsd) {
         try {
             return XSDValidator.validate(xsd, xml);
         } catch (Exception e) {

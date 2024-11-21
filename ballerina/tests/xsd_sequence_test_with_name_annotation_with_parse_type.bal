@@ -31,7 +31,7 @@ type Seq_EA1_NameAnnotationWithXmlValue record {
         maxOccurs: 1,
         minOccurs: 0
     }
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string EA1?;
@@ -41,7 +41,7 @@ type Seq_EA1_NameAnnotationWithXmlValue record {
         maxOccurs: 1,
         minOccurs: 0
     }
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     string EA2?;
@@ -51,7 +51,7 @@ type Seq_EA1_NameAnnotationWithXmlValue record {
         maxOccurs: 4,
         minOccurs: 2
     }
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     string[] EA3?;
@@ -127,7 +127,7 @@ type XsdSequenceWithNameAnnotationWithXmlValue2 record {
 };
 
 type Seq_EA2_NameAnnotationWithXmlValue record {
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     record {
@@ -135,7 +135,7 @@ type Seq_EA2_NameAnnotationWithXmlValue record {
             maxOccurs: 1,
             minOccurs: 0
         }
-        @Order {
+        @SequenceOrder {
             value: 1
         }
         @Name {value: "A1"}
@@ -145,7 +145,7 @@ type Seq_EA2_NameAnnotationWithXmlValue record {
             maxOccurs: 1,
             minOccurs: 0
         }
-        @Order {
+        @SequenceOrder {
             value: 2
         }
         @Name {value: "A2"}
@@ -157,7 +157,7 @@ type Seq_EA2_NameAnnotationWithXmlValue record {
         }
 
         @Name {value: "A3"}
-        @Order {
+        @SequenceOrder {
             value: 3
         }
         string[] EA3?;

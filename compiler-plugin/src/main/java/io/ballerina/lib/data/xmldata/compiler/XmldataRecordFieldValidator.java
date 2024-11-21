@@ -375,6 +375,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
                     reportDiagnosticInfo(ctx,
                             fieldSymbol.getLocation(), XmldataDiagnosticCodes.INVALID_SEQUENCE_TYPE);
                 }
+                boolean isOrderAnnotationFound = false;
                 for (AnnotationAttachmentSymbol annotSymbol : fieldSymbol.annotAttachments()) {
                     AnnotationSymbol annotationSymbol = annotSymbol.typeDescriptor();
                     if (!isAnnotFromXmldata(annotationSymbol)) {
@@ -385,10 +386,14 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
                         continue;
                     }
                     String name = annotName.get();
-                    if (!name.equals(Constants.ORDER)) {
-                        reportDiagnosticInfo(ctx, fieldSymbol
-                                .getLocation(), XmldataDiagnosticCodes.INVALID_SEQUENCE_TYPE);
+                    if (name.equals(Constants.ORDER)) {
+                       isOrderAnnotationFound = true;
                     }
+                }
+
+                if (!isOrderAnnotationFound) {
+                    reportDiagnosticInfo(ctx, fieldSymbol
+                            .getLocation(), XmldataDiagnosticCodes.INVALID_SEQUENCE_TYPE);
                 }
             }
         }

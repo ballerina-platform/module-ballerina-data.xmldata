@@ -128,7 +128,7 @@ type Choice_EA2 record {
             maxOccurs: 1,
             minOccurs: 0
         }
-        @Order {
+        @SequenceOrder {
             value: 1
         }
         string EA1?;
@@ -137,7 +137,7 @@ type Choice_EA2 record {
             maxOccurs: 1,
             minOccurs: 0
         }
-        @Order {
+        @SequenceOrder {
             value: 2
         }
         string EA2?;
@@ -146,7 +146,7 @@ type Choice_EA2 record {
             maxOccurs: 4,
             minOccurs: 2
         }
-        @Order {
+        @SequenceOrder {
             value: 3
         }
         string[] EA3?;

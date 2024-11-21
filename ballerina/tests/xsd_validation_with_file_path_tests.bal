@@ -30,10 +30,10 @@ function testValidateSchema1() returns error? {
     xml validXml = check readXmlFile(validXmlPath);
     xml invalidXml = check readXmlFile(invalidXmlPath);
 
-    Error? e = validate(xsdPath, validXml);
+    Error? e = validate(validXml, xsdPath);
     test:assertTrue(e is (), msg = "Valid XML should pass validation");
 
-    e = validate(xsdPath, invalidXml);
+    e = validate(invalidXml, xsdPath);
     test:assertTrue(e is Error, msg = "Invalid XML should fail validation");
     test:assertTrue((<Error>e).message().includes("Invalid XML found"), msg = "Invalid XML should fail validation");
 }
@@ -47,10 +47,10 @@ function testValidateSchema2() returns error? {
     xml validXml = check readXmlFile(validXmlPath);
     xml invalidXml = check readXmlFile(invalidXmlPath);
 
-    Error? e = validate(xsdPath, validXml);
+    Error? e = validate(validXml, xsdPath);
     test:assertTrue(e is (), msg = "Valid XML should pass validation");
 
-    e = validate(xsdPath, invalidXml);
+    e = validate(invalidXml, xsdPath);
     test:assertTrue(e is Error, msg = "Invalid XML should fail validation");
     test:assertTrue((<Error>e).message().includes("Invalid XML found"), msg = "Invalid XML should fail validation");
 }
@@ -64,10 +64,10 @@ function testValidateSchema3() returns error? {
     xml validXml = check readXmlFile(validXmlPath);
     xml invalidXml = check readXmlFile(invalidXmlPath);
 
-    Error? e = validate(xsdPath, validXml);
+    Error? e = validate(validXml, xsdPath);
     test:assertTrue(e is (), msg = "Valid XML should pass validation");
 
-    e = validate(xsdPath, invalidXml);
+    e = validate(invalidXml, xsdPath);
     test:assertTrue(e is Error, msg = "Invalid XML should fail validation");
     test:assertTrue((<Error>e).message().includes("Invalid XML found"), msg = "Invalid XML should fail validation");
 }
@@ -81,10 +81,10 @@ function testValidateSchema4() returns error? {
     xml validXml = check readXmlFile(validXmlPath);
     xml invalidXml = check readXmlFile(invalidXmlPath);
 
-    Error? e = validate(xsdPath, validXml);
+    Error? e = validate(validXml, xsdPath);
     test:assertTrue(e is (), msg = "Valid XML should pass validation");
 
-    e = validate(xsdPath, invalidXml);
+    e = validate(invalidXml, xsdPath);
     test:assertTrue(e is Error, msg = "Invalid XML should fail validation");
     test:assertTrue((<Error>e).message().includes("Invalid XML found"), msg = "Invalid XML should fail validation");
 }
@@ -98,10 +98,10 @@ function testValidateSchema5() returns error? {
     xml validXml = check readXmlFile(validXmlPath);
     xml invalidXml = check readXmlFile(invalidXmlPath);
 
-    Error? e = validate(xsdPath, validXml);
+    Error? e = validate(validXml, xsdPath);
     test:assertTrue(e is (), msg = "Valid XML should pass validation");
 
-    e = validate(xsdPath, invalidXml);
+    e = validate(invalidXml, xsdPath);
     test:assertTrue(e is Error, msg = "Invalid XML should fail validation");
     test:assertTrue((<Error>e).message().includes("Invalid XML found"), msg = "Invalid XML should fail validation");
 }

@@ -25,12 +25,12 @@ type XsdSequenceArray record {|
 |};
 
 type Seq_XsdSequenceArray record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
@@ -66,24 +66,24 @@ type XsdSequenceArray2 record {|
 |};
 
 type Seq_XsdSequenceArray2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
 |};
 
 type Seq_XsdSequenceArray2_2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age2;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary2;
@@ -124,24 +124,24 @@ type XSDSequenceArrayRecord13 record {
 };
 
 type Seq_XSDSequenceArrayRecord13_1 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     Seq_Array_A_3 field1;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     Seq_Array_B_3 field2;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     Seq_Array_C_3 field3;
 };
 
 type Seq_XSDSequenceArrayRecord13_2 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     Seq_Array_D_3 field4;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     Seq_Array_E_3 field5;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     Seq__Array_F_3 field6;
 };
 
@@ -194,35 +194,35 @@ type Seq__Array_F_3 record {
 };
 
 type Seq_Array_3 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     string a;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     string b;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     string c;
 };
 
 type Seq2_Array_3 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     string d;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     string e;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     string f;
 };
 
 type Seq3_Array_3 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     string g;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     string h;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     string i;
 };
 
@@ -285,12 +285,12 @@ type XsdSequenceArray5 record {|
 |};
 
 type Seq_XsdSequenceArray5 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
@@ -335,18 +335,18 @@ type XSDSequenceArrayRecord6 record {
 };
 
 type Seq_XSDSequenceArrayRecord6_1 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     Seq_Array_A_6 field1;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     Seq_Array_B_6 field2;
 };
 
 type Seq_XSDSequenceArrayRecord6_2 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     Seq_Array_D_6 field4;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     Seq_Array_E_6 field5;
 };
 
@@ -383,12 +383,12 @@ type Seq_Array_E_6 record {
 };
 
 type Seq_Array_6 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     string a;
 };
 
 type Seq2_Array_6 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     string d;
 };
 

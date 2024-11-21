@@ -30,7 +30,7 @@ type Seq_EA1_NamespaceAnnotation record {
         maxOccurs: 1,
         minOccurs: 0
     }
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     @Namespace {
@@ -43,7 +43,7 @@ type Seq_EA1_NamespaceAnnotation record {
         maxOccurs: 1,
         minOccurs: 0
     }
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     @Namespace {
@@ -60,7 +60,7 @@ type Seq_EA1_NamespaceAnnotation record {
         uri: "example3.com",
         prefix: "ea3"
     }
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     string[] EA3?;
@@ -136,7 +136,7 @@ type XsdSequenceWithNamespaceAnnotation2 record {
 };
 
 type Seq_EA2_NamespaceAnnotation record {
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     record {
@@ -144,7 +144,7 @@ type Seq_EA2_NamespaceAnnotation record {
             maxOccurs: 1,
             minOccurs: 0
         }
-        @Order {
+        @SequenceOrder {
             value: 1
         }
         @Namespace {
@@ -157,7 +157,7 @@ type Seq_EA2_NamespaceAnnotation record {
             maxOccurs: 1,
             minOccurs: 0
         }
-        @Order {
+        @SequenceOrder {
             value: 2
         }
         @Namespace {
@@ -175,7 +175,7 @@ type Seq_EA2_NamespaceAnnotation record {
             uri: "example3.com",
             prefix: "ea3"
         }
-        @Order {
+        @SequenceOrder {
             value: 3
         }
         string[] EA3?;

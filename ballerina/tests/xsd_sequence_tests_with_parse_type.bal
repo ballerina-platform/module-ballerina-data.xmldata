@@ -28,12 +28,12 @@ type XSDSequenceRecordWithXmlValue record {|
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
@@ -47,14 +47,14 @@ function testXsdSequenceWithXmlValue() returns error? {
     test:assertEquals((check v).seq_XSDSequenceRecordWithXmlValue.age, 13);
     test:assertEquals((check v).seq_XSDSequenceRecordWithXmlValue.salary, 11.1);
     test:assertEquals(toXml(check v), xmlValue);
-    Error? e = validate(XSDSequenceRecordWithXmlValue, xmlValue);
+    Error? e = validate(xmlValue, XSDSequenceRecordWithXmlValue);
     test:assertTrue(e is ());
 
     xmlValue = xml `<Root><salary>11.1</salary></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
     test:assertEquals((<Error>v).message(), "Element 'salary' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValue'");
-    e = validate(XSDSequenceRecordWithXmlValue, xmlValue);
+    e = validate(xmlValue, XSDSequenceRecordWithXmlValue);
     test:assertTrue(e is Error);
     test:assertEquals((<Error> e).message(), "Invalid XML found: 'Element 'salary' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValue''");
 
@@ -62,7 +62,7 @@ function testXsdSequenceWithXmlValue() returns error? {
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
     test:assertEquals((<Error>v).message(), "Element(s) 'salary' is not found in 'seq_XSDSequenceRecordWithXmlValue'");
-    e = validate(XSDSequenceRecordWithXmlValue, xmlValue);
+    e = validate(xmlValue, XSDSequenceRecordWithXmlValue);
     test:assertTrue(e is Error);
     test:assertEquals((<Error> e).message(), "Invalid XML found: 'Element(s) 'salary' is not found in 'seq_XSDSequenceRecordWithXmlValue''");
 
@@ -70,7 +70,7 @@ function testXsdSequenceWithXmlValue() returns error? {
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
     test:assertEquals((<Error>v).message(), ("required field 'seq_XSDSequenceRecordWithXmlValue' not present in XML"), msg = (<Error>v).message());
-    e = validate(XSDSequenceRecordWithXmlValue, xmlValue);
+    e = validate(xmlValue, XSDSequenceRecordWithXmlValue);
     test:assertTrue(e is Error);
     test:assertEquals((<Error> e).message(), "Invalid XML found: 'required field 'seq_XSDSequenceRecordWithXmlValue' not present in XML'");
 
@@ -78,7 +78,7 @@ function testXsdSequenceWithXmlValue() returns error? {
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
     test:assertEquals((<Error>v).message(), "Element 'salary' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValue'");
-    e = validate(XSDSequenceRecordWithXmlValue, xmlValue);
+    e = validate(xmlValue, XSDSequenceRecordWithXmlValue);
     test:assertTrue(e is Error);
     test:assertEquals((<Error> e).message(), "Invalid XML found: 'Element 'salary' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValue''");
 }
@@ -99,17 +99,17 @@ type Seq_XSDSequenceRecordWithXmlValueP2 record {|
         minOccurs: 1,
         maxOccurs: 3
     }
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int[] age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
 
-    @Order {
+    @SequenceOrder {
         value: 3
     }
     @Element {
@@ -187,12 +187,12 @@ type XSDSequenceRecordWithXmlValue2 record {|
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
@@ -236,12 +236,12 @@ type XSDSequenceRecordWithXmlValue3 record {|
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue3 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
@@ -284,12 +284,12 @@ type XSDSequenceRecordWithXmlValue4 record {|
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue4 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
@@ -333,12 +333,12 @@ type XSDSequenceRecordWithXmlValue5 record {|
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue5 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
@@ -398,24 +398,24 @@ type XSDSequenceRecordWithXmlValue6 record {|
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue6_1 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue6_2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string name;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     string status;
@@ -515,24 +515,24 @@ type XSDSequenceRecordWithXmlValue7 record {|
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue7_1 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue7_2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string name;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     string status;
@@ -571,24 +571,24 @@ type XSDSequenceRecordWithXmlValue8P2 record {|
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue8_1 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue8_2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string name;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     string status;
@@ -630,24 +630,24 @@ type XSDSequenceRecordWithXmlValue9P record {|
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue9_1 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue9_2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     string name;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     string status;
@@ -734,24 +734,24 @@ type XSDSequenceRecordWithXmlValue10P record {|
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue10_1 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue10_2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     Rec10 name;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     Rec10 status;
@@ -854,24 +854,24 @@ type XSDSequenceRecordWithXmlValue11P2 record {|
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue11_1 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     int age;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     float salary;
 |};
 
 type Seq_XSDSequenceRecordWithXmlValue11_2 record {|
-    @Order {
+    @SequenceOrder {
         value: 1
     }
     Rec11 name;
 
-    @Order {
+    @SequenceOrder {
         value: 2
     }
     Rec11 status;
@@ -930,13 +930,13 @@ type XSDSequenceRecordWithXmlValue12 record {
 };
 
 type Seq_XSDSequenceRecordWithXmlValue12_1 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     Seq_A field1;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     Seq_B field2;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     Seq_C field3;
 };
 
@@ -966,24 +966,24 @@ type XSDSequenceRecordWithXmlValue13 record {
 };
 
 type Seq_XSDSequenceRecordWithXmlValue13_1 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     Seq_A_13 field1;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     Seq_B_13 field2;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     Seq_C_13 field3;
 };
 
 type Seq_XSDSequenceRecordWithXmlValue13_2 record {
-    @Order {value: 1}
+    @SequenceOrder {value: 1}
     Seq_D_13 field4;
 
-    @Order {value: 2}
+    @SequenceOrder {value: 2}
     Seq_E_13 field5;
 
-    @Order {value: 3}
+    @SequenceOrder {value: 3}
     Seq_F_13 field6;
 };
 
@@ -993,21 +993,21 @@ function testXsdSequenceWithXmlValue13() returns error? {
     XSDSequenceRecordWithXmlValue13|Error v2 = parseAsType(xmlValue);
     test:assertEquals(v2, <XSDSequenceRecordWithXmlValue13>{seq_XSDSequenceRecordWithXmlValue13_1: {field1: {value1: {a: "1", b: "2", c: "3"}}, field2: {value2: {d: "1", e: "2", f: "3"}}, field3: {value3: {g: "1", h: "2", i: "3"}}}, seq_XSDSequenceRecordWithXmlValue13_2: {field4: {value1: {a: "1", b: "2", c: "3"}}, field5: {value2: {d: "1", e: "2", f: "3"}}, field6: {value3: {g: "1", h: "2", i: "3"}}}});
     test:assertEquals(toXml(check v2), xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`);
-    Error? e = validate(XSDSequenceRecordWithXmlValue13, xmlValue);
+    Error? e = validate(xmlValue, XSDSequenceRecordWithXmlValue13);
     test:assertTrue(e is ());
 
     xmlValue = xml `<Root><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertEquals(v2, <XSDSequenceRecordWithXmlValue13>{seq_XSDSequenceRecordWithXmlValue13_2: {field4: {value1: {a: "1", b: "2", c: "3"}}, field5: {value2: {d: "1", e: "2", f: "3"}}, field6: {value3: {g: "1", h: "2", i: "3"}}}});
     test:assertEquals(toXml(check v2), xml `<Root><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`);
-    e = validate(XSDSequenceRecordWithXmlValue13, xmlValue);
+    e = validate(xmlValue, XSDSequenceRecordWithXmlValue13);
     test:assertTrue(e is ());
 
     xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><g>1</g><h>2</h><i>3</i><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
     test:assertEquals((<Error>v2).message(), "Element(s) 'field6' is not found in 'seq_XSDSequenceRecordWithXmlValue13_2'");
-    e = validate(XSDSequenceRecordWithXmlValue13, xmlValue);
+    e = validate(xmlValue, XSDSequenceRecordWithXmlValue13);
     test:assertTrue(e is Error);
     test:assertEquals((<Error>e).message(), "Invalid XML found: 'Element(s) 'field6' is not found in 'seq_XSDSequenceRecordWithXmlValue13_2''");
 
@@ -1015,7 +1015,7 @@ function testXsdSequenceWithXmlValue13() returns error? {
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
     test:assertEquals((<Error>v2).message(), "Element(s) 'f' is not found in 'value2'");
-    e = validate(XSDSequenceRecordWithXmlValue13, xmlValue);
+    e = validate(xmlValue, XSDSequenceRecordWithXmlValue13);
     test:assertTrue(e is Error);
     test:assertEquals((<Error>e).message(), "Invalid XML found: 'Element(s) 'f' is not found in 'value2''");
 
@@ -1023,7 +1023,7 @@ function testXsdSequenceWithXmlValue13() returns error? {
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
     test:assertEquals((<Error>v2).message(), "Element 'i' is not in the correct order in 'value3'");
-    e = validate(XSDSequenceRecordWithXmlValue13, xmlValue);
+    e = validate(xmlValue, XSDSequenceRecordWithXmlValue13);
     test:assertTrue(e is Error);
     test:assertEquals((<Error>e).message(), "Invalid XML found: 'Element 'i' is not in the correct order in 'value3''");
 
@@ -1031,7 +1031,7 @@ function testXsdSequenceWithXmlValue13() returns error? {
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
     test:assertEquals((<Error>v2).message(), "Element 'c' is not in the correct order in 'value1'");
-    e = validate(XSDSequenceRecordWithXmlValue13, xmlValue);
+    e = validate(xmlValue, XSDSequenceRecordWithXmlValue13);
     test:assertTrue(e is Error);
     test:assertEquals((<Error>e).message(), "Invalid XML found: 'Element 'c' is not in the correct order in 'value1''");
 
@@ -1039,7 +1039,7 @@ function testXsdSequenceWithXmlValue13() returns error? {
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
     test:assertEquals((<Error>v2).message(), ("Element 'field5' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValue13_2'"), msg = (<Error>v2).message());
-    e = validate(XSDSequenceRecordWithXmlValue13, xmlValue);
+    e = validate(xmlValue, XSDSequenceRecordWithXmlValue13);
     test:assertTrue(e is Error);
     test:assertEquals((<Error>e).message(), "Invalid XML found: 'Element 'field5' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValue13_2''");
 }
