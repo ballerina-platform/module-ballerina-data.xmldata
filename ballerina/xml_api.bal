@@ -472,26 +472,12 @@ isolated function addNamespaces(map<string> allNamespaces, map<string> namespace
 
 # Validates an XML document against a provided XML schema.
 #
-# The schema can either be a content of a XSD (as a `string`) or a Ballerina record type that represents
+# The schema can either be a file path to the `.xsd` file or a Ballerina record type that represents
 # the XSD structure. The function checks if the `xmlValue` conforms to the provided schema.
 #
 # + schema - A `string` representing the XSD content or a Ballerina record type representing the XSD.
 # + xmlValue - The XML document that needs to be validated against the schema.
 # + return - Returns `()` if the XML is valid according to the schema, otherwise returns `Error`.
-#
-# # Examples
-#
-# ```ballerina
-# string xsdContent = string `<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
-#                                <xs:element name="Book" type="xs:string"/>
-#                             </xs:schema>`;
-# xml bookXml = xml `<Book>Sample</Book>`;
-# Error? isValid = validate(xsdContent, bookXml);
-#
-# // Using a record generated from an XSD document.
-# type XsdRecord record {string name;};
-# Error? isValid = validate(XsdRecord, bookXml);
-# ```
 public function validate(xml xmlValue, string|typedesc<record {}> schema)
     returns Error? = @java:Method {'class: "io.ballerina.lib.data.xmldata.xml.Native"} external;
 
