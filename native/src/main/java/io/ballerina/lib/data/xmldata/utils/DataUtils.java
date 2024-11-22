@@ -23,6 +23,10 @@ import io.ballerina.lib.data.xmldata.xml.QualifiedName;
 import io.ballerina.lib.data.xmldata.xml.QualifiedNameFactory;
 import io.ballerina.lib.data.xmldata.xml.QualifiedNameMap;
 import io.ballerina.lib.data.xmldata.xml.QualifiedNameSemantic;
+import io.ballerina.lib.data.xmldata.xml.xsd.ChoiceInfo;
+import io.ballerina.lib.data.xmldata.xml.xsd.ElementInfo;
+import io.ballerina.lib.data.xmldata.xml.xsd.ModelGroupInfo;
+import io.ballerina.lib.data.xmldata.xml.xsd.SequenceInfo;
 import io.ballerina.runtime.api.Module;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
@@ -49,15 +53,20 @@ import io.ballerina.stdlib.constraint.Constraints;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 
 import javax.xml.namespace.QName;
 
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.popXsdValidationStacks;
 import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ATTRIBUTE;
 import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ELEMENT;
 import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.NOT_DEFINED;
@@ -220,7 +229,7 @@ public class DataUtils {
     }
 
     @SuppressWarnings("unchecked")
-    private static String getModifiedName(Map<BString, Object> fieldAnnotation, String attributeName) {
+    static String getModifiedName(Map<BString, Object> fieldAnnotation, String attributeName) {
         for (BString key : fieldAnnotation.keySet()) {
             if (isNameAnnotationKey(key.getValue())) {
                 return ((Map<BString, Object>) fieldAnnotation.get(key)).get(Constants.VALUE).toString();
@@ -345,6 +354,8 @@ public class DataUtils {
         analyzerData.fieldHierarchy.push(new QualifiedNameMap<>(getAllFieldsInRecordType(recordType, analyzerData)));
         analyzerData.visitedFieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
         analyzerData.restTypes.push(recordType.getRestFieldType());
+        analyzerData.xsdModelGroupInfo.push(new HashMap<>());
+        analyzerData.xmlElementInfo.push(new HashMap<>());
     }
 
     public static void popExpectedTypeStacks(XmlAnalyzerData analyzerData) {
@@ -353,6 +364,7 @@ public class DataUtils {
         analyzerData.restTypes.pop();
         analyzerData.attributeHierarchy.pop();
         analyzerData.arrayIndexes.pop();
+        popXsdValidationStacks(analyzerData);
     }
 
     public static boolean isAnydataOrJson(int typeTag) {
@@ -510,6 +522,37 @@ public class DataUtils {
         return recordValue;
     }
 
+    static BString[] getOrderedRecordKeysIfXsdSequencePresent(BMap<BString, Object> input,
+                                                              HashMap<String, Integer> xsdSequencePriorityOrder) {
+        HashMap<String, String> localPartKeys = getLocalPartKeys(input);
+        if (xsdSequencePriorityOrder.isEmpty()) {
+            return input.getKeys();
+        } else {
+            return xsdSequencePriorityOrder.entrySet().stream()
+                    .filter(entry -> localPartKeys.containsKey(entry.getKey()))
+                    .sorted(Comparator.comparingInt(Map.Entry::getValue))
+                    .map(entry -> StringUtils.fromString(localPartKeys.get(entry.getKey())))
+                    .toArray(BString[]::new);
+        }
+    }
+
+    private static HashMap<String, String> getLocalPartKeys(BMap<BString, Object> input) {
+        HashMap<String, String> localPartKeys = new HashMap<>();
+        for (Map.Entry<BString, Object> entry : input.entrySet()) {
+            String k = entry.getKey().getValue();
+            if (k.contains(ATTRIBUTE_PREFIX)) {
+                continue;
+            }
+            int i = k.indexOf(Constants.COLON);
+            if (i != -1) {
+                localPartKeys.put(k.substring(i + 1), k);
+            } else {
+                localPartKeys.put(k, k);
+            }
+        }
+        return localPartKeys;
+    }
+
     private static void processRecordField(Type fieldType, BMap<BString, Object> annotations,
                                            BMap<BString, Object> recordValue, Map.Entry<BString, Object> entry,
                                            String key, Object value) {
@@ -537,11 +580,11 @@ public class DataUtils {
                                                  BMap<BString, Object> recordValue, String key, Object value) {
         BMap<BString, Object> namespaceAnnotRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         boolean doesNamespaceDefinedInField = false;
-        if (annotations.size() > 0) {
+        if (!annotations.isEmpty()) {
             String fieldName = key;
             key = getKeyNameFromAnnotation(annotations, key);
             QName qName = addFieldNamespaceAnnotation(fieldName, key, annotations, namespaceAnnotRecord);
-            if (!qName.getNamespaceURI().equals("")) {
+            if (!qName.getNamespaceURI().isEmpty()) {
                 doesNamespaceDefinedInField = true;
             }
             String localPart = qName.getLocalPart();
@@ -558,7 +601,7 @@ public class DataUtils {
 
         BMap<BString, Object> subRecordValue = addFields(((BMap<BString, Object>) value), referredType);
         addNamespaceToSubRecord(key, namespaceAnnotRecord, subRecordValue);
-        if (annotationRecord.size() > 0) {
+        if (!annotationRecord.isEmpty()) {
             subRecordValue.put(annotationRecord.getKeys()[0], annotationRecord.get(annotationRecord.getKeys()[0]));
         }
         recordValue.put(StringUtils.fromString(key), subRecordValue);
@@ -641,17 +684,19 @@ public class DataUtils {
                                       BMap<BString, Object> record, Object value, RecordType childType) {
         BMap<BString, Object> parentRecordAnnotations = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         BMap<BString, Object> annotation = childType.getAnnotations();
-        if (parentAnnotations.size() > 0) {
+        if (!parentAnnotations.isEmpty()) {
             annotation.merge(getFieldNamespaceAndNameAnnotations(key, parentAnnotations), true);
             processSubRecordAnnotation(parentAnnotations, parentRecordAnnotations);
         }
         BMap<BString, Object> subRecord = addFields(((BMap<BString, Object>) value), childType);
-        if (annotation.size() > 0) {
+        if (!annotation.isEmpty()) {
             processSubRecordAnnotation(annotation, subRecord);
         }
+
         key = getElementName(annotation, key);
         record.put(StringUtils.fromString(key), subRecord);
-        if (parentRecordAnnotations.size() > 0) {
+
+        if (!parentRecordAnnotations.isEmpty()) {
             record.put(parentRecordAnnotations.getKeys()[0],
                     parentRecordAnnotations.get(parentRecordAnnotations.getKeys()[0]));
         }
@@ -694,8 +739,7 @@ public class DataUtils {
         if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
             List<BMap<BString, Object>> records = new ArrayList<>();
             for (int i = 0; i < arrayValue.getLength(); i++) {
-                BMap<BString, Object> subRecord = addFields(((BMap<BString, Object>) arrayValue.get(i)),
-                        elementType);
+                BMap<BString, Object> subRecord = addFields(((BMap<BString, Object>) arrayValue.get(i)), elementType);
                 subRecord = processParentAnnotation(elementType, subRecord);
                 records.add((BMap<BString, Object>) subRecord.get(subRecord.getKeys()[0]));
             }
@@ -711,7 +755,7 @@ public class DataUtils {
             record.put(StringUtils.fromString(keyName), ValueCreator.createArrayValue(records.toArray(),
                     TypeCreator.createArrayType(Constants.JSON_ARRAY_TYPE)));
         }
-        if (annotationRecord.size() > 0) {
+        if (!annotationRecord.isEmpty()) {
             record.put(annotationRecord.getKeys()[0],
                     annotationRecord.get(annotationRecord.getKeys()[0]));
         }
@@ -745,7 +789,7 @@ public class DataUtils {
         BMap<BString, Object> namespaces = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         BMap<BString, Object> annotations = ((RecordType) type).getAnnotations();
         BString rootName = processAnnotation(annotations, type.getName(), namespaces);
-        if (namespaces.size() > 0) {
+        if (!namespaces.isEmpty()) {
             for (Map.Entry<BString, Object> namespace : namespaces.entrySet()) {
                 record.put(namespace.getKey(), namespace.getValue());
             }
@@ -905,7 +949,7 @@ public class DataUtils {
         return key.startsWith(Constants.MODULE_NAME) && key.endsWith(Constants.NAMESPACE);
     }
 
-    private static boolean isNameAnnotationKey(String key) {
+    public static boolean isNameAnnotationKey(String key) {
         return key.startsWith(Constants.MODULE_NAME) && key.endsWith(Constants.NAME);
     }
 
@@ -1013,26 +1057,280 @@ public class DataUtils {
         return false;
     }
 
+
+    public static Collection<String> getXmlElementNames(RecordType fieldType) {
+        HashSet<String> elementNames = new HashSet<>(fieldType.getFields().keySet());
+        BMap<BString, Object> annotations = fieldType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String key = annotationKey.getValue();
+            if (key.contains(Constants.FIELD)) {
+                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                    updateFieldSetWithName(fieldAnnotation, elementNames, fieldAnnotationKey, fieldName);
+                }
+            }
+        }
+        return elementNames;
+    }
+
+    private static void updateFieldSetWithName(Map<BString, Object> fieldAnnotation, Set<String> elementNames,
+                                               BString fieldAnnotationKey, String fieldName) {
+        String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+        if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+            if (fieldAnnotationKeyStr.endsWith(Constants.NAME)) {
+                BMap<BString, Object> fieldAnnotationValue =
+                        (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
+                String xmlElementName = StringUtils.getStringValue(fieldAnnotationValue
+                        .getStringValue(Constants.VALUE));
+                elementNames.remove(fieldName);
+                elementNames.add(xmlElementName);
+            }
+        }
+    }
+
+    public static HashMap<String, String> getXmlElementNameMap(RecordType fieldType) {
+        HashMap<String, String> elementMap = new HashMap<>();
+        BMap<BString, Object> annotations = fieldType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String key = annotationKey.getValue();
+            if (key.contains(Constants.FIELD)) {
+                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                    getXmlElementNameFromFieldAnnotation(fieldAnnotation, fieldAnnotationKey, fieldName, elementMap);
+                }
+            }
+        }
+        return elementMap;
+    }
+
+    private static void getXmlElementNameFromFieldAnnotation(Map<BString, Object> fieldAnnotation,
+                                               BString fieldAnnotationKey, String fieldName,
+                                               HashMap<String, String> xmlElementNameMap) {
+        String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+        if (fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+            if (fieldAnnotationKeyStr.endsWith(Constants.NAME)) {
+                BMap<BString, Object> fieldAnnotationValue =
+                        (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
+                String xmlElementName = StringUtils.getStringValue(fieldAnnotationValue
+                        .getStringValue(Constants.VALUE));
+                xmlElementNameMap.remove(fieldName);
+                xmlElementNameMap.put(xmlElementName, fieldName);
+            }
+        }
+    }
+
+    public static void popMappingTypeStacks(XmlAnalyzerMetaData xmlParserData) {
+        xmlParserData.fieldHierarchy.pop();
+        xmlParserData.visitedFieldHierarchy.pop();
+        xmlParserData.restTypes.pop();
+    }
+
+    public static HashMap<String, Integer> getXsdSequencePriorityOrder(RecordType fieldType) {
+        return getXsdSequencePriorityOrder(fieldType, false);
+    }
+
+    public static HashMap<String, Integer> getXsdSequencePriorityOrder(Type type, boolean isSequenceElements) {
+        if (type.getTag() != TypeTags.RECORD_TYPE_TAG) {
+            return new HashMap<>();
+        }
+
+        RecordType fieldType = (RecordType) type;
+        HashMap<String, Integer> elementPriorityOrder = new HashMap<>();
+        if (!isSequenceElements) {
+            return elementPriorityOrder;
+        }
+        BMap<BString, Object> annotations = fieldType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String key = annotationKey.getValue();
+            if (!key.contains(Constants.FIELD)) {
+                continue;
+            }
+
+            String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+            Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+            for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+                if (!fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+                    continue;
+                }
+                if (fieldAnnotationKeyStr.endsWith(Constants.ORDER)) {
+                    BMap<BString, Object> fieldAnnotationValue =
+                            (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
+                    elementPriorityOrder.put(fieldName,
+                            fieldAnnotationValue.getIntValue(Constants.VALUE).intValue());
+                }
+            }
+        }
+        return elementPriorityOrder;
+    }
+
+    public static HashMap<String, ModelGroupInfo> getFieldNamesWithModelGroupAnnotations(RecordType fieldType,
+                                                                           HashMap<String, String> elementNamesMap) {
+        HashMap<String, ModelGroupInfo> fieldNamesWithModelGroupAnnotations = new HashMap<>();
+        BMap<BString, Object> annotations = fieldType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String key = annotationKey.getValue();
+            if (!key.contains(Constants.FIELD)) {
+                continue;
+            }
+
+            String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+            if (elementNamesMap.containsKey(fieldName)) {
+                fieldName = elementNamesMap.get(fieldName);
+            }
+
+            Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+            for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+                if (!fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+                    continue;
+                }
+                if (fieldAnnotationKeyStr.endsWith(Constants.SEQUENCE)) {
+                    SequenceInfo sequenceInfo = new SequenceInfo(fieldName,
+                            (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey),
+                            fieldType, null);
+                    fieldNamesWithModelGroupAnnotations.put(fieldName, sequenceInfo);
+                }
+
+                if (fieldAnnotationKeyStr.endsWith(Constants.CHOICE)) {
+                    ChoiceInfo choiceInfo = new ChoiceInfo(fieldName,
+                            (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey),
+                            fieldType, null);
+                    fieldNamesWithModelGroupAnnotations.put(fieldName, choiceInfo);
+                }
+            }
+        }
+        return fieldNamesWithModelGroupAnnotations;
+    }
+
+    public static HashMap<String, ElementInfo> getFieldNamesWithElementGroupAnnotations(
+                    RecordType fieldType, HashMap<String, String> elementNamesMap, String xmlElementName) {
+        HashMap<String, ElementInfo> fieldNamesWithElementInfoAnnotations = new HashMap<>();
+        BMap<BString, Object> annotations = fieldType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String key = annotationKey.getValue();
+            if (!key.contains(Constants.FIELD)) {
+                continue;
+            }
+
+            String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+            if (elementNamesMap.containsKey(fieldName)) {
+                fieldName = elementNamesMap.get(fieldName);
+            }
+
+            Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+            for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+                if (!fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+                    continue;
+                }
+
+                if (fieldAnnotationKeyStr.endsWith(Constants.ELEMENT)) {
+                    ElementInfo elementInfo = new ElementInfo(xmlElementName, fieldName,
+                            (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey));
+                    fieldNamesWithElementInfoAnnotations.put(fieldName, elementInfo);
+                }
+            }
+        }
+        return fieldNamesWithElementInfoAnnotations;
+    }
+
+
+    public static ArrayList<String> getFieldNamesWithSequenceAnnotations(RecordType fieldType,
+                                                                           HashMap<String, String> elementNamesMap) {
+        ArrayList<String> fieldNamesWithModelGroupAnnotations = new ArrayList<>();
+        BMap<BString, Object> annotations = fieldType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String key = annotationKey.getValue();
+            if (!key.contains(Constants.FIELD)) {
+                continue;
+            }
+
+            String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+            Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+            for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+                if (!fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+                    continue;
+                }
+
+                if (fieldAnnotationKeyStr.endsWith(Constants.SEQUENCE)) {
+                    if (elementNamesMap.containsKey(fieldName)) {
+                        fieldNamesWithModelGroupAnnotations.add(elementNamesMap.get(fieldName));
+                    } else {
+                        fieldNamesWithModelGroupAnnotations.add(fieldName);
+                    }
+                }
+            }
+        }
+        return fieldNamesWithModelGroupAnnotations;
+    }
+
+    public static HashMap<String, String> getElementNameMap(Type type) {
+        HashMap<String, String> names = new HashMap<>();
+        if (type instanceof RecordType recordType) {
+            BMap<BString, Object> annotations = recordType.getAnnotations();
+            for (BString annotationKey : annotations.getKeys()) {
+                String key = annotationKey.getValue();
+                if (!key.contains(Constants.FIELD)) {
+                    continue;
+                }
+                String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
+                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+                for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
+                    String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
+                    if (!fieldAnnotationKeyStr.startsWith(Constants.MODULE_NAME)) {
+                        continue;
+                    }
+
+                    if (fieldAnnotationKeyStr.endsWith(Constants.NAME)) {
+                        BMap<BString, Object> fieldAnnotationValue =
+                                (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey);
+                        String xmlElementName = StringUtils.getStringValue(fieldAnnotationValue
+                                .getStringValue(Constants.VALUE));
+                        names.put(xmlElementName, fieldName);
+                    }
+                }
+            }
+            return names;
+        }
+        return names;
+    }
+
+    /**
+     * Holds data required for the processing.
+     *
+     * @since 1.1.0
+     */
+    public static class XmlAnalyzerMetaData {
+        public Stack<QualifiedNameMap<Field>> attributeHierarchy = new Stack<>();
+        public Stack<HashMap<String, Integer>> arrayIndexes = new Stack<>();
+        public Stack<HashMap<String, ElementInfo>> xmlElementInfo = new Stack<>();
+        public Stack<HashMap<String, ModelGroupInfo>> xsdModelGroupInfo = new Stack<>();
+        public Stack<ModelGroupInfo> modelGroupStack = new Stack<>();
+
+        public Stack<Object> nodesStack = new Stack<>();
+        public Stack<QualifiedNameMap<Field>> fieldHierarchy = new Stack<>();
+        public Stack<QualifiedNameMap<Field>> visitedFieldHierarchy = new Stack<>();
+        public Stack<Type> restTypes = new Stack<>();
+        public RecordType rootRecord;
+        public Field currentField;
+        public boolean allowDataProjection;
+        public boolean useSemanticEquality;
+        public String attributePrefix;
+        public String textFieldName;
+        public BMap<BString, Object> currentNode;
+        public final Stack<RecordType> recordTypeStack = new Stack<>();
+    }
+
     /**
      * Holds data required for the traversing.
      *
      * @since 0.1.0
      */
-    public static class XmlAnalyzerData {
-        public Stack<Object> nodesStack = new Stack<>();
-        public Stack<QualifiedNameMap<Field>> fieldHierarchy = new Stack<>();
-        public Stack<QualifiedNameMap<Field>> visitedFieldHierarchy = new Stack<>();
-        public Stack<QualifiedNameMap<Field>> attributeHierarchy = new Stack<>();
-        public Stack<Type> restTypes = new Stack<>();
-        public Stack<HashMap<String, Integer>> arrayIndexes = new Stack<>();
-        public RecordType rootRecord;
-        public Field currentField;
-        public QualifiedName rootElement;
-        public String attributePrefix;
-        public String textFieldName;
-        public boolean allowDataProjection;
-        public boolean useSemanticEquality;
-
+    public static class XmlAnalyzerData extends XmlAnalyzerMetaData {
         @SuppressWarnings("unchecked")
         public static XmlAnalyzerData copy(XmlAnalyzerData analyzerData) {
             XmlAnalyzerData data = new XmlAnalyzerData();
@@ -1044,11 +1342,13 @@ public class DataUtils {
             data.arrayIndexes = (Stack<HashMap<String, Integer>>) analyzerData.arrayIndexes.clone();
             data.rootRecord = analyzerData.rootRecord;
             data.currentField = analyzerData.currentField;
-            data.rootElement = analyzerData.rootElement;
             data.attributePrefix = analyzerData.attributePrefix;
             data.textFieldName = analyzerData.textFieldName;
             data.allowDataProjection = analyzerData.allowDataProjection;
             data.useSemanticEquality = analyzerData.useSemanticEquality;
+            data.xmlElementInfo = (Stack<HashMap<String, ElementInfo>>) analyzerData.xmlElementInfo.clone();
+            data.xsdModelGroupInfo = (Stack<HashMap<String, ModelGroupInfo>>) analyzerData.xsdModelGroupInfo.clone();
+            data.modelGroupStack = (Stack<ModelGroupInfo>) analyzerData.modelGroupStack.clone();
 
             return data;
         }
@@ -1062,11 +1362,24 @@ public class DataUtils {
             this.arrayIndexes = analyzerData.arrayIndexes;
             this.rootRecord = analyzerData.rootRecord;
             this.currentField = analyzerData.currentField;
-            this.rootElement = analyzerData.rootElement;
             this.attributePrefix = analyzerData.attributePrefix;
             this.textFieldName = analyzerData.textFieldName;
             this.allowDataProjection = analyzerData.allowDataProjection;
             this.useSemanticEquality = analyzerData.useSemanticEquality;
+            this.xmlElementInfo = analyzerData.xmlElementInfo;
+            this.xsdModelGroupInfo = analyzerData.xsdModelGroupInfo;
+            this.modelGroupStack = analyzerData.modelGroupStack;
         }
+    }
+
+    /**
+     * Holds data required for the parsing.
+     *
+     * @since 0.1.1
+     */
+    public static class XmlParserData extends XmlAnalyzerMetaData {
+        public final Stack<QualifiedName> restFieldsPoints = new Stack<>();
+        public final Stack<QualifiedNameMap<Boolean>> parents = new Stack<>();
+        public QualifiedNameMap<Boolean> siblings = new QualifiedNameMap<>(new LinkedHashMap<>());
     }
 }

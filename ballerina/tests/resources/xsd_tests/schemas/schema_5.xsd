@@ -1,0 +1,10 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:element name="Order">
+        <xs:complexType>
+            <xs:all>
+                <xs:element name="OrderID" type="xs:int"/>
+                <xs:element name="Product" type="xs:string"/>
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

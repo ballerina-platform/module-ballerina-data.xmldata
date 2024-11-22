@@ -81,4 +81,12 @@ public class Native {
             return DiagnosticLog.error(DiagnosticErrorCode.XML_PARSE_ERROR, e.getMessage());
         }
     }
+
+    public static Object validate(BXml xml, Object xsd) {
+        try {
+            return XSDValidator.validate(xml, xsd);
+        } catch (Exception e) {
+            return DiagnosticLog.error(DiagnosticErrorCode.INVALID_XML, e.getMessage());
+        }
+    }
 }
