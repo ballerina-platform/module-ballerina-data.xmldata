@@ -475,7 +475,7 @@ isolated function addNamespaces(map<string> allNamespaces, map<string> namespace
 # The schema can either be a file path to the `.xsd` file or a Ballerina record type that represents
 # the XSD structure. The function checks if the `xmlValue` conforms to the provided schema.
 #
-# + schema - A `string` representing the XSD content or a Ballerina record type representing the XSD.
+# + schema - A `string` representing the file path to the `.xsd` file or a Ballerina record type representing the XSD.
 # + xmlValue - The XML document that needs to be validated against the schema.
 # + return - Returns `()` if the XML is valid according to the schema, otherwise returns `Error`.
 public function validate(xml xmlValue, string|typedesc<record {}> schema)
