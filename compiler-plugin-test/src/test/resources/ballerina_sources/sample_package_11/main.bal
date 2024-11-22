@@ -190,12 +190,12 @@ type A4 record {|
 |};
 
 type Seq_XsdSequenceArray record {|
-    @xmldata:Order {
+    @xmldata:SequenceOrder {
         value: 1
     }
     int age;
 
-    @xmldata:Order {
+    @xmldata:SequenceOrder {
         value: 2
     }
     float salary;

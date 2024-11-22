@@ -25,12 +25,12 @@ type XSDSequenceRecord record {|
 |};
 
 type Seq_XSDSequenceRecord record {|
-    @xmldata:Order {
+    @xmldata:SequenceOrder {
         value: 1
     }
     int age;
 
-    @xmldata:Order {
+    @xmldata:SequenceOrder {
         value: 2
     }
     float salary;
@@ -57,12 +57,12 @@ type XSDSequenceRecord2 record {|
 |};
 
 type Seq_XSDSequenceRecord2 record {|
-    @xmldata:Order {
+    @xmldata:SequenceOrder {
         value: 1
     }
     int age;
 
-    @xmldata:Order {
+    @xmldata:SequenceOrder {
         value: 2
     }
     float salary;
@@ -74,13 +74,13 @@ type Seq_XSDSequenceRecord2 record {|
 |};
 
 type Seq_XSDSequenceRecord3 record {
-    @xmldata:Order {
+    @xmldata:SequenceOrder {
         value: 1
     }
     int age;
     string name;
 
-    @xmldata:Order {
+    @xmldata:SequenceOrder {
         value: 2
     }
     float salary;
@@ -98,7 +98,7 @@ type XSDSequenceRecord4 record {|
 
 type Seq_XSDSequenceRecord4 record {
     int age;
-    @xmldata:Order {
+    @xmldata:SequenceOrder {
         value: 1
     }
     int age2;
@@ -106,7 +106,7 @@ type Seq_XSDSequenceRecord4 record {
     @xmldata:Element {
         minOccurs: 2
     }
-    @xmldata:Order {
+    @xmldata:SequenceOrder {
         value: 2
     }
     float salary;
