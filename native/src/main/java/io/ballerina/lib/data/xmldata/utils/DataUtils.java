@@ -31,6 +31,7 @@ import io.ballerina.runtime.api.Module;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.flags.SymbolFlags;
+import io.ballerina.runtime.api.types.AnnotatableType;
 import io.ballerina.runtime.api.types.ArrayType;
 import io.ballerina.runtime.api.types.Field;
 import io.ballerina.runtime.api.types.MapType;
@@ -432,7 +433,9 @@ public class DataUtils {
 
     public static Object getModifiedRecord(BMap<BString, Object> input, BString textFieldName, BTypedesc type) {
         Type describingType = type.getDescribingType();
+        Type referredType = TypeUtils.getReferredType(describingType);
         contentFieldName = textFieldName.getValue();
+
         if (describingType.getTag() == TypeTags.MAP_TAG) {
             Type constraintType = TypeUtils.getReferredType(((MapType) describingType).getConstrainedType());
             switch (constraintType.getTag()) {
@@ -452,11 +455,11 @@ public class DataUtils {
                 }
             }
         }
-        if (describingType.getTag() == TypeTags.RECORD_TYPE_TAG &&
+        if (referredType instanceof RecordType &&
                 describingType.getFlags() != Constants.DEFAULT_TYPE_FLAG) {
             BArray jsonArray = ValueCreator.createArrayValue(PredefinedTypes.TYPE_JSON_ARRAY);
-            BMap<BString, Object> recordField = addFields(input, type.getDescribingType());
-            BMap<BString, Object> processedRecord = processParentAnnotation(type.getDescribingType(), recordField);
+            BMap<BString, Object> recordField =  addFields(input, describingType);
+            BMap<BString, Object> processedRecord = processParentAnnotation(describingType, recordField);
             BString rootTagName = processedRecord.getKeys()[0];
             jsonArray.append(processedRecord.get(rootTagName));
             jsonArray.append(rootTagName);
@@ -465,10 +468,23 @@ public class DataUtils {
         return input;
     }
 
+    private static BMap<BString, Object> mergeOriginalAndCurrentAnnotations(
+                                BMap<BString, Object> originalTypeAnnotations, BMap<BString, Object> typeAnnotations) {
+        BMap<BString, Object> annotations = originalTypeAnnotations;
+        for (Map.Entry<BString, Object> entry: typeAnnotations.entrySet()) {
+            if (annotations.containsKey(entry.getKey())) {
+                continue;
+            }
+            annotations.put(entry.getKey(), entry.getValue());
+        }
+        return annotations;
+    }
+
     @SuppressWarnings("unchecked")
     private static BMap<BString, Object> processArrayValue(BMap<BString, Object> input, ArrayType arrayType) {
-        Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
-        switch (elementType.getTag()) {
+        Type elementType = arrayType.getElementType();
+        Type referedType = TypeUtils.getReferredType(elementType);
+        switch (referedType.getTag()) {
             case TypeTags.RECORD_TYPE_TAG -> {
                 BMap<BString, Object> jsonMap = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
                 for (Map.Entry<BString, Object> entry : input.entrySet()) {
@@ -477,12 +493,12 @@ public class DataUtils {
                     for (int i = 0; i < arrayValue.getLength(); i++) {
                         BMap<BString, Object> record = addFields(((BMap<BString, Object>) arrayValue.get(i)),
                                 elementType);
-                        BMap<BString, Object> parentRecord = processParentAnnotation(elementType, record);
+                        BMap<BString, Object> parentRecord = processParentAnnotation(referedType, record);
                         // Remove parent element
                         records.add((BMap<BString, Object>) parentRecord.get(parentRecord.getKeys()[0]));
                     }
                     jsonMap.put(entry.getKey(), ValueCreator.createArrayValue(records.toArray(),
-                            TypeCreator.createArrayType(elementType)));
+                            TypeCreator.createArrayType(referedType)));
                 }
                 return jsonMap;
             }
@@ -508,9 +524,18 @@ public class DataUtils {
 
     private static BMap<BString, Object> addFields(BMap<BString, Object> input, Type type) {
         BMap<BString, Object> recordValue = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
-        Map<String, Field> fields = ((RecordType) type).getFields();
-        BMap<BString, Object> annotations = ((RecordType) type).getAnnotations();
-        for (Map.Entry<BString, Object> entry : input.entrySet()) {
+        BMap<BString, Object> annotations = ValueCreator.createMapValue();
+        if (type instanceof AnnotatableType annotatableType) {
+            annotations = annotatableType.getAnnotations();
+        }
+
+        RecordType recordType = (RecordType) TypeUtils.getReferredType(type);
+        if (type instanceof ReferenceType) {
+            annotations = mergeOriginalAndCurrentAnnotations(annotations, recordType.getAnnotations());
+        }
+
+        Map<String, Field> fields = recordType.getFields();
+        for (Map.Entry<BString, Object> entry: input.entrySet()) {
             String key = entry.getKey().getValue();
             Object value = entry.getValue();
             if (fields.containsKey(key)) {
@@ -579,6 +604,9 @@ public class DataUtils {
     private static void processTypeReferenceType(Type fieldType, BMap<BString, Object> annotations,
                                                  BMap<BString, Object> recordValue, String key, Object value) {
         BMap<BString, Object> namespaceAnnotRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
+        Type referredType = TypeUtils.getReferredType(fieldType);
+        RecordType recType = (RecordType) referredType;
+        annotations = mergeOriginalAndCurrentAnnotations(annotations, (recType).getAnnotations());
         boolean doesNamespaceDefinedInField = false;
         if (!annotations.isEmpty()) {
             String fieldName = key;
@@ -592,9 +620,9 @@ public class DataUtils {
         }
 
         BMap<BString, Object> annotationRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
-        Type referredType = TypeUtils.getReferredType(fieldType);
+
         if (!doesNamespaceDefinedInField) {
-            BMap<BString, Object> subRecordAnnotations = ((RecordType) referredType).getAnnotations();
+            BMap<BString, Object> subRecordAnnotations = (recType).getAnnotations();
             key = getElementName(subRecordAnnotations, key);
             processSubRecordAnnotation(subRecordAnnotations, annotationRecord);
         }
@@ -729,22 +757,25 @@ public class DataUtils {
     @SuppressWarnings("unchecked")
     private static void processArray(Type elementType, BMap<BString, Object> annotations,
                                      BMap<BString, Object> record, Map.Entry<BString, Object> entry) {
-        BMap<BString, Object> annotationRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
+        Type elementType = ((ArrayType) childType).getElementType();
+        Type referedType = TypeUtils.getReferredType(elementType);
+        BMap<BString, Object>  annotationRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         String keyName = entry.getKey().getValue();
         if (!annotations.isEmpty()) {
             keyName = getKeyNameFromAnnotation(annotations, keyName);
             processSubRecordAnnotation(annotations, annotationRecord);
         }
         BArray arrayValue = (BArray) entry.getValue();
-        if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+        if (referedType.getTag() == TypeTags.RECORD_TYPE_TAG) {
             List<BMap<BString, Object>> records = new ArrayList<>();
             for (int i = 0; i < arrayValue.getLength(); i++) {
-                BMap<BString, Object> subRecord = addFields(((BMap<BString, Object>) arrayValue.get(i)), elementType);
-                subRecord = processParentAnnotation(elementType, subRecord);
+                BMap<BString, Object> subRecord = addFields(((BMap<BString, Object>) arrayValue.get(i)),
+                        elementType);
+                subRecord = processParentAnnotation(referedType, subRecord);
                 records.add((BMap<BString, Object>) subRecord.get(subRecord.getKeys()[0]));
             }
             record.put(
-                    StringUtils.fromString(getElementName(((RecordType) elementType).getAnnotations(), keyName)),
+                    StringUtils.fromString(getElementName(((RecordType) referedType).getAnnotations(), keyName)),
                     ValueCreator.createArrayValue(records.toArray(),
                             TypeCreator.createArrayType(Constants.JSON_ARRAY_TYPE)));
         } else {
@@ -785,9 +816,17 @@ public class DataUtils {
     }
 
     private static BMap<BString, Object> processParentAnnotation(Type type, BMap<BString, Object> record) {
+        BMap<BString, Object> annotations = ValueCreator.createMapValue();
+        if (type instanceof AnnotatableType annotatableType) {
+            annotations = annotatableType.getAnnotations();
+        }
+        Type referedType = TypeUtils.getReferredType(type);
+        if (type instanceof ReferenceType referenceType) {
+            annotations = mergeOriginalAndCurrentAnnotations(annotations, ((RecordType) referedType).getAnnotations());
+        }
+
         BMap<BString, Object> parentRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         BMap<BString, Object> namespaces = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
-        BMap<BString, Object> annotations = ((RecordType) type).getAnnotations();
         BString rootName = processAnnotation(annotations, type.getName(), namespaces);
         if (!namespaces.isEmpty()) {
             for (Map.Entry<BString, Object> namespace : namespaces.entrySet()) {
