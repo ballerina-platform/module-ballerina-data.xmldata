@@ -55,7 +55,15 @@ public class XSDValidator {
     private static final String CONTENT_FIELD = "#content";
     private static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attributePrefix");
     private static final BString TEXT_FIELD_NAME = StringUtils.fromString("textFieldName");
-    public static Object validate(Object xsd, BXml xml) throws ParserConfigurationException, IOException, SAXException {
+
+    /**
+     * Validate the XML against the XSD.
+     *
+     * @param xsd XSD file path or XSD record
+     * @param xml XML to be validated
+     * @return Error if the XML is invalid, else null
+     */
+    public static Object validate(BXml xml, Object xsd) throws ParserConfigurationException, IOException, SAXException {
         try {
             if (xsd instanceof BString) {
                 return validateXmlFromXsdFile(xsd.toString(), xml);

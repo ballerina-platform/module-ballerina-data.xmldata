@@ -27,6 +27,8 @@ import org.testng.annotations.Test;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static io.ballerina.lib.data.xmldata.compiler.CompilerPluginTestUtils.getErrorMessage;
+
 /**
  * This class includes tests for Ballerina Xmldata compiler plugin.
  */
@@ -39,7 +41,7 @@ public class CompilerPluginTest {
                 .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
                 .collect(Collectors.toList());
         Assert.assertEquals(errorDiagnosticsList.size(), 1);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 0),
                 "invalid field: duplicate field found");
     }
 
@@ -51,7 +53,7 @@ public class CompilerPluginTest {
                 .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
                 .collect(Collectors.toList());
         Assert.assertEquals(errorDiagnosticsList.size(), 1);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 0),
                 "invalid field: duplicate field found");
     }
 
@@ -63,7 +65,7 @@ public class CompilerPluginTest {
                 .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.WARNING))
                 .collect(Collectors.toList());
         Assert.assertEquals(errorDiagnosticsList.size(), 1);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 0),
                 "invalid annotation attachment: child record does not allow name annotation");
     }
 
@@ -75,13 +77,13 @@ public class CompilerPluginTest {
                 .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
                 .collect(Collectors.toList());
         Assert.assertEquals(errorDiagnosticsList.size(), 4);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 0),
                 "invalid field: duplicate field found");
-        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 1),
                 "invalid field: duplicate field found");
-        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 2),
                 "invalid field: duplicate field found");
-        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 3),
                 "invalid field: duplicate field found");
     }
 
@@ -93,17 +95,17 @@ public class CompilerPluginTest {
                 .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
                 .collect(Collectors.toList());
         Assert.assertEquals(errorDiagnosticsList.size(), 6);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 0),
                 "invalid type: expected a record type");
-        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 1),
                 "invalid field: duplicate field found");
-        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 2),
                 "invalid field: duplicate field found");
-        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 3),
                 "invalid type: expected a record type");
-        Assert.assertEquals(errorDiagnosticsList.get(4).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 4),
                 "invalid field: duplicate field found");
-        Assert.assertEquals(errorDiagnosticsList.get(5).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 5),
                 "invalid field: duplicate field found");
     }
 
@@ -115,7 +117,7 @@ public class CompilerPluginTest {
                 .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
                 .collect(Collectors.toList());
         Assert.assertEquals(errorDiagnosticsList.size(), 1);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 0),
                 "invalid field: duplicate field found");
 
         List<Diagnostic> warningDiagnosticsList = diagnosticResult.diagnostics().stream()
@@ -134,53 +136,53 @@ public class CompilerPluginTest {
                 .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
                 .collect(Collectors.toList());
         Assert.assertEquals(errorDiagnosticsList.size(), 24);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 0),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 1),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 2),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 3),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(4).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 4),
                 "Invalid sequence member: Sequence members should be defined in a closed record");
-        Assert.assertEquals(errorDiagnosticsList.get(5).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 5),
                 "Invalid sequence member: Sequence members should be defined in a closed record");
-        Assert.assertEquals(errorDiagnosticsList.get(6).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 6),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(7).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 7),
                 "Invalid sequence member: Sequence members should be defined in a closed record");
-        Assert.assertEquals(errorDiagnosticsList.get(8).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 8),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(9).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 9),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(10).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 10),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(11).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 11),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(12).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 12),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(13).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 13),
                 "Invalid choice member: Choice members should be defined in a closed record");
-        Assert.assertEquals(errorDiagnosticsList.get(14).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 14),
                 "Invalid choice member: Choice members should be defined in a closed record");
-        Assert.assertEquals(errorDiagnosticsList.get(15).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 15),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(16).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 16),
                 "Invalid choice member: Choice members should be defined in a closed record");
-        Assert.assertEquals(errorDiagnosticsList.get(17).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 17),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(18).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 18),
                 "A record field cannot contains sequence/choice/element/attribute annotations simultaneously");
-        Assert.assertEquals(errorDiagnosticsList.get(19).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 19),
                 "A record field cannot contains sequence/choice/element/attribute annotations simultaneously");
-        Assert.assertEquals(errorDiagnosticsList.get(20).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 20),
                 "A record field cannot contains sequence/choice/element/attribute annotations simultaneously");
-        Assert.assertEquals(errorDiagnosticsList.get(20).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 21),
                 "A record field cannot contains sequence/choice/element/attribute annotations simultaneously");
-        Assert.assertEquals(errorDiagnosticsList.get(13).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 22),
                 "Invalid choice member: Choice members should be defined in a closed record");
-        Assert.assertEquals(errorDiagnosticsList.get(20).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 23),
                 "A record field cannot contains sequence/choice/element/attribute annotations simultaneously");
     }
 
@@ -192,17 +194,17 @@ public class CompilerPluginTest {
                 .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
                 .collect(Collectors.toList());
         Assert.assertEquals(errorDiagnosticsList.size(), 6);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 0),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 1),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 2),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 3),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(4).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 4),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(5).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 5),
                 "invalid xsd annotation: record type or record array type expected");
     }
 
@@ -214,23 +216,23 @@ public class CompilerPluginTest {
                 .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
                 .collect(Collectors.toList());
         Assert.assertEquals(errorDiagnosticsList.size(), 9);
-        Assert.assertEquals(errorDiagnosticsList.get(0).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 0),
                 "Invalid sequence member: Order should be defined in in all fields");
-        Assert.assertEquals(errorDiagnosticsList.get(1).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 1),
                 "Invalid sequence member: Sequence members should be defined in a closed record");
-        Assert.assertEquals(errorDiagnosticsList.get(2).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 2),
                 "Invalid sequence member: Order should be defined in in all fields");
-        Assert.assertEquals(errorDiagnosticsList.get(3).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 3),
                 "Invalid sequence member: Sequence members should be defined in a closed record");
-        Assert.assertEquals(errorDiagnosticsList.get(4).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 4),
                 "Invalid sequence member: Order should be defined in in all fields");
-        Assert.assertEquals(errorDiagnosticsList.get(5).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 5),
                 "Invalid sequence member: Order should be defined in in all fields");
-        Assert.assertEquals(errorDiagnosticsList.get(6).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 6),
                 "Invalid choice member: Choice members should be defined in a closed record");
-        Assert.assertEquals(errorDiagnosticsList.get(7).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 7),
                 "invalid xsd annotation: record type or record array type expected");
-        Assert.assertEquals(errorDiagnosticsList.get(8).diagnosticInfo().messageFormat(),
+        Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 8),
                 "Invalid choice member: Choice members should be defined in a closed record");
     }
 }

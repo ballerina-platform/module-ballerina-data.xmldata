@@ -84,7 +84,7 @@ public class Native {
 
     public static Object validate(BXml xml, Object xsd) {
         try {
-            return XSDValidator.validate(xsd, xml);
+            return XSDValidator.validate(xml, xsd);
         } catch (Exception e) {
             return DiagnosticLog.error(DiagnosticErrorCode.INVALID_XML, e.getMessage());
         }

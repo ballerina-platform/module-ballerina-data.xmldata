@@ -36,7 +36,7 @@ public type ElementConfig record {|
 |};
 
 # Annotation to define schema rules for an XML element in Ballerina.
-public const annotation ElementConfig Element on type, record field;
+public const annotation ElementConfig Element on record field;
 
 # Defines the configuration for an XML sequence in the XML schema (XSD).
 public type SequenceConfig record {|
@@ -44,7 +44,7 @@ public type SequenceConfig record {|
 |};
 
 # Annotation to define schema rules for an XML sequence in Ballerina.
-public const annotation SequenceConfig Sequence on type, record field;
+public const annotation SequenceConfig Sequence on record field;
 
 # Defines the configuration for an XML choice in the XML schema (XSD).
 public type ChoiceConfig record {|
@@ -52,7 +52,7 @@ public type ChoiceConfig record {|
 |};
 
 # Annotation to define schema rules for an XML choice in Ballerina.
-public const annotation ChoiceConfig Choice on type, record field;
+public const annotation ChoiceConfig Choice on record field;
 
 # Defines the configuration for the sequence order in the XML schema (XSD).
 public type SequenceOrderConfig record {|
@@ -61,7 +61,7 @@ public type SequenceOrderConfig record {|
 |};
 
 # Annotation to define schema rules for the sequence order in Ballerina.
-public const annotation SequenceOrderConfig SequenceOrder on type, record field;
+public const annotation SequenceOrderConfig SequenceOrder on record field;
 
 # Defines the name of the XML element.
 public type NameConfig record {|
@@ -470,14 +470,15 @@ isolated function addNamespaces(map<string> allNamespaces, map<string> namespace
     }
 }
 
-# Validates an XML document against a provided XML schema.
+# Validates an XML document against an XML schema.
 #
 # The schema can either be a file path to the `.xsd` file or a Ballerina record type that represents
-# the XSD structure. The function checks if the `xmlValue` conforms to the provided schema.
+# the schema defined by the XSD. The function checks if the XML value conforms to the specified schema.
 #
-# + schema - A `string` representing the file path to the `.xsd` file or a Ballerina record type representing the XSD.
+# + schema - A string representing the file path to the `.xsd` file or a
+#            Ballerina record type representing the schema defined by the XSD.
 # + xmlValue - The XML document that needs to be validated against the schema.
-# + return - Returns `()` if the XML is valid according to the schema, otherwise returns `Error`.
+# + return - Returns `()` if the XML value is valid according to the schema, otherwise returns `Error`.
 public function validate(xml xmlValue, string|typedesc<record {}> schema)
     returns Error? = @java:Method {'class: "io.ballerina.lib.data.xmldata.xml.Native"} external;
 
