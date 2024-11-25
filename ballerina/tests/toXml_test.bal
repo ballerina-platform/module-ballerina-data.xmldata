@@ -95,7 +95,7 @@ function testToXmlWithNameAnnotation() returns error? {
     xml xmlVal1 = xml `<Data8><A><D><C><D>1</D><D>2</D></C><C><D>3</D><D>4</D></C></D></A></Data8>`;
     Rec2 rec1 = check parseAsType(xmlVal1);
     xml result = check toXml(rec1);
-    test:assertTrue(result == xmlVal1);
+    test:assertEquals(result, xmlVal1);
 }
 
 @test:Config {

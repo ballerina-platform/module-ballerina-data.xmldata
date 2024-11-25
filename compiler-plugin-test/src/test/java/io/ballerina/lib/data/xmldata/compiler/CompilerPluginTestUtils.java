@@ -23,9 +23,11 @@ import io.ballerina.projects.ProjectEnvironmentBuilder;
 import io.ballerina.projects.directory.BuildProject;
 import io.ballerina.projects.environment.Environment;
 import io.ballerina.projects.environment.EnvironmentBuilder;
+import io.ballerina.tools.diagnostics.Diagnostic;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 /**
  * Utility functions related to compiler plugins tests.
@@ -42,5 +44,9 @@ public class CompilerPluginTestUtils {
         ProjectEnvironmentBuilder projectEnvironmentBuilder = ProjectEnvironmentBuilder.getBuilder(environment);
         BuildProject project = BuildProject.load(projectEnvironmentBuilder, projectDirPath);
         return project.currentPackage();
+    }
+
+    static String getErrorMessage(List<Diagnostic> errorDiagnosticsList, int index) {
+        return errorDiagnosticsList.get(index).diagnosticInfo().messageFormat();
     }
 }

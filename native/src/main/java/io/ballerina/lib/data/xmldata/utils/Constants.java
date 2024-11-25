@@ -39,6 +39,9 @@ public class Constants {
     public static final int DEFAULT_TYPE_FLAG = 2049;
 
     public static final String FIELD = "$field$.";
+    public static final String ROOT_TAG = "rootTag";
+    public static final String ROOT = "root";
+    public static final String EMPTY_STRING = "";
     public static final String NAMESPACE = "Namespace";
     public static final String UNDERSCORE = "_";
     public static final String COLON = ":";
@@ -59,11 +62,20 @@ public class Constants {
     public static final BString PREFIX = StringUtils.fromString("prefix");
     public static final BString VALUE = StringUtils.fromString("value");
     public static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attributePrefix");
+    public static final BString USER_ATTRIBUTE_PREFIX = StringUtils.fromString("userAttributePrefix");
     public static final BString TEXT_FIELD_NAME = StringUtils.fromString("textFieldName");
+    public static final BString ARRAY_ENTRY_TAG = StringUtils.fromString("arrayEntryTag");
     public static final BString ALLOW_DATA_PROJECTION = StringUtils.fromString("allowDataProjection");
     public static final BString USE_SEMANTIC_EQUALITY = StringUtils.fromString("useSemanticEquality");
     public static final BString ENABLE_CONSTRAINT_VALIDATION = StringUtils.fromString("enableConstraintValidation");
 
     public static final MapType JSON_MAP_TYPE = TypeCreator.createMapType(PredefinedTypes.TYPE_JSON);
     public static final ArrayType JSON_ARRAY_TYPE = TypeCreator.createArrayType(PredefinedTypes.TYPE_JSON);
+
+    public static final String ELEMENT = "Element";
+    public static final String SEQUENCE = "Sequence";
+    public static final String CHOICE = "Choice";
+    public static final BString MIN_OCCURS = StringUtils.fromString("minOccurs");
+    public static final BString MAX_OCCURS = StringUtils.fromString("maxOccurs");
+    public static final String ORDER = "SequenceOrder";
 }

@@ -23,6 +23,7 @@ import io.ballerina.lib.data.xmldata.utils.Constants;
 import io.ballerina.lib.data.xmldata.utils.DataUtils;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
+import io.ballerina.lib.data.xmldata.xml.xsd.ModelGroupInfo;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.flags.SymbolFlags;
@@ -58,6 +59,13 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import static io.ballerina.lib.data.xmldata.utils.Constants.ENABLE_CONSTRAINT_VALIDATION;
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.initializeXsdInformation;
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.popXsdValidationStacks;
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.updateElementOccurrence;
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.validateCurrentElementInfo;
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.validateElementInfoStack;
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.validateModelGroupInfoStack;
+import static io.ballerina.lib.data.xmldata.utils.XsdUtils.validateModelGroupStack;
 import static javax.xml.stream.XMLStreamConstants.CDATA;
 import static javax.xml.stream.XMLStreamConstants.CHARACTERS;
 import static javax.xml.stream.XMLStreamConstants.COMMENT;
@@ -66,6 +74,7 @@ import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static javax.xml.stream.XMLStreamConstants.PROCESSING_INSTRUCTION;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import static io.ballerina.lib.data.xmldata.utils.DataUtils.XmlParserData;
 import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ATTRIBUTE;
 import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ELEMENT;
 import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.NOT_DEFINED;
@@ -185,6 +194,8 @@ public class XmlParser {
             handleXMLStreamException(e);
         }
 
+        validateElementInfoStack(xmlParserData);
+        validateModelGroupInfoStack(xmlParserData);
         return xmlParserData.currentNode;
     }
 
@@ -221,6 +232,7 @@ public class XmlParser {
                 if (next == END_ELEMENT) {
                     QName endElement = xmlStreamReader.getName();
                     if (endElement.getLocalPart().equals(startElementName)) {
+                        validateCurrentElementInfo(xmlParserData);
                         validateRequiredFields(xmlParserData);
                         popExpectedTypeStacks(xmlParserData);
                         break;
@@ -251,22 +263,21 @@ public class XmlParser {
         xmlParserData.currentNode = ValueCreator.createRecordValue(rootRecord.getPackage(), rootRecord.getName());
         boolean useSemanticEquality = xmlParserData.useSemanticEquality;
         QualifiedName elementQName = getElementName(xmlStreamReader, useSemanticEquality);
-        xmlParserData.rootElement =
-                DataUtils.validateAndGetXmlNameFromRecordAnnotation(rootRecord, rootRecord.getName(), elementQName,
+        DataUtils.validateAndGetXmlNameFromRecordAnnotation(rootRecord, rootRecord.getName(), elementQName,
                         useSemanticEquality);
         DataUtils.validateTypeNamespace(elementQName.getPrefix(), elementQName.getNamespaceURI(), rootRecord);
 
         // Keep track of fields and attributes
         xmlParserData.recordTypeStack.push(rootRecord);
         updateExpectedTypeStacks(rootRecord, xmlParserData);
+        initializeXsdInformation(rootRecord, xmlParserData);
         handleAttributes(xmlStreamReader, xmlParserData);
         xmlParserData.arrayIndexes.push(new HashMap<>());
     }
 
     @SuppressWarnings("unchecked")
     private void readText(XMLStreamReader xmlStreamReader,
-                          boolean isCData,
-                          XmlParserData xmlParserData) throws XMLStreamException {
+                          boolean isCData, XmlParserData xmlParserData) throws XMLStreamException {
         Field currentField = xmlParserData.currentField;
         TextValue textValue = new TextValue();
         String text;
@@ -357,6 +368,7 @@ public class XmlParser {
         }
 
         xmlParserData.currentNode = parent;
+        validateCurrentElementInfo(xmlParserData);
         popExpectedTypeStacks(xmlParserData);
         updateSiblingAndRootRecord(xmlParserData);
     }
@@ -397,6 +409,7 @@ public class XmlParser {
 
     @SuppressWarnings("unchecked")
     private void handleContentFieldInRecordType(RecordType recordType, BString text, XmlParserData xmlParserData) {
+        validateCurrentElementInfo(xmlParserData);
         popExpectedTypeStacks(xmlParserData);
         updateSiblingAndRootRecord(xmlParserData);
         for (String key : recordType.getFields().keySet()) {
@@ -452,6 +465,7 @@ public class XmlParser {
         if (xmlParserData.fieldHierarchy.empty()) {
             return;
         }
+        validateCurrentElementInfo(xmlParserData);
         validateRequiredFields(xmlParserData);
     }
 
@@ -461,14 +475,18 @@ public class XmlParser {
         QualifiedName elemQName = getElementName(xmlStreamReader, xmlParserData.useSemanticEquality);
         QualifiedNameMap<Boolean> siblings = xmlParserData.siblings;
         Stack<QualifiedNameMap<Boolean>> parents = xmlParserData.parents;
+
         if (siblings.contains(elemQName) && !siblings.get(elemQName)) {
             siblings.put(elemQName, true);
         }
         if (parents.isEmpty() || !parents.peek().contains(elemQName)) {
+            validateModelGroupStack(xmlParserData, elemQName, false);
             return;
         }
 
+        validateCurrentElementInfo(xmlParserData);
         validateRequiredFields(xmlParserData);
+        validateModelGroupStack(xmlParserData, elemQName, false);
         xmlParserData.currentNode = (BMap<BString, Object>) xmlParserData.nodesStack.pop();
         popExpectedTypeStacks(xmlParserData);
         updateSiblingAndRootRecord(xmlParserData);
@@ -492,6 +510,9 @@ public class XmlParser {
 
     private void readElement(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
         QualifiedName elemQName = getElementName(xmlStreamReader, xmlParserData.useSemanticEquality);
+        updateElementOccurrence(xmlParserData, elemQName);
+        validateModelGroupStack(xmlParserData, elemQName, true);
+
         QualifiedNameMap<Field> fieldMap = xmlParserData.fieldHierarchy.peek();
         Field currentField = null;
         if (xmlParserData.visitedFieldHierarchy.peek().contains(elemQName)) {
@@ -500,8 +521,21 @@ public class XmlParser {
             elemQName = fieldMap.getMatchedQualifiedName(elemQName);
             currentField = fieldMap.remove(elemQName);
         }
+
         xmlParserData.currentField = currentField;
         if (currentField == null) {
+            // TODO: In here assume that if XSD is present then no rest type can be there.
+            HashMap<String, ModelGroupInfo> modelGroupInfo = null;
+            if (!xmlParserData.xsdModelGroupInfo.isEmpty()) {
+                modelGroupInfo = xmlParserData.xsdModelGroupInfo.peek();
+            }
+
+            if (modelGroupInfo != null && !modelGroupInfo.isEmpty()) {
+                validateElementInXsdSequenceOrElement(elemQName, modelGroupInfo,
+                        xmlStreamReader, xmlParserData, xmlParserData.visitedFieldHierarchy.peek(), fieldMap);
+                return;
+            }
+
             String elemName = elemQName.getLocalPart();
             if (xmlParserData.restTypes.peek() != null) {
                 if (fieldMap.contains(elemName)) {
@@ -525,21 +559,89 @@ public class XmlParser {
         Type referredFieldType = TypeUtils.getReferredType(fieldType);
         if (!xmlParserData.siblings.contains(elemQName)) {
             xmlParserData.siblings.put(elemQName, false);
+        } else if (DataUtils.isAnydataOrJson(referredFieldType.getTag()) && !(temp instanceof BArray)) {
+            BArray tempArray = DataUtils.createArrayValue(referredFieldType);
+            tempArray.append(temp);
+            currentNode.put(bFieldName, tempArray);
         } else {
-            if (DataUtils.isAnydataOrJson(referredFieldType.getTag()) && !(temp instanceof BArray)) {
-                BArray tempArray = DataUtils.createArrayValue(referredFieldType);
-                tempArray.append(temp);
-                currentNode.put(bFieldName, tempArray);
-            } else if (referredFieldType.getTag() != TypeTags.ARRAY_TAG) {
-                throw DiagnosticLog.error(DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, fieldType, fieldName);
+            if (!xmlParserData.modelGroupStack.isEmpty()) {
+                ModelGroupInfo modelGroup = xmlParserData.modelGroupStack.peek();
+
+                // Check whether this is a model group array
+                if (referredFieldType.getTag() != TypeTags.ARRAY_TAG && modelGroup == null) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, fieldType, fieldName);
+                }
+            } else {
+                if (referredFieldType.getTag() != TypeTags.ARRAY_TAG) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.FOUND_ARRAY_FOR_NON_ARRAY_TYPE, fieldType, fieldName);
+                }
             }
         }
 
         if (DataUtils.isRegExpType(fieldType)) {
             throw DiagnosticLog.error(DiagnosticErrorCode.UNSUPPORTED_TYPE);
         }
-
         initializeNextValueBasedOnExpectedType(fieldName, fieldType, temp, currentNode, xmlParserData);
+    }
+
+    private void validateElementInXsdSequenceOrElement(QualifiedName elemQName,
+               HashMap<String, ModelGroupInfo> modelGroupInfo, XMLStreamReader xmlStreamReader,
+               XmlParserData xmlParserData, QualifiedNameMap<Field> visitedFields, QualifiedNameMap<Field> fieldMap) {
+        if (modelGroupInfo != null) {
+            for (Map.Entry<String, ModelGroupInfo> entry : modelGroupInfo.entrySet()) {
+                ModelGroupInfo modelGroupValue = entry.getValue();
+                String key = entry.getKey();
+                QualifiedName qualifiedName = QualifiedNameFactory
+                        .createQualifiedName("", key, "", xmlParserData.useSemanticEquality);
+
+                if (modelGroupValue.isElementContains(elemQName.getLocalPart())) {
+                    Object temp = null;
+                    Field field = xmlParserData.rootRecord.getFields().get(key);
+                    if (visitedFields.contains(qualifiedName)) {
+                        temp = xmlParserData.currentNode.get(StringUtils.fromString(key));
+                    }
+                    xmlParserData.modelGroupStack.push(modelGroupValue);
+                    visitedFields.put(qualifiedName, field);
+                    fieldMap.remove(qualifiedName);
+                    Type referredType = TypeUtils.getReferredType(field.getFieldType());
+                    updateNextRecordForXsd(xmlParserData, key, referredType, temp, xmlParserData.currentNode);
+                    readElement(xmlStreamReader, xmlParserData);
+                    return;
+                }
+            }
+        }
+    }
+
+    private void updateNextRecordForXsd(XmlParserData xmlParserData,
+            String fieldName, Type fieldType, Object temp, BMap<BString, Object> currentNode) {
+        xmlParserData.recordTypeStack.push(xmlParserData.rootRecord);
+        if (fieldType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+            RecordType recType = (RecordType) fieldType;
+            xmlParserData.currentNode = updateNextValue(recType, fieldName, fieldType, xmlParserData);
+            xmlParserData.rootRecord = recType;
+            return;
+        }
+
+        if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
+            Type elementType = TypeUtils.getReferredType(((ArrayType) fieldType).getElementType());
+            if (temp == null) {
+                xmlParserData.arrayIndexes.peek().put(fieldName, 0);
+                currentNode.put(StringUtils.fromString(fieldName),
+                        ValueCreator.createArrayValue((ArrayType) fieldType));
+            } else {
+                HashMap<String, Integer> indexes = xmlParserData.arrayIndexes.peek();
+                indexes.put(fieldName, indexes.get(fieldName) + 1);
+            }
+
+            if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                RecordType recType = (RecordType) elementType;
+                xmlParserData.rootRecord = recType;
+                xmlParserData.currentNode = updateNextValue(recType,
+                        fieldName, fieldType, xmlParserData);
+                return;
+            }
+        }
+        throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_XSD_ANNOTATION, fieldName, fieldType);
     }
 
     private void initializeNextValueBasedOnExpectedType(String fieldName, Type fieldType, Object temp,
@@ -614,6 +716,8 @@ public class XmlParser {
         xmlParserData.fieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
         xmlParserData.visitedFieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
         xmlParserData.recordTypeStack.push(null);
+        xmlParserData.xsdModelGroupInfo.push(new HashMap<>());
+        xmlParserData.xmlElementInfo.push(new HashMap<>());
         BMap<BString, Object> currentNode = xmlParserData.currentNode;
         Object temp = currentNode.get(StringUtils.fromString(fieldName));
         if (temp instanceof BArray) {
@@ -657,6 +761,7 @@ public class XmlParser {
                                                   XmlParserData xmlParserData) {
         BMap<BString, Object> nextValue = ValueCreator.createRecordValue(rootRecord.getPackage(), rootRecord.getName());
         updateExpectedTypeStacks(rootRecord, xmlParserData);
+        initializeXsdInformation(rootRecord, xmlParserData);
         BMap<BString, Object> currentNode = xmlParserData.currentNode;
         Object temp = currentNode.get(StringUtils.fromString(fieldName));
         if (temp instanceof BArray) {
@@ -681,18 +786,19 @@ public class XmlParser {
         xmlParserData.fieldHierarchy.push(new QualifiedNameMap<>(getAllFieldsInRecordType(recordType, xmlParserData)));
         xmlParserData.visitedFieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
         xmlParserData.restTypes.push(recordType.getRestFieldType());
+        xmlParserData.xsdModelGroupInfo.push(new HashMap<>());
+        xmlParserData.xmlElementInfo.push(new HashMap<>());
     }
 
     private void popExpectedTypeStacks(XmlParserData xmlParserData) {
         popMappingTypeStacks(xmlParserData);
         xmlParserData.attributeHierarchy.pop();
         xmlParserData.arrayIndexes.pop();
+        popXsdValidationStacks(xmlParserData);
     }
 
     private void popMappingTypeStacks(XmlParserData xmlParserData) {
-        xmlParserData.fieldHierarchy.pop();
-        xmlParserData.visitedFieldHierarchy.pop();
-        xmlParserData.restTypes.pop();
+        DataUtils.popMappingTypeStacks(xmlParserData);
     }
 
     private void updateSiblingAndRootRecord(XmlParserData xmlParserData) {
@@ -760,6 +866,8 @@ public class XmlParser {
             xmlParserData.visitedFieldHierarchy.push(new QualifiedNameMap<>(new HashMap<>()));
             xmlParserData.restTypes.push(restType);
             xmlParserData.arrayIndexes.push(new HashMap<>());
+            xmlParserData.xsdModelGroupInfo.push(new HashMap<>());
+            xmlParserData.xmlElementInfo.push(new HashMap<>());
         }
     }
 
@@ -1141,31 +1249,5 @@ public class XmlParser {
     static class TextValue {
         String text;
         boolean isCommentInTheMiddle = false;
-    }
-
-    /**
-     * Holds data required for the parsing.
-     *
-     * @since 0.1.0
-     */
-    public static class XmlParserData {
-        private final Stack<Object> nodesStack = new Stack<>();
-        private final Stack<QualifiedNameMap<Field>> fieldHierarchy = new Stack<>();
-        Stack<QualifiedNameMap<Field>> visitedFieldHierarchy = new Stack<>();
-        private final Stack<QualifiedNameMap<Field>> attributeHierarchy = new Stack<>();
-        private final Stack<Type> restTypes = new Stack<>();
-        private final Stack<QualifiedName> restFieldsPoints = new Stack<>();
-        private final Stack<RecordType> recordTypeStack = new Stack<>();
-        Stack<HashMap<String, Integer>> arrayIndexes = new Stack<>();
-        private RecordType rootRecord;
-        private Field currentField;
-        private QualifiedName rootElement;
-        private final Stack<QualifiedNameMap<Boolean>> parents = new Stack<>();
-        private QualifiedNameMap<Boolean> siblings = new QualifiedNameMap<>(new LinkedHashMap<>());
-        private BMap<BString, Object> currentNode;
-        private String attributePrefix;
-        private String textFieldName;
-        private boolean allowDataProjection;
-        private boolean useSemanticEquality;
     }
 }
