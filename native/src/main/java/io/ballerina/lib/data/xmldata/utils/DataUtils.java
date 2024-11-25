@@ -585,8 +585,7 @@ public class DataUtils {
         switch (fieldType.getTag()) {
             case TypeTags.RECORD_TYPE_TAG -> processRecord(key, annotations, recordValue, value,
                     (RecordType) fieldType);
-            case TypeTags.ARRAY_TAG -> processArray(TypeUtils.getReferredType(((ArrayType) fieldType)
-                    .getElementType()), annotations, recordValue, entry);
+            case TypeTags.ARRAY_TAG -> processArray(fieldType, annotations, recordValue, entry);
             case TypeTags.TYPE_REFERENCED_TYPE_TAG -> {
                 Type referredType = TypeUtils.getReferredType(fieldType);
                 if (referredType.getTag() != TypeTags.RECORD_TYPE_TAG) {
@@ -622,7 +621,7 @@ public class DataUtils {
         BMap<BString, Object> annotationRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
 
         if (!doesNamespaceDefinedInField) {
-            BMap<BString, Object> subRecordAnnotations = (recType).getAnnotations();
+            BMap<BString, Object> subRecordAnnotations = recType.getAnnotations();
             key = getElementName(subRecordAnnotations, key);
             processSubRecordAnnotation(subRecordAnnotations, annotationRecord);
         }
@@ -755,7 +754,7 @@ public class DataUtils {
     }
 
     @SuppressWarnings("unchecked")
-    private static void processArray(Type elementType, BMap<BString, Object> annotations,
+    private static void processArray(Type childType, BMap<BString, Object> annotations,
                                      BMap<BString, Object> record, Map.Entry<BString, Object> entry) {
         Type elementType = ((ArrayType) childType).getElementType();
         Type referedType = TypeUtils.getReferredType(elementType);
