@@ -782,8 +782,16 @@ public class DataUtils {
             for (int i = 0; i < arrayValue.getLength(); i++) {
                 records.add(arrayValue.get(i));
             }
-            record.put(StringUtils.fromString(keyName), ValueCreator.createArrayValue(records.toArray(),
-                    TypeCreator.createArrayType(Constants.JSON_ARRAY_TYPE)));
+
+            QName qName = addFieldNamespaceAnnotation(keyName, keyName, annotations, record);
+            BString localPart = StringUtils.fromString(qName.getLocalPart());
+            BString key = qName.getPrefix().isBlank() ?
+                    localPart : StringUtils.fromString(qName.getPrefix() + ":" + localPart);
+            record.put(key, ValueCreator.createArrayValue(
+                    records.toArray(), TypeCreator.createArrayType(Constants.JSON_ARRAY_TYPE)));
+
+//            record.put(StringUtils.fromString(keyName), ValueCreator.createArrayValue(records.toArray(),
+//            TypeCreator.createArrayType(Constants.JSON_ARRAY_TYPE)));
         }
         if (!annotationRecord.isEmpty()) {
             record.put(annotationRecord.getKeys()[0],
