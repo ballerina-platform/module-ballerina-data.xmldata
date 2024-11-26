@@ -76,7 +76,7 @@ public class ToXmlUtils {
                                 getEmptyStringMap(), options, null, referredType,
                                 false, false, null, null),
                         allNamespaces, options,
-                        getAttributesMap(jsonValue, options, allNamespaces, getEmptyStringMap()));
+                        getAttributesMap(jsonValue, options, allNamespaces, getEmptyStringMap(), null));
             }
 
             BMap<BString, Object> jMap = null;
@@ -115,9 +115,10 @@ public class ToXmlUtils {
                 return getElementFromRecordMember(rootTag == null
                                 ? StringUtils.fromString(Constants.ROOT) : rootTagBstring, traverseRecordAndGenerateXml(
                                 value, allNamespaces, getEmptyStringMap(), options, key, getChildElementType(
-                                        referredType, keyStr), isSequenceField, isSequenceField,
+                                        referredType, recordKey), isSequenceField, isSequenceField,
                                 parentModelGroupInfo, elementInfo),
-                        allNamespaces, options, getAttributesMap(value, options, allNamespaces, getEmptyStringMap()));
+                        allNamespaces, options, getAttributesMap(value, options, allNamespaces, getEmptyStringMap(),
+                                key));
             }
 
             if (key.equals(options.get(Constants.TEXT_FIELD_NAME))) {
@@ -128,7 +129,7 @@ public class ToXmlUtils {
                     traverseRecordAndGenerateXml(value, allNamespaces, getEmptyStringMap(), options, null,
                             getChildElementType(referredType, recordKey), isSequenceField,
                             isSequenceField, parentModelGroupInfo, elementInfo),
-                    allNamespaces, options, getAttributesMap(value, options, allNamespaces, getEmptyStringMap()));
+                    allNamespaces, options, getAttributesMap(value, options, allNamespaces, getEmptyStringMap(), key));
             if (isContainsModelGroup) {
                 output = output.children();
             }
@@ -200,7 +201,8 @@ public class ToXmlUtils {
                         childElement = getElementFromRecordMember(k, traverseRecordAndGenerateXml(
                                 value, allNamespaces, namespacesOfElem, options, null, getChildElementType(
                             referredType, recordKey), isSequenceField, isSequenceField, modelGroupInfo, elementInfo),
-                            allNamespaces, options, getAttributesMap(value, options, allNamespaces, parentNamespaces));
+                            allNamespaces, options, getAttributesMap(value, options, allNamespaces, parentNamespaces,
+                                        keyObj));
                         xNode = Concat.concat(xNode, !isContainsModelGroup || isParentSequenceArray ? childElement
                                 : childElement.children());
                     }
@@ -248,13 +250,13 @@ public class ToXmlUtils {
                         traverseRecordAndGenerateXml(i, allNamespaces, namespacesOfElem,
                                 options, keyObj, getChildElementType(referredType, null),
                                 isParentSequence, isParentSequenceArray, parentModelGroupInfo, parentElementInfo),
-                        allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces));
+                        allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces, keyObj));
                 } else {
                     childElement = getElementFromRecordMember(StringUtils.fromString(arrayEntryTagKey),
                         traverseRecordAndGenerateXml(i, allNamespaces, namespacesOfElem,
                                 options, null, getChildElementType(referredType, null),
                                 isParentSequence, isParentSequenceArray, parentModelGroupInfo, parentElementInfo),
-                        allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces));
+                        allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces, keyObj));
                 }
                 xNode = Concat.concat(xNode, isParentSequenceArray ? childElement.children() : childElement);
             }
@@ -466,53 +468,62 @@ public class ToXmlUtils {
     public static BMap<BString, BString> getAttributesMap(Object jsonTree,
                                                           BMap<BString, Object> options,
                                                           BMap<BString, BString> namespaces,
-                                                          BMap<BString, BString> parentNamespaces) {
+                                                          BMap<BString, BString> parentNamespaces, Object keyObj) {
         BMap<BString, BString> attributes = (BMap<BString, BString>) parentNamespaces.copy(new HashMap<>());
+        String attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
         try {
             BMap<BString, Object> attr = (BMap<BString, Object>) ValueUtils.convert(
                     jsonTree, TypeCreator.createMapType(PredefinedTypes.TYPE_JSON));
-
-            String attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
             for (Map.Entry<BString, Object> entry : attr.entrySet()) {
                 String key = entry.getKey().toString();
                 Object value = entry.getValue();
-                if (!key.startsWith(attributePrefix)) {
-                    continue;
-                }
-
-                if (value instanceof BMap || value instanceof BArray) {
-                    DiagnosticLog.createXmlError("attribute cannot be an object or array.");
-                }
-
-                int index = key.indexOf(Constants.COLON);
-                if (index != -1) {
-                    String suffix = key.substring(index + 1);
-                    if (key.startsWith(attributePrefix + XMLNS)) {
-                        attributes.put(StringUtils.fromString(getXmlnsNameUrI() + suffix),
-                                StringUtils.fromString(StringUtils.getStringValue(value)));
-                    } else {
-                        Long startIndex = getStartIndex(StringUtils.fromString(attributePrefix), StringUtils.fromString(
-                                options.get(Constants.USER_ATTRIBUTE_PREFIX).toString()), StringUtils.fromString(key));
-                        String prefix = key.substring(startIndex.intValue(), index);
-                        BString namespaceUrl = namespaces.get(StringUtils.fromString(getXmlnsNameUrI() + prefix));
-                        attributes.put(StringUtils.fromString("{" + namespaceUrl + "}" + suffix),
-                                StringUtils.fromString(StringUtils.getStringValue(value)));
-                    }
-                } else {
-                    if (key.equals(attributePrefix + XMLNS)) {
-                        attributes.put(XMLNS, StringUtils.fromString(StringUtils.getStringValue(value)));
-                    } else {
-                        Long startIndex = getStartIndex(StringUtils.fromString(attributePrefix),
-                            StringUtils.fromString(options.get(Constants.USER_ATTRIBUTE_PREFIX).toString()),
-                                        StringUtils.fromString(key));
-                        attributes.put(StringUtils.fromString(key.substring(startIndex.intValue())),
-                                StringUtils.fromString(StringUtils.getStringValue(value)));
-                    }
-                }
+                getAttributesMapFromKey(key, value, attributePrefix, attributes, options, namespaces);
             }
             return attributes;
         } catch (BError e) {
+            if (keyObj != null && keyObj instanceof BString key) {
+                getAttributesMapFromKey(key.getValue(), jsonTree,
+                        options.get(Constants.ATTRIBUTE_PREFIX).toString(), attributes, options, namespaces);
+            }
             return attributes;
+        }
+    }
+
+    private static void getAttributesMapFromKey(String key, Object value, String attributePrefix,
+                                                BMap<BString, BString> attributes, BMap<BString, Object> options,
+                                                BMap<BString, BString> namespaces) {
+        if (!key.startsWith(attributePrefix)) {
+            return;
+        }
+
+        if (value instanceof BMap || value instanceof BArray) {
+            DiagnosticLog.createXmlError("attribute cannot be an object or array.");
+        }
+
+        int index = key.indexOf(Constants.COLON);
+        if (index != -1) {
+            String suffix = key.substring(index + 1);
+            if (key.startsWith(attributePrefix + XMLNS)) {
+                attributes.put(StringUtils.fromString(getXmlnsNameUrI() + suffix),
+                        StringUtils.fromString(StringUtils.getStringValue(value)));
+            } else {
+                Long startIndex = getStartIndex(StringUtils.fromString(attributePrefix), StringUtils.fromString(
+                        options.get(Constants.USER_ATTRIBUTE_PREFIX).toString()), StringUtils.fromString(key));
+                String prefix = key.substring(startIndex.intValue(), index);
+                BString namespaceUrl = namespaces.get(StringUtils.fromString(getXmlnsNameUrI() + prefix));
+                attributes.put(StringUtils.fromString("{" + namespaceUrl + "}" + suffix),
+                        StringUtils.fromString(StringUtils.getStringValue(value)));
+            }
+        } else {
+            if (key.equals(attributePrefix + XMLNS)) {
+                attributes.put(XMLNS, StringUtils.fromString(StringUtils.getStringValue(value)));
+            } else {
+                Long startIndex = getStartIndex(StringUtils.fromString(attributePrefix),
+                        StringUtils.fromString(options.get(Constants.USER_ATTRIBUTE_PREFIX).toString()),
+                        StringUtils.fromString(key));
+                attributes.put(StringUtils.fromString(key.substring(startIndex.intValue())),
+                        StringUtils.fromString(StringUtils.getStringValue(value)));
+            }
         }
     }
 
