@@ -24,9 +24,11 @@ import io.ballerina.runtime.api.PredefinedTypes;
 import io.ballerina.runtime.api.TypeTags;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
+import io.ballerina.runtime.api.types.FiniteType;
 import io.ballerina.runtime.api.types.ReferenceType;
 import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.types.UnionType;
+import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.utils.TypeUtils;
 import io.ballerina.runtime.api.values.BDecimal;
 import io.ballerina.runtime.api.values.BError;
@@ -96,12 +98,29 @@ public class FromString {
                     return stringToUnion(string, JSON_TYPE_WITH_BASIC_TYPES);
                 case TypeTags.TYPE_REFERENCED_TYPE_TAG:
                     return fromStringWithType(string, ((ReferenceType) expType).getReferredType());
+                case TypeTags.FINITE_TYPE_TAG:
+                    return stringToFiniteType(value, (FiniteType) expType);
                 default:
                     return returnError(value, expType.toString());
             }
         } catch (NumberFormatException e) {
             return returnError(value, expType.toString());
         }
+    }
+
+    private static Object stringToFiniteType(String value, FiniteType finiteType) {
+        return finiteType.getValueSpace().stream()
+            .filter(finiteValue -> !(convertToSingletonValue(value, finiteValue) instanceof BError))
+            .findFirst()
+            .orElseGet(() -> returnError(value, finiteType.toString()));
+    }
+
+    private static Object convertToSingletonValue(String str, Object singletonValue) {
+        String singletonStr = String.valueOf(singletonValue);
+        if (str.equals(singletonStr)) {
+            return fromStringWithType(StringUtils.fromString(str), TypeUtils.getType(singletonValue));
+        }
+        return returnError(str, singletonStr);
     }
 
     private static Long stringToInt(String value) throws NumberFormatException {
