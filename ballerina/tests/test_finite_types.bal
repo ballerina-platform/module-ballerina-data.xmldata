@@ -167,3 +167,33 @@ function testRecordFieldWithSingleFiniteType() returns error? {
     |} r = check parseAsType(xml `<Root><a>A</a><b>A</b><nested><c>100.0</c><d>B</d></nested></Root>`);
     test:assertEquals(r, {a: "A", b: "A", nested: {c: 100f, d: "B"}});
 }
+
+@test:Config
+function testRecordFieldWithSingleFiniteType2() returns error? {
+    record {| 
+        100f a;
+        200.1d b;
+        100d c;
+        200.1f d;
+        100f e;
+        200.1d f;
+        100d g;
+        200.1f h;
+    |} r = check parseAsType(xml `<Root><a>100</a><b>200.1</b><c>100</c><d>200.1</d><e>100.0</e><f>200.1</f><g>100.0</g><h>200.1</h></Root>`);
+    test:assertEquals(r, {a: 100f, b: 200.1d, c: 100d, d: 200.1f, e: 100f, f: 200.1d, g: 100d, h: 200.1f});
+}
+
+@test:Config
+function testRecordFieldWithSingleFiniteType3() returns error? {
+    record {| 
+        100f a;
+    |}|Error r = parseAsType(xml `<Root><a>100.01</a></Root>`);
+    test:assertTrue(r is Error);
+    test:assertEquals((<Error>r).message(), "'string' value '100.01' cannot be converted to '100.0f'");
+
+    record {| 
+        100d a;
+    |}|Error r2 = parseAsType(xml `<Root><a>100.01</a></Root>`);
+    test:assertTrue(r2 is Error);
+    test:assertEquals((<Error>r2).message(), "'string' value '100.01' cannot be converted to '100d'");
+}

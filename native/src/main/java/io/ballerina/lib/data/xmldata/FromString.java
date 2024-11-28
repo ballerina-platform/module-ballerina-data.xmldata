@@ -35,6 +35,7 @@ import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTypedesc;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -117,8 +118,25 @@ public class FromString {
 
     private static Object convertToSingletonValue(String str, Object singletonValue) {
         String singletonStr = String.valueOf(singletonValue);
+        Type type = TypeUtils.getType(singletonValue);
+
+        if (singletonValue instanceof BDecimal decimalValue) {
+            BigDecimal bigDecimal = decimalValue.decimalValue();
+            if (bigDecimal.compareTo(new BigDecimal(str)) == 0) {
+                return fromStringWithType(StringUtils.fromString(str), type);
+            }
+            return returnError(str, singletonStr);
+        }
+
+        if (singletonValue instanceof Double doubleValue) {
+            if (doubleValue.compareTo(Double.valueOf(str)) == 0) {
+                return fromStringWithType(StringUtils.fromString(str), type);
+            }
+            return returnError(str, singletonStr);
+        }
+
         if (str.equals(singletonStr)) {
-            return fromStringWithType(StringUtils.fromString(str), TypeUtils.getType(singletonValue));
+            return fromStringWithType(StringUtils.fromString(str), type);
         }
         return returnError(str, singletonStr);
     }
