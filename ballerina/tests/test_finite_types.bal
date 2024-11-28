@@ -38,7 +38,7 @@ function testFiniteTypes() returns error? {
 }
 
 @test:Config
-function testFiniteTypes2() returns error? {
+function testFiniteTypesWithNestedRecords() returns error? {
     record {| 
         EnumA a;
         FiniteType b;
@@ -52,7 +52,7 @@ function testFiniteTypes2() returns error? {
 }
 
 @test:Config
-function testFiniteTypes3() returns error? {
+function testFiniteTypeArrays() returns error? {
     record {| 
         EnumA[] a;
         ("A"|"B"|"C")[] b;
@@ -65,7 +65,7 @@ function testFiniteTypes3() returns error? {
 }
 
 @test:Config
-function testFiniteTypes4() returns error? {
+function testFiniteTypeArrays2() returns error? {
     record {| 
         EnumA[] a;
         FiniteType[] b;
@@ -92,7 +92,7 @@ function testFiniteTypesWithXmlString() returns error? {
 }
 
 @test:Config
-function testFiniteTypesWithXmlString2() returns error? {
+function testFiniteTypesWithNestedRecordsWithXmlString() returns error? {
     record {| 
         EnumA a;
         FiniteType b;
@@ -106,7 +106,7 @@ function testFiniteTypesWithXmlString2() returns error? {
 }
 
 @test:Config
-function testFiniteTypesWithXmlString3() returns error? {
+function testFiniteTypeArraysWithXmlString() returns error? {
     record {| 
         EnumA[] a;
         ("A"|"B"|"C")[] b;
@@ -119,7 +119,7 @@ function testFiniteTypesWithXmlString3() returns error? {
 }
 
 @test:Config
-function testFiniteTypesWithXmlString4() returns error? {
+function testFiniteTypeArraysWithXmlString2() returns error? {
     record {| 
         EnumA[] a;
         FiniteType[] b;
@@ -144,11 +144,71 @@ type NestedRec record {|
 |};
 
 @test:Config
-function testFiniteTypes5() returns error? {
+function testFiniteTypesWithNameAnnotations() returns error? {
     record {|
         EnumA a;
         FiniteType b;
         NestedRec nested;
     |} r = check parseAsType(xml `<Root><a>C2</a><b>1</b><nested><c2>2</c2><d2>A</d2><e>true</e></nested></Root>`);
     test:assertEquals(r, {a: "C2", b: 1, nested: {c: 2, d: "A", e: true}});
+}
+
+type FiniteValue 100f;
+
+@test:Config
+function testRecordFieldWithSingleFiniteType() returns error? {
+    record {| 
+        EnumA a;
+        "A" b;
+        record {|
+            FiniteValue c;
+            EnumA d;
+        |} nested;
+    |} r = check parseAsType(xml `<Root><a>A</a><b>A</b><nested><c>100.0</c><d>B</d></nested></Root>`);
+    test:assertEquals(r, {a: "A", b: "A", nested: {c: 100f, d: "B"}});
+}
+
+@test:Config
+function testRecordFieldWithSingleFiniteType2() returns error? {
+    record {| 
+        100f a;
+        200.1d b;
+        100d c;
+        200.1f d;
+        100f e;
+        200.1d f;
+        100d g;
+        200.1f h;
+    |} r = check parseAsType(xml `<Root><a>100</a><b>200.1</b><c>100</c><d>200.1</d><e>100.0</e><f>200.1</f><g>100.0</g><h>200.1</h></Root>`);
+    test:assertEquals(r, {a: 100f, b: 200.1d, c: 100d, d: 200.1f, e: 100f, f: 200.1d, g: 100d, h: 200.1f});
+}
+
+@test:Config
+function testRecordFieldWithSingleFiniteType3() returns error? {
+    record {| 
+        100f a;
+    |}|Error r = parseAsType(xml `<Root><a>100.01</a></Root>`);
+    test:assertTrue(r is Error);
+    test:assertEquals((<Error>r).message(), "'string' value '100.01' cannot be converted to '100.0f'");
+
+    record {| 
+        100d a;
+    |}|Error r2 = parseAsType(xml `<Root><a>100.01</a></Root>`);
+    test:assertTrue(r2 is Error);
+    test:assertEquals((<Error>r2).message(), "'string' value '100.01' cannot be converted to '100d'");
+}
+
+@test:Config
+function testRecordFieldWithSingleFiniteType4() returns error? {
+    record {| 
+        200.1d|100f a;
+        200.1d|100d b;
+        100d|100f|200.1f c;
+        200.1f|200.1d|100f d;
+        200.1d|200.1f|100f e;
+        100d|100d|200.1d f;
+        100d|200.1d|200.1d g;
+        200.1f|200.1d|200.1d h;
+    |} r = check parseAsType(xml `<Root><a>100</a><b>200.1</b><c>100</c><d>200.1</d><e>100.0</e><f>200.1</f><g>100.0</g><h>200.1</h></Root>`);
+    test:assertEquals(r, {a: 100f, b: 200.1d, c: 100d, d: 200.1f, e: 100f, f: 200.1d, g: 100d, h: 200.1f});
 }
