@@ -152,3 +152,18 @@ function testFiniteTypesWithNameAnnotations() returns error? {
     |} r = check parseAsType(xml `<Root><a>C2</a><b>1</b><nested><c2>2</c2><d2>A</d2><e>true</e></nested></Root>`);
     test:assertEquals(r, {a: "C2", b: 1, nested: {c: 2, d: "A", e: true}});
 }
+
+type FiniteValue 100f;
+
+@test:Config
+function testRecordFieldWithSingleFiniteType() returns error? {
+    record {| 
+        EnumA a;
+        "A" b;
+        record {|
+            FiniteValue c;
+            EnumA d;
+        |} nested;
+    |} r = check parseAsType(xml `<Root><a>A</a><b>A</b><nested><c>100.0</c><d>B</d></nested></Root>`);
+    test:assertEquals(r, {a: "A", b: "A", nested: {c: 100f, d: "B"}});
+}
