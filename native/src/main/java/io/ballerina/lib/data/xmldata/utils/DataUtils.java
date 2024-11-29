@@ -375,7 +375,7 @@ public class DataUtils {
         switch (type.getTag()) {
             case TypeTags.NULL_TAG, TypeTags.INT_TAG, TypeTags.BYTE_TAG, TypeTags.FLOAT_TAG, TypeTags.DECIMAL_TAG,
                  TypeTags.BOOLEAN_TAG, TypeTags.STRING_TAG, TypeTags.RECORD_TYPE_TAG, TypeTags.MAP_TAG,
-                 TypeTags.JSON_TAG, TypeTags.ANYDATA_TAG -> {
+                    TypeTags.JSON_TAG, TypeTags.ANYDATA_TAG, TypeTags.FINITE_TYPE_TAG -> {
                 return true;
             }
             case TypeTags.ARRAY_TAG -> {

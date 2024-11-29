@@ -448,7 +448,7 @@ public class XmlParser {
                 return convertStringToRestExpType(value, ((ArrayType) expType).getElementType());
             }
             case TypeTags.INT_TAG, TypeTags.FLOAT_TAG, TypeTags.DECIMAL_TAG, TypeTags.STRING_TAG,
-                 TypeTags.BOOLEAN_TAG, TypeTags.UNION_TAG -> {
+                    TypeTags.BOOLEAN_TAG, TypeTags.UNION_TAG, TypeTags.FINITE_TYPE_TAG -> {
                 return convertStringToExpType(value, expType);
             }
             case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG -> {
