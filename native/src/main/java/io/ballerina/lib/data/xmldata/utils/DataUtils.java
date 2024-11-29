@@ -458,7 +458,7 @@ public class DataUtils {
         if (referredType instanceof RecordType &&
                 describingType.getFlags() != Constants.DEFAULT_TYPE_FLAG) {
             BArray jsonArray = ValueCreator.createArrayValue(PredefinedTypes.TYPE_JSON_ARRAY);
-            BMap<BString, Object> recordField =  addFields(input, describingType);
+            BMap<BString, Object> recordField = addFields(input, describingType);
             BMap<BString, Object> processedRecord = processParentAnnotation(describingType, recordField);
             BString rootTagName = processedRecord.getKeys()[0];
             jsonArray.append(processedRecord.get(rootTagName));
@@ -783,15 +783,8 @@ public class DataUtils {
                 records.add(arrayValue.get(i));
             }
 
-            QName qName = addFieldNamespaceAnnotation(keyName, keyName, annotations, record);
-            BString localPart = StringUtils.fromString(qName.getLocalPart());
-            BString key = qName.getPrefix().isBlank() ?
-                    localPart : StringUtils.fromString(qName.getPrefix() + ":" + localPart);
-            record.put(key, ValueCreator.createArrayValue(
-                    records.toArray(), TypeCreator.createArrayType(Constants.JSON_ARRAY_TYPE)));
-
-//            record.put(StringUtils.fromString(keyName), ValueCreator.createArrayValue(records.toArray(),
-//            TypeCreator.createArrayType(Constants.JSON_ARRAY_TYPE)));
+            record.put(StringUtils.fromString(keyName), ValueCreator.createArrayValue(records.toArray(),
+                    TypeCreator.createArrayType(Constants.JSON_ARRAY_TYPE)));
         }
         if (!annotationRecord.isEmpty()) {
             record.put(annotationRecord.getKeys()[0],
