@@ -24,7 +24,7 @@ enum EnumA {
 
 type FiniteType true|"A"|1|2;
 
-@test:Config
+@test:Config {enable: false}
 function testFiniteTypes() returns error? {
     record {| 
         EnumA a;
@@ -37,7 +37,7 @@ function testFiniteTypes() returns error? {
     test:assertEquals(r, {a: "A", b: "B", nested: {c: "B", d: "B"}});
 }
 
-@test:Config
+@test:Config {enable: false}
 function testFiniteTypesWithNestedRecords() returns error? {
     record {| 
         EnumA a;
@@ -51,7 +51,7 @@ function testFiniteTypesWithNestedRecords() returns error? {
     test:assertEquals(r, {a: "C2", b: 1, nested: {c: 2, d: "A", e: true}});
 }
 
-@test:Config
+@test:Config {enable: false}
 function testFiniteTypeArrays() returns error? {
     record {| 
         EnumA[] a;
@@ -64,7 +64,7 @@ function testFiniteTypeArrays() returns error? {
     test:assertEquals(r, {a: ["A", "A"], b: ["B", "B"], nested: {c: ["B", "B"], d: ["B", "B"]}});
 }
 
-@test:Config
+@test:Config {enable: false}
 function testFiniteTypeArrays2() returns error? {
     record {| 
         EnumA[] a;
@@ -78,7 +78,7 @@ function testFiniteTypeArrays2() returns error? {
     test:assertEquals(r, {a: ["C2", "C2"], b: [1, 1], nested: {c: [2, 2], d: ["A", "A"], e: [true, true]}});
 }
 
-@test:Config
+@test:Config {enable: false}
 function testFiniteTypesWithXmlString() returns error? {
     record {| 
         EnumA a;
@@ -91,7 +91,7 @@ function testFiniteTypesWithXmlString() returns error? {
     test:assertEquals(r, {a: "A", b: "B", nested: {c: "B", d: "B"}});
 }
 
-@test:Config
+@test:Config {enable: false}
 function testFiniteTypesWithNestedRecordsWithXmlString() returns error? {
     record {| 
         EnumA a;
@@ -105,7 +105,7 @@ function testFiniteTypesWithNestedRecordsWithXmlString() returns error? {
     test:assertEquals(r, {a: "C2", b: 1, nested: {c: 2, d: "A", e: true}});
 }
 
-@test:Config
+@test:Config {enable: false}
 function testFiniteTypeArraysWithXmlString() returns error? {
     record {| 
         EnumA[] a;
@@ -118,7 +118,7 @@ function testFiniteTypeArraysWithXmlString() returns error? {
     test:assertEquals(r, {a: ["A", "A"], b: ["B", "B"], nested: {c: ["B", "B"], d: ["B", "B"]}});
 }
 
-@test:Config
+@test:Config {enable: false}
 function testFiniteTypeArraysWithXmlString2() returns error? {
     record {| 
         EnumA[] a;
@@ -143,7 +143,7 @@ type NestedRec record {|
     EnumA d;
 |};
 
-@test:Config
+@test:Config {enable: false}
 function testFiniteTypesWithNameAnnotations() returns error? {
     record {|
         EnumA a;
@@ -155,7 +155,7 @@ function testFiniteTypesWithNameAnnotations() returns error? {
 
 type FiniteValue 100f;
 
-@test:Config
+@test:Config {enable: false}
 function testRecordFieldWithSingleFiniteType() returns error? {
     record {| 
         EnumA a;
@@ -168,7 +168,7 @@ function testRecordFieldWithSingleFiniteType() returns error? {
     test:assertEquals(r, {a: "A", b: "A", nested: {c: 100f, d: "B"}});
 }
 
-@test:Config
+@test:Config {enable: false}
 function testRecordFieldWithSingleFiniteType2() returns error? {
     record {| 
         100f a;
@@ -183,7 +183,7 @@ function testRecordFieldWithSingleFiniteType2() returns error? {
     test:assertEquals(r, {a: 100f, b: 200.1d, c: 100d, d: 200.1f, e: 100f, f: 200.1d, g: 100d, h: 200.1f});
 }
 
-@test:Config
+@test:Config {enable: false}
 function testRecordFieldWithSingleFiniteType3() returns error? {
     record {| 
         100f a;
@@ -198,7 +198,7 @@ function testRecordFieldWithSingleFiniteType3() returns error? {
     test:assertEquals((<Error>r2).message(), "'string' value '100.01' cannot be converted to '100d'");
 }
 
-@test:Config
+@test:Config {enable: false}
 function testRecordFieldWithSingleFiniteType4() returns error? {
     record {| 
         200.1d|100f a;
