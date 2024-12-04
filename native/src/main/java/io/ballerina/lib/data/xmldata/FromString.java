@@ -40,6 +40,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import static io.ballerina.runtime.api.constants.RuntimeConstants.BBYTE_MAX_VALUE;
+import static io.ballerina.runtime.api.constants.RuntimeConstants.BBYTE_MIN_VALUE;
+
 /**
  * Native implementation of data:fromStringWithType(string).
  *
@@ -79,16 +82,22 @@ public class FromString {
 
     public static Object fromStringWithType(BString string, Type expType) {
         String value = string.getValue();
+        int tag = expType.getTag();
+
         try {
-            switch (expType.getTag()) {
+            if (TypeTags.isStringTypeTag(tag)) {
+                return string;
+            }
+
+            switch (tag) {
                 case TypeTags.INT_TAG:
                     return stringToInt(value);
+                case TypeTags.BYTE_TAG:
+                    return stringToByte(value);
                 case TypeTags.FLOAT_TAG:
                     return stringToFloat(value);
                 case TypeTags.DECIMAL_TAG:
                     return stringToDecimal(value);
-                case TypeTags.STRING_TAG:
-                    return string;
                 case TypeTags.BOOLEAN_TAG:
                     return stringToBoolean(value);
                 case TypeTags.NULL_TAG:
@@ -143,6 +152,19 @@ public class FromString {
 
     private static Long stringToInt(String value) throws NumberFormatException {
         return Long.parseLong(value);
+    }
+
+    private static int stringToByte(String value) throws NumberFormatException {
+        Long number = Long.parseLong(value);
+        int intValue = number.intValue();
+        if (isByteLiteral(intValue)) {
+            return intValue;
+        }
+        throw new NumberFormatException();
+    }
+
+    private static boolean isByteLiteral(long longValue) {
+        return (longValue >= BBYTE_MIN_VALUE && longValue <= BBYTE_MAX_VALUE);
     }
 
     private static Double stringToFloat(String value) throws NumberFormatException {
