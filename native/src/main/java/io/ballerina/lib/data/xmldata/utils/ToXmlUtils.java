@@ -121,7 +121,11 @@ public class ToXmlUtils {
             }
 
             if (key.equals(options.get(Constants.TEXT_FIELD_NAME))) {
-                return CreateText.createText(StringUtils.fromString(value.toString()));
+                if (rootTagBstring.equals(StringUtils.fromString(Constants.EMPTY_STRING))) {
+                    rootTagBstring = StringUtils.fromString(Constants.ROOT);
+                }
+                return CreateElement.createElement(rootTagBstring, getEmptyStringMap(),
+                        CreateText.createText(StringUtils.fromString(value.toString())));
             }
 
             BXml output = getElementFromRecordMember(key,

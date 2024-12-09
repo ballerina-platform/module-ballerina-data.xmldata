@@ -1378,3 +1378,66 @@ function testMapXmltoXmlNegative() {
     xml|Error result = toXml(data);
     test:assertEquals((<Error>result).message(), "unsupported input type");
 }
+
+type ContentRec record {
+    string \#content;
+};
+
+@Name {
+    value: "root1"
+}
+type ContentRec2 record {
+    string \#content;
+};
+
+type ContentRec3 record {
+    @Name {
+        value: "value"
+    }
+    string \#content;
+};
+
+@Namespace {
+    uri: "www.example.com",
+    prefix: "ns"
+}
+type ContentRec4 record {
+    string \#content;
+};
+
+@test:Config {
+    groups: ["toXml"]
+}
+function testToXmlWithContentField() returns error? {
+    ContentRec document = {
+        \#content: "this is a string"
+    };
+    xml xmlDocument = check toXml(document);
+    test:assertEquals(xmlDocument.toString(), "<ContentRec>this is a string</ContentRec>");
+
+    ContentRec2 document2 = {
+        \#content: "this is a string"
+    };
+    xmlDocument = check toXml(document2);
+    test:assertEquals(xmlDocument.toString(), "<root1>this is a string</root1>");
+
+    ContentRec3 document3 = {
+        \#content: "this is a string"
+    };
+    xmlDocument = check toXml(document3);
+    test:assertEquals(xmlDocument.toString(), "<ContentRec3><value>this is a string</value></ContentRec3>");
+
+    ContentRec4 document4 = {
+        \#content: "this is a string"
+    };
+    xmlDocument = check toXml(document4);
+    test:assertEquals(xmlDocument.toString(), "<ns:ContentRec4 xmlns:ns=\"www.example.com\">this is a string</ns:ContentRec4>");
+
+    record {
+        int \#content;
+    } document5 = {
+        \#content: 2
+    };
+    xmlDocument = check toXml(document5);
+    test:assertEquals(xmlDocument.toString(), "<root>2</root>");
+}
