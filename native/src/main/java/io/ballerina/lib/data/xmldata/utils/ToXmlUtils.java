@@ -140,7 +140,7 @@ public class ToXmlUtils {
                 return CreateElement.createElement(rootTagBstring, getEmptyStringMap(), output);
             }
             return output;
-        } catch (BError e) {
+        } catch (Exception e) {
             return DiagnosticLog.createXmlError(e.getMessage());
         }
     }

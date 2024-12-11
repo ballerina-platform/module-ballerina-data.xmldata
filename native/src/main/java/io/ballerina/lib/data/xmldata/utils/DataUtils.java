@@ -738,8 +738,10 @@ public class DataUtils {
         BString annotationKey = StringUtils.fromString(Constants.FIELD
                 + (localPart.getValue().replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0")));
         BMap<BString, Object> currentValue;
+        BString prevKey = key;
         if (record.containsKey(key)) {
             currentValue = (BMap<BString, Object>) record.get(key);
+            prevKey = key;
             key = StringUtils.fromString(contentFieldName);
         } else {
             currentValue = record;
@@ -747,7 +749,15 @@ public class DataUtils {
 
         if (annotations.containsKey(annotationKey)) {
             BMap<BString, Object> annotationValue = (BMap<BString, Object>) annotations.get(annotationKey);
-            currentValue.put(StringUtils.fromString(processFieldAnnotation(annotationValue, key.getValue())), value);
+            String keyName = processFieldAnnotation(annotationValue, prevKey.getValue());
+            if (key.getValue().equals(contentFieldName)) {
+                currentValue.put(StringUtils.fromString(contentFieldName), value);
+                if (!keyName.equals(prevKey.getValue())) {
+                    record.put(StringUtils.fromString(keyName), record.remove(prevKey));
+                }
+            } else {
+                currentValue.put(StringUtils.fromString(keyName), value);
+            }
         } else {
             currentValue.put(key, value);
         }
