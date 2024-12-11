@@ -166,3 +166,104 @@ function testTypeRefAnnotations2() returns error? {
     test:assertTrue(xmlResult is xml:Element);
     test:assertEquals(xmlResult.toString(), string `<a1:root xmlns:a1="http://ballerina.io"><nestedA:nestedA xmlns:nestedA="http://nested-ballerina.io"><A>1</A><B>2</B></nestedA:nestedA><nestedB:nestedB xmlns:nestedB="http://nested-ballerina.io"><a:a xmlns:a="http://nested-ballerina.io/a">3</a:a><B>4</B></nestedB:nestedB></a1:root>`);
 }
+
+@Name {
+    value: "root"
+}
+type TypeRefType3 record {
+    @Namespace {
+        uri: "http://www.example.com/",
+        prefix: "ex"
+    }
+    @Name {
+        value: "A"
+    }
+    int a;
+};
+
+@test:Config
+function testTypeRefAnnotations3() returns error? {
+    TypeRefType3 t = {a: 1};
+    xml xmlResult = check toXml(t);
+    test:assertTrue(xmlResult is xml:Element);
+    test:assertEquals(xmlResult.toString(), string `<root><ex:A xmlns:ex="http://www.example.com/">1</ex:A></root>`);
+}
+
+@Namespace {
+    uri: "http://ballerina.io",
+    prefix: "a1"
+}
+@Name {
+    value: "root"
+}
+type TypeRefType4 record {
+    @Name {
+        value: "nestedA"
+    }
+    NestedTypeRefType5 a;
+
+    @Name {
+        value: "nestedB"
+    }
+    NestedTypeRefType6 b;
+};
+
+@Namespace {
+    uri: "http://nested-ballerina.io",
+    prefix: "nestedA"
+}
+type NestedTypeRefType5 record {
+    @Name {
+        value: "A"
+    }
+    @Namespace {
+        uri: "http://nested-ballerina.io/a",
+        prefix: "a"
+    }
+    int a;
+
+    @Namespace {
+        uri: "http://nested-ballerina.io/a",
+        prefix: "a"
+    }
+    @Name {
+        value: "B"
+    }
+    int b;
+};
+
+@Namespace {
+    uri: "http://nested-ballerina.io",
+    prefix: "nestedB"
+}
+type NestedTypeRefType6 record {
+    @Name {
+        value: "A"
+    }
+    @Namespace {
+        uri: "http://nested-ballerina.io/a",
+        prefix: "a"
+    }
+    int a;
+
+    @Name {
+        value: "B"
+    }
+    @Namespace {
+        uri: "http://nested-ballerina.io/a",
+        prefix: "a"
+    }
+    int b;
+};
+
+@test:Config
+function testTypeRefAnnotations4() returns error? {
+    TypeRefType4 t = {
+        a: {a: 1, b: 2},
+        b: {a: 3, b: 4}
+    };
+
+    xml xmlResult = check toXml(t);
+    test:assertTrue(xmlResult is xml:Element);
+    test:assertEquals(xmlResult.toString(), string `<a1:root xmlns:a1="http://ballerina.io"><nestedA:nestedA xmlns:nestedA="http://nested-ballerina.io"><a:A xmlns:a="http://nested-ballerina.io/a">1</a:A><a:B xmlns:a="http://nested-ballerina.io/a">2</a:B></nestedA:nestedA><nestedB:nestedB xmlns:nestedB="http://nested-ballerina.io"><a:A xmlns:a="http://nested-ballerina.io/a">3</a:A><a:B xmlns:a="http://nested-ballerina.io/a">4</a:B></nestedB:nestedB></a1:root>`);
+}
