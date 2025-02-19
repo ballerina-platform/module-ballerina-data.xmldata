@@ -3692,3 +3692,84 @@ function testXmlToRecordWithInvalidExpectedTypeForAttributes() {
     test:assertTrue(rec8 is Error);
     test:assertEquals((<error>rec8).message(), "unsupported input type");
 }
+
+xml xmlValueWithXmlnsNamespace = xml `
+    <A xmlns="http://abc.com">
+        <B>address 1</B>
+        <B>address 2</B>
+        <B>address 3</B>
+    </A>
+`;
+
+xml xmlValueWithXmlnsNamespace2 = xml `
+    <A xmlns="http://abc.com">
+        <B xmlns="http://def.com">
+            <C>address 1</C>
+            <C>address 2</C>
+            <C>address 3</C>
+        </B>
+        <B xmlns="http://def.com">
+            <C>address 1</C>
+            <C>address 2</C>
+            <C>address 3</C>
+        </B>
+    </A>
+`;
+
+xml xmlValueWithXmlnsNamespace3 = xml `
+    <A xmlns="http://abc.com">
+        <B xmlns="http://def.com">
+            <C>address 1</C>
+            <C>address 2</C>
+            <C>address 3</C>
+        </B>
+        <B id="1" xmlns="http://def.com">
+            <C id="1">address 1</C>
+            <C>address 3</C>
+            <C id="2" xmlns="http://def.com">address 3</C>
+            <C xmlns:a="http://def.com">address 3</C>
+            <C id="3" xmlns:a="http://def.com">address 3</C>
+            <C id="1" xmlns="http://def.com">address 1</C>
+        </B>
+    </A>
+`;
+
+xml xmlValueWithXmlnsNamespace4 = xml `
+    <A xmlns="http://abc.com">
+        <B id="2" xmlns="http://def.com">address 1</B>
+        <B>address 2</B>
+        <B xmlns="http://def.com">address 2</B>
+        <B xmlns:a="http://def.com">address 2</B>
+        <B id="3">address 3</B>
+    </A>
+`;
+
+@test:Config {
+    groups: ["fromXml"]
+}
+function testXmlArraysWithNamespaces() {
+    record {|json...;|}|Error result;
+
+    result = parseAsType(xmlValueWithXmlnsNamespace);
+    test:assertEquals(result, {B: ["address 1", "address 2", "address 3"]});
+
+    result = parseAsType(xmlValueWithXmlnsNamespace2);
+    test:assertEquals(result, {B: [{C: ["address 1", "address 2", "address 3"]}, {C: ["address 1", "address 2", "address 3"]}]});
+
+    result = parseAsType(xmlValueWithXmlnsNamespace3);
+    test:assertEquals(result, {B: [
+            {C: ["address 1", "address 2", "address 3"]},
+            {id: 1, C: [
+                {id: 1,"#content": "address 1"},
+                "address 3",
+                {"id":2, "#content":"address 3"},
+                "address 3",
+                {id: 3, "#content": "address 3"},
+                {"id": 1, "#content": "address 1"}
+            ]
+        }]
+    });
+
+    result = parseAsType(xmlValueWithXmlnsNamespace4);
+    test:assertEquals(result, {B: [{id: 2, "#content": "address 1"}, "address 2", "address 2", "address 2", {id: 3, "#content": "address 3"}]});
+}

@@ -607,9 +607,9 @@ public class XmlTraversal {
                     BMap<BString, Object> nextValue =
                             ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
                     handleAttributesRest(xmlItem, nextValue, restType, useSemanticEquality);
-                    arrayValue.append(nextValue);
 
                     if (!nextValue.isEmpty()) {
+                        arrayValue.append(nextValue);
                         analyzerData.currentField =
                                 TypeCreator.createField(restType, analyzerData.textFieldName, SymbolFlags.REQUIRED);
                         analyzerData.nodesStack.push(analyzerData.currentNode);
@@ -666,9 +666,9 @@ public class XmlTraversal {
                 BMap<BString, Object> nextValue =
                         ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(restType));
                 handleAttributesRest(xmlItem, nextValue, restType, analyzerData.useSemanticEquality);
-                mapValue.put(bElementName, nextValue);
 
                 if (!nextValue.isEmpty()) {
+                    mapValue.put(bElementName, nextValue);
                     analyzerData.currentField =
                             TypeCreator.createField(restType, analyzerData.textFieldName, SymbolFlags.REQUIRED);
                     analyzerData.nodesStack.push(analyzerData.currentNode);
