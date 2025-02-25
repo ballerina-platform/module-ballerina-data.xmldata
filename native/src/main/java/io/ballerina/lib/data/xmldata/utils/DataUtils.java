@@ -470,14 +470,20 @@ public class DataUtils {
 
     private static BMap<BString, Object> mergeOriginalAndCurrentAnnotations(
                                 BMap<BString, Object> originalTypeAnnotations, BMap<BString, Object> typeAnnotations) {
-        BMap<BString, Object> annotations = originalTypeAnnotations;
-        for (Map.Entry<BString, Object> entry: typeAnnotations.entrySet()) {
-            if (annotations.containsKey(entry.getKey())) {
-                continue;
+        BMap<BString, Object> mergedAnnotations = ValueCreator.createMapValue();
+        for (Map.Entry<BString, Object> entry : originalTypeAnnotations.entrySet()) {
+            if (!mergedAnnotations.containsKey(entry.getKey())) {
+                mergedAnnotations.put(entry.getKey(), entry.getValue());
             }
-            annotations.put(entry.getKey(), entry.getValue());
         }
-        return annotations;
+
+        for (Map.Entry<BString, Object> entry : typeAnnotations.entrySet()) {
+            if (!mergedAnnotations.containsKey(entry.getKey())) {
+                mergedAnnotations.put(entry.getKey(), entry.getValue());
+            }
+        }  
+        
+        return mergedAnnotations; 
     }
 
     @SuppressWarnings("unchecked")
@@ -525,13 +531,16 @@ public class DataUtils {
     private static BMap<BString, Object> addFields(BMap<BString, Object> input, Type type) {
         BMap<BString, Object> recordValue = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         BMap<BString, Object> annotations = ValueCreator.createMapValue();
+        BMap<BString, Object> mergedAnnotations;
         if (type instanceof AnnotatableType annotatableType) {
             annotations = annotatableType.getAnnotations();
         }
 
         RecordType recordType = (RecordType) TypeUtils.getReferredType(type);
         if (type instanceof ReferenceType) {
-            annotations = mergeOriginalAndCurrentAnnotations(annotations, recordType.getAnnotations());
+            mergedAnnotations = mergeOriginalAndCurrentAnnotations(annotations, recordType.getAnnotations());
+        } else {
+            mergedAnnotations = annotations;
         }
 
         Map<String, Field> fields = recordType.getFields();
@@ -539,7 +548,7 @@ public class DataUtils {
             String key = entry.getKey().getValue();
             Object value = entry.getValue();
             if (fields.containsKey(key)) {
-                processRecordField(fields.get(key).getFieldType(), annotations, recordValue, entry, key, value);
+                processRecordField(fields.get(key).getFieldType(), mergedAnnotations, recordValue, entry, key, value);
             } else {
                 recordValue.put(StringUtils.fromString(key), value);
             }
@@ -605,12 +614,13 @@ public class DataUtils {
         BMap<BString, Object> namespaceAnnotRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         Type referredType = TypeUtils.getReferredType(fieldType);
         RecordType recType = (RecordType) referredType;
-        annotations = mergeOriginalAndCurrentAnnotations(annotations, (recType).getAnnotations());
+        BMap<BString, Object> mergedAnnotations =
+                mergeOriginalAndCurrentAnnotations(annotations, (recType).getAnnotations());
         boolean doesNamespaceDefinedInField = false;
-        if (!annotations.isEmpty()) {
+        if (!mergedAnnotations.isEmpty()) {
             String fieldName = key;
-            key = getKeyNameFromAnnotation(annotations, key);
-            QName qName = addFieldNamespaceAnnotation(fieldName, key, annotations, namespaceAnnotRecord);
+            key = getKeyNameFromAnnotation(mergedAnnotations, key);
+            QName qName = addFieldNamespaceAnnotation(fieldName, key, mergedAnnotations, namespaceAnnotRecord);
             if (!qName.getNamespaceURI().isEmpty()) {
                 doesNamespaceDefinedInField = true;
             }
@@ -830,17 +840,21 @@ public class DataUtils {
 
     private static BMap<BString, Object> processParentAnnotation(Type type, BMap<BString, Object> record) {
         BMap<BString, Object> annotations = ValueCreator.createMapValue();
+        BMap<BString, Object> mergedAnnotations;
         if (type instanceof AnnotatableType annotatableType) {
             annotations = annotatableType.getAnnotations();
         }
         Type referedType = TypeUtils.getReferredType(type);
-        if (type instanceof ReferenceType referenceType) {
-            annotations = mergeOriginalAndCurrentAnnotations(annotations, ((RecordType) referedType).getAnnotations());
+        if (type instanceof ReferenceType) {
+            mergedAnnotations =
+                    mergeOriginalAndCurrentAnnotations(annotations, ((RecordType) referedType).getAnnotations());
+        } else {
+            mergedAnnotations = annotations;
         }
 
         BMap<BString, Object> parentRecord = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
         BMap<BString, Object> namespaces = ValueCreator.createMapValue(Constants.JSON_MAP_TYPE);
-        BString rootName = processAnnotation(annotations, type.getName(), namespaces);
+        BString rootName = processAnnotation(mergedAnnotations, type.getName(), namespaces);
         if (!namespaces.isEmpty()) {
             for (Map.Entry<BString, Object> namespace : namespaces.entrySet()) {
                 record.put(namespace.getKey(), namespace.getValue());
