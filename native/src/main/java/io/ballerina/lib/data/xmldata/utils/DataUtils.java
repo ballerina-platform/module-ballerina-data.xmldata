@@ -750,13 +750,16 @@ public class DataUtils {
         if (annotations.containsKey(annotationKey)) {
             BMap<BString, Object> annotationValue = (BMap<BString, Object>) annotations.get(annotationKey);
             String keyName = processFieldAnnotation(annotationValue, prevKey.getValue());
+            String prevKeyValue = prevKey.getValue(); 
+            BString formattedKeyName = StringUtils.fromString(keyName);
+            BString formattedContentFieldName = StringUtils.fromString(contentFieldName); 
             if (key.getValue().equals(contentFieldName)) {
-                currentValue.put(StringUtils.fromString(contentFieldName), value);
-                if (!keyName.equals(prevKey.getValue())) {
-                    record.put(StringUtils.fromString(keyName), record.remove(prevKey));
+                currentValue.put(formattedContentFieldName, value);
+                if (!keyName.equals(prevKeyValue)) {
+                    record.put(formattedKeyName, record.remove(prevKey));
                 }
             } else {
-                currentValue.put(StringUtils.fromString(keyName), value);
+                currentValue.put(formattedKeyName, value);
             }
         } else {
             currentValue.put(key, value);
