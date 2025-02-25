@@ -115,13 +115,17 @@ public class ToXmlUtils {
                 return getElementFromRecordMember(rootTag == null
                                 ? StringUtils.fromString(Constants.ROOT) : rootTagBstring, traverseRecordAndGenerateXml(
                                 value, allNamespaces, getEmptyStringMap(), options, key, getChildElementType(
-                                        referredType, keyStr), isSequenceField, isSequenceField,
+                                        referredType, recordKey), isSequenceField, isSequenceField,
                                 parentModelGroupInfo, elementInfo),
                         allNamespaces, options, getAttributesMap(value, options, allNamespaces, getEmptyStringMap()));
             }
 
             if (key.equals(options.get(Constants.TEXT_FIELD_NAME))) {
-                return CreateText.createText(StringUtils.fromString(value.toString()));
+                if (rootTagBstring.equals(StringUtils.fromString(Constants.EMPTY_STRING))) {
+                    rootTagBstring = StringUtils.fromString(Constants.ROOT);
+                }
+                return CreateElement.createElement(rootTagBstring, getEmptyStringMap(),
+                        CreateText.createText(StringUtils.fromString(value.toString())));
             }
 
             BXml output = getElementFromRecordMember(key,
@@ -136,7 +140,7 @@ public class ToXmlUtils {
                 return CreateElement.createElement(rootTagBstring, getEmptyStringMap(), output);
             }
             return output;
-        } catch (BError e) {
+        } catch (Exception e) {
             return DiagnosticLog.createXmlError(e.getMessage());
         }
     }
@@ -503,8 +507,8 @@ public class ToXmlUtils {
                         attributes.put(XMLNS, StringUtils.fromString(StringUtils.getStringValue(value)));
                     } else {
                         Long startIndex = getStartIndex(StringUtils.fromString(attributePrefix),
-                            StringUtils.fromString(options.get(Constants.USER_ATTRIBUTE_PREFIX).toString()),
-                                        StringUtils.fromString(key));
+                                StringUtils.fromString(options.get(Constants.USER_ATTRIBUTE_PREFIX).toString()),
+                                StringUtils.fromString(key));
                         attributes.put(StringUtils.fromString(key.substring(startIndex.intValue())),
                                 StringUtils.fromString(StringUtils.getStringValue(value)));
                     }
