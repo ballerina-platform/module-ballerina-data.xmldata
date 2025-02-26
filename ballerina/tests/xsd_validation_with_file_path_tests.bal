@@ -26,10 +26,6 @@ function testValidateSchema(string xsdPath, string validXmlPath, string invalidX
     xml validXml = check readXmlFile(validXmlPath);
     xml invalidXml = check readXmlFile(invalidXmlPath);
 
-    if (xsdPath != "tests/resources/xsd_tests/schemas/schema_11.xsd") {
-        return;
-    }
-
     Error? e = validate(validXml, xsdPath);
     test:assertTrue(e is (), msg = "Valid XML should pass validation");
 
