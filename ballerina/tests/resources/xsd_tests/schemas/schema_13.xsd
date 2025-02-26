@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.com/ns3"
+           xmlns="http://example.com/ns3"
+           xmlns:ns1="http://example.com/ns1"
+           xmlns:ns2="http://example.com/ns2"
+           elementFormDefault="qualified">
+  
+  <xs:import namespace="http://example.com/ns1" schemaLocation="TestCase1.xsd"/>
+  <xs:import namespace="http://example.com/ns2" schemaLocation="TestCase2.xsd"/>
+  
+  <xs:element name="store">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="storeName" type="xs:string"/>
+        <xs:element name="location" type="xs:string"/>
+        <xs:element name="inventory">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="item" maxOccurs="unbounded">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="itemName" type="xs:string"/>
+                    <xs:element name="itemPrice" type="xs:decimal"/>
+                    <xs:element name="itemQuantity" type="xs:int"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+           targetNamespace="http://example.com/ns1" 
+           xmlns="http://example.com/ns1"
+           xmlns:ns2="http://example.com/ns2" 
+           xmlns:ns3="http://example.com/ns3"
+           elementFormDefault="qualified">
+  
+  <!-- Import schemas from ns2 and ns3 -->
+  <xs:import namespace="http://example.com/ns2" schemaLocation="TestCase2.xsd"/>
+  <xs:import namespace="http://example.com/ns3" schemaLocation="TestCase3.xsd"/>
+  
+  <!-- Define the complexType for book -->
+  <xs:complexType name="bookType">
+    <xs:sequence>
+      <xs:element name="title" type="xs:string"/>
+      <xs:element name="author" type="xs:string"/>
+      <xs:element name="price" type="xs:decimal"/>
+      <xs:element name="publisher" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <!-- Define the complexType for library -->
+  <xs:complexType name="libraryType">
+    <xs:sequence>
+      <xs:element name="book" maxOccurs="unbounded" type="bookType"/>
+      <xs:element name="location" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+  
+  <!-- Define the 'book' element using the bookType complexType -->
+  <xs:element name="book" type="bookType"/>
+
+  <!-- Define the 'library' element using the libraryType complexType -->
+  <xs:element name="library" type="libraryType"/>
+  
+</xs:schema>

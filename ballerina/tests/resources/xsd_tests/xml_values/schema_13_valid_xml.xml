@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<store xmlns="http://example.com/ns3" xmlns:ns1="http://example.com/ns1" xmlns:ns2="http://example.com/ns2">
+  <storeName>SuperMart</storeName>
+  <location>New York</location>
+  <inventory>
+    <item>
+      <itemName>Apple</itemName>
+      <itemPrice>1.25</itemPrice>
+      <itemQuantity>100</itemQuantity>
+    </item>
+    <item>
+      <itemName>Banana</itemName>
+      <itemPrice>0.75</itemPrice>
+      <itemQuantity>150</itemQuantity>
+    </item>
+  </inventory>
+</store>

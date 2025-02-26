@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Missing orderId -->
+<order xmlns="http://example.com/ns">
+  <customerName>Jane Doe</customerName>
+  <totalAmount>100.50</totalAmount>
+</order>

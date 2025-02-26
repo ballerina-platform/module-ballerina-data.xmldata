@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<book xmlns="http://example.com/ns">
+  <title>XML for Beginners</title>
+  <author>John Doe</author>
+  <price>29.99</price>
+</book>

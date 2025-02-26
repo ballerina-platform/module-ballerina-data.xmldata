@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Missing amount element -->
+<invoice xmlns="http://example.com/ns">
+  <invoiceNumber>INV123</invoiceNumber>
+  <invoiceDate>2024-02-25</invoiceDate>
+</invoice>

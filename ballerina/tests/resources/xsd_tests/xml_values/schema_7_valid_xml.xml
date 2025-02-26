@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This is an order -->
+<order xmlns="http://example.com/ns">
+  <orderId>12345</orderId>
+  <customerName>Jane Doe</customerName>
+  <totalAmount>100.50</totalAmount>
+</order>

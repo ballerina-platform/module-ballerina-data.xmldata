@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.com/ns2"
+           xmlns="http://example.com/ns2"
+           xmlns:ns1="http://example.com/ns1"
+           xmlns:ns3="http://example.com/ns3"
+           elementFormDefault="qualified">
+  
+  <xs:import namespace="http://example.com/ns1" schemaLocation="TestCase1.xsd"/>
+  <xs:import namespace="http://example.com/ns3" schemaLocation="TestCase3.xsd"/>
+  
+  <xs:element name="authorDetails">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="firstName" type="xs:string"/>
+        <xs:element name="lastName" type="xs:string"/>
+        <xs:element name="age" type="xs:int"/>
+        <xs:element name="books" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="bookTitle" type="xs:string"/>
+              <xs:element name="bookPrice" type="xs:decimal"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>
