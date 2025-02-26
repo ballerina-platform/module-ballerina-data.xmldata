@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<address xmlns="http://example.com/ns">
+  <street>   123 Elm Street   </street>
+  <city>    Springfield  </city>
+  <zipcode>  98765 </zipcode>
+</address>

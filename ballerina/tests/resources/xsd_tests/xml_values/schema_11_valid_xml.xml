@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<library xmlns="http://example.com/ns1" xmlns:ns2="http://example.com/ns2" xmlns:ns3="http://example.com/ns3">
+  <book>
+    <title>XML for Beginners</title>
+    <author>John Doe</author>
+    <price>19.99</price>
+    <publisher>XYZ Publishers</publisher>
+  </book>
+  <book>
+    <title>Advanced XML</title>
+    <author>Jane Smith</author>
+    <price>29.99</price>
+    <publisher>ABC Publishers</publisher>
+  </book>
+  <location>Main Branch</location>
+</library>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<profile xmlns="http://example.com/ns">
+  <name>John Doe</name>
+  <age>30</age>
+  <bio>Software Developer</bio>
+</profile>

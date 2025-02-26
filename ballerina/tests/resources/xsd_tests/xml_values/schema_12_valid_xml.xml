@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<authorDetails xmlns="http://example.com/ns2" xmlns:ns1="http://example.com/ns1" xmlns:ns3="http://example.com/ns3">
+  <firstName>John</firstName>
+  <lastName>Doe</lastName>
+  <age>45</age>
+  <books>
+    <bookTitle>XML for Beginners</bookTitle>
+    <bookPrice>19.99</bookPrice>
+  </books>
+  <books>
+    <bookTitle>Advanced XML</bookTitle>
+    <bookPrice>29.99</bookPrice>
+  </books>
+</authorDetails>

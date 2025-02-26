@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<store>
+  <storeName>SuperMart</storeName>
+  <location>New York</location>
+  <inventory>
+    <item>
+      <itemName>Apple</itemName>
+      <itemPrice>1.25</itemPrice>
+      <itemQuantity>100</itemQuantity>
+    </item>
+    <item>
+      <itemName>Banana</itemName>
+      <itemPrice>0.75</itemPrice>
+      <itemQuantity>150</itemQuantity>
+    </item>
+  </inventory>
+</store>

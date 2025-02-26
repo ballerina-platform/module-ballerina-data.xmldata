@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Invoice details -->
+<invoice xmlns="http://example.com/ns">
+  <invoiceNumber>INV123</invoiceNumber>
+  <invoiceDate>2024-02-25</invoiceDate>
+  <amount>250.75</amount>
+</invoice>

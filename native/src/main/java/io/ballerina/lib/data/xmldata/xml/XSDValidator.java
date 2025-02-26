@@ -78,7 +78,9 @@ public class XSDValidator {
             throws ParserConfigurationException, IOException, SAXException {
         try {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            dbFactory.setNamespaceAware(true); // Support for XML namespaces
             dbFactory.setIgnoringComments(true); // Ignore comments in the XML
+            dbFactory.setIgnoringElementContentWhitespace(true); // Ignore white spaces in the XML
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
             Document document = dBuilder.parse(new InputSource(new StringReader(StringUtils.getStringValue(xml))));
 
