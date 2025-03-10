@@ -349,6 +349,10 @@ public class ToXmlUtils {
                 if (!(fieldName.isEmpty()) && fields.containsKey(fieldName.get())) {
                     return fields.get(fieldName.get()).getFieldType();
                 } else {
+                    Type restFieldType = recordType.getRestFieldType();
+                    if (restFieldType != null) {
+                        return restFieldType;
+                    }
                     assert false;
                     throw DiagnosticLog.createXmlError("Invalid xml provided");
                 }
