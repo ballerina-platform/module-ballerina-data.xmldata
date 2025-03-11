@@ -1527,7 +1527,8 @@ function testToXmlWithRestTypes() returns error? {
         "</PayloadAnyType2>";
 
     PayloadAnyType2 data2 = check parseAsType(xmlValue);
-    test:assertEquals(data2, {'version: "token", 'type: "token", partnerGetRequest: {partnerGetRequest: {"content": {partner: "partner name", listOption: "list options"}}}});
+    test:assertEquals(data2, {'version: "token", 'type: "token", 
+            partnerGetRequest: {partnerGetRequest: {"content": {partner: "partner name", listOption: "list options"}}}});
     xmlItem = check toXml(data2);
     test:assertTrue(xmlItem is xml:Element);
     test:assertEquals(xmlItem.toString(), xmlStr);
@@ -1558,8 +1559,95 @@ function testToXmlWithRestTypes() returns error? {
         "</PayloadAnyType3>";
 
     PayloadAnyType3 data3 = check parseAsType(xmlValue);
-    test:assertEquals(data3, {'version: "token", 'type: "token", partnerGetRequest: {partnerGetRequest: {"content": {partner: "partner name", listOption: "list options"}}}});
+    test:assertEquals(data3, {'version: "token", 'type: "token", 
+            partnerGetRequest: {partnerGetRequest: {"content": {partner: "partner name", listOption: "list options"}}}});
     xmlItem = check toXml(data3);
+    test:assertTrue(xmlItem is xml:Element);
+    test:assertEquals(xmlItem.toString(), xmlStr);
+}
+
+@Name {
+    value: "payloadAny"
+}
+public type PayloadAnyType4 record {|
+    @Attribute
+    string 'version?;
+    @Attribute
+    string 'type?;
+    int|boolean|record{}...;
+|};
+
+public type PayloadAnyType5 record {|
+    @Attribute
+    string 'version?;
+    string 'type?;
+    map<anydata>|json...;
+|};
+
+@test:Config {
+    groups: ["toXml"]
+}
+function testToXmlWithRestTypes2() returns error? {
+    xml xmlValue = xml `
+        <payloadAny version="token" type="token">
+        <partnerGetRequest>
+            <partnerGetRequest>
+                <content>
+                    <partner>partner name</partner>
+                    <listOption>list options</listOption>
+                </content>
+            </partnerGetRequest>
+            </partnerGetRequest>
+        </payloadAny>
+    `;
+
+    string xmlStr = "<payloadAny version=\"token\" type=\"token\">" +
+        "<partnerGetRequest>" + 
+            "<partnerGetRequest>" + 
+                "<content>" +
+                    "<partner>partner name</partner>" + 
+                    "<listOption>list options</listOption>" + 
+                "</content>" + 
+            "</partnerGetRequest>" + 
+            "</partnerGetRequest>" + 
+        "</payloadAny>";
+
+    PayloadAnyType4 data = check parseAsType(xmlValue);
+    test:assertEquals(data, {'version: "token", 'type: "token", 
+            partnerGetRequest: {partnerGetRequest: {"content": {partner: "partner name", listOption: "list options"}}}});
+    xml xmlItem = check toXml(data);
+    test:assertTrue(xmlItem is xml:Element);
+    test:assertEquals(xmlItem.toString(), xmlStr);
+
+    xmlValue = xml `
+        <payloadAny version="token" type="token">
+        <partnerGetRequest>
+            <partnerGetRequest>
+                <content>
+                    <partner>false</partner>
+                    <listOption>1</listOption>
+                </content>
+            </partnerGetRequest>
+            </partnerGetRequest>
+        </payloadAny>
+    `;
+
+    xmlStr = "<PayloadAnyType5 version=\"token\">" +
+        "<type>token</type>" +
+        "<partnerGetRequest>" + 
+            "<partnerGetRequest>" + 
+                "<content>" +
+                    "<partner>false</partner>" + 
+                    "<listOption>1</listOption>" + 
+                "</content>" + 
+            "</partnerGetRequest>" + 
+            "</partnerGetRequest>" + 
+        "</PayloadAnyType5>";
+
+    PayloadAnyType5 data2 = check parseAsType(xmlValue);
+    test:assertEquals(data2, {'version: "token", 'type: "token", 
+            partnerGetRequest: {partnerGetRequest: {"content": {partner: false, listOption: 1}}}});
+    xmlItem = check toXml(data2);
     test:assertTrue(xmlItem is xml:Element);
     test:assertEquals(xmlItem.toString(), xmlStr);
 }
