@@ -1496,7 +1496,8 @@ function testToXmlWithRestTypes() returns error? {
         "</payloadAny>";
 
     PayloadAnyType data = check parseAsType(xmlValue);
-    test:assertEquals(data, {'version: "token", 'type: "token", partnerGetRequest: {partnerGetRequest: {"content": {partner: "partner name", listOption: "list options"}}}});
+    test:assertEquals(data, {'version: "token", 'type: "token", partnerGetRequest: 
+        {partnerGetRequest: {"content": {partner: "partner name", listOption: "list options"}}}});
     xml xmlItem = check toXml(data);
     test:assertTrue(xmlItem is xml:Element);
     test:assertEquals(xmlItem.toString(), xmlStr);
@@ -1528,7 +1529,8 @@ function testToXmlWithRestTypes() returns error? {
 
     PayloadAnyType2 data2 = check parseAsType(xmlValue);
     test:assertEquals(data2, {'version: "token", 'type: "token", 
-            partnerGetRequest: {partnerGetRequest: {"content": {partner: "partner name", listOption: "list options"}}}});
+            partnerGetRequest: {partnerGetRequest: {"content": 
+                {partner: "partner name", listOption: "list options"}}}});
     xmlItem = check toXml(data2);
     test:assertTrue(xmlItem is xml:Element);
     test:assertEquals(xmlItem.toString(), xmlStr);
@@ -1560,7 +1562,8 @@ function testToXmlWithRestTypes() returns error? {
 
     PayloadAnyType3 data3 = check parseAsType(xmlValue);
     test:assertEquals(data3, {'version: "token", 'type: "token", 
-            partnerGetRequest: {partnerGetRequest: {"content": {partner: "partner name", listOption: "list options"}}}});
+            partnerGetRequest: {partnerGetRequest: {"content": 
+                {partner: "partner name", listOption: "list options"}}}});
     xmlItem = check toXml(data3);
     test:assertTrue(xmlItem is xml:Element);
     test:assertEquals(xmlItem.toString(), xmlStr);
@@ -1614,7 +1617,8 @@ function testToXmlWithRestTypes2() returns error? {
 
     PayloadAnyType4 data = check parseAsType(xmlValue);
     test:assertEquals(data, {'version: "token", 'type: "token", 
-            partnerGetRequest: {partnerGetRequest: {"content": {partner: "partner name", listOption: "list options"}}}});
+            partnerGetRequest: {partnerGetRequest: {"content": 
+                {partner: "partner name", listOption: "list options"}}}});
     xml xmlItem = check toXml(data);
     test:assertTrue(xmlItem is xml:Element);
     test:assertEquals(xmlItem.toString(), xmlStr);
