@@ -53,7 +53,7 @@ interface ConvertibleBasicType<E> {
 
     default boolean isValidCandidate(Context cx, BTypedesc targetTd) {
         SemType ty = SemType.tryInto(cx, targetTd.getDescribingType());
-        return Core.containsBasicType(basicType(), ty);
+        return Core.containsBasicType(ty, basicType());
     }
 
     ConvertibleBasicType<Long> INT = new BasicTypeHolder<>(Builder.getIntType(), Long::valueOf, "INT");

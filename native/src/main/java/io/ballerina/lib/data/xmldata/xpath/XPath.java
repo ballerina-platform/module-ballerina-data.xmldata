@@ -22,7 +22,6 @@ import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.types.XmlNodeType;
-import io.ballerina.runtime.api.types.semtype.Builder;
 import io.ballerina.runtime.api.types.semtype.Context;
 import io.ballerina.runtime.api.types.semtype.Core;
 import io.ballerina.runtime.api.types.semtype.Env;
@@ -39,8 +38,11 @@ import net.sf.saxon.s9api.SaxonApiException;
 import net.sf.saxon.s9api.XPathCompiler;
 import net.sf.saxon.s9api.XPathExecutable;
 import net.sf.saxon.s9api.XPathSelector;
+import net.sf.saxon.s9api.XdmItem;
 import net.sf.saxon.s9api.XdmNode;
+import net.sf.saxon.s9api.XdmSequenceIterator;
 import net.sf.saxon.s9api.XdmValue;
+import org.ballerinalang.langlib.xml.Concat;
 
 import java.io.StringReader;
 import java.util.Optional;
@@ -81,11 +83,13 @@ public class XPath {
 
     private static Object convertToSequence(Context cx, XdmValue value, BTypedesc td)
             throws ResultTypeMismatchException {
-        SemType ty = SemType.tryInto(cx, td.getDescribingType());
-        if (!isSequenceType(cx, ty)) {
+        if (!ConvertibleBasicType.XML.isValidCandidate(cx, td)) {
             throw new ResultTypeMismatchException(value, td.getDescribingType());
         }
-        throw new RuntimeException("sequence type not implemented yet");
+        XdmSequenceIterator<XdmItem> it = value.iterator();
+        // This is guaranteed to work since we have an XML to begin with
+        Object[] items = it.stream().map(ConvertibleBasicType.XML::convertToType).toArray(BXml[]::new);
+        return Concat.concat(items);
     }
 
     private static Object convertToSingleValue(Context cx, XdmValue value, BTypedesc td)
@@ -132,12 +136,6 @@ public class XPath {
             return null;
         }
         throw new ResultTypeMismatchException(value, td.getDescribingType());
-    }
-
-    private static boolean isSequenceType(Context cx, SemType ty) {
-        SemType sequenceType = Builder.getListType();
-        // TODO: properly build this
-        return Core.isSubType(cx, ty, sequenceType);
     }
 
     static XdmValue query(String xPath, String xml) throws SaxonApiException {

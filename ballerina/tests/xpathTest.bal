@@ -168,6 +168,28 @@ function intUnionSingleErrorTest() {
     test:assertTrue(result is Error);
 }
 
+@test:Config
+function xmlSequenceTest() {
+    xml value = xml `<data>
+        <person><name>John</name><age>25</age></person>
+        <person><name>Jane</name><age>30</age></person>
+    </data>`;
+    string query = "//person";
+    xml result = checkpanic transform(query, value);
+    xmlEqual(result, xml `<person><name>John</name><age>25</age></person><person><name>Jane</name><age>30</age></person>`);
+}
+
+@test:Config
+function stringSequenceErrorTest() {
+    xml value = xml `<data>
+        <person><name>John</name></person>
+        <person><name>Jane</name></person>
+    </data>`;
+    string query = "//person/name";
+    string|error result = transform(query, value);
+    test:assertTrue(result is Error);
+}
+
 function xmlEqual(xml actual, xml expected) {
     var whitespace = re `\s+`;
     string actualString = whitespace.replaceAll(actual.toString(), "");
