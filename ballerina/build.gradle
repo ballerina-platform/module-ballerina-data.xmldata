@@ -61,6 +61,12 @@ dependencies {
     externalJars(group: 'io.ballerina.stdlib', name: 'constraint-native', version: "${stdlibConstraintVersion}") {
         transitive = false
     }
+    externalJars(group: 'net.sf.saxon', name: 'Saxon-HE', version: "${saxonHeVersion}") {
+        transitive = false
+    }
+    externalJars(group: 'org.xmlresolver', name: 'xmlresolver', version: "${xmlResolverVersion}") {
+        transitive = false
+    }
 }
 
 task updateTomlFiles {
@@ -72,6 +78,8 @@ task updateTomlFiles {
         newConfig = newConfig.replace("@toml.version@", tomlVersion)
         newConfig = newConfig.replace("@stdlib.constraintnative.version@", stdlibDependentConstraintNativeVersion)
         newConfig = newConfig.replace("@constraint.version@", stdlibDependentConstraintVersion)
+        newConfig = newConfig.replace("@project.saxonHeVersion@", project.saxonHeVersion)
+        newConfig = newConfig.replace("@project.xmlResolverVersion@", project.xmlResolverVersion)
         ballerinaTomlFile.text = newConfig
 
         def newCompilerPluginToml = compilerPluginTomlFilePlaceHolder.text.replace("@project.version@", project.version)
