@@ -1,20 +1,34 @@
+/*
+ *  Copyright (c) 2025, WSO2 LLC. (http://www.wso2.com).
+ *
+ *  WSO2 LLC. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
 package io.ballerina.lib.data.xmldata.xpath;
 
 import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.types.XmlNodeType;
-import io.ballerina.runtime.api.types.semtype.BasicTypeBitSet;
 import io.ballerina.runtime.api.types.semtype.Builder;
 import io.ballerina.runtime.api.types.semtype.Context;
 import io.ballerina.runtime.api.types.semtype.Core;
 import io.ballerina.runtime.api.types.semtype.Env;
 import io.ballerina.runtime.api.types.semtype.SemType;
 import io.ballerina.runtime.api.types.semtype.ShapeAnalyzer;
-import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.utils.TypeUtils;
-import io.ballerina.runtime.api.utils.XmlUtils;
-import io.ballerina.runtime.api.values.BDecimal;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTypedesc;
 import io.ballerina.runtime.api.values.BXml;
@@ -30,14 +44,19 @@ import net.sf.saxon.s9api.XdmValue;
 
 import java.io.StringReader;
 import java.util.Optional;
-import java.util.function.Function;
 
 import javax.xml.namespace.QName;
 import javax.xml.transform.stream.StreamSource;
 
 public class XPath {
-
     private static final Processor processor = new Processor(false);
+    private static final ConvertibleBasicType<?>[] SIMPLE_BASIC_TYPES = {
+        ConvertibleBasicType.INT,
+        ConvertibleBasicType.FLOAT,
+        ConvertibleBasicType.DECIMAL,
+        ConvertibleBasicType.BOOLEAN,
+        ConvertibleBasicType.STRING,
+    };
 
     public static Object transform(BString query, BXml value, BTypedesc td) {
         try {
@@ -50,17 +69,18 @@ public class XPath {
     }
 
     private static Object convertToBType(XdmValue value, BTypedesc td) throws ResultTypeMismatchException {
-        assert !Core.isNever(SemType.tryInto(Context.from(Env.getInstance()), td.getDescribingType())) :
+        Context cx = Context.from(Env.getInstance());
+        assert !Core.isNever(SemType.tryInto(cx, td.getDescribingType())) :
                 "Target type must not be never";
         return switch (value.size()) {
-            case 0 -> convertToNil(value, td);
-            case 1 -> convertToSingleValue(value, td);
-            default -> convertToSequence(value, td);
+            case 0 -> convertToNil(cx, value, td);
+            case 1 -> convertToSingleValue(cx, value, td);
+            default -> convertToSequence(cx, value, td);
         };
     }
 
-    private static Object convertToSequence(XdmValue value, BTypedesc td) throws ResultTypeMismatchException {
-        Context cx = Context.from(Env.getInstance());
+    private static Object convertToSequence(Context cx, XdmValue value, BTypedesc td)
+            throws ResultTypeMismatchException {
         SemType ty = SemType.tryInto(cx, td.getDescribingType());
         if (!isSequenceType(cx, ty)) {
             throw new ResultTypeMismatchException(value, td.getDescribingType());
@@ -68,94 +88,47 @@ public class XPath {
         throw new RuntimeException("sequence type not implemented yet");
     }
 
-    private static Object convertToSingleValue(XdmValue value, BTypedesc td) throws ResultTypeMismatchException {
-        Context cx = Context.from(Env.getInstance());
+    private static Object convertToSingleValue(Context cx, XdmValue value, BTypedesc td)
+            throws ResultTypeMismatchException {
         Type describingType = td.getDescribingType();
         SemType ty = SemType.tryInto(cx, describingType);
-        if (Core.containsBasicType(ty, Builder.getXmlType())) {
-            return createXmlItemFrom(value);
+        if (Core.containsBasicType(ty, ConvertibleBasicType.XML.basicType())) {
+            // This is guaranteed to work since we have an XML to begin with
+            return ConvertibleBasicType.XML.convertToType(value);
         }
-        String repr = value.iterator().next().getStringValue();
-        Optional<Object> bValue =  tryConvertToBasicType(widenType(ty), repr);
-        if (bValue.isPresent()) {
-            Object inner =  bValue.get();
-            if (belongToType(cx, inner, ty)) {
-                return inner;
+        String xmlString = value.iterator().next().getStringValue();
+        for (var each: SIMPLE_BASIC_TYPES) {
+            Optional<?> result = tryConvertToSimpleBasicType(cx, xmlString, each, ty);
+            if (result.isPresent()) {
+                return result.get();
             }
         }
         throw new ResultTypeMismatchException(value, describingType);
     }
 
-    private static BXml createXmlItemFrom(XdmValue value) {
-        return XmlUtils.parse(value.toString().trim());
-    }
-
-    private static boolean belongToType(Context cx, Object object, SemType targetType) {
-        SemType valueTy = ShapeAnalyzer.inherentTypeOf(cx, object)
-                .orElseGet(() -> SemType.tryInto(cx, TypeUtils.getType(object)));
-        return Core.isSubType(cx, valueTy, targetType);
-    }
-
-    private static BasicTypeBitSet widenType(SemType ty) {
-        return SemType.from(ty.all() | ty.some());
-    }
-
-    // TODO: clean this up
-    private static Optional<Object> tryConvertToBasicType(BasicTypeBitSet ty, String repr) {
-        if (Core.containsBasicType(ty, Builder.getIntType())) {
-            Optional<Long> result = tryConvert(repr, Long::valueOf);
-            if (result.isPresent()) {
-                return Optional.of(result.get());
-            }
-        }
-        if (Core.containsBasicType(ty, Builder.getFloatType())) {
-            Optional<Double> result = tryConvert(repr, Double::valueOf);
-            if (result.isPresent()) {
-                return Optional.of(result.get());
-            }
-        }
-        if (Core.containsBasicType(ty, Builder.getDecimalType())) {
-            Optional<BDecimal> result = tryConvert(repr, ValueCreator::createDecimalValue);
-            if (result.isPresent()) {
-                return Optional.of(result.get());
-            }
-        }
-        if (Core.containsBasicType(ty, Builder.getBooleanType())) {
-            Optional<Boolean> result = tryConvert(repr, XPath::booleanValueOf);
-            if (result.isPresent()) {
-                return Optional.of(result.get());
-            }
-        }
-        if (Core.containsBasicType(ty, Builder.getStringType())) {
-            Optional<BString> result = tryConvert(repr, StringUtils::fromString);
-            if (result.isPresent()) {
-                return Optional.of(result.get());
-            }
-        }
-        return Optional.empty();
-    }
-
-    private static Boolean booleanValueOf(String repr) {
-        if (repr.equalsIgnoreCase("true")) {
-            return true;
-        } else if (repr.equalsIgnoreCase("false")) {
-            return false;
-        }
-        throw new IllegalArgumentException("Invalid boolean value: " + repr);
-    }
-
-    private static <T> Optional<T> tryConvert(String repr, Function<String, T> convertFn) {
-        try {
-            return Optional.ofNullable(convertFn.apply(repr));
-        } catch (Exception e) {
+    private static <E> Optional<E> tryConvertToSimpleBasicType(Context cx, String xml,
+            ConvertibleBasicType<E> convertibleType, SemType targetType) {
+        SemType basicType = convertibleType.basicType();
+        if (!Core.containsBasicType(targetType, basicType)) {
             return Optional.empty();
         }
+        Optional<E> result = convertibleType.tryConvertToType(xml);
+        if (targetType.some() == 0 || result.isEmpty()) {
+            return result;
+        }
+        E value = result.get();
+        // Note we have converted to the basic type now we need to check if it is a subtype of the target type.
+        SemType inherentType = ShapeAnalyzer.inherentTypeOf(cx, value)
+                .orElseGet(() -> SemType.tryInto(cx, TypeUtils.getType(value)));
+        if (!Core.isSubType(cx, inherentType, targetType)) {
+            return Optional.empty();
+        }
+        return result;
     }
 
-    private static Object convertToNil(XdmValue value, BTypedesc td) throws ResultTypeMismatchException {
-        Context cx = Context.from(Env.getInstance());
-        SemType ty = SemType.tryInto(cx, td.getDescribingType());
-        if (Core.isSubtypeSimple(Builder.getNilType(), ty)) {
+    private static Object convertToNil(Context cx, XdmValue value, BTypedesc td) throws ResultTypeMismatchException {
+        ConvertibleBasicType<Object> nil = ConvertibleBasicType.NIL;
+        if (nil.isValidCandidate(cx, td)) {
             return null;
         }
         throw new ResultTypeMismatchException(value, td.getDescribingType());
