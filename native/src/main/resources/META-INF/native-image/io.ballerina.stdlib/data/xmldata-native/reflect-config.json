@@ -1,0 +1,49 @@
+[
+    {
+        "name": "net.sf.saxon.Configuration",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": []
+            }
+        ]
+    },
+    {
+        "name": "net.sf.saxon.functions.StringJoin",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": []
+            }
+        ]
+    },
+    {
+        "name": "net.sf.saxon.functions.String_1",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": []
+            }
+        ]
+    },
+    {
+        "name": "net.sf.saxon.functions.Tokenize_1",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": []
+            }
+        ]
+    },
+    {
+        "name": "org.xmlresolver.loaders.XmlLoader",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.xmlresolver.ResolverConfiguration"
+                ]
+            }
+        ]
+    }
+]
