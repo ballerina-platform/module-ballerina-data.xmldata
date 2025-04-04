@@ -67,7 +67,7 @@ public final class XPath {
         ConvertibleBasicType.STRING,
     };
 
-    public static Object transform(BString query, BXml value, BTypedesc td) {
+    public static Object transform(BXml value, BString query, BTypedesc td) {
         try {
             XdmValue result = query(from(query), from(value));
             return convertToBType(result, td);

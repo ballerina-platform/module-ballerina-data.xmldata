@@ -20,7 +20,7 @@ import ballerina/test;
 function emptyQueryTest() {
     xml value = xml `<root></root>`;
     string query = "//b";
-    () result = checkpanic transform(query, value);
+    () result = checkpanic transform(value, query);
     test:assertEquals(result, ());
 }
 
@@ -28,7 +28,7 @@ function emptyQueryTest() {
 function xmlValueTest() {
     xml value = xml `<data><person><firstName>John</firstName><lastName>Doe</lastName></person></data>`;
     string query = "/data/person";
-    xml result = checkpanic transform(query, value);
+    xml result = checkpanic transform(value, query);
     xmlEqual(result, xml `<person><firstName>John</firstName><lastName>Doe</lastName></person>`);
 }
 
@@ -36,11 +36,11 @@ function xmlValueTest() {
 function stringValueTest() {
     xml value = xml `<root><name>John</name></root>`;
     string query = "/root/name";
-    string result = checkpanic transform(query, value);
+    string result = checkpanic transform(value, query);
     test:assertEquals(result, "John");
 
     query = "/root/name/text()";
-    result = checkpanic transform(query, value);
+    result = checkpanic transform(value, query);
     test:assertEquals(result, "John");
 }
 
@@ -48,11 +48,11 @@ function stringValueTest() {
 function stringSingleTest() {
     xml value = xml `<root><name>John</name></root>`;
     string query = "/root/name";
-    "John" result = checkpanic transform(query, value);
+    "John" result = checkpanic transform(value, query);
     test:assertEquals(result, "John");
 
     query = "/root/name/text()";
-    result = checkpanic transform(query, value);
+    result = checkpanic transform(value, query);
     test:assertEquals(result, "John");
 }
 
@@ -60,11 +60,11 @@ function stringSingleTest() {
 function stringUnionSingleTest() {
     xml value = xml `<root><name>John</name></root>`;
     string query = "/root/name";
-    "John"|"Jane" result = checkpanic transform(query, value);
+    "John"|"Jane" result = checkpanic transform(value, query);
     test:assertEquals(result, "John");
 
     query = "/root/name/text()";
-    result = checkpanic transform(query, value);
+    result = checkpanic transform(value, query);
     test:assertEquals(result, "John");
 }
 
@@ -72,11 +72,11 @@ function stringUnionSingleTest() {
 function stringSingleErrorTest() {
     xml value = xml `<root><name>John</name></root>`;
     string query = "/root/name";
-    "Jane"|error result = transform(query, value);
+    "Jane"|error result = transform(value, query);
     test:assertTrue(result is Error);
 
     query = "/root/name/text()";
-    result = transform(query, value);
+    result = transform(value, query);
     test:assertTrue(result is Error);
 }
 
@@ -84,11 +84,11 @@ function stringSingleErrorTest() {
 function stringIntUnionTest() {
     xml value = xml `<root><value>John</value></root>`;
     string query = "/root/value";
-    string|int result = checkpanic transform(query, value);
+    string|int result = checkpanic transform(value, query);
     test:assertEquals(result, "John");
 
     query = "/root/value/text()";
-    result = checkpanic transform(query, value);
+    result = checkpanic transform(value, query);
     test:assertEquals(result, "John");
 }
 
@@ -96,7 +96,7 @@ function stringIntUnionTest() {
 function booleanValueTest() {
     xml value = xml `<root><active>true</active></root>`;
     string query = "/root/active";
-    boolean result = checkpanic transform(query, value);
+    boolean result = checkpanic transform(value, query);
     test:assertEquals(result, true);
 }
 
@@ -104,7 +104,7 @@ function booleanValueTest() {
 function booleanSingleTest() {
     xml value = xml `<root><active>true</active></root>`;
     string query = "/root/active";
-    true result = checkpanic transform(query, value);
+    true result = checkpanic transform(value, query);
     test:assertEquals(result, true);
 }
 
@@ -112,7 +112,7 @@ function booleanSingleTest() {
 function booleanUnionSingleTest() {
     xml value = xml `<root><active>true</active></root>`;
     string query = "/root/active";
-    true|false result = checkpanic transform(query, value);
+    true|false result = checkpanic transform(value, query);
     test:assertEquals(result, true);
 }
 
@@ -120,7 +120,7 @@ function booleanUnionSingleTest() {
 function booleanSingleErrorTest() {
     xml value = xml `<root><active>true</active></root>`;
     string query = "/root/active";
-    false|error result = transform(query, value);
+    false|error result = transform(value, query);
     test:assertTrue(result is Error);
 }
 
@@ -128,7 +128,7 @@ function booleanSingleErrorTest() {
 function booleanStringUnionTest() {
     xml value = xml `<root><value>true</value></root>`;
     string query = "/root/value";
-    boolean|string result = checkpanic transform(query, value);
+    boolean|string result = checkpanic transform(value, query);
     test:assertEquals(result, true);
 }
 
@@ -136,11 +136,11 @@ function booleanStringUnionTest() {
 function stringValueTest2() {
     xml value = xml `<root><value>25</value></root>`;
     string query = "/root/value";
-    string|int result = checkpanic transform(query, value);
+    string|int result = checkpanic transform(value, query);
     test:assertEquals(result, 25);
 
     query = "/root/value/text()";
-    result = checkpanic transform(query, value);
+    result = checkpanic transform(value, query);
     test:assertEquals(result, 25);
 }
 
@@ -148,11 +148,11 @@ function stringValueTest2() {
 function multiTypeUnionTest() {
     xml value = xml `<root><value>true</value></root>`;
     string query = "/root/value";
-    boolean|string|int result = checkpanic transform(query, value);
+    boolean|string|int result = checkpanic transform(value, query);
     test:assertEquals(result, true);
 
     query = "/root/value/text()";
-    result = checkpanic transform(query, value);
+    result = checkpanic transform(value, query);
     test:assertEquals(result, true);
 }
 
@@ -160,11 +160,11 @@ function multiTypeUnionTest() {
 function multiTypeUnionErrorTest() {
     xml value = xml `<root><value>invalid</value></root>`;
     string query = "/root/value";
-    boolean|int|error result = transform(query, value);
+    boolean|int|error result = transform(value, query);
     test:assertTrue(result is Error);
 
     query = "/root/value/text()";
-    result = transform(query, value);
+    result = transform(value, query);
     test:assertTrue(result is Error);
 }
 
@@ -172,11 +172,11 @@ function multiTypeUnionErrorTest() {
 function stringBooleanIntUnionTest() {
     xml value = xml `<root><value>42</value></root>`;
     string query = "/root/value";
-    string|boolean|int result = checkpanic transform(query, value);
+    string|boolean|int result = checkpanic transform(value, query);
     test:assertEquals(result, 42);
 
     query = "/root/value/text()";
-    result = checkpanic transform(query, value);
+    result = checkpanic transform(value, query);
     test:assertEquals(result, 42);
 }
 
@@ -184,7 +184,7 @@ function stringBooleanIntUnionTest() {
 function intValueTest() {
     xml value = xml `<root><age>25</age></root>`;
     string query = "/root/age";
-    int result = checkpanic transform(query, value);
+    int result = checkpanic transform(value, query);
     test:assertEquals(result, 25);
 }
 
@@ -192,7 +192,7 @@ function intValueTest() {
 function intSingleTest() {
     xml value = xml `<root><age>25</age></root>`;
     string query = "/root/age";
-    25 result = checkpanic transform(query, value);
+    25 result = checkpanic transform(value, query);
     test:assertEquals(result, 25);
 }
 
@@ -200,7 +200,7 @@ function intSingleTest() {
 function intUnionSingleTest() {
     xml value = xml `<root><age>25</age></root>`;
     string query = "/root/age";
-    25|30 result = checkpanic transform(query, value);
+    25|30 result = checkpanic transform(value, query);
     test:assertEquals(result, 25);
 }
 
@@ -208,7 +208,7 @@ function intUnionSingleTest() {
 function intSingleErrorTest() {
     xml value = xml `<root><age>25</age></root>`;
     string query = "/root/age";
-    30|error result = transform(query, value);
+    30|error result = transform(value, query);
     test:assertTrue(result is Error);
 }
 
@@ -216,7 +216,7 @@ function intSingleErrorTest() {
 function intUnionSingleErrorTest() {
     xml value = xml `<root><age>25</age></root>`;
     string query = "/root/age";
-    30|45|error result = transform(query, value);
+    30|45|error result = transform(value, query);
     test:assertTrue(result is Error);
 }
 
@@ -227,7 +227,7 @@ function xmlSequenceTest() {
         <person><name>Jane</name><age>30</age></person>
     </data>`;
     string query = "//person";
-    xml result = checkpanic transform(query, value);
+    xml result = checkpanic transform(value, query);
     xmlEqual(result, xml `<person><name>John</name><age>25</age></person><person><name>Jane</name><age>30</age></person>`);
 }
 
@@ -238,11 +238,11 @@ function stringSequenceErrorTest() {
         <person><name>Jane</name></person>
     </data>`;
     string query = "//person/name";
-    string|error result = transform(query, value);
+    string|error result = transform(value, query);
     test:assertTrue(result is Error);
 
     query = "//person/name/text()";
-    result = transform(query, value);
+    result = transform(value, query);
     test:assertTrue(result is Error);
 }
 
@@ -250,7 +250,7 @@ function stringSequenceErrorTest() {
 function invalidXPathQueryTest() {
     xml value = xml `<root><name>John</name></root>`;
     string query = "//invalid[";
-    error|xml result = transform(query, value);
+    error|xml result = transform(value, query);
     test:assertTrue(result is Error);
 }
 
@@ -258,7 +258,7 @@ function invalidXPathQueryTest() {
 function noMatchingValueTest() {
     xml value = xml `<root><name>John</name></root>`;
     string query = "//nonexistent";
-    () result = checkpanic transform(query, value);
+    () result = checkpanic transform(value, query);
     test:assertEquals(result, ());
 }
 
@@ -270,7 +270,7 @@ function positionPredicateTest() {
         <person><name>Bob</name><age>35</age></person>
     </data>`;
     string query = "//person[2]";
-    xml result = checkpanic transform(query, value);
+    xml result = checkpanic transform(value, query);
     xmlEqual(result, xml `<person><name>Jane</name><age>30</age></person>`);
 }
 
@@ -281,7 +281,7 @@ function attributePredicateTest() {
         <person id="2"><name>Jane</name></person>
     </data>`;
     string query = "//person[@id='2']";
-    xml result = checkpanic transform(query, value);
+    xml result = checkpanic transform(value, query);
     xmlEqual(result, xml `<person id="2"><name>Jane</name></person>`);
 }
 
@@ -292,7 +292,7 @@ function valuePredicateTest() {
         <person><name>Jane</name><age>30</age></person>
     </data>`;
     string query = "//person[age > 25]";
-    xml result = checkpanic transform(query, value);
+    xml result = checkpanic transform(value, query);
     xmlEqual(result, xml `<person><name>Jane</name><age>30</age></person>`);
 }
 
@@ -304,7 +304,7 @@ function complexPredicateTest() {
         <person id="3"><name>Bob</name><age>35</age><active>true</active></person>
     </data>`;
     string query = "//person[age > 25 and active = 'true']";
-    xml result = checkpanic transform(query, value);
+    xml result = checkpanic transform(value, query);
     xmlEqual(result, xml `<person id="3"><name>Bob</name><age>35</age><active>true</active></person>`);
 }
 
@@ -312,7 +312,7 @@ function complexPredicateTest() {
 function noMatchExpectedValueTest() {
     xml value = xml `<root><name>John</name></root>`;
     string query = "/root/nonexistent";
-    string|error result = transform(query, value);
+    string|error result = transform(value, query);
     test:assertTrue(result is Error);
 }
 
