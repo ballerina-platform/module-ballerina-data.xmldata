@@ -316,6 +316,43 @@ function noMatchExpectedValueTest() {
     test:assertTrue(result is Error);
 }
 
+@test:Config
+function containsPredicateTest() {
+    xml value = xml `<data>
+        <person><name>John Smith</name></person>
+        <person><name>Jane Doe</name></person>
+        <person><name>Bob Wilson</name></person>
+    </data>`;
+    string query = "//person[contains(name, 'Smith')]";
+    xml result = checkpanic transform(value, query);
+    xmlEqual(result, xml `<person><name>John Smith</name></person>`);
+}
+
+@test:Config
+function binaryAndPredicateTest() {
+    xml value = xml `<data>
+        <person><name>John</name><age>25</age><city>London</city></person>
+        <person><name>Jane</name><age>30</age><city>Paris</city></person>
+        <person><name>Bob</name><age>35</age><city>London</city></person>
+    </data>`;
+    string query = "//person[age > 30 and city = 'London']";
+    xml result = checkpanic transform(value, query);
+    xmlEqual(result, xml `<person><name>Bob</name><age>35</age><city>London</city></person>`);
+}
+
+@test:Config
+function binaryOrPredicateTest() {
+    xml value = xml `<data>
+        <person><name>John</name><age>25</age><city>London</city></person>
+        <person><name>Jane</name><age>30</age><city>Paris</city></person>
+        <person><name>Bob</name><age>35</age><city>London</city></person>
+    </data>`;
+    string query = "//person[city = 'Paris' or age > 30]";
+    xml result = checkpanic transform(value, query);
+    xmlEqual(result, xml `<person><name>Jane</name><age>30</age><city>Paris</city></person><person><name>Bob</name><age>35</age><city>London</city></person>`);
+}
+
+
 function xmlEqual(xml actual, xml expected) {
     var whitespace = re `\s+`;
     string actualString = whitespace.replaceAll(actual.toString(), "");
