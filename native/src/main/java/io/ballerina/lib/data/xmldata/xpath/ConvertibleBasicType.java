@@ -34,6 +34,13 @@ import net.sf.saxon.s9api.XdmValue;
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * This interface defines the basic types whose values can be converted from XML strings. Any valid candidate for XPath
+ * query must implement this.
+ *
+ * @param <E> The type of the resulting value after converting
+ * @since 1.3.1
+ */
 interface ConvertibleBasicType<E> {
 
     SemType basicType();
@@ -105,7 +112,7 @@ interface ConvertibleBasicType<E> {
 
         @Override
         public String toString() {
-            // This is help with debugging
+            // This is to help with debugging
             return "ConvertibleBasicType[" + name + "]";
         }
 

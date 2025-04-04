@@ -18,20 +18,14 @@
 
 package io.ballerina.lib.data.xmldata.xpath;
 
-import io.ballerina.runtime.api.types.Type;
-
 /**
- * Exception thrown when there is a mismatch between the expected and actual result type in result of XPath operations.
+ * Exception thrown when the XPath query is invalid.
  *
  * @since 1.3.1
  */
-class ResultTypeMismatchException extends Exception {
+public class InvalidQueryException extends IllegalArgumentException {
 
-    ResultTypeMismatchException(Object value, Type targetType) {
-        super(errorMessage(value, targetType));
-    }
-
-    private static String errorMessage(Object value, Type targetType) {
-        return "Value: " + value + " cannot be converted to type: " + targetType;
+    public InvalidQueryException(String query) {
+        super("Invalid XPath query: " + query);
     }
 }

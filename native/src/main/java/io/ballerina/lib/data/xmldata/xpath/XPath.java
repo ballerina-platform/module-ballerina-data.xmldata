@@ -27,7 +27,6 @@ import io.ballerina.runtime.api.types.semtype.Core;
 import io.ballerina.runtime.api.types.semtype.Env;
 import io.ballerina.runtime.api.types.semtype.SemType;
 import io.ballerina.runtime.api.types.semtype.ShapeAnalyzer;
-import io.ballerina.runtime.api.utils.TypeUtils;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTypedesc;
 import io.ballerina.runtime.api.values.BXml;
@@ -50,7 +49,15 @@ import java.util.Optional;
 import javax.xml.namespace.QName;
 import javax.xml.transform.stream.StreamSource;
 
-public class XPath {
+/**
+ * Utility class containing native implementations of functions defined in {@code xpath_api.bal}.
+ *
+ * @since 1.3.1
+ */
+public final class XPath {
+    private XPath() {
+
+    }
     private static final Processor processor = new Processor(false);
     private static final ConvertibleBasicType<?>[] SIMPLE_BASIC_TYPES = {
         ConvertibleBasicType.INT,
@@ -64,8 +71,7 @@ public class XPath {
         try {
             XdmValue result = query(from(query), from(value));
             return convertToBType(result, td);
-        } catch (SaxonApiException | ResultTypeMismatchException | NumberFormatException e) {
-            // TODO: handle SaxonApiException properly without exposing it to the user
+        } catch (InvalidQueryException | ResultTypeMismatchException e) {
             return DiagnosticLog.createXmlError(e.getMessage());
         }
     }
@@ -101,8 +107,8 @@ public class XPath {
             return ConvertibleBasicType.XML.convertToType(value);
         }
         String xmlString = value.iterator().next().getStringValue();
-        for (var each: SIMPLE_BASIC_TYPES) {
-            Optional<?> result = tryConvertToSimpleBasicType(cx, xmlString, each, ty);
+        for (ConvertibleBasicType<?> basicType: SIMPLE_BASIC_TYPES) {
+            Optional<?> result = tryConvertToSimpleBasicType(cx, xmlString, basicType, ty);
             if (result.isPresent()) {
                 return result.get();
             }
@@ -120,13 +126,15 @@ public class XPath {
         if (targetType.some() == 0 || result.isEmpty()) {
             return result;
         }
+
+        // We have converted to the basic type now we need to check if it is a subtype of the target type.
         E value = result.get();
-        // Note we have converted to the basic type now we need to check if it is a subtype of the target type.
         SemType inherentType = ShapeAnalyzer.inherentTypeOf(cx, value)
-                .orElseGet(() -> SemType.tryInto(cx, TypeUtils.getType(value)));
+                .orElseThrow(() -> new RuntimeException("Inherent type not found for: " + value));
         if (!Core.isSubType(cx, inherentType, targetType)) {
             return Optional.empty();
         }
+
         return result;
     }
 
@@ -138,16 +146,26 @@ public class XPath {
         throw new ResultTypeMismatchException(value, td.getDescribingType());
     }
 
-    static XdmValue query(String xPath, String xml) throws SaxonApiException {
+    private static XdmValue query(String xPath, String xml) throws InvalidQueryException {
         DocumentBuilder builder = processor.newDocumentBuilder();
-        XdmNode xmlDocument = builder.build(new StreamSource((new StringReader(xml))));
+        XdmNode xmlDocument;
+        try {
+            xmlDocument = builder.build(new StreamSource((new StringReader(xml))));
+        } catch (SaxonApiException e) {
+            // This should never happen since we are starting with a valid xml value
+            throw new RuntimeException(e);
+        }
 
         XPathCompiler xpathCompiler = processor.newXPathCompiler();
-        XPathExecutable executable = xpathCompiler.compile(xPath);
-        XPathSelector selector = executable.load();
+        try {
+            XPathExecutable executable = xpathCompiler.compile(xPath);
+            XPathSelector selector = executable.load();
 
-        selector.setContextItem(xmlDocument);
-        return selector.evaluate();
+            selector.setContextItem(xmlDocument);
+            return selector.evaluate();
+        } catch (SaxonApiException e) {
+            throw new InvalidQueryException(xPath);
+        }
     }
 
     private static String from(BString bString) {
@@ -156,6 +174,7 @@ public class XPath {
 
     private static String from(BXml bXml) {
         BXml xmlInput = bXml;
+        // Copied this workaround from XSLT library, ideally we should be able to do something better.
         if (xmlInput.getNodeType() == XmlNodeType.SEQUENCE) {
             xmlInput = ValueCreator.createXmlItem(new QName("root"), (BXmlSequence) xmlInput);
             String input = xmlInput.toString();
