@@ -16,9 +16,16 @@
 
 
 import ballerina/jballerina.java;
+import ballerina/lang.'object as obj;
+
+public type XPathRawTemplate object {
+    *obj:RawTemplate;
+    public string[] & readonly strings;
+    public (()|boolean|int|float|decimal|string|xml)[] insertions;
+};
 
 # Valid types to which the result of the XPath query can be projected.
-type XPathProjectionType ()|boolean|int|float|decimal|string;
+public type XPathProjectionType ()|boolean|int|float|decimal|string;
 
 # Transforms the XML value using the XPath query and projects the result to the specified type.
 #
@@ -27,6 +34,6 @@ type XPathProjectionType ()|boolean|int|float|decimal|string;
 # + td - The type to which the result of the XPath query should be projected
 # + return - On success, returns the projected value, if either query is invalid or result of query can't be projected
 # to the specified type, returns an `Error` value
-public isolated function transform(xml 'xml, string query, typedesc<XPathProjectionType|xml> td = <>) returns td|Error = @java:Method {
+public isolated function transform(xml 'xml, XPathRawTemplate query, typedesc<XPathProjectionType|xml> td = <>) returns td|Error = @java:Method {
     'class: "io.ballerina.lib.data.xmldata.xpath.XPath"
 } external;

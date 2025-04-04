@@ -27,6 +27,7 @@ dependencies = [
 	{org = "ballerina", name = "constraint"},
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerina", name = "lang.object"},
 	{org = "ballerina", name = "test"},
 	{org = "ballerina", name = "time"}
 ]
@@ -88,7 +89,9 @@ dependencies = [
 org = "ballerina"
 name = "lang.object"
 version = "0.0.0"
-scope = "testOnly"
+modules = [
+	{org = "ballerina", packageName = "lang.object", moduleName = "lang.object"}
+]
 
 [[package]]
 org = "ballerina"

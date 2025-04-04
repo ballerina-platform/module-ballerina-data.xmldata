@@ -27,7 +27,9 @@ import io.ballerina.runtime.api.types.semtype.Core;
 import io.ballerina.runtime.api.types.semtype.Env;
 import io.ballerina.runtime.api.types.semtype.SemType;
 import io.ballerina.runtime.api.types.semtype.ShapeAnalyzer;
-import io.ballerina.runtime.api.values.BString;
+import io.ballerina.runtime.api.utils.StringUtils;
+import io.ballerina.runtime.api.values.BArray;
+import io.ballerina.runtime.api.values.BObject;
 import io.ballerina.runtime.api.values.BTypedesc;
 import io.ballerina.runtime.api.values.BXml;
 import io.ballerina.runtime.api.values.BXmlSequence;
@@ -49,6 +51,8 @@ import java.util.Optional;
 import javax.xml.namespace.QName;
 import javax.xml.transform.stream.StreamSource;
 
+import static io.ballerina.runtime.api.utils.StringUtils.fromString;
+
 /**
  * Utility class containing native implementations of functions defined in {@code xpath_api.bal}.
  *
@@ -67,9 +71,9 @@ public final class XPath {
         ConvertibleBasicType.STRING,
     };
 
-    public static Object transform(BXml value, BString query, BTypedesc td) {
+    public static Object transform(BXml value, BObject query, BTypedesc td) {
         try {
-            XdmValue result = query(from(query), from(value));
+            XdmValue result = query(convertRawTemplateToString(query), from(value));
             return convertToBType(result, td);
         } catch (InvalidQueryException | ResultTypeMismatchException e) {
             return DiagnosticLog.createXmlError(e.getMessage());
@@ -168,10 +172,6 @@ public final class XPath {
         }
     }
 
-    private static String from(BString bString) {
-        return bString.getValue();
-    }
-
     private static String from(BXml bXml) {
         BXml xmlInput = bXml;
         // Copied this workaround from XSLT library, ideally we should be able to do something better.
@@ -182,5 +182,25 @@ public final class XPath {
             return input.substring(6, input.length() - 7).trim();
         }
         return xmlInput.toString();
+    }
+
+    public static String convertRawTemplateToString(BObject rawTemplate) {
+        BArray insertionsArray = rawTemplate.getArrayValue(fromString("insertions"));
+        BArray stringsArray = rawTemplate.getArrayValue(fromString("strings"));
+        int stringArraySize = stringsArray.size();
+        if (stringArraySize == 0) {
+            return "";
+        } else {
+            long insertionLength = insertionsArray.getLength();
+            StringBuilder query = new StringBuilder(stringsArray.getBString(0).getValue());
+            for (int i = 1; i < stringArraySize; i++) {
+                String templatedString = "";
+                if (i - 1 < insertionLength) {
+                    templatedString = StringUtils.getStringValue(insertionsArray.get(i - 1));
+                }
+                query.append(templatedString).append(stringsArray.getBString(i).getValue());
+            }
+            return query.toString();
+        }
     }
 }

@@ -19,204 +19,174 @@ import ballerina/test;
 @test:Config
 function emptyQueryTest() {
     xml value = xml `<root></root>`;
-    string query = "//b";
-    () result = checkpanic transform(value, query);
+    () result = checkpanic transform(value, `//b`);
     test:assertEquals(result, ());
 }
 
 @test:Config
 function xmlValueTest() {
     xml value = xml `<data><person><firstName>John</firstName><lastName>Doe</lastName></person></data>`;
-    string query = "/data/person";
-    xml result = checkpanic transform(value, query);
+    xml result = checkpanic transform(value, `/data/person`);
     xmlEqual(result, xml `<person><firstName>John</firstName><lastName>Doe</lastName></person>`);
 }
 
 @test:Config
 function stringValueTest() {
     xml value = xml `<root><name>John</name></root>`;
-    string query = "/root/name";
-    string result = checkpanic transform(value, query);
+    string result = checkpanic transform(value, `/root/name`);
     test:assertEquals(result, "John");
 
-    query = "/root/name/text()";
-    result = checkpanic transform(value, query);
+    result = checkpanic transform(value, `/root/name/text()`);
     test:assertEquals(result, "John");
 }
 
 @test:Config
 function stringSingleTest() {
     xml value = xml `<root><name>John</name></root>`;
-    string query = "/root/name";
-    "John" result = checkpanic transform(value, query);
+    "John" result = checkpanic transform(value, `/root/name`);
     test:assertEquals(result, "John");
 
-    query = "/root/name/text()";
-    result = checkpanic transform(value, query);
+    result = checkpanic transform(value, `/root/name/text()`);
     test:assertEquals(result, "John");
 }
 
 @test:Config
 function stringUnionSingleTest() {
     xml value = xml `<root><name>John</name></root>`;
-    string query = "/root/name";
-    "John"|"Jane" result = checkpanic transform(value, query);
+    "John"|"Jane" result = checkpanic transform(value, `/root/name`);
     test:assertEquals(result, "John");
 
-    query = "/root/name/text()";
-    result = checkpanic transform(value, query);
+    result = checkpanic transform(value, `/root/name/text()`);
     test:assertEquals(result, "John");
 }
 
 @test:Config
 function stringSingleErrorTest() {
     xml value = xml `<root><name>John</name></root>`;
-    string query = "/root/name";
-    "Jane"|error result = transform(value, query);
+    "Jane"|error result = transform(value, `/root/name`);
     test:assertTrue(result is Error);
 
-    query = "/root/name/text()";
-    result = transform(value, query);
+    result = transform(value, `/root/name/text()`);
     test:assertTrue(result is Error);
 }
 
 @test:Config
 function stringIntUnionTest() {
     xml value = xml `<root><value>John</value></root>`;
-    string query = "/root/value";
-    string|int result = checkpanic transform(value, query);
+    string|int result = checkpanic transform(value, `/root/value`);
     test:assertEquals(result, "John");
 
-    query = "/root/value/text()";
-    result = checkpanic transform(value, query);
+    result = checkpanic transform(value, `/root/value/text()`);
     test:assertEquals(result, "John");
 }
 
 @test:Config
 function booleanValueTest() {
     xml value = xml `<root><active>true</active></root>`;
-    string query = "/root/active";
-    boolean result = checkpanic transform(value, query);
+    boolean result = checkpanic transform(value, `/root/active`);
     test:assertEquals(result, true);
 }
 
 @test:Config
 function booleanSingleTest() {
     xml value = xml `<root><active>true</active></root>`;
-    string query = "/root/active";
-    true result = checkpanic transform(value, query);
+    true result = checkpanic transform(value, `/root/active`);
     test:assertEquals(result, true);
 }
 
 @test:Config
 function booleanUnionSingleTest() {
     xml value = xml `<root><active>true</active></root>`;
-    string query = "/root/active";
-    true|false result = checkpanic transform(value, query);
+    true|false result = checkpanic transform(value, `/root/active`);
     test:assertEquals(result, true);
 }
 
 @test:Config
 function booleanSingleErrorTest() {
     xml value = xml `<root><active>true</active></root>`;
-    string query = "/root/active";
-    false|error result = transform(value, query);
+    false|error result = transform(value, `/root/active`);
     test:assertTrue(result is Error);
 }
 
 @test:Config
 function booleanStringUnionTest() {
     xml value = xml `<root><value>true</value></root>`;
-    string query = "/root/value";
-    boolean|string result = checkpanic transform(value, query);
+    boolean|string result = checkpanic transform(value, `/root/value`);
     test:assertEquals(result, true);
 }
 
 @test:Config
 function stringValueTest2() {
     xml value = xml `<root><value>25</value></root>`;
-    string query = "/root/value";
-    string|int result = checkpanic transform(value, query);
+    string|int result = checkpanic transform(value, `/root/value`);
     test:assertEquals(result, 25);
 
-    query = "/root/value/text()";
-    result = checkpanic transform(value, query);
+    result = checkpanic transform(value, `/root/value/text()`);
     test:assertEquals(result, 25);
 }
 
 @test:Config
 function multiTypeUnionTest() {
     xml value = xml `<root><value>true</value></root>`;
-    string query = "/root/value";
-    boolean|string|int result = checkpanic transform(value, query);
+    boolean|string|int result = checkpanic transform(value, `/root/value`);
     test:assertEquals(result, true);
 
-    query = "/root/value/text()";
-    result = checkpanic transform(value, query);
+    result = checkpanic transform(value, `/root/value/text()`);
     test:assertEquals(result, true);
 }
 
 @test:Config
 function multiTypeUnionErrorTest() {
     xml value = xml `<root><value>invalid</value></root>`;
-    string query = "/root/value";
-    boolean|int|error result = transform(value, query);
+    boolean|int|error result = transform(value, `/root/value`);
     test:assertTrue(result is Error);
 
-    query = "/root/value/text()";
-    result = transform(value, query);
+    result = transform(value, `/root/value/text()`);
     test:assertTrue(result is Error);
 }
 
 @test:Config
 function stringBooleanIntUnionTest() {
     xml value = xml `<root><value>42</value></root>`;
-    string query = "/root/value";
-    string|boolean|int result = checkpanic transform(value, query);
+    string|boolean|int result = checkpanic transform(value, `/root/value`);
     test:assertEquals(result, 42);
 
-    query = "/root/value/text()";
-    result = checkpanic transform(value, query);
+    result = checkpanic transform(value, `/root/value/text()`);
     test:assertEquals(result, 42);
 }
 
 @test:Config
 function intValueTest() {
     xml value = xml `<root><age>25</age></root>`;
-    string query = "/root/age";
-    int result = checkpanic transform(value, query);
+    int result = checkpanic transform(value, `/root/age`);
     test:assertEquals(result, 25);
 }
 
 @test:Config
 function intSingleTest() {
     xml value = xml `<root><age>25</age></root>`;
-    string query = "/root/age";
-    25 result = checkpanic transform(value, query);
+    25 result = checkpanic transform(value, `/root/age`);
     test:assertEquals(result, 25);
 }
 
 @test:Config
 function intUnionSingleTest() {
     xml value = xml `<root><age>25</age></root>`;
-    string query = "/root/age";
-    25|30 result = checkpanic transform(value, query);
+    25|30 result = checkpanic transform(value, `/root/age`);
     test:assertEquals(result, 25);
 }
 
 @test:Config
 function intSingleErrorTest() {
     xml value = xml `<root><age>25</age></root>`;
-    string query = "/root/age";
-    30|error result = transform(value, query);
+    30|error result = transform(value, `/root/age`);
     test:assertTrue(result is Error);
 }
 
 @test:Config
 function intUnionSingleErrorTest() {
     xml value = xml `<root><age>25</age></root>`;
-    string query = "/root/age";
-    30|45|error result = transform(value, query);
+    30|45|error result = transform(value, `/root/age`);
     test:assertTrue(result is Error);
 }
 
@@ -226,8 +196,7 @@ function xmlSequenceTest() {
         <person><name>John</name><age>25</age></person>
         <person><name>Jane</name><age>30</age></person>
     </data>`;
-    string query = "//person";
-    xml result = checkpanic transform(value, query);
+    xml result = checkpanic transform(value, `//person`);
     xmlEqual(result, xml `<person><name>John</name><age>25</age></person><person><name>Jane</name><age>30</age></person>`);
 }
 
@@ -237,28 +206,24 @@ function stringSequenceErrorTest() {
         <person><name>John</name></person>
         <person><name>Jane</name></person>
     </data>`;
-    string query = "//person/name";
-    string|error result = transform(value, query);
+    string|error result = transform(value, `//person/name`);
     test:assertTrue(result is Error);
 
-    query = "//person/name/text()";
-    result = transform(value, query);
+    result = transform(value, `//person/name/text()`);
     test:assertTrue(result is Error);
 }
 
 @test:Config
 function invalidXPathQueryTest() {
     xml value = xml `<root><name>John</name></root>`;
-    string query = "//invalid[";
-    error|xml result = transform(value, query);
+    error|xml result = transform(value, `//invalid[`);
     test:assertTrue(result is Error);
 }
 
 @test:Config
 function noMatchingValueTest() {
     xml value = xml `<root><name>John</name></root>`;
-    string query = "//nonexistent";
-    () result = checkpanic transform(value, query);
+    () result = checkpanic transform(value, `//nonexistent`);
     test:assertEquals(result, ());
 }
 
@@ -269,8 +234,7 @@ function positionPredicateTest() {
         <person><name>Jane</name><age>30</age></person>
         <person><name>Bob</name><age>35</age></person>
     </data>`;
-    string query = "//person[2]";
-    xml result = checkpanic transform(value, query);
+    xml result = checkpanic transform(value, `//person[2]`);
     xmlEqual(result, xml `<person><name>Jane</name><age>30</age></person>`);
 }
 
@@ -280,8 +244,7 @@ function attributePredicateTest() {
         <person id="1"><name>John</name></person>
         <person id="2"><name>Jane</name></person>
     </data>`;
-    string query = "//person[@id='2']";
-    xml result = checkpanic transform(value, query);
+    xml result = checkpanic transform(value, `//person[@id='2']`);
     xmlEqual(result, xml `<person id="2"><name>Jane</name></person>`);
 }
 
@@ -291,8 +254,7 @@ function valuePredicateTest() {
         <person><name>John</name><age>25</age></person>
         <person><name>Jane</name><age>30</age></person>
     </data>`;
-    string query = "//person[age > 25]";
-    xml result = checkpanic transform(value, query);
+    xml result = checkpanic transform(value, `//person[age > 25]`);
     xmlEqual(result, xml `<person><name>Jane</name><age>30</age></person>`);
 }
 
@@ -303,16 +265,14 @@ function complexPredicateTest() {
         <person id="2"><name>Jane</name><age>30</age><active>false</active></person>
         <person id="3"><name>Bob</name><age>35</age><active>true</active></person>
     </data>`;
-    string query = "//person[age > 25 and active = 'true']";
-    xml result = checkpanic transform(value, query);
+    xml result = checkpanic transform(value, `//person[age > 25 and active = 'true']`);
     xmlEqual(result, xml `<person id="3"><name>Bob</name><age>35</age><active>true</active></person>`);
 }
 
 @test:Config
 function noMatchExpectedValueTest() {
     xml value = xml `<root><name>John</name></root>`;
-    string query = "/root/nonexistent";
-    string|error result = transform(value, query);
+    string|error result = transform(value, `/root/nonexistent`);
     test:assertTrue(result is Error);
 }
 
@@ -323,8 +283,7 @@ function containsPredicateTest() {
         <person><name>Jane Doe</name></person>
         <person><name>Bob Wilson</name></person>
     </data>`;
-    string query = "//person[contains(name, 'Smith')]";
-    xml result = checkpanic transform(value, query);
+    xml result = checkpanic transform(value, `//person[contains(name, 'Smith')]`);
     xmlEqual(result, xml `<person><name>John Smith</name></person>`);
 }
 
@@ -335,8 +294,7 @@ function binaryAndPredicateTest() {
         <person><name>Jane</name><age>30</age><city>Paris</city></person>
         <person><name>Bob</name><age>35</age><city>London</city></person>
     </data>`;
-    string query = "//person[age > 30 and city = 'London']";
-    xml result = checkpanic transform(value, query);
+    xml result = checkpanic transform(value, `//person[age > 30 and city = 'London']`);
     xmlEqual(result, xml `<person><name>Bob</name><age>35</age><city>London</city></person>`);
 }
 
@@ -347,11 +305,47 @@ function binaryOrPredicateTest() {
         <person><name>Jane</name><age>30</age><city>Paris</city></person>
         <person><name>Bob</name><age>35</age><city>London</city></person>
     </data>`;
-    string query = "//person[city = 'Paris' or age > 30]";
-    xml result = checkpanic transform(value, query);
+    xml result = checkpanic transform(value, `//person[city = 'Paris' or age > 30]`);
     xmlEqual(result, xml `<person><name>Jane</name><age>30</age><city>Paris</city></person><person><name>Bob</name><age>35</age><city>London</city></person>`);
 }
 
+@test:Config
+function variableNumericPredicateTest() {
+    xml value = xml `<data>
+        <person><name>John</name><age>25</age><active>true</active></person>
+        <person><name>Jane</name><age>30</age><active>true</active></person>
+        <person><name>Bob</name><age>35</age><active>true</active></person>
+    </data>`;
+    int minAge = 30;
+    xml result = checkpanic transform(value, `//person[age > ${minAge} and active = 'true']`);
+    xmlEqual(result, xml `<person><name>Bob</name><age>35</age><active>true</active></person>`);
+}
+
+@test:Config
+function variableStringPredicateTest() {
+    xml value = xml `<data>
+        <person><name>John</name><city>London</city></person>
+        <person><name>Jane</name><city>Paris</city></person>
+        <person><name>Bob</name><city>London</city></person>
+    </data>`;
+    string targetCity = "London";
+    xml result = checkpanic transform(value, `//person[city = '${targetCity}']`);
+    xmlEqual(result, xml `<person><name>John</name><city>London</city></person><person><name>Bob</name><city>London</city></person>`);
+}
+
+@test:Config
+function multipleVariablePredicateTest() {
+    xml value = xml `<data>
+        <person><name>John</name><age>25</age><city>London</city><active>false</active></person>
+        <person><name>Jane</name><age>30</age><city>Paris</city><active>true</active></person>
+        <person><name>Bob</name><age>35</age><city>London</city><active>true</active></person>
+    </data>`;
+    int minAge = 25;
+    string targetCity = "London";
+    boolean isActive = true;
+    xml result = checkpanic transform(value, `//person[age > ${minAge} and city = '${targetCity}' and active = '${isActive}']`);
+    xmlEqual(result, xml `<person><name>Bob</name><age>35</age><city>London</city><active>true</active></person>`);
+}
 
 function xmlEqual(xml actual, xml expected) {
     var whitespace = re `\s+`;
