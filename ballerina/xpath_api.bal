@@ -17,8 +17,16 @@
 
 import ballerina/jballerina.java;
 
-type SupportedType ()|boolean|int|float|decimal|string|xml;
+# Valid types to which the result of the XPath query can be projected.
+type XPathProjectionType ()|boolean|int|float|decimal|string;
 
-public isolated function transform(string query, xml value, typedesc<SupportedType> td = <>) returns td|Error = @java:Method {
+# Transforms the XML value using the XPath query and projects the result to the specified type.
+#
+# + query - The XPath query to be used for transformation
+# + value - The XML value to be transformed
+# + td - The type to which the result of the XPath query should be projected
+# + return - On success, returns the projected value, if either query is invalid or result of query can't be projected
+# to the specified type, returns an `Error` value
+public isolated function transform(string query, xml value, typedesc<XPathProjectionType|xml> td = <>) returns td|Error = @java:Method {
     'class: "io.ballerina.lib.data.xmldata.xpath.XPath"
 } external;
