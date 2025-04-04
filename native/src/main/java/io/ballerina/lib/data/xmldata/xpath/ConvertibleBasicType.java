@@ -46,6 +46,13 @@ interface ConvertibleBasicType<E> {
     SemType basicType();
     E convertToType(String xmlString);
 
+    default Optional<E> tryConvertToType(XdmValue xml) {
+        try {
+            return Optional.of(convertToType(xml));
+        } catch (Exception ignored) {
+            return Optional.empty();
+        }
+    }
     default E convertToType(XdmValue xml) {
         assert xml.size() == 1;
         return convertToType(xml.iterator().next().getStringValue());

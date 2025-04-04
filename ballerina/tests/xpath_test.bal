@@ -119,10 +119,10 @@ function booleanStringUnionTest() {
 function stringValueTest2() {
     xml value = xml `<root><value>25</value></root>`;
     string|int result = checkpanic transform(value, `/root/value`);
-    test:assertEquals(result, 25);
+    test:assertEquals(result, "25");
 
     result = checkpanic transform(value, `/root/value/text()`);
-    test:assertEquals(result, 25);
+    test:assertEquals(result, "25");
 }
 
 @test:Config
@@ -149,10 +149,10 @@ function multiTypeUnionErrorTest() {
 function stringBooleanIntUnionTest() {
     xml value = xml `<root><value>42</value></root>`;
     string|boolean|int result = checkpanic transform(value, `/root/value`);
-    test:assertEquals(result, 42);
+    test:assertEquals(result, "42");
 
     result = checkpanic transform(value, `/root/value/text()`);
-    test:assertEquals(result, 42);
+    test:assertEquals(result, "42");
 }
 
 @test:Config
@@ -345,6 +345,58 @@ function multipleVariablePredicateTest() {
     boolean isActive = true;
     xml result = checkpanic transform(value, `//person[age > ${minAge} and city = '${targetCity}' and active = '${isActive}']`);
     xmlEqual(result, xml `<person><name>Bob</name><age>35</age><city>London</city><active>true</active></person>`);
+}
+
+@test:Config
+function intFloatUnionOrderTest() {
+    xml value = xml `<root><value>42</value></root>`;
+    int|float result = checkpanic transform(value, `/root/value`);
+    test:assertTrue(result is int);
+    test:assertEquals(result, 42);
+
+    value = xml `<root><value>42.5</value></root>`;
+    result = checkpanic transform(value, `/root/value`);
+    test:assertTrue(result is float);
+    test:assertEquals(result, 42.5);
+}
+
+@test:Config
+function floatIntUnionOrderTest() {
+    xml value = xml `<root><value>42</value></root>`;
+    float|int result = checkpanic transform(value, `/root/value`);
+    test:assertTrue(result is float);
+    test:assertEquals(result, 42.0);
+
+    value = xml `<root><value>42.5</value></root>`;
+    result = checkpanic transform(value, `/root/value`);
+    test:assertTrue(result is float);
+    test:assertEquals(result, 42.5);
+}
+
+@test:Config
+function stringIntUnionOrderTest() {
+    xml value = xml `<root><value>42</value></root>`;
+    string|int result = checkpanic transform(value, `/root/value`);
+    test:assertTrue(result is string);
+    test:assertEquals(result, "42");
+
+    value = xml `<root><value>42.5</value></root>`;
+    result = checkpanic transform(value, `/root/value`);
+    test:assertTrue(result is string);
+    test:assertEquals(result, "42.5");
+}
+
+@test:Config
+function intStringUnionOrderTest() {
+    xml value = xml `<root><value>42</value></root>`;
+    int|string result = checkpanic transform(value, `/root/value`);
+    test:assertTrue(result is int);
+    test:assertEquals(result, 42);
+
+    value = xml `<root><value>42.5</value></root>`;
+    result = checkpanic transform(value, `/root/value`);
+    test:assertTrue(result is string);
+    test:assertEquals(result, "42.5");
 }
 
 function xmlEqual(xml actual, xml expected) {

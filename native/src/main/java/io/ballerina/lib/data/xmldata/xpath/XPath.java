@@ -21,6 +21,7 @@ package io.ballerina.lib.data.xmldata.xpath;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.types.Type;
+import io.ballerina.runtime.api.types.UnionType;
 import io.ballerina.runtime.api.types.XmlNodeType;
 import io.ballerina.runtime.api.types.semtype.Context;
 import io.ballerina.runtime.api.types.semtype.Core;
@@ -46,7 +47,9 @@ import net.sf.saxon.s9api.XdmValue;
 import org.ballerinalang.langlib.xml.Concat;
 
 import java.io.StringReader;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import javax.xml.namespace.QName;
 import javax.xml.transform.stream.StreamSource;
@@ -63,13 +66,15 @@ public final class XPath {
 
     }
     private static final Processor processor = new Processor(false);
-    private static final ConvertibleBasicType<?>[] SIMPLE_BASIC_TYPES = {
-        ConvertibleBasicType.INT,
-        ConvertibleBasicType.FLOAT,
-        ConvertibleBasicType.DECIMAL,
-        ConvertibleBasicType.BOOLEAN,
-        ConvertibleBasicType.STRING,
-    };
+
+    private static final List<ConvertibleBasicType<?>> DEFAULT_CANDIDATE_TYPES = List.of(
+            ConvertibleBasicType.INT,
+            ConvertibleBasicType.FLOAT,
+            ConvertibleBasicType.DECIMAL,
+            ConvertibleBasicType.BOOLEAN,
+            ConvertibleBasicType.STRING,
+            ConvertibleBasicType.XML
+    );
 
     public static Object transform(BXml value, BObject query, BTypedesc td) {
         try {
@@ -102,44 +107,35 @@ public final class XPath {
         return Concat.concat(items);
     }
 
+    // This is very inefficient, but number of candidates in td is typically small enough that it shouldn't be a
+    //  problem
     private static Object convertToSingleValue(Context cx, XdmValue value, BTypedesc td)
             throws ResultTypeMismatchException {
-        Type describingType = td.getDescribingType();
-        SemType ty = SemType.tryInto(cx, describingType);
-        if (Core.containsBasicType(ty, ConvertibleBasicType.XML.basicType())) {
-            // This is guaranteed to work since we have an XML to begin with
-            return ConvertibleBasicType.XML.convertToType(value);
-        }
-        String xmlString = value.iterator().next().getStringValue();
-        for (ConvertibleBasicType<?> basicType: SIMPLE_BASIC_TYPES) {
-            Optional<?> result = tryConvertToSimpleBasicType(cx, xmlString, basicType, ty);
-            if (result.isPresent()) {
-                return result.get();
-            }
-        }
-        throw new ResultTypeMismatchException(value, describingType);
+        SemType describingTy = SemType.tryInto(cx, td.getDescribingType());
+        return getCandidateSequence(cx, td).filter(candidate -> candidate.isValidCandidate(cx, td))
+                .map(candidate -> candidate.tryConvertToType(value))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .filter(v -> {
+                    SemType inherentType = ShapeAnalyzer.inherentTypeOf(cx, v)
+                            .orElseThrow(() -> new RuntimeException("Inherent type not found for: " + v));
+                    return Core.isSubType(cx, inherentType, describingTy);
+                })
+                .findFirst()
+                .orElseThrow(() -> new ResultTypeMismatchException(value, td.getDescribingType()));
     }
 
-    private static <E> Optional<E> tryConvertToSimpleBasicType(Context cx, String xml,
-            ConvertibleBasicType<E> convertibleType, SemType targetType) {
-        SemType basicType = convertibleType.basicType();
-        if (!Core.containsBasicType(targetType, basicType)) {
-            return Optional.empty();
+    private static Stream<ConvertibleBasicType<?>> getCandidateSequence(Context cx, BTypedesc td) {
+        Type describingType = td.getDescribingType();
+        if (!(describingType instanceof UnionType unionType)) {
+            return DEFAULT_CANDIDATE_TYPES.stream();
         }
-        Optional<E> result = convertibleType.tryConvertToType(xml);
-        if (targetType.some() == 0 || result.isEmpty()) {
-            return result;
-        }
+        return unionType.getMemberTypes().stream().flatMap(each -> getCandidateConvertibleTypes(cx, each));
+    }
 
-        // We have converted to the basic type now we need to check if it is a subtype of the target type.
-        E value = result.get();
-        SemType inherentType = ShapeAnalyzer.inherentTypeOf(cx, value)
-                .orElseThrow(() -> new RuntimeException("Inherent type not found for: " + value));
-        if (!Core.isSubType(cx, inherentType, targetType)) {
-            return Optional.empty();
-        }
-
-        return result;
+    private static Stream<ConvertibleBasicType<?>> getCandidateConvertibleTypes(Context cx, Type type) {
+        SemType ty = SemType.tryInto(cx, type);
+        return DEFAULT_CANDIDATE_TYPES.stream().filter(each -> Core.containsBasicType(ty, each.basicType()));
     }
 
     private static Object convertToNil(Context cx, XdmValue value, BTypedesc td) throws ResultTypeMismatchException {
