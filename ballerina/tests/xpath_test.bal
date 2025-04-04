@@ -206,6 +206,76 @@ function stringSequenceErrorTest() {
     test:assertTrue(result is Error);
 }
 
+@test:Config
+function invalidXPathQueryTest() {
+    xml value = xml `<root><name>John</name></root>`;
+    string query = "//invalid[";
+    error|xml result = transform(query, value);
+    test:assertTrue(result is Error);
+}
+
+@test:Config
+function noMatchingValueTest() {
+    xml value = xml `<root><name>John</name></root>`;
+    string query = "//nonexistent";
+    () result = checkpanic transform(query, value);
+    test:assertEquals(result, ());
+}
+
+@test:Config
+function positionPredicateTest() {
+    xml value = xml `<data>
+        <person><name>John</name><age>25</age></person>
+        <person><name>Jane</name><age>30</age></person>
+        <person><name>Bob</name><age>35</age></person>
+    </data>`;
+    string query = "//person[2]";
+    xml result = checkpanic transform(query, value);
+    xmlEqual(result, xml `<person><name>Jane</name><age>30</age></person>`);
+}
+
+@test:Config
+function attributePredicateTest() {
+    xml value = xml `<data>
+        <person id="1"><name>John</name></person>
+        <person id="2"><name>Jane</name></person>
+    </data>`;
+    string query = "//person[@id='2']";
+    xml result = checkpanic transform(query, value);
+    xmlEqual(result, xml `<person id="2"><name>Jane</name></person>`);
+}
+
+@test:Config
+function valuePredicateTest() {
+    xml value = xml `<data>
+        <person><name>John</name><age>25</age></person>
+        <person><name>Jane</name><age>30</age></person>
+    </data>`;
+    string query = "//person[age > 25]";
+    xml result = checkpanic transform(query, value);
+    xmlEqual(result, xml `<person><name>Jane</name><age>30</age></person>`);
+}
+
+@test:Config
+function complexPredicateTest() {
+    xml value = xml `<data>
+        <person id="1"><name>John</name><age>25</age><active>true</active></person>
+        <person id="2"><name>Jane</name><age>30</age><active>false</active></person>
+        <person id="3"><name>Bob</name><age>35</age><active>true</active></person>
+    </data>`;
+    string query = "//person[age > 25 and active = 'true']";
+    xml result = checkpanic transform(query, value);
+    xmlEqual(result, xml `<person id="3"><name>Bob</name><age>35</age><active>true</active></person>`);
+}
+
+@test:Config
+function noMatchExpectedValueTest() {
+    xml value = xml `<root><name>John</name></root>`;
+    string query = "/root/nonexistent";
+    string|error result = transform(query, value);
+    test:assertTrue(result is Error);
+}
+
 function xmlEqual(xml actual, xml expected) {
     var whitespace = re `\s+`;
     string actualString = whitespace.replaceAll(actual.toString(), "");
