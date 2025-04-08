@@ -64,6 +64,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 /**
  * Xmldata Record Field Validator.
@@ -72,6 +73,11 @@ import java.util.Optional;
  */
 public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnalysisContext> {
 
+    private final Predicate<FunctionCallExpressionNode> isParseFunctionPredicate =
+            createFunctionPredicateForName((functionName) -> functionName.contains(Constants.PARSE_STRING)
+                    || functionName.contains(Constants.PARSE_BYTES)
+                    || functionName.contains(Constants.PARSE_STREAM)
+                    || functionName.contains(Constants.PARSE_AS_TYPE));
     private SemanticModel semanticModel;
     private final HashMap<Location, DiagnosticInfo> allDiagnosticInfo = new HashMap<>();
     private String modulePrefix = Constants.XMLDATA;
@@ -145,11 +151,11 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             }
 
             TypeSymbol typeSymbol = ((VariableSymbol) symbol.get()).typeDescriptor();
-            if (!isParseFunctionFromXmldata(initializer.get())) {
+            if (isParseFunctionFromXmldata(initializer.get())) {
+                validateExpectedType(typeSymbol, symbol.get().getLocation(), ctx);
+            } else {
                 validateAnnotationUsageInAllInlineExpectedTypes(typeSymbol, ctx);
-                continue;
             }
-            validateExpectedType(typeSymbol, symbol.get().getLocation(), ctx);
         }
     }
 
@@ -246,11 +252,11 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         }
         TypeSymbol typeSymbol = ((VariableSymbol) symbol.get()).typeDescriptor();
 
-        if (!isParseFunctionFromXmldata(initializer.get())) {
+        if (isParseFunctionFromXmldata(initializer.get())) {
+            validateExpectedType(typeSymbol, symbol.get().getLocation(), ctx);
+        } else {
             validateAnnotationUsageInAllInlineExpectedTypes(typeSymbol, ctx);
-            return;
         }
-        validateExpectedType(typeSymbol, symbol.get().getLocation(), ctx);
     }
 
     private void processTypeDefinitionNode(TypeDefinitionNode typeDefinitionNode, SyntaxNodeAnalysisContext ctx) {
@@ -548,6 +554,11 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
     }
 
     private boolean isParseFunctionFromXmldata(ExpressionNode expressionNode) {
+        return isFunctionCallMatching(expressionNode, isParseFunctionPredicate);
+    }
+
+    private boolean isFunctionCallMatching(ExpressionNode expressionNode,
+                                           Predicate<FunctionCallExpressionNode> predicate) {
         if (expressionNode.kind() == SyntaxKind.CHECK_EXPRESSION) {
             expressionNode = ((CheckExpressionNode) expressionNode).expression();
         }
@@ -556,18 +567,24 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             return false;
         }
 
-        NameReferenceNode nameReferenceNode = ((FunctionCallExpressionNode) expressionNode).functionName();
-        if (nameReferenceNode.kind() != SyntaxKind.QUALIFIED_NAME_REFERENCE) {
-            return false;
-        }
-        String prefix = ((QualifiedNameReferenceNode) nameReferenceNode).modulePrefix().text();
-        if (!prefix.equals(modulePrefix)) {
-            return false;
-        }
+        FunctionCallExpressionNode functionCallExpression = (FunctionCallExpressionNode) expressionNode;
+        return predicate.test(functionCallExpression);
+    }
 
-        String functionName = ((FunctionCallExpressionNode) expressionNode).functionName().toSourceCode().trim();
-        return functionName.contains(Constants.PARSE_STRING) || functionName.contains(Constants.PARSE_BYTES)
-                || functionName.contains(Constants.PARSE_STREAM) || functionName.contains(Constants.PARSE_AS_TYPE);
+    private Predicate<FunctionCallExpressionNode> createFunctionPredicateForName(Predicate<String> namePredicate) {
+        return (functionCallExpression) -> {
+            NameReferenceNode nameReferenceNode = functionCallExpression.functionName();
+            if (nameReferenceNode.kind() != SyntaxKind.QUALIFIED_NAME_REFERENCE) {
+                return false;
+            }
+            String prefix = ((QualifiedNameReferenceNode) nameReferenceNode).modulePrefix().text();
+            if (!prefix.equals(modulePrefix)) {
+                return false;
+            }
+
+            String functionName = functionCallExpression.functionName().toSourceCode().trim();
+            return namePredicate.test(functionName);
+        };
     }
 
     private void reportDiagnosticInfo(SyntaxNodeAnalysisContext ctx, Optional<Location> location,
