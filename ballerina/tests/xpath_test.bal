@@ -399,6 +399,28 @@ function intStringUnionOrderTest() {
     test:assertEquals(result, "42.5");
 }
 
+enum Status {
+    ACTIVE,
+    INACTIVE,
+    PENDING
+}
+
+@test:Config
+function enumValueTest() {
+
+    xml value = xml `<root><status>ACTIVE</status></root>`;
+    Status result = checkpanic transform(value, `/root/status`);
+    test:assertEquals(result, ACTIVE);
+
+    value = xml `<root><status>INACTIVE</status></root>`;
+    result = checkpanic transform(value, `/root/status`);
+    test:assertEquals(result, INACTIVE);
+
+    value = xml `<root><status>PENDING</status></root>`;
+    result = checkpanic transform(value, `/root/status`);
+    test:assertEquals(result, PENDING);
+}
+
 function xmlEqual(xml actual, xml expected) {
     var whitespace = re `\s+`;
     string actualString = whitespace.replaceAll(actual.toString(), "");
