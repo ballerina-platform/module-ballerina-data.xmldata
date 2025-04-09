@@ -78,13 +78,19 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
                     || functionName.contains(Constants.PARSE_BYTES)
                     || functionName.contains(Constants.PARSE_STREAM)
                     || functionName.contains(Constants.PARSE_AS_TYPE));
+    private final Predicate<FunctionCallExpressionNode> isXPathFunctionPredicate =
+            createFunctionPredicateForName((name) -> name.contains("transform"));
     private SemanticModel semanticModel;
     private final HashMap<Location, DiagnosticInfo> allDiagnosticInfo = new HashMap<>();
     private String modulePrefix = Constants.XMLDATA;
+    private TypeDefinitionSymbol xPathSupportedTypes;
 
     @Override
     public void perform(SyntaxNodeAnalysisContext ctx) {
         semanticModel = ctx.semanticModel();
+        xPathSupportedTypes = (TypeDefinitionSymbol) semanticModel.types().getTypeByName(
+                "ballerina", "data.xmldata", "",  "SupportedType")
+                .orElseThrow(() -> new IllegalStateException("Failed to find XPath SupportedTypes"));
         List<Diagnostic> diagnostics = semanticModel.diagnostics();
         boolean erroneousCompilation = diagnostics.stream()
                 .anyMatch(d -> d.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR));
@@ -151,8 +157,11 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
             }
 
             TypeSymbol typeSymbol = ((VariableSymbol) symbol.get()).typeDescriptor();
-            if (isParseFunctionFromXmldata(initializer.get())) {
-                validateExpectedType(typeSymbol, symbol.get().getLocation(), ctx);
+            ExpressionNode expressionNode = initializer.get();
+            if (isParseFunctionFromXmldata(expressionNode)) {
+                validateParseFunctionExpectedType(typeSymbol, symbol.get().getLocation(), ctx);
+            } else if (isXpathTransformFunction(expressionNode)) {
+                validateXPathTransformFunctionExpectedType(typeSymbol, symbol.get().getLocation(), ctx);
             } else {
                 validateAnnotationUsageInAllInlineExpectedTypes(typeSymbol, ctx);
             }
@@ -173,8 +182,15 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         }
     }
 
-    private void validateExpectedType(TypeSymbol typeSymbol, Optional<Location> location,
-                                      SyntaxNodeAnalysisContext ctx) {
+    private void validateXPathTransformFunctionExpectedType(TypeSymbol typeSymbol, Optional<Location> location,
+                                                            SyntaxNodeAnalysisContext ctx) {
+        if (!typeSymbol.subtypeOf(xPathSupportedTypes.typeDescriptor())) {
+            reportDiagnosticInfo(ctx, location, XmldataDiagnosticCodes.UNSUPPORTED_XPATH_TYPE);
+        }
+    }
+
+    private void validateParseFunctionExpectedType(TypeSymbol typeSymbol, Optional<Location> location,
+                                                   SyntaxNodeAnalysisContext ctx) {
         if (isNotValidExpectedType(typeSymbol)) {
             reportDiagnosticInfo(ctx, location, XmldataDiagnosticCodes.EXPECTED_RECORD_TYPE);
         }
@@ -186,8 +202,8 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
                 validateXsdModelGroupAnnotations(recordSymbol, ctx);
                 processRecordFieldsType(recordSymbol, ctx);
             }
-            case TYPE_REFERENCE -> validateExpectedType(((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor(),
-                    location, ctx);
+            case TYPE_REFERENCE -> validateParseFunctionExpectedType(
+                    ((TypeReferenceTypeSymbol) typeSymbol).typeDescriptor(), location, ctx);
             case UNION -> {
                 int recordCount = 0;
                 for (TypeSymbol memberTSymbol : ((UnionTypeSymbol) typeSymbol).memberTypeDescriptors()) {
@@ -196,7 +212,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
                         continue;
                     }
                     if (typeDescKind == TypeDescKind.RECORD) {
-                        validateExpectedType(memberTSymbol, location, ctx);
+                        validateParseFunctionExpectedType(memberTSymbol, location, ctx);
                         recordCount++;
                     }
                 }
@@ -252,8 +268,11 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
         }
         TypeSymbol typeSymbol = ((VariableSymbol) symbol.get()).typeDescriptor();
 
-        if (isParseFunctionFromXmldata(initializer.get())) {
-            validateExpectedType(typeSymbol, symbol.get().getLocation(), ctx);
+        ExpressionNode expressionNode = initializer.get();
+        if (isParseFunctionFromXmldata(expressionNode)) {
+            validateParseFunctionExpectedType(typeSymbol, symbol.get().getLocation(), ctx);
+        } else if (isXpathTransformFunction(expressionNode)) {
+            validateXPathTransformFunctionExpectedType(typeSymbol, symbol.get().getLocation(), ctx);
         } else {
             validateAnnotationUsageInAllInlineExpectedTypes(typeSymbol, ctx);
         }
@@ -555,6 +574,10 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
 
     private boolean isParseFunctionFromXmldata(ExpressionNode expressionNode) {
         return isFunctionCallMatching(expressionNode, isParseFunctionPredicate);
+    }
+
+    private boolean isXpathTransformFunction(ExpressionNode expressionNode) {
+        return isFunctionCallMatching(expressionNode, isXPathFunctionPredicate);
     }
 
     private boolean isFunctionCallMatching(ExpressionNode expressionNode,

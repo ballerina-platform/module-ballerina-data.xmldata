@@ -21,11 +21,13 @@ import ballerina/lang.'object as obj;
 public type XPathRawTemplate object {
     *obj:RawTemplate;
     public string[] & readonly strings;
-    public (()|boolean|int|float|decimal|string|xml)[] insertions;
+    public anydata[] insertions;
 };
 
-# Valid types to which the result of the XPath query can be projected.
-public type XPathProjectionType ()|boolean|int|float|decimal|string;
+# Valid types to which the result of the XPath query can be projected. This will be used by the compiler plugin to
+# validate usages of `transform` function. Since compiler plugin don't fully cover all possible cases, we need to
+# validate at runtime as well.
+type SupportedType ()|boolean|int|float|decimal|string|xml;
 
 # Transforms the XML value using the XPath query and projects the result to the specified type.
 #
@@ -34,6 +36,6 @@ public type XPathProjectionType ()|boolean|int|float|decimal|string;
 # + td - The type to which the result of the XPath query should be projected
 # + return - On success, returns the projected value, if either query is invalid or result of query can't be projected
 # to the specified type, returns an `Error` value
-public isolated function transform(xml 'xml, XPathRawTemplate query, typedesc<XPathProjectionType|xml> td = <>) returns td|Error = @java:Method {
+public isolated function transform(xml 'xml, XPathRawTemplate query, typedesc<anydata> td = <>) returns td|Error = @java:Method {
     'class: "io.ballerina.lib.data.xmldata.xpath.XPath"
 } external;
