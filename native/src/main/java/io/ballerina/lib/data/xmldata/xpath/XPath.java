@@ -57,9 +57,10 @@ import javax.xml.transform.stream.StreamSource;
 import static io.ballerina.runtime.api.utils.StringUtils.fromString;
 
 /**
- * Utility class containing native implementations of functions defined in {@code xpath_api.bal}.
+ * Utility class containing native implementations of functions defined in
+ * {@code xpath_api.bal}.
  *
- * @since 1.3.1
+ * @since 1.3.2
  */
 public final class XPath {
     private XPath() {

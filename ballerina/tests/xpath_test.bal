@@ -421,6 +421,20 @@ function enumValueTest() {
     test:assertEquals(result, PENDING);
 }
 
+@test:Config
+function testRuntimeValidation() {
+    error? e = trap contextuallyExpectedTypeFromParameter();
+    test:assertTrue(e is Error);
+}
+
+function contextuallyExpectedTypeFromParameter() {
+    xml value = xml `<root></root>`;
+    foo(checkpanic transform(value, `//b`));
+}
+
+function foo(map<anydata> m) {
+}
+
 function xmlEqual(xml actual, xml expected) {
     var whitespace = re `\s+`;
     string actualString = whitespace.replaceAll(actual.toString(), "");
