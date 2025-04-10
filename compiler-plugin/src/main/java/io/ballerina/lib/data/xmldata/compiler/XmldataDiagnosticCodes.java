@@ -46,7 +46,9 @@ public enum XmldataDiagnosticCodes {
     INVALID_CHOICE_REST_TYPE("XML_ERROR_209",
             "Invalid choice member: Choice members should be defined in a closed record", ERROR),
     INVALID_ANNOTATIONS("XML_ERROR_210", "A record field cannot contains " +
-            "sequence/choice/element/attribute annotations simultaneously", ERROR);
+            "sequence/choice/element/attribute annotations simultaneously", ERROR),
+    UNSUPPORTED_XPATH_TYPE("XML_ERROR_211", "unsupported type: XPath projection does not support the " +
+            "expected type", ERROR);
 
     private final String code;
     private final String message;

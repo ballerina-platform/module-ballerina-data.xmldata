@@ -20,3 +20,11 @@ groupId = "io.ballerina.stdlib"
 artifactId = "constraint-native"
 version = "@constraint.version@"
 path = "./lib/constraint-native-@stdlib.constraintnative.version@.jar"
+
+[[platform.java21.dependency]]
+path = "./lib/Saxon-HE-@project.saxonHeVersion@.jar"
+version = "@project.saxonHeVersion@"
+
+[[platform.java21.dependency]]
+path = "./lib/xmlresolver-@project.xmlResolverVersion@.jar"
+version = "@xmlresolver.version@"

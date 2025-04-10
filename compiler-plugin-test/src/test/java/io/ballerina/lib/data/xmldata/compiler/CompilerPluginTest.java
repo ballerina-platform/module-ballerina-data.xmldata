@@ -235,4 +235,16 @@ public class CompilerPluginTest {
         Assert.assertEquals(getErrorMessage(errorDiagnosticsList, 8),
                 "Invalid choice member: Choice members should be defined in a closed record");
     }
+
+    @Test
+    public void testXPathDiagnostics() {
+        DiagnosticResult diagnosticResult =
+                CompilerPluginTestUtils.loadPackage("sample_package_14").getCompilation().diagnosticResult();
+        List<Diagnostic> expectedTypeErrors = diagnosticResult.diagnostics().stream()
+                .filter(r -> r.diagnosticInfo().severity().equals(DiagnosticSeverity.ERROR))
+                .filter(diagnostic -> diagnostic.diagnosticInfo().messageFormat()
+                        .equals(XmldataDiagnosticCodes.UNSUPPORTED_XPATH_TYPE.getMessage())).toList();
+        Assert.assertEquals(expectedTypeErrors.size(), 4);
+    }
+
 }

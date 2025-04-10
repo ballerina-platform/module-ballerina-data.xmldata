@@ -5,7 +5,7 @@
 
 [ballerina]
 dependencies-toml-version = "2"
-distribution-version = "2201.12.0"
+distribution-version = "2201.12.2"
 
 [[package]]
 org = "ballerina"
@@ -22,11 +22,12 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "data.xmldata"
-version = "1.3.1"
+version = "1.3.2"
 dependencies = [
 	{org = "ballerina", name = "constraint"},
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerina", name = "lang.object"},
 	{org = "ballerina", name = "test"},
 	{org = "ballerina", name = "time"}
 ]
@@ -88,7 +89,9 @@ dependencies = [
 org = "ballerina"
 name = "lang.object"
 version = "0.0.0"
-scope = "testOnly"
+modules = [
+	{org = "ballerina", packageName = "lang.object", moduleName = "lang.object"}
+]
 
 [[package]]
 org = "ballerina"

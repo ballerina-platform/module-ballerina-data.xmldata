@@ -1,0 +1,509 @@
+[
+    {
+        "name": "net.sf.saxon.Configuration",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": []
+            }
+        ]
+    },
+    {
+        "name": "net.sf.saxon.functions.StringJoin",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": []
+            }
+        ]
+    },
+    {
+        "name": "net.sf.saxon.functions.String_1",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": []
+            }
+        ]
+    },
+    {
+        "name": "net.sf.saxon.functions.Tokenize_1",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": []
+            }
+        ]
+    },
+    {
+        "name": "org.xmlresolver.loaders.XmlLoader",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.xmlresolver.ResolverConfiguration"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "net.sf.saxon.functions.ExtensionFunctionCall",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.Configuration",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Extensions",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.exslt.Common",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.exslt.Sets",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.exslt.Math",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.exslt.Date",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.exslt.Random",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "java.math.BigDecimal",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.style.LiteralResultElement",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Evaluate",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Rounding",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Adjust",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Aggregate",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.BaseURI",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.BooleanFn",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.CodepointEqual",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.CodepointsToString",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Collection",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Compare",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Concat",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Contains",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Current",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.CurrentDateTime",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.CurrentGroup",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Data",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.DateTimeConstructor",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Component",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.DeepEqual",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.DefaultCollation",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.DistinctValues",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Doc",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.DocAvailable",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Document",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.NamePart",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Existence",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Contains",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Available",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.EscapeURI",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Error",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.TreatFn",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Existence",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.BooleanFn",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Rounding",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.FormatDate",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.FormatNumber",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.FormatDate",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Id",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Idref",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.InScopePrefixes",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.IndexOf",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Insert",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.KeyFn",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Lang",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Last",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.ForceCase",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Matches",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Minimax",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.NamespaceForPrefix",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Nilled",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.NormalizeSpace",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.NormalizeUnicode",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.NumberFn",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.TreatFn",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Position",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Put",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.QNameFn",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.RegexGroup",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Remove",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Replace",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.ResolveQName",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.ResolveURI",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Reverse",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Root",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.StaticBaseURI",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.StringFn",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.StringLength",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.StringJoin",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.StringToCodepoints",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Subsequence",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Substring",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.SystemProperty",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Trace",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Translate",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Tokenize",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Unordered",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.UnparsedEntity",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.UnparsedText",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.IsWholeNumber",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.ItemAt",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Parse",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    },
+    {
+        "name": "net.sf.saxon.functions.Serialize",
+        "allDeclaredConstructors": true,
+        "allPublicConstructors": true
+    }
+]

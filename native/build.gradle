@@ -37,6 +37,8 @@ dependencies {
     implementation group: 'org.ballerinalang', name: 'map', version: "${ballerinaLangVersion}"
 
     implementation group: 'io.ballerina.stdlib', name: 'constraint-native', version: "${stdlibConstraintVersion}"
+
+    implementation(group: 'net.sf.saxon', name: 'Saxon-HE', version: "${saxonHeVersion}")
 }
 
 checkstyle {
