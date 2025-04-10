@@ -36,6 +36,6 @@ type SupportedType ()|boolean|int|float|decimal|string|xml;
 # + td - The type to which the result of the XPath query should be projected
 # + return - On success, returns the projected value, if either query is invalid or result of query can't be projected
 # to the specified type, returns an `Error` value
-public isolated function transform(xml 'xml, XPathRawTemplate query, typedesc<anydata> td = <>) returns td|Error = @java:Method {
+public isolated function transform(xml xmlValue, XPathRawTemplate query, typedesc<anydata> td = <>) returns td|Error = @java:Method {
     'class: "io.ballerina.lib.data.xmldata.xpath.XPath"
 } external;
