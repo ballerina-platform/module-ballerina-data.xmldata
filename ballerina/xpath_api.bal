@@ -14,7 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 import ballerina/jballerina.java;
 import ballerina/lang.'object as obj;
 
@@ -31,7 +30,7 @@ type SupportedType ()|boolean|int|float|decimal|string|xml;
 
 # Transforms the XML value using the XPath query and projects the result to the specified type.
 #
-# + 'xml - The XML value to be transformed
+# + xmlValue - The XML value to be transformed
 # + query - The XPath query to be used for transformation
 # + td - The type to which the result of the XPath query should be projected
 # + return - On success, returns the projected value, if either query is invalid or result of query can't be projected
