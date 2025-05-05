@@ -117,7 +117,8 @@ public class XmlTraversal {
         
         private Object traverseXmlWithRecordAsExpectedType(BXml xml, XmlAnalyzerData analyzerData,
                                                            RecordType recordType) {
-            analyzerData.currentNode = ValueCreator.createRecordValue(recordType.getPackage(), recordType.getName());
+            analyzerData.currentNode = recordType.getPackage() == null ? ValueCreator.createRecordValue(recordType) :
+                    ValueCreator.createRecordValue(recordType.getPackage(), recordType.getName());
             BXml nextXml = validateRootElement(xml, recordType, analyzerData);
             Object resultRecordValue = traverseXml(nextXml, recordType, analyzerData);
             validateModelGroupStackForRootElement(analyzerData);
