@@ -232,7 +232,7 @@ public class XmldataRecordFieldValidator implements AnalysisTask<SyntaxNodeAnaly
 
     private boolean isNotValidExpectedType(TypeSymbol typeSymbol) {
         switch (typeSymbol.typeKind()) {
-            case RECORD -> {
+            case RECORD, MAP -> {
                 return false;
             }
             case TYPE_REFERENCE -> {
