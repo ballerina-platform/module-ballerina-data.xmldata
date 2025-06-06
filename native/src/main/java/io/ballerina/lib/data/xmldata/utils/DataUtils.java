@@ -44,6 +44,7 @@ import io.ballerina.runtime.api.types.TypeTags;
 import io.ballerina.runtime.api.types.UnionType;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.utils.TypeUtils;
+import io.ballerina.runtime.api.utils.ValueUtils;
 import io.ballerina.runtime.api.values.BArray;
 import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BMap;
@@ -253,6 +254,7 @@ public class DataUtils {
             case TypeTags.ARRAY_TAG -> result = convertStringToExpType(value,
                     ((ArrayType) refferedType).getElementType());
             case TypeTags.UNION_TAG -> result = convertStringToUnionExpType(value, expType);
+            case TypeTags.XML_TAG -> result = ValueUtils.convert(value, expType);
             default -> result = FromString.fromStringWithType(value, expType);
         }
 
@@ -376,7 +378,7 @@ public class DataUtils {
         switch (type.getTag()) {
             case TypeTags.NULL_TAG, TypeTags.INT_TAG, TypeTags.BYTE_TAG, TypeTags.FLOAT_TAG, TypeTags.DECIMAL_TAG,
                  TypeTags.BOOLEAN_TAG, TypeTags.STRING_TAG, TypeTags.RECORD_TYPE_TAG, TypeTags.MAP_TAG,
-                    TypeTags.JSON_TAG, TypeTags.ANYDATA_TAG, TypeTags.FINITE_TYPE_TAG -> {
+                    TypeTags.JSON_TAG, TypeTags.ANYDATA_TAG,  TypeTags.FINITE_TYPE_TAG, TypeTags.XML_TAG -> {
                 return true;
             }
             case TypeTags.ARRAY_TAG -> {
@@ -429,6 +431,16 @@ public class DataUtils {
 
     public static boolean isSameAttributeFlag(QualifiedName.AttributeState flag1, QualifiedName.AttributeState flag2) {
         return flag1 == NOT_DEFINED || flag2 == NOT_DEFINED || flag1.equals(flag2);
+    }
+
+    public static boolean isXMLArrayType(Type type) {
+        if (type.getTag() != TypeTags.ARRAY_TAG) {
+            return false;
+        }
+
+        ArrayType arrayType = (ArrayType) type;
+        Type elementType = arrayType.getElementType();
+        return TypeTags.isXMLTypeTag(elementType.getTag());
     }
 
     public static Object getModifiedRecord(BMap<BString, Object> input, BString textFieldName, BTypedesc type) {
