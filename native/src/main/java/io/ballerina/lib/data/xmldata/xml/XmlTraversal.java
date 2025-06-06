@@ -235,10 +235,16 @@ public class XmlTraversal {
                 }
 
                 ArrayType arrayType = (ArrayType) fieldType;
+                Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
                 int currentIndex = analyzerData.arrayIndexes.peek().get(fieldName.getValue());
                 if (arrayType.getState() == ArrayType.ArrayState.CLOSED && arrayType.getSize() <= currentIndex) {
                     DataUtils.logArrayMismatchErrorIfProjectionNotAllowed(analyzerData.allowDataProjection);
                     return;
+                }
+                if (elementType.getTag() == TypeTags.XML_TEXT_TAG &&
+                        xml.getType().getTag() == TypeTags.XML_ELEMENT_TAG) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.CANNOT_CONVERT_TO_EXPECTED_TYPE,
+                            PredefinedTypes.TYPE_XML_TEXT_SEQUENCE.getName(), xml, fieldType);
                 }
                 ((BArray) value).add(currentIndex, convertedValue);
             } else {
@@ -415,7 +421,8 @@ public class XmlTraversal {
                             mapValue, analyzerData);
                 case TypeTags.UNION_TAG -> convertToUnionMemberType(xmlItem, fieldName, fieldType,
                         elementType, mapValue, analyzerData);
-                case TypeTags.XML_TAG -> traverseXml(xmlItem, fieldType, analyzerData);
+                case TypeTags.XML_TAG, TypeTags.XML_ELEMENT_TAG, TypeTags.XML_TEXT_TAG -> traverseXml(xmlItem,
+                        fieldType, analyzerData);
                 default -> traverseXml(xmlItem.getChildrenSeq(), fieldType, analyzerData);
             }
         }

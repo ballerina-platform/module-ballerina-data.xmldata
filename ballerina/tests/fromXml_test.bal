@@ -3269,6 +3269,39 @@ function testXmlStringToRecordNegative12() {
 
     RecAtt6|error rec = parseString(xmlStr);
     test:assertEquals((<error>rec).message(), "required attribute 'data' not present in XML");
+
+    xml xmlVal3 = xml `
+        <Data>
+            <A><C>1</C></A>
+            <A>f</A>
+            <B>ee</B>
+        </Data>
+        `;
+    record {|
+        xml:Text[] A;
+    |}|error textRec = parseAsType(xmlVal3);
+    test:assertTrue(textRec is error);
+    test:assertEquals((<error>textRec).message(),
+        "'xml' value '<A><C>1</C></A>' cannot be converted to 'lang.xml:Text[]'");
+}
+
+@test:Config {
+    groups: ["fromXml"]
+}
+function testXmlTextToRecordFieldWithXmlTextType() {
+    xml xmlVal3 = xml `
+        <Data>
+            <A><C>1</C></A>
+            <A>f</A>
+            <B>ee</B>
+        </Data>
+        `;
+    record {|
+        xml:Text[] A;
+    |}|error textRec = parseAsType(xmlVal3);
+    test:assertTrue(textRec is error);
+    test:assertEquals((<error>textRec).message(),
+        "'xml' value '<A><C>1</C></A>' cannot be converted to 'lang.xml:Text[]'");
 }
 
 @test:Config {
@@ -3777,6 +3810,16 @@ function testFromXmlForRecordsWithXmlFields() returns error? {
     xml exp = xml `<text><A>1</A><!-- comment --></text>`;
     Component component = check parseAsType(value);
     test:assertEquals(exp, component?.section?.text);
+
+    xml xmlVal1 = xml `
+                <Data>
+                    <A>1</A>
+                </Data>
+                `;
+            record {|
+                xml:Element A;
+    |} rec = check parseAsType(xmlVal1);
+    test:assertEquals(rec.A[0], xml `<A>1</A>`);
 }
 
 public type Section record {
@@ -3802,4 +3845,17 @@ function testFromXmlForXmlArrayFields() returns error? {
     |} rec = check parseAsType(xmlVal1);
     test:assertEquals(rec.A[0], xml `<A>1</A>`);
     test:assertEquals(rec.A[1], xml `<A>2</A>`);
+
+    xml xmlVal3 = xml `
+        <Data>
+            <A><C>1</C></A>
+            <A>f</A>
+            <B>ee</B>
+        </Data>
+        `;
+        record {|
+            xml:Element[] A;
+        |} rec3 = check parseAsType(xmlVal3);
+    test:assertEquals(rec3.A[0], xml `<A><C>1</C></A>`);
+    test:assertEquals(rec3.A[1], xml `<A>f</A>`);
 }
