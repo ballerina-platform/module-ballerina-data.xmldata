@@ -46,6 +46,7 @@ import io.ballerina.runtime.api.values.BTypedesc;
 import io.ballerina.runtime.api.values.BXml;
 import io.ballerina.runtime.api.values.BXmlItem;
 import io.ballerina.runtime.api.values.BXmlSequence;
+import org.ballerinalang.langlib.xml.Concat;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -150,19 +151,25 @@ public class XmlTraversal {
 
         private Object traverseXml(BXml xml, Type type, XmlAnalyzerData analyzerData) {
             switch (xml.getNodeType()) {
-                case ELEMENT -> convertElement((BXmlItem) xml, analyzerData);
+                case ELEMENT -> {
+                    if (!(DataUtils.isXMLArrayType(type) || TypeTags.isXMLTypeTag(type.getTag()))) {
+                        convertElement((BXmlItem) xml, analyzerData);
+                    } else {
+                        convertXml(xml, type.getTag(), analyzerData);
+                    }
+                }
                 case SEQUENCE -> convertSequence((BXmlSequence) xml, type, analyzerData);
-                case TEXT -> convertText(xml.toString(), analyzerData);
+                case TEXT -> convertXml(xml, TypeTags.STRING_TAG, analyzerData);
             }
 
             return analyzerData.currentNode;
         }
 
         @SuppressWarnings("unchecked")
-        private void convertText(String text, XmlAnalyzerData analyzerData) {
+        private void convertXml(BXml xml, int typeTag, XmlAnalyzerData analyzerData) {
             Field currentField = analyzerData.currentField;
             BMap<BString, Object> mapValue = analyzerData.currentNode;
-
+            boolean isText = typeTag == TypeTags.STRING_TAG;
             String textFieldName = analyzerData.textFieldName;
             if (currentField == null) {
                 QualifiedName contentQName = QualifiedNameFactory.createQualifiedName("", textFieldName, "",
@@ -199,7 +206,8 @@ public class XmlTraversal {
                         if (!(value instanceof BArray) && memberType.getTag() == TypeTags.ARRAY_TAG) {
                             continue;
                         }
-                        convertedValue = DataUtils.convertStringToExpType(StringUtils.fromString(text), memberType);
+                        convertedValue = isText ? DataUtils.convertStringToExpType(StringUtils.fromString(xml.
+                                toString()), memberType) : xml.copy(new HashMap<>());
                         fieldType = memberType;
                         break;
                     } catch (Exception ex) {
@@ -211,7 +219,8 @@ public class XmlTraversal {
                     throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE, fieldName, fieldType);
                 }
             } else {
-                convertedValue = DataUtils.convertStringToExpType(StringUtils.fromString(text), fieldType);
+                convertedValue = isText ? DataUtils.convertStringToExpType(StringUtils.fromString(xml.toString()),
+                        fieldType) : xml.copy(new HashMap<>());
             }
 
             if (value instanceof BArray) {
@@ -226,16 +235,22 @@ public class XmlTraversal {
                 }
 
                 ArrayType arrayType = (ArrayType) fieldType;
+                Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
                 int currentIndex = analyzerData.arrayIndexes.peek().get(fieldName.getValue());
                 if (arrayType.getState() == ArrayType.ArrayState.CLOSED && arrayType.getSize() <= currentIndex) {
                     DataUtils.logArrayMismatchErrorIfProjectionNotAllowed(analyzerData.allowDataProjection);
                     return;
                 }
+                if (elementType.getTag() == TypeTags.XML_TEXT_TAG &&
+                        xml.getType().getTag() == TypeTags.XML_ELEMENT_TAG) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.CANNOT_CONVERT_TO_EXPECTED_TYPE,
+                            PredefinedTypes.TYPE_XML_TEXT_SEQUENCE.getName(), xml, fieldType);
+                }
                 ((BArray) value).add(currentIndex, convertedValue);
             } else {
                 if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
                     throw DiagnosticLog.error(DiagnosticErrorCode.CANNOT_CONVERT_TO_EXPECTED_TYPE,
-                            PredefinedTypes.TYPE_STRING.getName(), text, fieldType);
+                            PredefinedTypes.TYPE_STRING.getName(), xml, fieldType);
                 }
                 mapValue.put(fieldName, convertedValue);
             }
@@ -337,7 +352,13 @@ public class XmlTraversal {
                             mapValue, analyzerData);
                 case TypeTags.UNION_TAG -> convertFieldTypeToUnion(xmlItem, currentField, fieldName,
                         currentFieldType, mapValue, analyzerData);
-                default -> traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
+                default -> {
+                    if (TypeTags.isXMLTypeTag(currentFieldType.getTag())) {
+                        traverseXml(xmlItem, currentFieldType, analyzerData);
+                    } else {
+                        traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
+                    }
+                }
             }
         }
 
@@ -400,6 +421,8 @@ public class XmlTraversal {
                             mapValue, analyzerData);
                 case TypeTags.UNION_TAG -> convertToUnionMemberType(xmlItem, fieldName, fieldType,
                         elementType, mapValue, analyzerData);
+                case TypeTags.XML_TAG, TypeTags.XML_ELEMENT_TAG, TypeTags.XML_TEXT_TAG -> traverseXml(xmlItem,
+                        fieldType, analyzerData);
                 default -> traverseXml(xmlItem.getChildrenSeq(), fieldType, analyzerData);
             }
         }
@@ -767,12 +790,7 @@ public class XmlTraversal {
             if (!DataUtils.isStringValueAssignable(type.getTag())) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_TYPE, type, PredefinedTypes.TYPE_STRING);
             }
-
-            StringBuilder textBuilder = new StringBuilder();
-            for (BXml bXml: sequence) {
-                textBuilder.append(bXml.toString());
-            }
-            convertText(textBuilder.toString(), analyzerData);
+            convertXml(Concat.concat(sequence.toArray()), TypeTags.STRING_TAG, analyzerData);
             return analyzerData.currentNode;
         }
 

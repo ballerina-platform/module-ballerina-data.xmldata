@@ -34,6 +34,7 @@ import io.ballerina.runtime.api.values.BDecimal;
 import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTypedesc;
+import org.ballerinalang.langlib.xml.CreateText;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -110,6 +111,8 @@ public class FromString {
                     return fromStringWithType(string, ((ReferenceType) expType).getReferredType());
                 case TypeTags.FINITE_TYPE_TAG:
                     return stringToFiniteType(value, (FiniteType) expType);
+                case TypeTags.XML_TEXT_TAG:
+                    return CreateText.createText(string);
                 default:
                     return returnError(value, expType.toString());
             }

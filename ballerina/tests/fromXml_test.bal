@@ -3269,6 +3269,39 @@ function testXmlStringToRecordNegative12() {
 
     RecAtt6|error rec = parseString(xmlStr);
     test:assertEquals((<error>rec).message(), "required attribute 'data' not present in XML");
+
+    xml xmlVal3 = xml `
+        <Data>
+            <A><C>1</C></A>
+            <A>f</A>
+            <B>ee</B>
+        </Data>
+        `;
+    record {|
+        xml:Text[] A;
+    |}|error textRec = parseAsType(xmlVal3);
+    test:assertTrue(textRec is error);
+    test:assertEquals((<error>textRec).message(),
+        "'xml' value '<A><C>1</C></A>' cannot be converted to 'lang.xml:Text[]'");
+}
+
+@test:Config {
+    groups: ["fromXml"]
+}
+function testXmlTextToRecordFieldWithXmlTextType() {
+    xml xmlVal3 = xml `
+        <Data>
+            <A><C>1</C></A>
+            <A>f</A>
+            <B>ee</B>
+        </Data>
+        `;
+    record {|
+        xml:Text[] A;
+    |}|error textRec = parseAsType(xmlVal3);
+    test:assertTrue(textRec is error);
+    test:assertEquals((<error>textRec).message(),
+        "'xml' value '<A><C>1</C></A>' cannot be converted to 'lang.xml:Text[]'");
 }
 
 @test:Config {
@@ -3320,17 +3353,6 @@ function testCommentMiddleInContentNegative2() {
     groups: ["fromXml"]
 }
 function testUnsupportedTypeNegative() {
-    xml xmlVal1 = xml `
-    <Data>
-        <A>1</A>
-        <A>2</A>
-    </Data>
-    `;
-    record {|
-        xml[] A;
-    |}|error err1 = parseAsType(xmlVal1);
-    test:assertEquals((<error>err1).message(), "unsupported input type");
-
     xml xmlVal2 = xml `
     <Data>
         <A>
@@ -3772,4 +3794,68 @@ function testXmlArraysWithNamespaces() {
 
     result = parseAsType(xmlValueWithXmlnsNamespace4);
     test:assertEquals(result, {B: [{id: 2, "#content": "address 1"}, "address 2", "address 2", "address 2", {id: 3, "#content": "address 3"}]});
+}
+
+@test:Config {
+    groups: ["fromXml"]
+}
+function testFromXmlForRecordsWithXmlFields() returns error? {
+    xml value = xml `<Component>
+                    <section>
+                        <templateId root="2.16.840.1.113883.10.20.22.2.12"/>
+                        <title>Reason for Visit</title>
+                        <text><A>1</A><!-- comment --></text>
+                   </section>
+    </Component>`;
+    xml exp = xml `<text><A>1</A><!-- comment --></text>`;
+    Component component = check parseAsType(value);
+    test:assertEquals(exp, component?.section?.text);
+
+    xml xmlVal1 = xml `
+                <Data>
+                    <A>1</A>
+                </Data>
+                `;
+            record {|
+                xml:Element A;
+    |} rec = check parseAsType(xmlVal1);
+    test:assertEquals(rec.A[0], xml `<A>1</A>`);
+}
+
+public type Section record {
+    xml text?;
+};
+
+public type Component record {|
+    Section section?;
+|};
+
+@test:Config {
+    groups: ["fromXml"]
+}
+function testFromXmlForXmlArrayFields() returns error? {
+    xml xmlVal1 = xml `
+        <Data>
+            <A>1</A>
+            <A>2</A>
+        </Data>
+        `;
+    record {|
+        xml[] A;
+    |} rec = check parseAsType(xmlVal1);
+    test:assertEquals(rec.A[0], xml `<A>1</A>`);
+    test:assertEquals(rec.A[1], xml `<A>2</A>`);
+
+    xml xmlVal3 = xml `
+        <Data>
+            <A><C>1</C></A>
+            <A>f</A>
+            <B>ee</B>
+        </Data>
+        `;
+        record {|
+            xml:Element[] A;
+        |} rec3 = check parseAsType(xmlVal3);
+    test:assertEquals(rec3.A[0], xml `<A><C>1</C></A>`);
+    test:assertEquals(rec3.A[1], xml `<A>f</A>`);
 }
