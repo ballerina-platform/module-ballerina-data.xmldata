@@ -13,7 +13,7 @@ export = ["data.xmldata"]
 groupId = "io.ballerina.lib"
 artifactId = "data-native"
 version = "1.4.2"
-path = "../native/build/libs/data.xmldata-native-1.4.2-SNAPSHOT.jar"
+path = "../native/build/libs/data.xmldata-native-1.4.2.jar"
 
 [[platform.java21.dependency]]
 groupId = "io.ballerina.stdlib"
