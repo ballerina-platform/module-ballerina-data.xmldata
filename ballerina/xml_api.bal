@@ -479,7 +479,7 @@ isolated function addNamespaces(map<string> allNamespaces, map<string> namespace
 #            Ballerina record type representing the schema defined by the XSD.
 # + xmlValue - The XML document that needs to be validated against the schema.
 # + return - Returns `()` if the XML value is valid according to the schema, otherwise returns `Error`.
-public function validate(xml xmlValue, string|typedesc<record {}> schema)
+public isolated function validate(xml xmlValue, string|typedesc<record {}> schema)
     returns Error? = @java:Method {'class: "io.ballerina.lib.data.xmldata.xml.Native"} external;
 
 isolated function fromRecordToXml(json jsonValue, JsonOptions options, typedesc<anydata> inputType) returns xml|Error
