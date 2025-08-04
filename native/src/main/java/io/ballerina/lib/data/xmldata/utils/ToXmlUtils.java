@@ -94,7 +94,7 @@ public class ToXmlUtils {
 
             BString key = jMap.getKeys()[0];
             String keyStr = key.getValue();
-            HashMap<String, String> elementNamesMap = DataUtils.getElementNameMap(referredType);
+            HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap = DataUtils.getElementNameMap(referredType);
             ArrayList<String> sequenceFieldNames = getSequenceFieldNames(referredType, elementNamesMap);
             HashMap<String, ModelGroupInfo> modelGroupRelatedFieldNames =
                     getModelGroupRelatedFieldNames(referredType, elementNamesMap);
@@ -157,7 +157,7 @@ public class ToXmlUtils {
         BXml xNode = ValueCreator.createXmlValue(Constants.EMPTY_STRING);
         String attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
         Type referredType = TypeUtils.getReferredType(type);
-        HashMap<String, String> elementNamesMap = DataUtils.getElementNameMap(referredType);
+        HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap = DataUtils.getElementNameMap(referredType);
         HashMap<String, ModelGroupInfo> modelGroupRelatedFieldNames =
                 getModelGroupRelatedFieldNames(referredType, elementNamesMap);
         HashMap<String, ElementInfo> elementInfoRelatedFieldNames =
@@ -270,7 +270,7 @@ public class ToXmlUtils {
 
     private static void validateChoiceFields(ModelGroupInfo parentModelGroupInfo, BMap jMap,
                                             HashMap<String, ElementInfo> elementInfoRelatedFieldNames,
-                                            HashMap<String, String> elementNamesMap) {
+                                            HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap) {
         // TODO: Update this later for validate choices with multiple element occurences.
         boolean isMeasurable = true;
         int occurences = 0;
@@ -306,7 +306,7 @@ public class ToXmlUtils {
     }
 
     private static HashMap<String, ModelGroupInfo> getModelGroupRelatedFieldNames(Type expType,
-                                                      HashMap<String, String> elementNamesMap) {
+                                                  HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap) {
         Type referedType = TypeUtils.getReferredType(expType);
         if (referedType instanceof RecordType recordType) {
             return DataUtils.getFieldNamesWithModelGroupAnnotations(recordType, elementNamesMap);
@@ -315,7 +315,7 @@ public class ToXmlUtils {
     }
 
     private static HashMap<String, ElementInfo> getElementInfoRelatedFieldNames(Type expType,
-                                                                          HashMap<String, String> elementNamesMap) {
+                                          HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap) {
         Type referedType = TypeUtils.getReferredType(expType);
         if (referedType instanceof RecordType recordType) {
             return DataUtils.getFieldNamesWithElementGroupAnnotations(recordType, elementNamesMap, null);
@@ -324,7 +324,7 @@ public class ToXmlUtils {
     }
 
     private static ArrayList<String> getSequenceFieldNames(Type expType,
-                                                                    HashMap<String, String> elementNamesMap) {
+                                    HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap) {
         Type referedType = TypeUtils.getReferredType(expType);
         if (referedType instanceof RecordType recordType) {
             return DataUtils.getFieldNamesWithSequenceAnnotations(recordType, elementNamesMap);
