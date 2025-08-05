@@ -495,7 +495,8 @@ public class XmlTraversal {
             BMap<BString, Object> nextValue =
                     updateNextMappingValue(recordType, fieldName, fieldType, currentMapValue, analyzerData);
             QName qName = xmlItem.getQName();
-            DataUtils.validateTypeNamespace(qName.getPrefix(), qName.getNamespaceURI(), recordType);
+            DataUtils.validateTypeNamespaceForNextRecord(qName.getPrefix(), qName.getNamespaceURI(),
+                    recordType, analyzerData.rootRecord, fieldName);
             handleAttributes(xmlItem, nextValue, analyzerData);
             return nextValue;
         }

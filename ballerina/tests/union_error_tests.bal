@@ -71,6 +71,10 @@ type F111 record {
         uri: "http://example.com/ns1"
     }
     string b1;
+    @Namespace {
+        prefix: "ns2",
+        uri: "http://example.com/ns1"
+    }
     (G111|G112)[] C;
 };
 
@@ -84,6 +88,10 @@ type F112 record {
         uri: "http://example.com/ns1"
     }
     string b1;
+    @Namespace {
+        prefix: "ns2",
+        uri: "http://example.com/ns1"
+    }
     (G111|G112)[] C;
 };
 

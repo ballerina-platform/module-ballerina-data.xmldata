@@ -95,35 +95,23 @@ public class ToXmlUtils {
             BString key = jMap.getKeys()[0];
             String jsonKey = key.getValue();
             HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap = DataUtils.getElementNameMap(referredType);
-            ArrayList<String> sequenceFieldNames = getSequenceFieldNames(referredType, elementNamesMap);
+            ArrayList<String> sequenceFieldNames = getSequenceFieldNames(referredType);
             HashMap<String, ModelGroupInfo> modelGroupRelatedFieldNames =
                     getModelGroupRelatedFieldNames(referredType, elementNamesMap);
-            HashMap<String, ElementInfo> elementInfoRelatedFieldNames =
-                    getElementInfoRelatedFieldNames(referredType, elementNamesMap);
+            HashMap<String, ElementInfo> elementInfoRelatedFieldNames = getElementInfoRelatedFieldNames(referredType);
 
             boolean isKeyContainsPrefix = jsonKey.contains(Constants.COLON);
-            String localJsonKeyPart;
-            DataUtils.FieldAnnotationValue jsonKeyFieldAnnotation;
-            if (isKeyContainsPrefix) {
-                int jsonKeyIndex = jsonKey.indexOf(Constants.COLON);
-                localJsonKeyPart = jsonKey.substring(jsonKeyIndex + 1);
-                String prefix = jsonKey.substring(0, jsonKeyIndex);
-                BString namespaceUrl = allNamespaces.get(StringUtils.fromString(getXmlnsNameUrI() + prefix));
-                String namespaceUrlStr = namespaceUrl != null ? namespaceUrl.getValue() : null;
-                jsonKeyFieldAnnotation = new DataUtils.FieldAnnotationValue(jsonKey, namespaceUrlStr);
-            } else {
-                localJsonKeyPart = jsonKey;
-                jsonKeyFieldAnnotation = new DataUtils.FieldAnnotationValue(jsonKey, null);
-            }
+            Object value = ToArray.toArray(jMap).getValues()[0];
+            addNamespaces(allNamespaces, getNamespacesMap(value, options, getEmptyStringMap()));
+            String localJsonKeyPart = getElementLocalKeyPart(isKeyContainsPrefix, jsonKey);
+            DataUtils.FieldAnnotationValue jsonKeyFieldAnnotation = getElementNamesMapKey(
+                    isKeyContainsPrefix, jsonKey, allNamespaces, localJsonKeyPart);
 
             String recordKey = elementNamesMap.getOrDefault(jsonKeyFieldAnnotation, localJsonKeyPart);
             boolean isSequenceField = sequenceFieldNames.contains(recordKey);
             boolean isContainsModelGroup = modelGroupRelatedFieldNames.containsKey(recordKey);
             ModelGroupInfo parentModelGroupInfo = modelGroupRelatedFieldNames.get(recordKey);
             ElementInfo elementInfo = elementInfoRelatedFieldNames.get(recordKey);
-
-            Object value = ToArray.toArray(jMap).getValues()[0];
-            addNamespaces(allNamespaces, getNamespacesMap(value, options, getEmptyStringMap()));
 
             if (value instanceof BArray) {
                 return getElementFromRecordMember(rootTag == null
@@ -174,9 +162,8 @@ public class ToXmlUtils {
         HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap = DataUtils.getElementNameMap(referredType);
         HashMap<String, ModelGroupInfo> modelGroupRelatedFieldNames =
                 getModelGroupRelatedFieldNames(referredType, elementNamesMap);
-        HashMap<String, ElementInfo> elementInfoRelatedFieldNames =
-                getElementInfoRelatedFieldNames(referredType, elementNamesMap);
-        ArrayList<String> sequenceFieldNames = getSequenceFieldNames(referredType, elementNamesMap);
+        HashMap<String, ElementInfo> elementInfoRelatedFieldNames = getElementInfoRelatedFieldNames(referredType);
+        ArrayList<String> sequenceFieldNames = getSequenceFieldNames(referredType);
         BXml childElement;
 
         if (jNode instanceof BMap jMap) {
@@ -185,26 +172,18 @@ public class ToXmlUtils {
                     mapNode, DataUtils.getXsdSequencePriorityOrder(referredType, isParentSequence));
 
             if (parentModelGroupInfo instanceof ChoiceInfo) {
-                validateChoiceFields(parentModelGroupInfo, jMap, elementInfoRelatedFieldNames, elementNamesMap);
+                validateChoiceFields(parentModelGroupInfo, jMap, elementInfoRelatedFieldNames,
+                        elementNamesMap, options, parentNamespaces);
             }
 
             for (BString k : orderedRecordKeysIfXsdSequencePresent) {
                 Object value = mapNode.get(k);
                 String jsonKey = k.getValue().trim();
                 boolean isKeyContainsPrefix = jsonKey.contains(Constants.COLON);
-                String localJsonKeyPart;
-                DataUtils.FieldAnnotationValue jsonKeyFieldAnnotation;
-                if (isKeyContainsPrefix) {
-                    int jsonKeyIndex = jsonKey.indexOf(Constants.COLON);
-                    localJsonKeyPart = jsonKey.substring(jsonKeyIndex + 1);
-                    String prefix = jsonKey.substring(0, jsonKeyIndex);
-                    BString namespaceUrl = allNamespaces.get(StringUtils.fromString(getXmlnsNameUrI() + prefix));
-                    String namespaceUrlStr = namespaceUrl != null ? namespaceUrl.getValue() : null;
-                    jsonKeyFieldAnnotation = new DataUtils.FieldAnnotationValue(jsonKey, namespaceUrlStr);
-                } else {
-                    localJsonKeyPart = jsonKey;
-                    jsonKeyFieldAnnotation = new DataUtils.FieldAnnotationValue(jsonKey, null);
-                }
+                namespacesOfElem = getNamespacesMap(value, options, parentNamespaces);
+                String localJsonKeyPart = getElementLocalKeyPart(isKeyContainsPrefix, jsonKey);
+                DataUtils.FieldAnnotationValue jsonKeyFieldAnnotation = getElementNamesMapKey(
+                        isKeyContainsPrefix, jsonKey, namespacesOfElem, localJsonKeyPart);
 
                 String recordKey = elementNamesMap.getOrDefault(jsonKeyFieldAnnotation, localJsonKeyPart);
                 boolean isContainsModelGroup = modelGroupRelatedFieldNames.containsKey(recordKey);
@@ -219,7 +198,6 @@ public class ToXmlUtils {
                 if (jsonKey.equals(options.get(Constants.TEXT_FIELD_NAME).toString())) {
                     xNode = Concat.concat(xNode, CreateText.createText(StringUtils.fromString(value.toString())));
                 } else {
-                    namespacesOfElem = getNamespacesMap(value, options, parentNamespaces);
                     addNamespaces(allNamespaces, namespacesOfElem);
 
                     if (value instanceof BArray) {
@@ -296,8 +274,9 @@ public class ToXmlUtils {
     }
 
     private static void validateChoiceFields(ModelGroupInfo parentModelGroupInfo, BMap jMap,
-                                            HashMap<String, ElementInfo> elementInfoRelatedFieldNames,
-                                            HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap) {
+                                             HashMap<String, ElementInfo> elementInfoRelatedFieldNames,
+                                             HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap,
+                                             BMap<BString, Object> options, BMap<BString, BString> parentNamespaces) {
         // TODO: Update this later for validate choices with multiple element occurences.
         boolean isMeasurable = true;
         int occurences = 0;
@@ -305,9 +284,13 @@ public class ToXmlUtils {
         for (Object key : jMap.getKeys()) {
             String jsonKey = key.toString();
             Object value = jMap.get(key);
-            String localJsonKeyPart = jsonKey.contains(Constants.COLON) ?
-                    jsonKey.substring(jsonKey.indexOf(Constants.COLON) + 1) : jsonKey;
-            String recordKey = elementNamesMap.getOrDefault(localJsonKeyPart, localJsonKeyPart);
+            boolean isKeyContainsPrefix = jsonKey.contains(Constants.COLON);
+            BMap<BString, BString> namespacesMap = getNamespacesMap(value, options, parentNamespaces);
+            String localJsonKeyPart = getElementLocalKeyPart(isKeyContainsPrefix, jsonKey);
+            DataUtils.FieldAnnotationValue jsonKeyFieldAnnotation = getElementNamesMapKey(
+                    isKeyContainsPrefix, jsonKey, namespacesMap, localJsonKeyPart);
+
+            String recordKey = elementNamesMap.getOrDefault(jsonKeyFieldAnnotation, localJsonKeyPart);
             ElementInfo elementInfo = elementInfoRelatedFieldNames.get(recordKey);
             if (elementInfo != null && elementInfo.maxOccurs != 1) {
                 isMeasurable = false;
@@ -332,6 +315,23 @@ public class ToXmlUtils {
         }
     }
 
+    private static DataUtils.FieldAnnotationValue getElementNamesMapKey(boolean isKeyContainsPrefix, String jsonKey,
+                                            BMap<BString, BString> namespacesMap, String localJsonKeyPart) {
+        if (isKeyContainsPrefix) {
+            int jsonKeyIndex = jsonKey.indexOf(Constants.COLON);
+            String prefix = jsonKey.substring(0, jsonKeyIndex);
+            BString namespaceUrl = namespacesMap.get(StringUtils.fromString(getXmlnsNameUrI() + prefix));
+            String namespaceUrlStr = namespaceUrl != null ? namespaceUrl.getValue() : null;
+            return new DataUtils.FieldAnnotationValue(localJsonKeyPart, namespaceUrlStr);
+        }
+
+        return new DataUtils.FieldAnnotationValue(jsonKey, null);
+    }
+
+    private static String getElementLocalKeyPart(boolean isKeyContainsPrefix, String jsonKey) {
+        return isKeyContainsPrefix ? jsonKey.substring(jsonKey.indexOf(Constants.COLON) + 1) : jsonKey;
+    }
+
     private static HashMap<String, ModelGroupInfo> getModelGroupRelatedFieldNames(Type expType,
                                                   HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap) {
         Type referedType = TypeUtils.getReferredType(expType);
@@ -341,20 +341,18 @@ public class ToXmlUtils {
         return new HashMap<>();
     }
 
-    private static HashMap<String, ElementInfo> getElementInfoRelatedFieldNames(Type expType,
-                                          HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap) {
+    private static HashMap<String, ElementInfo> getElementInfoRelatedFieldNames(Type expType) {
         Type referedType = TypeUtils.getReferredType(expType);
         if (referedType instanceof RecordType recordType) {
-            return DataUtils.getFieldNamesWithElementGroupAnnotations(recordType, elementNamesMap, null);
+            return DataUtils.getFieldNamesWithElementGroupAnnotations(recordType);
         }
         return new HashMap<>();
     }
 
-    private static ArrayList<String> getSequenceFieldNames(Type expType,
-                                    HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap) {
+    private static ArrayList<String> getSequenceFieldNames(Type expType) {
         Type referedType = TypeUtils.getReferredType(expType);
         if (referedType instanceof RecordType recordType) {
-            return DataUtils.getFieldNamesWithSequenceAnnotations(recordType, elementNamesMap);
+            return DataUtils.getFieldNamesWithSequenceAnnotations(recordType);
         }
         return new ArrayList<>();
     }

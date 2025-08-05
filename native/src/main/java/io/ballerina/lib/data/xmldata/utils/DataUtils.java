@@ -134,6 +134,51 @@ public class DataUtils {
         throw DiagnosticLog.error(DiagnosticErrorCode.NAMESPACE_MISMATCH, recordType.getName());
     }
 
+    public static void validateTypeNamespaceForNextRecord(String prefix, String uri,
+                                                          RecordType recordType, RecordType parentRecord,
+                                                          String fieldName) {
+        ArrayList<String> fieldNamespace = getFieldNamespaceForNextRecord(parentRecord, fieldName);
+        if (!fieldNamespace.isEmpty()) {
+            validateFieldNamespaces(fieldNamespace, prefix, uri, recordType);
+            return;
+        }
+
+        ArrayList<String> parentNamespace = getParentNamespaceForNextRecord(parentRecord);
+        if (!parentNamespace.isEmpty()) {
+            validateParentNamespaces(parentNamespace, prefix, uri, recordType);
+        }
+    }
+
+    private static void validateParentNamespaces(ArrayList<String> parentNamespace,
+                                                 String prefix, String uri, RecordType recordType) {
+        int size = parentNamespace.size();
+        if (size == 0 || size == 2) {
+            return;
+        }
+
+        if (size == 1 && uri.equals(parentNamespace.get(0))) {
+            return;
+        }
+        throw DiagnosticLog.error(DiagnosticErrorCode.NAMESPACE_MISMATCH, recordType.getName());
+    }
+
+    private static void validateFieldNamespaces(ArrayList<String> namespace, String prefix,
+                                                String uri, RecordType recordType) {
+        int size = namespace.size();
+        if (size == 0) {
+            return;
+        }
+
+        if (size == 1 && uri.equals(namespace.get(0))) {
+            return;
+        }
+
+        if (namespace.isEmpty() || prefix.equals(namespace.get(0)) && uri.equals(namespace.get(1))) {
+            return;
+        }
+        throw DiagnosticLog.error(DiagnosticErrorCode.NAMESPACE_MISMATCH, recordType.getName());
+    }
+
     @SuppressWarnings("unchecked")
     private static ArrayList<String> getNamespace(RecordType recordType) {
         BMap<BString, Object> annotations = recordType.getAnnotations();
@@ -150,6 +195,69 @@ public class DataUtils {
             }
         }
         return namespace;
+    }
+
+    private static ArrayList<String> getNamespacesArray(BMap<BString, Object> namespaceAnnotation) {
+        ArrayList<String> namespace = new ArrayList<>();
+        if (namespaceAnnotation == null) {
+            return namespace;
+        }
+
+        boolean isContainsPrefix = namespaceAnnotation.containsKey(Constants.PREFIX);
+        if (isContainsPrefix) {
+            namespace.add(((BString) namespaceAnnotation.get(Constants.PREFIX)).getValue());
+        }
+        namespace.add(((BString) namespaceAnnotation.get(Constants.URI)).getValue());
+        return namespace;
+    }
+
+    private static ArrayList<String> getFieldNamespaceForNextRecord(RecordType parentRecord, String fieldName) {
+        BMap<BString, Object> namespaceAnnotation = DataUtils
+                .getRelevantFieldNamespaceForRecordField(parentRecord, fieldName);
+        return getNamespacesArray(namespaceAnnotation);
+    }
+
+    private static ArrayList<String> getParentNamespaceForNextRecord(RecordType parentRecord) {
+        BMap<BString, Object> namespaceAnnotation = DataUtils
+                .getRelevantParentNamespaceForRecordField(parentRecord);
+        return getNamespacesArray(namespaceAnnotation);
+    }
+
+    private static BMap<BString, Object> getRelevantFieldNamespaceForRecordField(RecordType recordType,
+                                                                                 String fieldName) {
+        BMap<BString, Object> annotations = recordType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            String keyStr = annotationKey.getValue();
+            if (keyStr.contains(Constants.FIELD)) {
+                // Capture namespace and name from the field annotation.
+                String annotationFieldName = keyStr.split(Constants.FIELD_REGEX)[1]
+                        .replaceAll("\\\\", "");
+                if (!annotationFieldName.equals(fieldName)) {
+                    continue;
+                }
+
+                Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
+                for (BString key : fieldAnnotation.keySet()) {
+                    if (isNamespaceAnnotationKey(key.getValue())) {
+                        return (BMap<BString, Object>) fieldAnnotation.get(key);
+                    }
+                }
+
+            }
+        }
+
+        return null;
+    }
+
+    private static BMap<BString, Object> getRelevantParentNamespaceForRecordField(RecordType recordType) {
+        BMap<BString, Object> annotations = recordType.getAnnotations();
+        for (BString annotationKey : annotations.getKeys()) {
+            if (isNamespaceAnnotationKey(annotationKey.getValue())) {
+                return (BMap<BString, Object>) annotations.get(annotationKey);
+            }
+        }
+
+        return null;
     }
 
     @SuppressWarnings("unchecked")
@@ -1315,8 +1423,7 @@ public class DataUtils {
         return fieldNamesWithModelGroupAnnotations;
     }
 
-    public static HashMap<String, ElementInfo> getFieldNamesWithElementGroupAnnotations(
-                RecordType fieldType, HashMap<FieldAnnotationValue, String> elementNamesMap, String xmlElementName) {
+    public static HashMap<String, ElementInfo> getFieldNamesWithElementGroupAnnotations(RecordType fieldType) {
         HashMap<String, ElementInfo> fieldNamesWithElementInfoAnnotations = new HashMap<>();
         BMap<BString, Object> annotations = fieldType.getAnnotations();
         for (BString annotationKey : annotations.getKeys()) {
@@ -1326,10 +1433,6 @@ public class DataUtils {
             }
 
             String fieldName = key.split(Constants.FIELD_REGEX)[1].replaceAll("\\\\", "");
-            if (elementNamesMap.containsKey(fieldName)) {
-                fieldName = elementNamesMap.get(fieldName);
-            }
-
             Map<BString, Object> fieldAnnotation = (Map<BString, Object>) annotations.get(annotationKey);
             for (BString fieldAnnotationKey : fieldAnnotation.keySet()) {
                 String fieldAnnotationKeyStr = fieldAnnotationKey.getValue();
@@ -1338,7 +1441,7 @@ public class DataUtils {
                 }
 
                 if (fieldAnnotationKeyStr.endsWith(Constants.ELEMENT)) {
-                    ElementInfo elementInfo = new ElementInfo(xmlElementName, fieldName,
+                    ElementInfo elementInfo = new ElementInfo(null, fieldName,
                             (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey));
                     fieldNamesWithElementInfoAnnotations.put(fieldName, elementInfo);
                 }
@@ -1348,8 +1451,7 @@ public class DataUtils {
     }
 
 
-    public static ArrayList<String> getFieldNamesWithSequenceAnnotations(RecordType fieldType,
-                                       HashMap<FieldAnnotationValue, String> elementNamesMap) {
+    public static ArrayList<String> getFieldNamesWithSequenceAnnotations(RecordType fieldType) {
         ArrayList<String> fieldNamesWithModelGroupAnnotations = new ArrayList<>();
         BMap<BString, Object> annotations = fieldType.getAnnotations();
         for (BString annotationKey : annotations.getKeys()) {
@@ -1367,11 +1469,7 @@ public class DataUtils {
                 }
 
                 if (fieldAnnotationKeyStr.endsWith(Constants.SEQUENCE)) {
-                    if (elementNamesMap.containsKey(fieldName)) {
-                        fieldNamesWithModelGroupAnnotations.add(elementNamesMap.get(fieldName));
-                    } else {
-                        fieldNamesWithModelGroupAnnotations.add(fieldName);
-                    }
+                    fieldNamesWithModelGroupAnnotations.add(fieldName);
                 }
             }
         }
