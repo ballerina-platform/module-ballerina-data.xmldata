@@ -93,16 +93,30 @@ public class ToXmlUtils {
             }
 
             BString key = jMap.getKeys()[0];
-            String keyStr = key.getValue();
+            String jsonKey = key.getValue();
             HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap = DataUtils.getElementNameMap(referredType);
             ArrayList<String> sequenceFieldNames = getSequenceFieldNames(referredType, elementNamesMap);
             HashMap<String, ModelGroupInfo> modelGroupRelatedFieldNames =
                     getModelGroupRelatedFieldNames(referredType, elementNamesMap);
             HashMap<String, ElementInfo> elementInfoRelatedFieldNames =
                     getElementInfoRelatedFieldNames(referredType, elementNamesMap);
-            String localJsonKeyPart = keyStr.contains(Constants.COLON)
-                    ? keyStr.substring(keyStr.indexOf(Constants.COLON) + 1) : keyStr;
-            String recordKey = elementNamesMap.getOrDefault(localJsonKeyPart, localJsonKeyPart);
+
+            boolean isKeyContainsPrefix = jsonKey.contains(Constants.COLON);
+            String localJsonKeyPart;
+            DataUtils.FieldAnnotationValue jsonKeyFieldAnnotation;
+            if (isKeyContainsPrefix) {
+                int jsonKeyIndex = jsonKey.indexOf(Constants.COLON);
+                localJsonKeyPart = jsonKey.substring(jsonKeyIndex + 1);
+                String prefix = jsonKey.substring(0, jsonKeyIndex);
+                BString namespaceUrl = allNamespaces.get(StringUtils.fromString(getXmlnsNameUrI() + prefix));
+                String namespaceUrlStr = namespaceUrl != null ? namespaceUrl.getValue() : null;
+                jsonKeyFieldAnnotation = new DataUtils.FieldAnnotationValue(jsonKey, namespaceUrlStr);
+            } else {
+                localJsonKeyPart = jsonKey;
+                jsonKeyFieldAnnotation = new DataUtils.FieldAnnotationValue(jsonKey, null);
+            }
+
+            String recordKey = elementNamesMap.getOrDefault(jsonKeyFieldAnnotation, localJsonKeyPart);
             boolean isSequenceField = sequenceFieldNames.contains(recordKey);
             boolean isContainsModelGroup = modelGroupRelatedFieldNames.containsKey(recordKey);
             ModelGroupInfo parentModelGroupInfo = modelGroupRelatedFieldNames.get(recordKey);
@@ -177,9 +191,22 @@ public class ToXmlUtils {
             for (BString k : orderedRecordKeysIfXsdSequencePresent) {
                 Object value = mapNode.get(k);
                 String jsonKey = k.getValue().trim();
-                String localJsonKeyPart = jsonKey.contains(Constants.COLON) ?
-                        jsonKey.substring(jsonKey.indexOf(Constants.COLON) + 1) : jsonKey;
-                String recordKey = elementNamesMap.getOrDefault(localJsonKeyPart, localJsonKeyPart);
+                boolean isKeyContainsPrefix = jsonKey.contains(Constants.COLON);
+                String localJsonKeyPart;
+                DataUtils.FieldAnnotationValue jsonKeyFieldAnnotation;
+                if (isKeyContainsPrefix) {
+                    int jsonKeyIndex = jsonKey.indexOf(Constants.COLON);
+                    localJsonKeyPart = jsonKey.substring(jsonKeyIndex + 1);
+                    String prefix = jsonKey.substring(0, jsonKeyIndex);
+                    BString namespaceUrl = allNamespaces.get(StringUtils.fromString(getXmlnsNameUrI() + prefix));
+                    String namespaceUrlStr = namespaceUrl != null ? namespaceUrl.getValue() : null;
+                    jsonKeyFieldAnnotation = new DataUtils.FieldAnnotationValue(jsonKey, namespaceUrlStr);
+                } else {
+                    localJsonKeyPart = jsonKey;
+                    jsonKeyFieldAnnotation = new DataUtils.FieldAnnotationValue(jsonKey, null);
+                }
+
+                String recordKey = elementNamesMap.getOrDefault(jsonKeyFieldAnnotation, localJsonKeyPart);
                 boolean isContainsModelGroup = modelGroupRelatedFieldNames.containsKey(recordKey);
                 ModelGroupInfo modelGroupInfo = modelGroupRelatedFieldNames.get(recordKey);
                 ElementInfo elementInfo = elementInfoRelatedFieldNames.get(recordKey);

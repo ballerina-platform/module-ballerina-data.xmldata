@@ -63,7 +63,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 
@@ -120,6 +119,15 @@ public class DataUtils {
 
     public static void validateTypeNamespace(String prefix, String uri, RecordType recordType) {
         ArrayList<String> namespace = getNamespace(recordType);
+        int size = namespace.size();
+        if (size == 0) {
+            return;
+        }
+
+        if (size == 1 && uri.equals(namespace.get(0))) {
+            return;
+        }
+
         if (namespace.isEmpty() || prefix.equals(namespace.get(0)) && uri.equals(namespace.get(1))) {
             return;
         }
@@ -133,8 +141,10 @@ public class DataUtils {
         for (BString annotationsKey : annotations.getKeys()) {
             if (isNamespaceAnnotationKey(annotationsKey.getValue())) {
                 BMap<BString, Object> namespaceAnnotation = (BMap<BString, Object>) annotations.get(annotationsKey);
-                namespace.add(namespaceAnnotation.containsKey(Constants.PREFIX) ?
-                        ((BString) namespaceAnnotation.get(Constants.PREFIX)).getValue() : "");
+                boolean isContainsPrefix = namespaceAnnotation.containsKey(Constants.PREFIX);
+                if (isContainsPrefix) {
+                    namespace.add(((BString) namespaceAnnotation.get(Constants.PREFIX)).getValue());
+                }
                 namespace.add(((BString) namespaceAnnotation.get(Constants.URI)).getValue());
                 break;
             }
@@ -724,7 +734,6 @@ public class DataUtils {
             String keyName = fieldKey.getValue();
             if (isNamespaceAnnotationKey(keyName) || isNameAnnotationKey(keyName)) {
                 nsFieldAnnotation.put(fieldKey, annotationValue.get(fieldKey));
-                break;
             }
         }
         return nsFieldAnnotation;
@@ -1494,23 +1503,5 @@ public class DataUtils {
     }
 
     record FieldAnnotationValue(String elementName, String namespaceUri) {
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o instanceof String str) {
-                return this.elementName.equals(str);
-            }
-            if (!(o instanceof FieldAnnotationValue that)) {
-                return false;
-            }
-            return Objects.equals(this.elementName, that.elementName);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(elementName);
-        }
     }
 }
