@@ -1802,6 +1802,50 @@ function testNestedXmlElementWithDifferentNamespaces() returns error? {
     test:assertEquals(recValue, orderData, string `expected: ${recValue.toString()}, actual: ${orderData.toString()}`);
 }
 
+@Name {
+    value: "Order"
+}
+type NestedRecordWithNamespaces2 record {|
+    @Name {
+        value: "Product"
+    }
+    ProductDetails product;
+|};
+
+@test:Config {
+    groups: ["toXml", "nested"]
+}
+function testNestedXmlElementWithDifferentNamespaces2() returns error? {
+    ProductDetails productData = {
+        retailerTitle: "Cloud Native Development",
+        publisherTitle: "Cloud Native Development: A Practical Guide",
+        price: 49.99
+    };
+    NestedRecordWithNamespaces2 orderData = {
+        product: productData
+    };
+
+    xml result = check toXml(orderData);
+    string xmlStr = "<Order>" +
+                        "<Product>" +
+                            "<retail:title xmlns:retail=\"http://example.com/retailer\">Cloud Native Development</retail:title>" +
+                            "<pub:title xmlns:pub=\"http://example.com/publisher\">Cloud Native Development: A Practical Guide</pub:title>" +
+                            "<retail:price xmlns:retail=\"http://example.com/retailer\">49.99</retail:price>" +
+                        "</Product>" +
+                    "</Order>";
+    test:assertEquals(result.toString(), xmlStr, string `expected: ${xmlStr}, actual: ${result.toString()}`);
+
+    xml xmlValue = xml `<Order xmlns:retail="http://example.com/retailer" xmlns:pub="http://example.com/publisher">
+                        <Product>
+                            <retail:title>Cloud Native Development</retail:title>
+                            <pub:title>Cloud Native Development: A Practical Guide</pub:title>
+                            <retail:price>49.99</retail:price>
+                        </Product>
+                    </Order>`;
+    NestedRecordWithNamespaces2 recValue = check parseAsType(xmlValue);
+    test:assertEquals(recValue, orderData, string `expected: ${recValue.toString()}, actual: ${orderData.toString()}`);
+}
+
 type IdRecord record {|
     @Name {value: "CompanyId"}
     string id;
