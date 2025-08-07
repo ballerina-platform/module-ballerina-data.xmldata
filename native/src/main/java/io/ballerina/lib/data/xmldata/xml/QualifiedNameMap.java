@@ -92,8 +92,7 @@ public class QualifiedNameMap<V> {
             return null;
         }
         for (QualifiedName qualifiedName : stringToQNameMap.get(localName)) {
-            if (DataUtils.isSameNamespace(qualifiedName, qName)
-                    && DataUtils.isSameAttributeFlag(qualifiedName.getAttributeState(), qName.getAttributeState())) {
+            if (DataUtils.isSameNamespace(qualifiedName, qName)) {
                 return members.get(qualifiedName);
             }
         }

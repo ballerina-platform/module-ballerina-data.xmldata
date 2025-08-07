@@ -1655,3 +1655,283 @@ function testToXmlWithRestTypes2() returns error? {
     test:assertTrue(xmlItem is xml:Element);
     test:assertEquals(xmlItem.toString(), xmlStr);
 }
+
+@Name {
+    value: "CompanyDetails"
+}
+type RecordWithNamespaces record {|
+    @Name {
+        value: "CompanyId"
+    }
+    string id;
+
+    @Name {
+        value: "CompanyAddress"
+    }
+    @Namespace {
+        prefix: "company",
+        uri: "http://example.com/company"
+    }
+    string address;
+
+    @Name {
+        value: "name"
+    }
+    @Namespace {
+        prefix: "employee",
+        uri: "http://example.com/employee"
+    }
+    string employeeName;
+
+    @Name {
+        value: "name"
+    }
+    @Namespace {
+        prefix: "company",
+        uri: "http://example.com/company"
+    }
+    string companyName;
+
+    string remarks;
+|};
+
+@test:Config {
+    groups: ["toXml"]
+}
+function testSameXmlElementWithDifferentNamespaces() returns error? {
+    RecordWithNamespaces data = {
+        id: "123",
+        address: "123 Main St",
+        employeeName: "John Doe",
+        companyName: "Tech Corp",
+        remarks: "No remarks"
+    };
+
+    xml result = check toXml(data);
+    string xmlStr = "<CompanyDetails>" +
+                        "<CompanyId>123</CompanyId>" +
+                        "<company:CompanyAddress xmlns:company=\"http://example.com/company\">123 Main St</company:CompanyAddress>" +
+                        "<employee:name xmlns:employee=\"http://example.com/employee\">John Doe</employee:name>" +
+                        "<company:name xmlns:company=\"http://example.com/company\">Tech Corp</company:name>" +
+                        "<remarks>No remarks</remarks>" +
+                    "</CompanyDetails>";
+    test:assertEquals(result.toString(), xmlStr, string `expected: ${xmlStr}, actual: ${result.toString()}`);
+
+    xml xmlValue = xml `<CompanyDetails xmlns:company="http://example.com/company" xmlns:employee="http://example.com/employee">
+                        <CompanyId>123</CompanyId>
+                        <company:CompanyAddress>123 Main St</company:CompanyAddress>
+                        <employee:name >John Doe</employee:name>
+                        <company:name>Tech Corp</company:name>
+                        <remarks>No remarks</remarks>
+                    </CompanyDetails>`;
+    RecordWithNamespaces recValue = check parseAsType(xmlValue);
+    test:assertEquals(recValue, data, string `expected: ${recValue.toString()}, actual: ${data.toString()}`);
+}
+
+type ProductDetails record {|
+    @Name {
+        value: "title"
+    }
+    @Namespace {
+        prefix: "retail",
+        uri: "http://example.com/retailer"
+    }
+    string retailerTitle;
+
+    @Name {
+        value: "title"
+    }
+    @Namespace {
+        prefix: "pub",
+        uri: "http://example.com/publisher"
+    }
+    string publisherTitle;
+
+    @Namespace {
+        prefix: "retail",
+        uri: "http://example.com/retailer"
+    }
+    decimal price;
+|};
+
+@Name {
+    value: "Order"
+}
+type NestedRecordWithNamespaces record {|
+    string orderId;
+    @Name {
+        value: "Product"
+    }
+    ProductDetails product;
+|};
+
+@test:Config {
+    groups: ["toXml", "nested"]
+}
+function testNestedXmlElementWithDifferentNamespaces() returns error? {
+    ProductDetails productData = {
+        retailerTitle: "Cloud Native Development",
+        publisherTitle: "Cloud Native Development: A Practical Guide",
+        price: 49.99
+    };
+    NestedRecordWithNamespaces orderData = {
+        orderId: "ORD-9876",
+        product: productData
+    };
+
+    xml result = check toXml(orderData);
+    string xmlStr = "<Order>" +
+                        "<orderId>ORD-9876</orderId>" +
+                        "<Product>" +
+                            "<retail:title xmlns:retail=\"http://example.com/retailer\">Cloud Native Development</retail:title>" +
+                            "<pub:title xmlns:pub=\"http://example.com/publisher\">Cloud Native Development: A Practical Guide</pub:title>" +
+                            "<retail:price xmlns:retail=\"http://example.com/retailer\">49.99</retail:price>" +
+                        "</Product>" +
+                    "</Order>";
+    test:assertEquals(result.toString(), xmlStr, string `expected: ${xmlStr}, actual: ${result.toString()}`);
+
+    xml xmlValue = xml `<Order xmlns:retail="http://example.com/retailer" xmlns:pub="http://example.com/publisher">
+                        <orderId>ORD-9876</orderId>
+                        <Product>
+                            <retail:title>Cloud Native Development</retail:title>
+                            <pub:title>Cloud Native Development: A Practical Guide</pub:title>
+                            <retail:price>49.99</retail:price>
+                        </Product>
+                    </Order>`;
+    NestedRecordWithNamespaces recValue = check parseAsType(xmlValue);
+    test:assertEquals(recValue, orderData, string `expected: ${recValue.toString()}, actual: ${orderData.toString()}`);
+}
+
+@Name {
+    value: "Order"
+}
+type NestedRecordWithNamespaces2 record {|
+    @Name {
+        value: "Product"
+    }
+    ProductDetails product;
+|};
+
+@test:Config {
+    groups: ["toXml", "nested"]
+}
+function testNestedXmlElementWithDifferentNamespaces2() returns error? {
+    ProductDetails productData = {
+        retailerTitle: "Cloud Native Development",
+        publisherTitle: "Cloud Native Development: A Practical Guide",
+        price: 49.99
+    };
+    NestedRecordWithNamespaces2 orderData = {
+        product: productData
+    };
+
+    xml result = check toXml(orderData);
+    string xmlStr = "<Order>" +
+                        "<Product>" +
+                            "<retail:title xmlns:retail=\"http://example.com/retailer\">Cloud Native Development</retail:title>" +
+                            "<pub:title xmlns:pub=\"http://example.com/publisher\">Cloud Native Development: A Practical Guide</pub:title>" +
+                            "<retail:price xmlns:retail=\"http://example.com/retailer\">49.99</retail:price>" +
+                        "</Product>" +
+                    "</Order>";
+    test:assertEquals(result.toString(), xmlStr, string `expected: ${xmlStr}, actual: ${result.toString()}`);
+
+    xml xmlValue = xml `<Order xmlns:retail="http://example.com/retailer" xmlns:pub="http://example.com/publisher">
+                        <Product>
+                            <retail:title>Cloud Native Development</retail:title>
+                            <pub:title>Cloud Native Development: A Practical Guide</pub:title>
+                            <retail:price>49.99</retail:price>
+                        </Product>
+                    </Order>`;
+    NestedRecordWithNamespaces2 recValue = check parseAsType(xmlValue);
+    test:assertEquals(recValue, orderData, string `expected: ${recValue.toString()}, actual: ${orderData.toString()}`);
+}
+
+type IdRecord record {|
+    @Name {value: "CompanyId"}
+    string id;
+|};
+
+type AddressRecord record {|
+    @Name {value: "CompanyAddress"}
+    @Namespace {prefix: "company", uri: "http://example.com/company"}
+    string address;
+|};
+
+type EmployeeNameRecord record {|
+    @Name {value: "name"}
+    @Namespace {prefix: "employee", uri: "http://example.com/employee"}
+    string employeeName;
+|};
+
+type CompanyNameRecord record {|
+    @Name {value: "name"}
+    @Namespace {prefix: "company", uri: "http://example.com/company"}
+    string companyName;
+|};
+
+type RemarksRecord record {|
+    string remarks;
+|};
+
+@Name {
+    value: "CompanyDetails"
+}
+type FullyNestedRecord record {|
+    @Name { value: "Identification" }
+    IdRecord idInfo;
+
+    @Name { value: "Location" }
+    AddressRecord addressInfo;
+
+    @Name { value: "Personnel" }
+    EmployeeNameRecord employeeInfo;
+
+    @Name { value: "Organization" }
+    CompanyNameRecord companyInfo;
+    
+    @Name { value: "Notes" }
+    RemarksRecord remarksInfo;
+|};
+
+@test:Config {
+    groups: ["toXml", "nested"]
+}
+function testFullyNestedXmlElementWithDifferentNamespaces() returns error? {
+    FullyNestedRecord data = {
+        idInfo: { id: "123" },
+        addressInfo: { address: "123 Main St, Colombo" },
+        employeeInfo: { employeeName: "John Doe" },
+        companyInfo: { companyName: "Tech Corp" },
+        remarksInfo: { remarks: "No remarks" }
+    };
+
+    xml result = check toXml(data);
+    string xmlStr = "<CompanyDetails>" + 
+                        "<Identification><CompanyId>123</CompanyId></Identification>" +
+                        "<Location><company:CompanyAddress xmlns:company=\"http://example.com/company\">123 Main St, Colombo</company:CompanyAddress></Location>" +
+                        "<Personnel><employee:name xmlns:employee=\"http://example.com/employee\">John Doe</employee:name></Personnel>" +
+                        "<Organization><company:name xmlns:company=\"http://example.com/company\">Tech Corp</company:name></Organization>" +
+                        "<Notes><remarks>No remarks</remarks></Notes>" +
+                    "</CompanyDetails>";
+    test:assertEquals(result.toString(), xmlStr, string `expected: ${xmlStr}, actual: ${result.toString()}`);
+
+    xml xmlValue = xml `<CompanyDetails xmlns:company="http://example.com/company" xmlns:employee="http://example.com/employee">
+                        <Identification>
+                            <CompanyId>123</CompanyId>
+                        </Identification>
+                        <Location>
+                            <company:CompanyAddress>123 Main St, Colombo</company:CompanyAddress>
+                        </Location>
+                        <Personnel>
+                            <employee:name>John Doe</employee:name>
+                        </Personnel>
+                        <Organization>
+                            <company:name>Tech Corp</company:name>
+                        </Organization>
+                        <Notes>
+                            <remarks>No remarks</remarks>
+                        </Notes>
+                    </CompanyDetails>`;
+    FullyNestedRecord recValue = check parseAsType(xmlValue);
+    test:assertEquals(recValue, data, string `expected: ${recValue.toString()}, actual: ${data.toString()}`);
+}

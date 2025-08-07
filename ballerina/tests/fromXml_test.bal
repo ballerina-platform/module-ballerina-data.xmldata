@@ -3859,3 +3859,75 @@ function testFromXmlForXmlArrayFields() returns error? {
     test:assertEquals(rec3.A[0], xml `<A><C>1</C></A>`);
     test:assertEquals(rec3.A[1], xml `<A>f</A>`);
 }
+
+@Namespace {
+    uri: "example3.com"
+}
+type RecValueElement record {|
+    @Namespace {
+        prefix: "ns1",
+        uri: "example1.com"
+    }
+    string C;
+    RecValue2 D;
+|};
+
+@Namespace {
+    prefix: "ns",
+    uri: "example.com"
+}
+type RecValue record {|
+    @Namespace {
+        prefix: "ns2",
+        uri: "example2.com"
+    }
+    string A;
+    RecValueElement B;
+|};
+
+type RecValue2 record {|
+    RecValue3 E;
+|};
+
+type RecValue3 record {|
+    string F;
+|};
+
+@test:Config {
+    groups: ["fromXml"]
+}
+function testFromXmlWithNamespaceAnnotation() returns error? {
+    xml xmlVal = xml `
+        <ns:Data xmlns:ns="example.com" xmlns:ns2="example2.com">
+            <ns2:A>1</ns2:A>
+            <B xmlns:ns1="example1.com">
+                <ns1:C>2</ns1:C>
+                <D xmlns="example3.com">
+                    <E>
+                        <F>3</F>
+                    </E>
+                </D>
+            </B>
+        </ns:Data>
+    `;
+    RecValue rec = check parseAsType(xmlVal);
+    test:assertEquals(rec.A, "1");
+    test:assertEquals(rec.B.C, "2");
+
+    xml xmlVal2 = xml `
+        <ns:Data xmlns:ns="example.com" xmlns:ns2="example2.com">
+            <ns2:A>1</ns2:A>
+            <B xmlns:ns1="example1.com">
+                <ns1:C>2</ns1:C>
+                <D>
+                    <E>
+                        <F>3</F>
+                    </E>
+                </D>
+            </B>
+        </ns:Data>
+    `;
+    RecValue|error rec2 = parseAsType(xmlVal2);
+    test:assertTrue(rec2 is error);
+    test:assertEquals((<error>rec2).message(), "namespace mismatched for the type: 'RecValue2'");
+}
