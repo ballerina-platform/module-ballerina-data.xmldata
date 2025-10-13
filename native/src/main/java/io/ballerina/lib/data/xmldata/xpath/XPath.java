@@ -62,7 +62,7 @@ import static io.ballerina.runtime.api.utils.StringUtils.fromString;
  *
  * @since 1.3.2
  */
-final class XPath {
+public final class XPath {
     private XPath() {
 
     }
