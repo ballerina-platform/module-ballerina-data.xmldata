@@ -88,8 +88,8 @@ compileJava {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            groupId "io.ballerina.lib.data"
-            artifactId "xmldata-native"
+            groupId "io.ballerina.lib"
+            artifactId "data.xmldata-native"
             version = project.version
             artifact jar
         }
