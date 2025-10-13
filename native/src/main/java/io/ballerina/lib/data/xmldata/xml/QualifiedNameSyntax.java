@@ -23,7 +23,7 @@ package io.ballerina.lib.data.xmldata.xml;
  *
  * @since 0.1.4
  */
-public class QualifiedNameSyntax extends QualifiedName {
+class QualifiedNameSyntax extends QualifiedName {
 
     public QualifiedNameSyntax(String namespaceURI, String localPart, String prefix, AttributeState attributeState) {
         super(namespaceURI, localPart, prefix, attributeState);

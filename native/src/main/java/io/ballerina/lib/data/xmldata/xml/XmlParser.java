@@ -84,7 +84,7 @@ import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.NOT
  *
  * @since 0.1.0
  */
-public class XmlParser {
+class XmlParser {
 
     // XMLInputFactory2
     private static final XMLInputFactory xmlInputFactory;

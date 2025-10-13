@@ -70,7 +70,7 @@ import static io.ballerina.lib.data.xmldata.utils.XsdUtils.validateModelGroupSta
  *
  * @since 0.1.0
  */
-public class XmlTraversal {
+class XmlTraversal {
 
     private static final ThreadLocal<XmlTree> tlXmlTree = ThreadLocal.withInitial(XmlTree::new);
 
