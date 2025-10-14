@@ -1,6 +1,4 @@
-package io.ballerina.lib.data.xmldata.xml;
-
-import io.ballerina.lib.data.xmldata.utils.DataUtils;
+package io.ballerina.lib.data.xmldata.utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;

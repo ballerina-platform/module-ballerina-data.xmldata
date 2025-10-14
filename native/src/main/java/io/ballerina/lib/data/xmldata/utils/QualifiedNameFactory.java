@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package io.ballerina.lib.data.xmldata.xml;
+package io.ballerina.lib.data.xmldata.utils;
 
 /**
  * A factory for creating a qualified name.

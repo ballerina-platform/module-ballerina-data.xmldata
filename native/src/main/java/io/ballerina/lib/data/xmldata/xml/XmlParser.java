@@ -23,7 +23,10 @@ import io.ballerina.lib.data.xmldata.utils.Constants;
 import io.ballerina.lib.data.xmldata.utils.DataUtils;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
-import io.ballerina.lib.data.xmldata.xml.xsd.ModelGroupInfo;
+import io.ballerina.lib.data.xmldata.utils.QualifiedName;
+import io.ballerina.lib.data.xmldata.utils.QualifiedNameFactory;
+import io.ballerina.lib.data.xmldata.utils.QualifiedNameMap;
+import io.ballerina.lib.data.xmldata.utils.xsd.ModelGroupInfo;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.flags.SymbolFlags;
@@ -75,9 +78,9 @@ import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static javax.xml.stream.XMLStreamConstants.PROCESSING_INSTRUCTION;
 import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 import static io.ballerina.lib.data.xmldata.utils.DataUtils.XmlParserData;
-import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ATTRIBUTE;
-import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ELEMENT;
-import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.NOT_DEFINED;
+import static io.ballerina.lib.data.xmldata.utils.QualifiedName.AttributeState.ATTRIBUTE;
+import static io.ballerina.lib.data.xmldata.utils.QualifiedName.AttributeState.ELEMENT;
+import static io.ballerina.lib.data.xmldata.utils.QualifiedName.AttributeState.NOT_DEFINED;
 
 /**
  * Convert Xml string to a ballerina record.
@@ -98,7 +101,7 @@ class XmlParser {
     public static final String PARSE_ERROR = "failed to parse xml";
     public static final String PARSE_ERROR_PREFIX = PARSE_ERROR + ": ";
 
-    public XmlParser(Reader stringReader) {
+    XmlParser(Reader stringReader) {
         try {
             xmlStreamReader = xmlInputFactory.createXMLStreamReader(stringReader);
         } catch (XMLStreamException e) {

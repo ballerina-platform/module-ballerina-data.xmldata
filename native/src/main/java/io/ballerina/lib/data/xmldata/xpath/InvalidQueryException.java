@@ -23,7 +23,7 @@ package io.ballerina.lib.data.xmldata.xpath;
  *
  * @since 1.3.1
  */
-class InvalidQueryException extends IllegalArgumentException {
+public class InvalidQueryException extends IllegalArgumentException {
 
     public InvalidQueryException(String query) {
         super("Invalid XPath query: " + query);

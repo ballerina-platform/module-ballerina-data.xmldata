@@ -18,11 +18,10 @@
 
 package io.ballerina.lib.data.xmldata.utils;
 
-import io.ballerina.lib.data.xmldata.xml.QualifiedName;
-import io.ballerina.lib.data.xmldata.xml.xsd.ChoiceInfo;
-import io.ballerina.lib.data.xmldata.xml.xsd.ElementInfo;
-import io.ballerina.lib.data.xmldata.xml.xsd.ModelGroupInfo;
-import io.ballerina.lib.data.xmldata.xml.xsd.SequenceInfo;
+import io.ballerina.lib.data.xmldata.utils.xsd.ChoiceInfo;
+import io.ballerina.lib.data.xmldata.utils.xsd.ElementInfo;
+import io.ballerina.lib.data.xmldata.utils.xsd.ModelGroupInfo;
+import io.ballerina.lib.data.xmldata.utils.xsd.SequenceInfo;
 import io.ballerina.runtime.api.types.ArrayType;
 import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.types.Type;

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package io.ballerina.lib.data.xmldata.xml.xsd;
+package io.ballerina.lib.data.xmldata.utils.xsd;
 
 /**
  * Represent the xsd model group.
