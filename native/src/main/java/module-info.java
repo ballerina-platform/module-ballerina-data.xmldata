@@ -16,7 +16,7 @@
  * under the License.
  */
 
-module io.ballerina.lib.data {
+module io.ballerina.lib.data.xmldata {
     requires io.ballerina.runtime;
     requires io.ballerina.lang.value;
     requires io.ballerina.stdlib.constraint;
