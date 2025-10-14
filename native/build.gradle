@@ -84,3 +84,27 @@ compileJava {
         classpath = files()
     }
 }
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId "io.ballerina.lib"
+            artifactId "data.xmldata-native"
+            version = project.version
+            artifact jar
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/ballerina-platform/module-ballerina-data.xmldata")
+            credentials {
+                username = System.getenv("packageUser")
+                password = System.getenv("packagePAT")
+            }
+        }
+    }
+}
+
+publish.dependsOn build

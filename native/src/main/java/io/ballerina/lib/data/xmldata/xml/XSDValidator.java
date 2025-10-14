@@ -50,7 +50,7 @@ import javax.xml.validation.Validator;
  *
  * @since 1.1.0
  */
-public class XSDValidator {
+class XSDValidator {
     private static final String SOURCE_OPTIONS = "SourceOptions";
     private static final String CONTENT_FIELD = "#content";
     private static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attributePrefix");

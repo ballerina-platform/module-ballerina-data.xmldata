@@ -19,14 +19,10 @@
 package io.ballerina.lib.data.xmldata.utils;
 
 import io.ballerina.lib.data.xmldata.FromString;
-import io.ballerina.lib.data.xmldata.xml.QualifiedName;
-import io.ballerina.lib.data.xmldata.xml.QualifiedNameFactory;
-import io.ballerina.lib.data.xmldata.xml.QualifiedNameMap;
-import io.ballerina.lib.data.xmldata.xml.QualifiedNameSemantic;
-import io.ballerina.lib.data.xmldata.xml.xsd.ChoiceInfo;
-import io.ballerina.lib.data.xmldata.xml.xsd.ElementInfo;
-import io.ballerina.lib.data.xmldata.xml.xsd.ModelGroupInfo;
-import io.ballerina.lib.data.xmldata.xml.xsd.SequenceInfo;
+import io.ballerina.lib.data.xmldata.utils.xsd.ChoiceInfo;
+import io.ballerina.lib.data.xmldata.utils.xsd.ElementInfo;
+import io.ballerina.lib.data.xmldata.utils.xsd.ModelGroupInfo;
+import io.ballerina.lib.data.xmldata.utils.xsd.SequenceInfo;
 import io.ballerina.runtime.api.Module;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
@@ -69,9 +65,9 @@ import java.util.Stack;
 import javax.xml.namespace.QName;
 
 import static io.ballerina.lib.data.xmldata.utils.XsdUtils.popXsdValidationStacks;
-import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ATTRIBUTE;
-import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.ELEMENT;
-import static io.ballerina.lib.data.xmldata.xml.QualifiedName.AttributeState.NOT_DEFINED;
+import static io.ballerina.lib.data.xmldata.utils.QualifiedName.AttributeState.ATTRIBUTE;
+import static io.ballerina.lib.data.xmldata.utils.QualifiedName.AttributeState.ELEMENT;
+import static io.ballerina.lib.data.xmldata.utils.QualifiedName.AttributeState.NOT_DEFINED;
 
 /**
  * A util class for the Data package's native implementation.

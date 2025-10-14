@@ -23,7 +23,10 @@ import io.ballerina.lib.data.xmldata.utils.DataUtils;
 import io.ballerina.lib.data.xmldata.utils.DataUtils.XmlAnalyzerData;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
-import io.ballerina.lib.data.xmldata.xml.xsd.ModelGroupInfo;
+import io.ballerina.lib.data.xmldata.utils.QualifiedName;
+import io.ballerina.lib.data.xmldata.utils.QualifiedNameFactory;
+import io.ballerina.lib.data.xmldata.utils.QualifiedNameMap;
+import io.ballerina.lib.data.xmldata.utils.xsd.ModelGroupInfo;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.flags.SymbolFlags;
@@ -70,7 +73,7 @@ import static io.ballerina.lib.data.xmldata.utils.XsdUtils.validateModelGroupSta
  *
  * @since 0.1.0
  */
-public class XmlTraversal {
+class XmlTraversal {
 
     private static final ThreadLocal<XmlTree> tlXmlTree = ThreadLocal.withInitial(XmlTree::new);
 

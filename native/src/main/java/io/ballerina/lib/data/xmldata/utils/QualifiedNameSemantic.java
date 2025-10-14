@@ -16,27 +16,26 @@
  * under the License.
  */
 
-package io.ballerina.lib.data.xmldata.xml;
+package io.ballerina.lib.data.xmldata.utils;
 
 /**
- * Represents a syntactic qualified name.
+ * Represents a semantic qualified name.
  *
  * @since 0.1.4
  */
-public class QualifiedNameSyntax extends QualifiedName {
+public class QualifiedNameSemantic extends QualifiedName {
 
-    public QualifiedNameSyntax(String namespaceURI, String localPart, String prefix, AttributeState attributeState) {
+    public QualifiedNameSemantic(String namespaceURI, String localPart, String prefix, AttributeState attributeState) {
         super(namespaceURI, localPart, prefix, attributeState);
     }
 
-    public QualifiedNameSyntax(String namespaceURI, String localPart, String prefix) {
+    public QualifiedNameSemantic(String namespaceURI, String localPart, String prefix) {
         super(namespaceURI, localPart, prefix);
     }
 
     @Override
     public int hashCode() {
-        return getPrefix().hashCode() ^ getNamespaceURI().hashCode()
-                ^ getLocalPart().hashCode() ^ getAttributeState().hashCode();
+        return getNamespaceURI().hashCode() ^ getLocalPart().hashCode() ^ getAttributeState().hashCode();
     }
 
     @Override
@@ -49,9 +48,7 @@ public class QualifiedNameSyntax extends QualifiedName {
             return false;
         }
 
-        return getPrefix().equals(qName.getPrefix())
-                && getLocalPart().equals(qName.getLocalPart())
-                && getNamespaceURI().equals(qName.getNamespaceURI())
+        return getLocalPart().equals(qName.getLocalPart()) && getNamespaceURI().equals(qName.getNamespaceURI())
                 && getAttributeState().equals(qName.getAttributeState());
     }
 }
