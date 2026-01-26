@@ -73,7 +73,7 @@ public class ToXmlUtils {
                 return getElementFromRecordMember(
                         rootTag == null ? StringUtils.fromString(Constants.ROOT) : rootTagBstring,
                         traverseRecordAndGenerateXml(jsonValue, allNamespaces,
-                                getEmptyStringMap(), options, null, referredType,
+                                getEmptyStringMap(), options, null, type,
                                 false, false, null, null),
                         allNamespaces, options,
                         getAttributesMap(jsonValue, options, allNamespaces, getEmptyStringMap()));
@@ -199,14 +199,23 @@ public class ToXmlUtils {
                     xNode = Concat.concat(xNode, CreateText.createText(StringUtils.fromString(value.toString())));
                 } else {
                     addNamespaces(allNamespaces, namespacesOfElem);
+                    BString elementName = k;
+                    boolean isAnyField = DataUtils.isFieldAnnotatedWithAny(type, recordKey);
+                    if (isAnyField && value instanceof BMap) {
+                        Type valueType = TypeUtils.getReferredType(TypeUtils.getType(value));
+                        if (valueType instanceof RecordType valueRecordType) {
+                            elementName = StringUtils.fromString(valueRecordType.getName());
+                        }
+                    }
 
                     if (value instanceof BArray) {
-                        childElement = traverseRecordAndGenerateXml(value, allNamespaces, namespacesOfElem, options, k,
+                        childElement = traverseRecordAndGenerateXml(value, allNamespaces, namespacesOfElem, options,
+                                isAnyField ? elementName : k,
                                 getChildElementType(referredType, recordKey),
                                 isSequenceField, isSequenceField, modelGroupInfo, elementInfo);
                         xNode = Concat.concat(xNode, childElement);
                     } else {
-                        childElement = getElementFromRecordMember(k, traverseRecordAndGenerateXml(
+                        childElement = getElementFromRecordMember(elementName, traverseRecordAndGenerateXml(
                                 value, allNamespaces, namespacesOfElem, options, null, getChildElementType(
                             referredType, recordKey), isSequenceField, isSequenceField, modelGroupInfo, elementInfo),
                             allNamespaces, options, getAttributesMap(value, options, allNamespaces, parentNamespaces));

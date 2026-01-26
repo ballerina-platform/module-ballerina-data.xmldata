@@ -75,6 +75,7 @@ import static io.ballerina.lib.data.xmldata.utils.QualifiedName.AttributeState.N
  * @since 0.1.0
  */
 public class DataUtils {
+    public static final String ANY = "Any";
     private static final String ATTRIBUTE_PREFIX = "attribute_";
     private static final String VALUE = "value";
     private static String contentFieldName = Constants.CONTENT;
@@ -745,6 +746,7 @@ public class DataUtils {
         BMap<BString, Object> mergedAnnotations =
                 mergeOriginalAndCurrentAnnotations(annotations, (recType).getAnnotations());
         boolean doesNamespaceDefinedInField = false;
+        String originalFieldName = key;
         if (!mergedAnnotations.isEmpty()) {
             String fieldName = key;
             key = getKeyNameFromAnnotation(mergedAnnotations, key);
@@ -760,7 +762,11 @@ public class DataUtils {
 
         if (!doesNamespaceDefinedInField) {
             BMap<BString, Object> subRecordAnnotations = recType.getAnnotations();
-            key = getElementName(subRecordAnnotations, key);
+            if (!isFieldAnnotatedWithAnyFromAnnotations(annotations, originalFieldName)) {
+                key = getElementName(subRecordAnnotations, key);
+            } else {
+                key = recType.getName();
+            }
             processSubRecordAnnotation(subRecordAnnotations, annotationRecord);
         }
 
@@ -856,8 +862,11 @@ public class DataUtils {
         if (!annotation.isEmpty()) {
             processSubRecordAnnotation(annotation, subRecord);
         }
-
-        key = getElementName(annotation, key);
+        if (isFieldAnnotatedWithAnyFromAnnotations(parentAnnotations, key)) {
+            key = childType.getName();
+        } else {
+            key = getElementName(annotation, key);
+        }
         record.put(StringUtils.fromString(key), subRecord);
 
         if (!parentRecordAnnotations.isEmpty()) {
@@ -1148,6 +1157,52 @@ public class DataUtils {
 
     private static boolean isAttributeAnnotationKey(String key) {
         return key.startsWith(Constants.MODULE_NAME) && key.endsWith(Constants.ATTRIBUTE);
+    }
+
+    public static boolean isAnyAnnotationKey(String key) {
+        return key.startsWith(Constants.MODULE_NAME) && key.endsWith(ANY);
+    }
+
+    public static boolean isFieldAnnotatedWithAny(Type type, String fieldName) {
+        BString annotationKey = StringUtils.fromString(Constants.FIELD
+                + (fieldName.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0")));
+
+        Type referredType = TypeUtils.getReferredType(type);
+        if (!(referredType instanceof RecordType recordType)) {
+            return false;
+        }
+        BMap<BString, Object> annotations = recordType.getAnnotations();
+        if (type instanceof ReferenceType && type instanceof AnnotatableType annotatableType) {
+            annotations = mergeOriginalAndCurrentAnnotations(annotatableType.getAnnotations(), annotations);
+        }
+        if (!annotations.containsKey(annotationKey)) {
+            return false;
+        }
+        BMap<BString, Object> fieldAnnotation = (BMap<BString, Object>) annotations.get(annotationKey);
+        for (BString annotKey : fieldAnnotation.getKeys()) {
+            if (isAnyAnnotationKey(annotKey.getValue())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean isFieldAnnotatedWithAnyFromAnnotations(BMap<BString, Object> annotations, String fieldName) {
+        BString annotationKey = StringUtils.fromString(Constants.FIELD
+                + (fieldName.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0")));
+
+        if (!annotations.containsKey(annotationKey)) {
+            return false;
+        }
+
+        BMap<BString, Object> fieldAnnotation = (BMap<BString, Object>) annotations.get(annotationKey);
+        for (BString annotKey : fieldAnnotation.getKeys()) {
+            if (isAnyAnnotationKey(annotKey.getValue())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static Object validateConstraints(Object convertedValue, BTypedesc typed, boolean requireValidation) {

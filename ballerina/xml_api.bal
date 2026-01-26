@@ -90,10 +90,15 @@ public type NamespaceConfig record {|
 public const annotation NamespaceConfig Namespace on type, record field;
 
 # The annotation is used to denote the field that is considered an attribute.
-# When using `parseString`, `parseBytes`, `parseStream`, `parseAsType`, this annotation can be used to 
+# When using `parseString`, `parseBytes`, `parseStream`, `parseAsType`, this annotation can be used to
 # indicate the record field as an attribute.
 # When using `toXml`, this annotation can be used to add the attribute to the XML element.
 public const annotation Attribute on record field;
+
+# The annotation is used to denote a field that can contain xsd:any type value.
+# When using `toXml`, this annotation will use the actual type name of the value as the XML element name
+# instead of the field name.
+public const annotation Any on record field;
 
 # Represent the options that can be used to modify the behaviour of projection.
 public type Options record {|
