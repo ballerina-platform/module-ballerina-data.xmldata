@@ -15,7 +15,7 @@ export = true
 groupId = "io.ballerina.lib"
 artifactId = "data-native"
 version = "1.5.3"
-path = "../native/build/libs/data.xmldata-native-1.5.3-SNAPSHOT.jar"
+path = "../native/build/libs/data.xmldata-native-1.5.3.jar"
 
 [[platform.java21.dependency]]
 groupId = "io.ballerina.stdlib"
