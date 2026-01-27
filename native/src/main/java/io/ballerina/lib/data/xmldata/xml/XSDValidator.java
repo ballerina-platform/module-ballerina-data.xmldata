@@ -45,8 +45,6 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
-import static io.ballerina.runtime.api.creators.ErrorCreator.createError;
-
 /**
  * Represent native APIS for validating XML against a XSD.
  *
@@ -57,7 +55,7 @@ class XSDValidator {
     private static final String CONTENT_FIELD = "#content";
     private static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attributePrefix");
     private static final BString TEXT_FIELD_NAME = StringUtils.fromString("textFieldName");
-    private static final String ATTRIBUTE_EXTERNAL_SCHEMA_FILE = "file";
+    private static final String ACCESS_EXTERNAL_SCHEMA_PROTOCOL_FILE = "file";
 
     // XXE Prevention feature URIs for DocumentBuilderFactory
     private static final String FEATURE_EXTERNAL_GENERAL_ENTITIES =
@@ -107,7 +105,7 @@ class XSDValidator {
 
             SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
             factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, ATTRIBUTE_EXTERNAL_SCHEMA_FILE);
+            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, ACCESS_EXTERNAL_SCHEMA_PROTOCOL_FILE);
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
 
             Schema schema = factory.newSchema(new File(xsdFilePath));
@@ -119,13 +117,13 @@ class XSDValidator {
             validator.validate(source);
             return null;
         } catch (Exception e) {
-            throw createError(e);
+            throw e;
         }
     }
 
     private static Object validateXsdFromXsdRecord(BTypedesc xsdRecord, BXml xml) {
         try {
-            Object result =  XmlTraversal.traverse(xml, getDefaultSourceOptions(), xsdRecord);
+            Object result = XmlTraversal.traverse(xml, getDefaultSourceOptions(), xsdRecord);
             if (result instanceof BError e) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_XML, e.getMessage());
             }
