@@ -201,10 +201,10 @@ public class ToXmlUtils {
                     addNamespaces(allNamespaces, namespacesOfElem);
                     BString elementName = k;
                     boolean isAnyField = DataUtils.isFieldAnnotatedWithAny(type, recordKey);
-                    if (isAnyField && value instanceof BMap) {
+                    if (isAnyField && TypeUtils.getType(value).getTag() == TypeTags.MAP_TAG) {
                         Type valueType = TypeUtils.getReferredType(TypeUtils.getType(value));
-                        if (valueType instanceof RecordType valueRecordType) {
-                            elementName = StringUtils.fromString(valueRecordType.getName());
+                        if (valueType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                            elementName = StringUtils.fromString(valueType.getName());
                         }
                     }
 

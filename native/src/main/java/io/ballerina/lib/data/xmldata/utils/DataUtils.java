@@ -1168,12 +1168,13 @@ public class DataUtils {
                 + (fieldName.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0")));
 
         Type referredType = TypeUtils.getReferredType(type);
-        if (!(referredType instanceof RecordType recordType)) {
+        if (referredType.getTag() != TypeTags.RECORD_TYPE_TAG) {
             return false;
         }
-        BMap<BString, Object> annotations = recordType.getAnnotations();
-        if (type instanceof ReferenceType && type instanceof AnnotatableType annotatableType) {
-            annotations = mergeOriginalAndCurrentAnnotations(annotatableType.getAnnotations(), annotations);
+        BMap<BString, Object> annotations = ((RecordType) referredType).getAnnotations();
+        if (type.getTag() == TypeTags.TYPE_REFERENCED_TYPE_TAG
+                && type.getTag() == TypeTags.ANNOTATION_TAG) {
+            annotations = mergeOriginalAndCurrentAnnotations(((AnnotatableType) type).getAnnotations(), annotations);
         }
         if (!annotations.containsKey(annotationKey)) {
             return false;
@@ -1187,7 +1188,6 @@ public class DataUtils {
         return false;
     }
 
-    @SuppressWarnings("unchecked")
     private static boolean isFieldAnnotatedWithAnyFromAnnotations(BMap<BString, Object> annotations, String fieldName) {
         BString annotationKey = StringUtils.fromString(Constants.FIELD
                 + (fieldName.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0")));
