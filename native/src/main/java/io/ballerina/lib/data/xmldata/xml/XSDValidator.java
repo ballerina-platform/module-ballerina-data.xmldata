@@ -55,6 +55,15 @@ class XSDValidator {
     private static final String CONTENT_FIELD = "#content";
     private static final BString ATTRIBUTE_PREFIX = StringUtils.fromString("attributePrefix");
     private static final BString TEXT_FIELD_NAME = StringUtils.fromString("textFieldName");
+    private static final String ACCESS_EXTERNAL_SCHEMA_PROTOCOL_FILE = "file";
+
+    // XXE Prevention feature URIs for DocumentBuilderFactory
+    private static final String FEATURE_EXTERNAL_GENERAL_ENTITIES =
+            "http://xml.org/sax/features/external-general-entities";
+    private static final String FEATURE_EXTERNAL_PARAMETER_ENTITIES =
+            "http://xml.org/sax/features/external-parameter-entities";
+    private static final String FEATURE_LOAD_EXTERNAL_DTD =
+            "http://apache.org/xml/features/nonvalidating/load-external-dtd";
 
     /**
      * Validate the XML against the XSD.
@@ -78,15 +87,33 @@ class XSDValidator {
             throws ParserConfigurationException, IOException, SAXException {
         try {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            dbFactory.setNamespaceAware(true); // Support for XML namespaces
-            dbFactory.setIgnoringComments(true); // Ignore comments in the XML
+
+            // XXE Prevention
+            dbFactory.setFeature(FEATURE_EXTERNAL_GENERAL_ENTITIES, false);
+            dbFactory.setFeature(FEATURE_EXTERNAL_PARAMETER_ENTITIES, false);
+            dbFactory.setFeature(FEATURE_LOAD_EXTERNAL_DTD, false);
+            dbFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            dbFactory.setXIncludeAware(false);
+            dbFactory.setExpandEntityReferences(false);
+
+            dbFactory.setNamespaceAware(true);
+            dbFactory.setIgnoringComments(true);
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
             Document document = dBuilder.parse(new InputSource(new StringReader(StringUtils.getStringValue(xml))));
 
             DOMSource source = new DOMSource(document);
+
             SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, ACCESS_EXTERNAL_SCHEMA_PROTOCOL_FILE);
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+
             Schema schema = factory.newSchema(new File(xsdFilePath));
             Validator validator = schema.newValidator();
+
+            validator.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            validator.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+
             validator.validate(source);
             return null;
         } catch (Exception e) {
@@ -96,7 +123,7 @@ class XSDValidator {
 
     private static Object validateXsdFromXsdRecord(BTypedesc xsdRecord, BXml xml) {
         try {
-            Object result =  XmlTraversal.traverse(xml, getDefaultSourceOptions(), xsdRecord);
+            Object result = XmlTraversal.traverse(xml, getDefaultSourceOptions(), xsdRecord);
             if (result instanceof BError e) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_XML, e.getMessage());
             }
