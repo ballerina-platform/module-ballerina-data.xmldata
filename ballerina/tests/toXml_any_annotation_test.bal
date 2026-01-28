@@ -65,6 +65,38 @@ type EmployeeWithNamedAny record {
     NamedPersonInfo anyElement;
 };
 
+type EmployeeWithAnyBase record {
+    string name;
+    @Any
+    PersonInfo|AddressInfo anyElement;
+};
+
+type EmployeeWithAnyTypeRef EmployeeWithAnyBase;
+
+@Namespace {
+    prefix: "ns1",
+    uri: "http://example.com/ns1"
+}
+type NamespacedPersonInfo record {
+    int age;
+    string country;
+};
+
+@Namespace {
+    prefix: "ns2",
+    uri: "http://example.com/ns2"
+}
+type NamespacedAddressInfo record {
+    string city;
+    string zip;
+};
+
+type EmployeeWithNamespacedAny record {
+    string name;
+    @Any
+    NamespacedPersonInfo|NamespacedAddressInfo anyElement;
+};
+
 @test:Config {
     groups: ["toXml", "any"]
 }
@@ -173,4 +205,74 @@ function testToXmlWithAnyAndNameAnnotation() returns error? {
 
     EmployeeWithNamedAny newEmployee = check parseAsType(expected);
     test:assertEquals(employee, newEmployee);
+}
+
+@test:Config {
+    groups: ["toXml", "any"]
+}
+function testToXmlWithAnyAnnotationParentTypeReference() returns error? {
+    PersonInfo person = {
+        age: 28,
+        country: "Canada"
+    };
+    EmployeeWithAnyTypeRef employee = {
+        name: "Sarah",
+        anyElement: person
+    };
+    xml result = check toXml(employee);
+    xml expected = xml `<EmployeeWithAnyTypeRef><name>Sarah</name><PersonInfo><age>28</age><country>Canada</country></PersonInfo></EmployeeWithAnyTypeRef>`;
+    test:assertEquals(result, expected);
+
+    EmployeeWithAnyTypeRef parsedEmployee = check parseAsType(expected);
+    test:assertEquals(parsedEmployee, employee);
+
+    AddressInfo address = {
+        city: "Toronto",
+        zip: "M5V"
+    };
+    employee = {
+        name: "David",
+        anyElement: address
+    };
+    result = check toXml(employee);
+    expected = xml `<EmployeeWithAnyTypeRef><name>David</name><AddressInfo><city>Toronto</city><zip>M5V</zip></AddressInfo></EmployeeWithAnyTypeRef>`;
+    test:assertEquals(result, expected);
+
+    EmployeeWithAnyTypeRef newEmployee = check parseAsType(expected);
+    test:assertEquals(newEmployee, employee);
+}
+
+@test:Config {
+    groups: ["toXml", "any"]
+}
+function testToXmlWithAnyAndNamespaceAnnotation() returns error? {
+    NamespacedPersonInfo person = {
+        age: 40,
+        country: "Germany"
+    };
+    EmployeeWithNamespacedAny employee = {
+        name: "Hans",
+        anyElement: person
+    };
+    xml result = check toXml(employee);
+    xml expected = xml `<EmployeeWithNamespacedAny><name>Hans</name><ns1:NamespacedPersonInfo xmlns:ns1="http://example.com/ns1"><age>40</age><country>Germany</country></ns1:NamespacedPersonInfo></EmployeeWithNamespacedAny>`;
+    test:assertEquals(result.toString(), expected.toString());
+
+    EmployeeWithNamespacedAny parsedEmployee = check parseAsType(expected);
+    test:assertEquals(parsedEmployee, employee);
+
+    NamespacedAddressInfo address = {
+        city: "Berlin",
+        zip: "10115"
+    };
+    employee = {
+        name: "Eva",
+        anyElement: address
+    };
+    result = check toXml(employee);
+    expected = xml `<EmployeeWithNamespacedAny><name>Eva</name><ns2:NamespacedAddressInfo xmlns:ns2="http://example.com/ns2"><city>Berlin</city><zip>10115</zip></ns2:NamespacedAddressInfo></EmployeeWithNamespacedAny>`;
+    test:assertEquals(result.toString(), expected.toString());
+
+    EmployeeWithNamespacedAny newEmployee = check parseAsType(expected);
+    test:assertEquals(newEmployee, employee);
 }
