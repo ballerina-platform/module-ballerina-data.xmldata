@@ -158,6 +158,6 @@ function testToXmlWithAnyAndNameAnnotation() returns error? {
         }
     };
     xml result = check toXml(employee);
-    xml expected = xml `<EmployeeWithNamedAny><name>Mike</name><NamedPersonInfo><age>35</age><country>Australia</country></NamedPersonInfo></EmployeeWithNamedAny>`;
+    xml expected = xml `<EmployeeWithNamedAny><name>Mike</name><Person><age>35</age><country>Australia</country></Person></EmployeeWithNamedAny>`;
     test:assertEquals(result, expected, msg = "testToXmlWithAnyAndNameAnnotation result incorrect");
 }

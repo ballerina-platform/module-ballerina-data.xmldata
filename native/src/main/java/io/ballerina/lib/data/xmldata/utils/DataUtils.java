@@ -765,7 +765,7 @@ public class DataUtils {
             if (!isFieldAnnotatedWithAnyFromAnnotations(annotations, originalFieldName)) {
                 key = getElementName(subRecordAnnotations, key);
             } else {
-                key = recType.getName();
+                key = getElementName(subRecordAnnotations, recType.getName());
             }
             processSubRecordAnnotation(subRecordAnnotations, annotationRecord);
         }
@@ -863,7 +863,7 @@ public class DataUtils {
             processSubRecordAnnotation(annotation, subRecord);
         }
         if (isFieldAnnotatedWithAnyFromAnnotations(parentAnnotations, key)) {
-            key = childType.getName();
+            key = getElementName(annotation, childType.getName());
         } else {
             key = getElementName(annotation, key);
         }
