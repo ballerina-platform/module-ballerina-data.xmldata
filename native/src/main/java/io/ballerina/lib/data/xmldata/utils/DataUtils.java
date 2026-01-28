@@ -1210,7 +1210,7 @@ public class DataUtils {
         }
         BMap<BString, Object> annotations = ((RecordType) referredType).getAnnotations();
         if (type.getTag() == TypeTags.TYPE_REFERENCED_TYPE_TAG
-                && type.getTag() == TypeTags.ANNOTATION_TAG) {
+                || type.getTag() == TypeTags.ANNOTATION_TAG) {
             annotations = mergeOriginalAndCurrentAnnotations(((AnnotatableType) type).getAnnotations(), annotations);
         }
         if (!annotations.containsKey(annotationKey)) {
