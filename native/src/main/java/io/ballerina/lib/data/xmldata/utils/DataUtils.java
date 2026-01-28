@@ -307,8 +307,45 @@ public class DataUtils {
                 fieldMap.put(modifiedQName, recordFields.get(key));
                 fieldNames.put(localName, new ArrayList<>(List.of(modifiedQName)));
             }
+            if (isFieldAnnotatedWithAny(recordType, key)) {
+                Field field = recordFields.get(key);
+                addAnyAnnotatedFieldMappings(field, fieldMap, fieldNames, analyzerData.useSemanticEquality);
+            }
         }
         return fieldMap;
+    }
+
+    private static void addAnyAnnotatedFieldMappings(Field field, Map<QualifiedName, Field> fieldMap,
+                                                      Map<String, List<QualifiedName>> fieldNames,
+                                                      boolean useSemanticEquality) {
+        Type fieldType = TypeUtils.getReferredType(field.getFieldType());
+        List<Type> typesToProcess = new ArrayList<>();
+
+        if (fieldType.getTag() == TypeTags.UNION_TAG) {
+            for (Type memberType : ((UnionType) fieldType).getMemberTypes()) {
+                typesToProcess.add(TypeUtils.getReferredType(memberType));
+            }
+        } else {
+            typesToProcess.add(fieldType);
+        }
+
+        for (Type type : typesToProcess) {
+            if (type.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                RecordType memberRecordType = (RecordType) type;
+                QualifiedName typeQName = getQualifiedNameFromRecordAnnotation(memberRecordType, useSemanticEquality);
+                String typeName = typeQName.getLocalPart();
+
+                // Only add if not already present (to avoid overwriting explicit field mappings)
+                if (!fieldMap.containsKey(typeQName)) {
+                    fieldMap.put(typeQName, field);
+                    if (fieldNames.containsKey(typeName)) {
+                        fieldNames.get(typeName).add(typeQName);
+                    } else {
+                        fieldNames.put(typeName, new ArrayList<>(List.of(typeQName)));
+                    }
+                }
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -1203,6 +1240,31 @@ public class DataUtils {
             }
         }
         return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static QualifiedName getQualifiedNameFromRecordAnnotation(RecordType recordType,
+                                                                      boolean useSemanticEquality) {
+        BMap<BString, Object> annotations = recordType.getAnnotations();
+        String localName = recordType.getName();
+        String uri = Constants.NS_ANNOT_NOT_DEFINED;
+        String prefix = "";
+
+        for (BString annotationsKey : annotations.getKeys()) {
+            if (isNameAnnotationKey(annotationsKey.getValue())) {
+                localName = ((BMap<BString, Object>) annotations.get(annotationsKey))
+                        .get(Constants.VALUE).toString();
+            }
+            if (isNamespaceAnnotationKey(annotationsKey.getValue())) {
+                Map<BString, Object> namespaceAnnotation =
+                        ((Map<BString, Object>) annotations.get(annotationsKey));
+                BString uriValue = (BString) namespaceAnnotation.get(Constants.URI);
+                BString prefixValue = (BString) namespaceAnnotation.get(Constants.PREFIX);
+                uri = uriValue == null ? "" : uriValue.getValue();
+                prefix = prefixValue == null ? "" : prefixValue.getValue();
+            }
+        }
+        return QualifiedNameFactory.createQualifiedName(uri, localName, prefix, useSemanticEquality);
     }
 
     public static Object validateConstraints(Object convertedValue, BTypedesc typed, boolean requireValidation) {

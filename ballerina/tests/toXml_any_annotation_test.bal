@@ -29,7 +29,7 @@ type AddressInfo record {
 type EmployeeWithAny record {
     string name;
     @Any
-    PersonInfo|AddressInfo|int|decimal anyElement;
+    PersonInfo|AddressInfo anyElement;
 };
 
 type Department record {
@@ -81,13 +81,23 @@ function testToXmlWithAnyAnnotationRecordType() returns error? {
     xml expected = xml `<EmployeeWithAny><name>John</name><PersonInfo><age>30</age><country>Sri Lanka</country></PersonInfo></EmployeeWithAny>`;
     test:assertEquals(result, expected);
 
+    EmployeeWithAny parsedEmployee = check parseAsType(expected);
+    test:assertEquals(parsedEmployee, employee);
+
+    AddressInfo address = {
+        city: "New York",
+        zip: "10001"
+    };
     employee = {
         name: "Alice",
-        anyElement: 1001
+        anyElement: address
     };
     result = check toXml(employee);
-    expected = xml `<EmployeeWithAny><name>Alice</name><anyElement>1001</anyElement></EmployeeWithAny>`;
+    expected = xml `<EmployeeWithAny><name>Alice</name><AddressInfo><city>New York</city><zip>10001</zip></AddressInfo></EmployeeWithAny>`;
     test:assertEquals(result, expected);
+
+    EmployeeWithAny newEmployee = check parseAsType(expected);
+    test:assertEquals(newEmployee, employee);
 }
 
 @test:Config {
@@ -160,4 +170,7 @@ function testToXmlWithAnyAndNameAnnotation() returns error? {
     xml result = check toXml(employee);
     xml expected = xml `<EmployeeWithNamedAny><name>Mike</name><Person><age>35</age><country>Australia</country></Person></EmployeeWithNamedAny>`;
     test:assertEquals(result, expected, msg = "testToXmlWithAnyAndNameAnnotation result incorrect");
+
+    EmployeeWithNamedAny newEmployee = check parseAsType(expected);
+    test:assertEquals(employee, newEmployee);
 }
