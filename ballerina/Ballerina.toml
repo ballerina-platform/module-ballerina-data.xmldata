@@ -1,19 +1,21 @@
 [package]
 org = "ballerina"
 name = "data.xmldata"
-version = "1.5.1"
+version = "1.5.3"
 authors = ["Ballerina"]
 keywords = ["xml"]
 repository = "https://github.com/ballerina-platform/module-ballerina-data-xmldata"
 license = ["Apache-2.0"]
 distribution = "2201.11.0"
-export = ["data.xmldata"]
+
+[data.xmldata]
+export = true
 
 [[platform.java21.dependency]]
 groupId = "io.ballerina.lib"
 artifactId = "data-native"
-version = "1.5.1"
-path = "../native/build/libs/data.xmldata-native-1.5.1.jar"
+version = "1.5.3"
+path = "../native/build/libs/data.xmldata-native-1.5.3-SNAPSHOT.jar"
 
 [[platform.java21.dependency]]
 groupId = "io.ballerina.stdlib"

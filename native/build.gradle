@@ -28,7 +28,7 @@ dependencies {
     implementation 'junit:junit:4.13.1'
     checkstyle project(':checkstyle')
     checkstyle "com.puppycrawl.tools:checkstyle:${checkstyleToolVersion}"
-    implementation 'org.apache.commons:commons-lang3:3.6'
+    implementation "org.apache.commons:commons-lang3:${commonsLangVersion}"
 
     implementation group: 'org.ballerinalang', name: 'ballerina-lang', version: "${ballerinaLangVersion}"
     implementation group: 'org.ballerinalang', name: 'ballerina-runtime', version: "${ballerinaLangVersion}"

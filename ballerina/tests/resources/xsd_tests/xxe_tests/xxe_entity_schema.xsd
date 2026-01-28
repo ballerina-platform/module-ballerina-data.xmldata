@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xs:schema [
+  <!ENTITY xxe SYSTEM "secret.txt">
+]>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:annotation>
+        <xs:documentation>&xxe;</xs:documentation>
+    </xs:annotation>
+    <xs:element name="root" type="xs:string"/>
+</xs:schema>
