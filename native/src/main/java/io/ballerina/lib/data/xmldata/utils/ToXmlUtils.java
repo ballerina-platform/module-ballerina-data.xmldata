@@ -199,23 +199,14 @@ public class ToXmlUtils {
                     xNode = Concat.concat(xNode, CreateText.createText(StringUtils.fromString(value.toString())));
                 } else {
                     addNamespaces(allNamespaces, namespacesOfElem);
-                    BString elementName = k;
-                    boolean isAnyField = DataUtils.isFieldAnnotatedWithAny(type, recordKey);
-                    if (isAnyField && TypeUtils.getType(value).getTag() == TypeTags.MAP_TAG) {
-                        Type valueType = TypeUtils.getReferredType(TypeUtils.getType(value));
-                        if (valueType.getTag() == TypeTags.RECORD_TYPE_TAG) {
-                            elementName = StringUtils.fromString(valueType.getName());
-                        }
-                    }
-
                     if (value instanceof BArray) {
                         childElement = traverseRecordAndGenerateXml(value, allNamespaces, namespacesOfElem, options,
-                                isAnyField ? elementName : k,
+                                k,
                                 getChildElementType(referredType, recordKey),
                                 isSequenceField, isSequenceField, modelGroupInfo, elementInfo);
                         xNode = Concat.concat(xNode, childElement);
                     } else {
-                        childElement = getElementFromRecordMember(elementName, traverseRecordAndGenerateXml(
+                        childElement = getElementFromRecordMember(k, traverseRecordAndGenerateXml(
                                 value, allNamespaces, namespacesOfElem, options, null, getChildElementType(
                             referredType, recordKey), isSequenceField, isSequenceField, modelGroupInfo, elementInfo),
                             allNamespaces, options, getAttributesMap(value, options, allNamespaces, parentNamespaces));
