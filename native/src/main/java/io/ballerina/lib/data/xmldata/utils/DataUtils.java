@@ -75,6 +75,7 @@ import static io.ballerina.lib.data.xmldata.utils.QualifiedName.AttributeState.N
  * @since 0.1.0
  */
 public class DataUtils {
+    public static final String ANY = "Any";
     private static final String ATTRIBUTE_PREFIX = "attribute_";
     private static final String VALUE = "value";
     private static String contentFieldName = Constants.CONTENT;
@@ -306,8 +307,45 @@ public class DataUtils {
                 fieldMap.put(modifiedQName, recordFields.get(key));
                 fieldNames.put(localName, new ArrayList<>(List.of(modifiedQName)));
             }
+            if (isFieldAnnotatedWithAny(recordType, key)) {
+                Field field = recordFields.get(key);
+                addAnyAnnotatedFieldMappings(field, fieldMap, fieldNames, analyzerData.useSemanticEquality);
+            }
         }
         return fieldMap;
+    }
+
+    private static void addAnyAnnotatedFieldMappings(Field field, Map<QualifiedName, Field> fieldMap,
+                                                      Map<String, List<QualifiedName>> fieldNames,
+                                                      boolean useSemanticEquality) {
+        Type fieldType = TypeUtils.getReferredType(field.getFieldType());
+        List<Type> typesToProcess = new ArrayList<>();
+
+        if (fieldType.getTag() == TypeTags.UNION_TAG) {
+            for (Type memberType : ((UnionType) fieldType).getMemberTypes()) {
+                typesToProcess.add(TypeUtils.getReferredType(memberType));
+            }
+        } else {
+            typesToProcess.add(fieldType);
+        }
+
+        for (Type type : typesToProcess) {
+            if (type.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                RecordType memberRecordType = (RecordType) type;
+                QualifiedName typeQName = getQualifiedNameFromRecordAnnotation(memberRecordType, useSemanticEquality);
+                String typeName = typeQName.getLocalPart();
+
+                // Only add if not already present (to avoid overwriting explicit field mappings)
+                if (!fieldMap.containsKey(typeQName)) {
+                    fieldMap.put(typeQName, field);
+                    if (fieldNames.containsKey(typeName)) {
+                        fieldNames.get(typeName).add(typeQName);
+                    } else {
+                        fieldNames.put(typeName, new ArrayList<>(List.of(typeQName)));
+                    }
+                }
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -745,6 +783,7 @@ public class DataUtils {
         BMap<BString, Object> mergedAnnotations =
                 mergeOriginalAndCurrentAnnotations(annotations, (recType).getAnnotations());
         boolean doesNamespaceDefinedInField = false;
+        String originalFieldName = key;
         if (!mergedAnnotations.isEmpty()) {
             String fieldName = key;
             key = getKeyNameFromAnnotation(mergedAnnotations, key);
@@ -760,7 +799,11 @@ public class DataUtils {
 
         if (!doesNamespaceDefinedInField) {
             BMap<BString, Object> subRecordAnnotations = recType.getAnnotations();
-            key = getElementName(subRecordAnnotations, key);
+            if (!isFieldAnnotatedWithAnyFromAnnotations(annotations, originalFieldName)) {
+                key = getElementName(subRecordAnnotations, key);
+            } else {
+                key = getElementName(subRecordAnnotations, recType.getName());
+            }
             processSubRecordAnnotation(subRecordAnnotations, annotationRecord);
         }
 
@@ -856,8 +899,11 @@ public class DataUtils {
         if (!annotation.isEmpty()) {
             processSubRecordAnnotation(annotation, subRecord);
         }
-
-        key = getElementName(annotation, key);
+        if (isFieldAnnotatedWithAnyFromAnnotations(parentAnnotations, key)) {
+            key = getElementName(annotation, childType.getName());
+        } else {
+            key = getElementName(annotation, key);
+        }
         record.put(StringUtils.fromString(key), subRecord);
 
         if (!parentRecordAnnotations.isEmpty()) {
@@ -1148,6 +1194,77 @@ public class DataUtils {
 
     private static boolean isAttributeAnnotationKey(String key) {
         return key.startsWith(Constants.MODULE_NAME) && key.endsWith(Constants.ATTRIBUTE);
+    }
+
+    public static boolean isAnyAnnotationKey(String key) {
+        return key.startsWith(Constants.MODULE_NAME) && key.endsWith(ANY);
+    }
+
+    public static boolean isFieldAnnotatedWithAny(Type type, String fieldName) {
+        BString annotationKey = StringUtils.fromString(Constants.FIELD
+                + (fieldName.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0")));
+
+        Type referredType = TypeUtils.getReferredType(type);
+        if (referredType.getTag() != TypeTags.RECORD_TYPE_TAG) {
+            return false;
+        }
+        BMap<BString, Object> annotations = ((RecordType) referredType).getAnnotations();
+        if (type.getTag() == TypeTags.TYPE_REFERENCED_TYPE_TAG
+                || type.getTag() == TypeTags.ANNOTATION_TAG) {
+            annotations = mergeOriginalAndCurrentAnnotations(((AnnotatableType) type).getAnnotations(), annotations);
+        }
+        if (!annotations.containsKey(annotationKey)) {
+            return false;
+        }
+        BMap<BString, Object> fieldAnnotation = (BMap<BString, Object>) annotations.get(annotationKey);
+        for (BString annotKey : fieldAnnotation.getKeys()) {
+            if (isAnyAnnotationKey(annotKey.getValue())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isFieldAnnotatedWithAnyFromAnnotations(BMap<BString, Object> annotations, String fieldName) {
+        BString annotationKey = StringUtils.fromString(Constants.FIELD
+                + (fieldName.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0")));
+
+        if (!annotations.containsKey(annotationKey)) {
+            return false;
+        }
+
+        BMap<BString, Object> fieldAnnotation = (BMap<BString, Object>) annotations.get(annotationKey);
+        for (BString annotKey : fieldAnnotation.getKeys()) {
+            if (isAnyAnnotationKey(annotKey.getValue())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static QualifiedName getQualifiedNameFromRecordAnnotation(RecordType recordType,
+                                                                      boolean useSemanticEquality) {
+        BMap<BString, Object> annotations = recordType.getAnnotations();
+        String localName = recordType.getName();
+        String uri = Constants.NS_ANNOT_NOT_DEFINED;
+        String prefix = "";
+
+        for (BString annotationsKey : annotations.getKeys()) {
+            if (isNameAnnotationKey(annotationsKey.getValue())) {
+                localName = ((BMap<BString, Object>) annotations.get(annotationsKey))
+                        .get(Constants.VALUE).toString();
+            }
+            if (isNamespaceAnnotationKey(annotationsKey.getValue())) {
+                Map<BString, Object> namespaceAnnotation =
+                        ((Map<BString, Object>) annotations.get(annotationsKey));
+                BString uriValue = (BString) namespaceAnnotation.get(Constants.URI);
+                BString prefixValue = (BString) namespaceAnnotation.get(Constants.PREFIX);
+                uri = uriValue == null ? "" : uriValue.getValue();
+                prefix = prefixValue == null ? "" : prefixValue.getValue();
+            }
+        }
+        return QualifiedNameFactory.createQualifiedName(uri, localName, prefix, useSemanticEquality);
     }
 
     public static Object validateConstraints(Object convertedValue, BTypedesc typed, boolean requireValidation) {

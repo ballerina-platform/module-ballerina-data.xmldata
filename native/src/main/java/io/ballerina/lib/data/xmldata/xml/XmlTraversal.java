@@ -287,6 +287,21 @@ class XmlTraversal {
                 if (currentField != null
                         && TypeUtils.getReferredType(currentField.getFieldType()).getTag() != TypeTags.ARRAY_TAG) {
                     fieldsMap.remove(elementQName);
+                    String fieldName = currentField.getFieldName();
+                    if (!elementQName.getLocalPart().equals(fieldName)) {
+                        QualifiedName fieldQName = QualifiedNameFactory.createQualifiedName(
+                                Constants.NS_ANNOT_NOT_DEFINED, fieldName, "", analyzerData.useSemanticEquality);
+                        fieldsMap.remove(fieldQName);
+                        List<QualifiedName> keysToRemove = new ArrayList<>();
+                        for (Map.Entry<QualifiedName, Field> entry : fieldsMap.getMembers().entrySet()) {
+                            if (entry.getValue().getFieldName().equals(fieldName)) {
+                                keysToRemove.add(entry.getKey());
+                            }
+                        }
+                        for (QualifiedName keyToRemove : keysToRemove) {
+                            fieldsMap.remove(keyToRemove);
+                        }
+                    }
                 }
             }
 

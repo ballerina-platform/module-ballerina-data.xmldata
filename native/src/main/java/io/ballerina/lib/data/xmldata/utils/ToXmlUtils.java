@@ -30,6 +30,7 @@ import io.ballerina.runtime.api.types.PredefinedTypes;
 import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.types.TypeTags;
+import io.ballerina.runtime.api.types.UnionType;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.utils.TypeUtils;
 import io.ballerina.runtime.api.utils.ValueUtils;
@@ -73,7 +74,7 @@ public class ToXmlUtils {
                 return getElementFromRecordMember(
                         rootTag == null ? StringUtils.fromString(Constants.ROOT) : rootTagBstring,
                         traverseRecordAndGenerateXml(jsonValue, allNamespaces,
-                                getEmptyStringMap(), options, null, referredType,
+                                getEmptyStringMap(), options, null, type,
                                 false, false, null, null),
                         allNamespaces, options,
                         getAttributesMap(jsonValue, options, allNamespaces, getEmptyStringMap()));
@@ -199,9 +200,9 @@ public class ToXmlUtils {
                     xNode = Concat.concat(xNode, CreateText.createText(StringUtils.fromString(value.toString())));
                 } else {
                     addNamespaces(allNamespaces, namespacesOfElem);
-
                     if (value instanceof BArray) {
-                        childElement = traverseRecordAndGenerateXml(value, allNamespaces, namespacesOfElem, options, k,
+                        childElement = traverseRecordAndGenerateXml(value, allNamespaces, namespacesOfElem, options,
+                                k,
                                 getChildElementType(referredType, recordKey),
                                 isSequenceField, isSequenceField, modelGroupInfo, elementInfo);
                         xNode = Concat.concat(xNode, childElement);
@@ -373,14 +374,18 @@ public class ToXmlUtils {
                 Optional<String> fieldName = getFieldFromRecordNameAnnotation(fields, recordKey);
                 if (!(fieldName.isEmpty()) && fields.containsKey(fieldName.get())) {
                     return fields.get(fieldName.get()).getFieldType();
-                } else {
-                    Type restFieldType = recordType.getRestFieldType();
-                    if (restFieldType != null) {
-                        return restFieldType;
-                    }
-                    assert false;
-                    throw DiagnosticLog.createXmlError("Invalid xml provided");
                 }
+
+                Optional<Type> anyFieldType = getTypeFromAnyAnnotatedField(recordType, fields, recordKey);
+                if (anyFieldType.isPresent()) {
+                    return anyFieldType.get();
+                }
+
+                Type restFieldType = recordType.getRestFieldType();
+                if (restFieldType != null) {
+                    return restFieldType;
+                }
+                throw DiagnosticLog.createXmlError("Invalid xml provided");
             }
             return type;
         } catch (Exception e) {
@@ -403,6 +408,42 @@ public class ToXmlUtils {
             }
         }
         return Optional.empty();
+    }
+
+    private static Optional<Type> getTypeFromAnyAnnotatedField(RecordType parentRecordType,
+                                                                Map<String, Field> fields, String recordKey) {
+        for (Field field : fields.values()) {
+            if (!DataUtils.isFieldAnnotatedWithAny(parentRecordType, field.getFieldName())) {
+                continue;
+            }
+            Type fieldType = TypeUtils.getReferredType(field.getFieldType());
+            if (fieldType.getTag() == TypeTags.UNION_TAG) {
+                for (Type memberType : ((UnionType) fieldType).getMemberTypes()) {
+                    Type referredMemberType = TypeUtils.getReferredType(memberType);
+                    if (referredMemberType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                        String typeName = getRecordTypeName((RecordType) referredMemberType);
+                        if (typeName.equals(recordKey)) {
+                            return Optional.of(referredMemberType);
+                        }
+                    }
+                }
+            } else if (fieldType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                String typeName = getRecordTypeName((RecordType) fieldType);
+                if (typeName.equals(recordKey)) {
+                    return Optional.of(fieldType);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static String getRecordTypeName(RecordType recordType) {
+        for (Map.Entry<BString, Object> annotation : recordType.getAnnotations().entrySet()) {
+            if (DataUtils.isNameAnnotationKey(annotation.getKey().getValue())) {
+                return ((BMap<BString, Object>) annotation.getValue()).get(Constants.VALUE).toString();
+            }
+        }
+        return recordType.getName();
     }
 
     public static boolean isSingleRecordMember(Object node) {
