@@ -495,6 +495,28 @@ type EmployeeWithSameNameDifferentNS record {
     PersonNS1|PersonNS2 anyElement;
 };
 
+type NestedAddress record {
+    string street;
+    string city;
+};
+
+type Country record {
+    string country;
+};
+
+type PersonWithNestedRecord record {
+    string name;
+    int age;
+    @Any
+    NestedAddress|Country address;
+};
+
+type EmployeeWithNestedAny record {
+    string empId;
+    @Any
+    PersonWithNestedRecord|AddressInfo anyElement;
+};
+
 type EmployeeWithAnyOnNonRecordType record {
     string name;
     @Any
@@ -547,4 +569,28 @@ function testToXmlWithSameTypeNameDifferentNamespaces() returns error? {
 
     EmployeeWithSameNameDifferentNS newEmployee = check parseAsType(expected);
     test:assertEquals(newEmployee, employee);
+}
+
+@test:Config {
+    groups: ["toXml", "any"]
+}
+function testToXmlWithAnyAnnotationHavingNestedRecord() returns error? {
+    PersonWithNestedRecord person = {
+        name: "John",
+        age: 30,
+        address: {
+            street: "123 Main St",
+            city: "New York"
+        }
+    };
+    EmployeeWithNestedAny employee = {
+        empId: "EMP001",
+        anyElement: person
+    };
+    xml result = check toXml(employee);
+    xml expected = xml `<EmployeeWithNestedAny><empId>EMP001</empId><PersonWithNestedRecord><name>John</name><age>30</age><NestedAddress><street>123 Main St</street><city>New York</city></NestedAddress></PersonWithNestedRecord></EmployeeWithNestedAny>`;
+    test:assertEquals(result, expected);
+
+    EmployeeWithNestedAny parsedEmployee = check parseAsType(expected);
+    test:assertEquals(parsedEmployee, employee);
 }
