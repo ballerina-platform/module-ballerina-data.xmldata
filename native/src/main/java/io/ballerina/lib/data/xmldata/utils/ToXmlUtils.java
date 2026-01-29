@@ -385,7 +385,6 @@ public class ToXmlUtils {
                 if (restFieldType != null) {
                     return restFieldType;
                 }
-                assert false;
                 throw DiagnosticLog.createXmlError("Invalid xml provided");
             }
             return type;
@@ -421,15 +420,15 @@ public class ToXmlUtils {
             if (fieldType.getTag() == TypeTags.UNION_TAG) {
                 for (Type memberType : ((UnionType) fieldType).getMemberTypes()) {
                     Type referredMemberType = TypeUtils.getReferredType(memberType);
-                    if (referredMemberType instanceof RecordType memberRecordType) {
-                        String typeName = getRecordTypeName(memberRecordType);
+                    if (referredMemberType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                        String typeName = getRecordTypeName((RecordType) referredMemberType);
                         if (typeName.equals(recordKey)) {
                             return Optional.of(referredMemberType);
                         }
                     }
                 }
-            } else if (fieldType instanceof RecordType recordType) {
-                String typeName = getRecordTypeName(recordType);
+            } else if (fieldType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                String typeName = getRecordTypeName((RecordType) fieldType);
                 if (typeName.equals(recordKey)) {
                     return Optional.of(fieldType);
                 }
