@@ -82,6 +82,26 @@ type EmployeeWithNamedAny record {
     NamedPersonInfo anyElement;
 };
 
+@Name {
+    value: "Location"
+}
+type NamedAddressInfo record {
+    string city;
+    string zip;
+};
+
+type EmployeeWithNamedAnyUnion record {
+    string name;
+    @Any
+    NamedPersonInfo|NamedAddressInfo anyElement;
+};
+
+type EmployeeWithSingleRecordAny record {|
+    string name;
+    @Any
+    PersonInfo anyElement;
+|};
+
 type EmployeeWithAnyBase record {
     string name;
     @Any
@@ -226,6 +246,26 @@ function testToXmlWithMultipleAnyAnnotations() returns error? {
 @test:Config {
     groups: ["toXml", "any"]
 }
+function testToXmlWithAnyAnnotationSingleRecordType() returns error? {
+    PersonInfo person = {
+        age: 45,
+        country: "France"
+    };
+    EmployeeWithSingleRecordAny employee = {
+        name: "Pierre",
+        anyElement: person
+    };
+    xml result = check toXml(employee);
+    xml expected = xml `<EmployeeWithSingleRecordAny><name>Pierre</name><PersonInfo><age>45</age><country>France</country></PersonInfo></EmployeeWithSingleRecordAny>`;
+    test:assertEquals(result, expected);
+
+    EmployeeWithSingleRecordAny parsedEmployee = check parseAsType(expected);
+    test:assertEquals(parsedEmployee, employee);
+}
+
+@test:Config {
+    groups: ["toXml", "any"]
+}
 function testToXmlWithAnyAndNameAnnotation() returns error? {
     EmployeeWithNamedAny employee = {
         name: "Mike",
@@ -344,5 +384,167 @@ function testToXmlWithNamespaceAnnotationAndAnyField() returns error? {
     test:assertEquals(result.toString(), expected.toString());
 
     NamespacedEmployeeWithAny newEmployee = check parseAsType(expected);
+    test:assertEquals(newEmployee, employee);
+}
+
+@test:Config {
+    groups: ["toXml", "any"]
+}
+function testToXmlWithAnyAndNameAnnotationInUnion() returns error? {
+    NamedPersonInfo person = {
+        age: 28,
+        country: "UK"
+    };
+    EmployeeWithNamedAnyUnion employee = {
+        name: "James",
+        anyElement: person
+    };
+    xml result = check toXml(employee);
+    xml expected = xml `<EmployeeWithNamedAnyUnion><name>James</name><Person><age>28</age><country>UK</country></Person></EmployeeWithNamedAnyUnion>`;
+    test:assertEquals(result, expected);
+
+    EmployeeWithNamedAnyUnion parsedEmployee = check parseAsType(expected);
+    test:assertEquals(parsedEmployee, employee);
+
+    NamedAddressInfo address = {
+        city: "London",
+        zip: "SW1A"
+    };
+    employee = {
+        name: "Emma",
+        anyElement: address
+    };
+    result = check toXml(employee);
+    expected = xml `<EmployeeWithNamedAnyUnion><name>Emma</name><Location><city>London</city><zip>SW1A</zip></Location></EmployeeWithNamedAnyUnion>`;
+    test:assertEquals(result, expected);
+
+    EmployeeWithNamedAnyUnion newEmployee = check parseAsType(expected);
+    test:assertEquals(newEmployee, employee);
+}
+
+type EmployeeBaseWithoutAny record {
+    string name;
+    PersonInfo|AddressInfo details;
+};
+
+type EmployeeTypeRefWithAny record {
+    *EmployeeBaseWithoutAny;
+    @Any
+    PersonInfo|AddressInfo details;
+};
+
+@test:Config {
+    groups: ["toXml", "any"]
+}
+function testToXmlWithAnyAnnotationOnTypeRefField() returns error? {
+    PersonInfo person = {
+        age: 33,
+        country: "Brazil"
+    };
+    EmployeeTypeRefWithAny employee = {
+        name: "Carlos",
+        details: person
+    };
+    xml result = check toXml(employee);
+    xml expected = xml `<EmployeeTypeRefWithAny><PersonInfo><age>33</age><country>Brazil</country></PersonInfo><name>Carlos</name></EmployeeTypeRefWithAny>`;
+    test:assertEquals(result, expected);
+
+    EmployeeTypeRefWithAny parsedEmployee = check parseAsType(expected);
+    test:assertEquals(parsedEmployee, employee);
+
+    AddressInfo address = {
+        city: "Sao Paulo",
+        zip: "01310"
+    };
+    employee = {
+        name: "Ana",
+        details: address
+    };
+    result = check toXml(employee);
+    expected = xml `<EmployeeTypeRefWithAny><AddressInfo><city>Sao Paulo</city><zip>01310</zip></AddressInfo><name>Ana</name></EmployeeTypeRefWithAny>`;
+    test:assertEquals(result, expected);
+
+    EmployeeTypeRefWithAny newEmployee = check parseAsType(expected);
+    test:assertEquals(newEmployee, employee);
+}
+
+@Namespace {
+    prefix: "ns1",
+    uri: "http://example.com/ns1"
+}
+type PersonNS1 record {
+    int age;
+    string country;
+};
+
+@Namespace {
+    prefix: "ns2",
+    uri: "http://example.com/ns2"
+}
+@Name {
+    value: "PersonNS1"
+}
+type PersonNS2 record {
+    int age;
+    string country;
+};
+
+type EmployeeWithSameNameDifferentNS record {
+    string name;
+    @Any
+    PersonNS1|PersonNS2 anyElement;
+};
+
+type EmployeeWithAnyOnNonRecordType record {
+    string name;
+    @Any
+    string description;
+};
+
+@test:Config {
+    groups: ["toXml", "any"]
+}
+function testToXmlWithAnyAnnotationOnNonRecordType() returns error? {
+    EmployeeWithAnyOnNonRecordType employee = {
+        name: "John",
+        description: "Software Engineer"
+    };
+    xml result = check toXml(employee);
+    xml expected = xml `<EmployeeWithAnyOnNonRecordType><name>John</name><description>Software Engineer</description></EmployeeWithAnyOnNonRecordType>`;
+    test:assertEquals(result, expected);
+}
+
+@test:Config {
+    groups: ["toXml", "any"]
+}
+function testToXmlWithSameTypeNameDifferentNamespaces() returns error? {
+    PersonNS1 person1 = {
+        age: 30,
+        country: "USA"
+    };
+    EmployeeWithSameNameDifferentNS employee = {
+        name: "John",
+        anyElement: person1
+    };
+    xml result = check toXml(employee);
+    xml expected = xml `<EmployeeWithSameNameDifferentNS><name>John</name><ns1:PersonNS1 xmlns:ns1="http://example.com/ns1"><age>30</age><country>USA</country></ns1:PersonNS1></EmployeeWithSameNameDifferentNS>`;
+    test:assertEquals(result.toString(), expected.toString());
+
+    EmployeeWithSameNameDifferentNS parsedEmployee = check parseAsType(expected);
+    test:assertEquals(parsedEmployee, employee);
+
+    PersonNS2 person2 = {
+        age: 25,
+        country: "UK"
+    };
+    employee = {
+        name: "Jane",
+        anyElement: person2
+    };
+    result = check toXml(employee);
+    expected = xml `<EmployeeWithSameNameDifferentNS><name>Jane</name><ns2:PersonNS1 xmlns:ns2="http://example.com/ns2"><age>25</age><country>UK</country></ns2:PersonNS1></EmployeeWithSameNameDifferentNS>`;
+    test:assertEquals(result.toString(), expected.toString());
+
+    EmployeeWithSameNameDifferentNS newEmployee = check parseAsType(expected);
     test:assertEquals(newEmployee, employee);
 }
