@@ -1671,7 +1671,7 @@ type RecordWithAnyUnionWithNilType record {|
 type RecordWithMixedAnydataArray record {|
     string name;
     @Any
-    anydata?[] mixedArray;
+    anydata[] mixedArray;
 |};
 
 type AllOptionalAnyRecord record {|
@@ -1925,14 +1925,20 @@ function testToXmlWithAnyTypeRefNil() returns error? {
 @test:Config {
     groups: ["toXml", "any"]
 }
-function testToXmlWithEmptyAnyArray() returns error? {
+function testXmlWithAnyArray() returns error? {
+    PersonInfo person = {
+        age: 29,
+        country: "India"
+    };
     RecordWithEmptyAnyArray rec = {
         id: "empty-array",
-        people: []
+        people: [person]
     };
     xml result = check toXml(rec);
-    xml expected = xml `<RecordWithEmptyAnyArray><id>empty-array</id></RecordWithEmptyAnyArray>`;
+    xml expected = xml `<RecordWithEmptyAnyArray><id>empty-array</id><PersonInfo><age>29</age><country>India</country></PersonInfo></RecordWithEmptyAnyArray>`;
     test:assertEquals(result, expected);
+    RecordWithEmptyAnyArray parsedRec = check parseAsType(result);
+    test:assertEquals(parsedRec, rec);
 }
 
 @test:Config {
