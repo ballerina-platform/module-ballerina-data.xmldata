@@ -229,36 +229,29 @@ public class ToXmlUtils {
                                     }
                                 }
                             } else if (referredChildType.getTag() == TypeTags.UNION_TAG) {
-                                // Handle optional arrays (T[]?)
                                 UnionType unionType = (UnionType) referredChildType;
                                 for (Type memberType : unionType.getMemberTypes()) {
                                     Type referredMemberType = TypeUtils.getReferredType(memberType);
                                     if (referredMemberType.getTag() == TypeTags.ARRAY_TAG) {
                                         ArrayType arrayType = (ArrayType) referredMemberType;
                                         Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
-                                        // For optional anydata arrays, apply @Any handling when they contain records
-                                        if (elementType.getTag() == TypeTags.ANYDATA_TAG) {
-                                            // Check the actual contents to see if they contain records
-                                            if (value instanceof BArray) {
-                                                BArray array = (BArray) value;
-                                                if (array.size() > 0) {
-                                                    // Check if any non-null element is a record
-                                                    for (int i = 0; i < array.size(); i++) {
-                                                        Object element = array.get(i);
-                                                        if (element != null) {
-                                                            Type actualType = TypeUtils.getType(element);
-                                                            if (TypeUtils.getReferredType(actualType).getTag() == 
-                                                                    TypeTags.RECORD_TYPE_TAG) {
-                                                                isAnyArrayField = true;
-                                                                break;
-                                                            }
+                                        if (elementType.getTag() == TypeTags.ANYDATA_TAG &&
+                                                TypeUtils.getType(value).getTag() == TypeTags.ARRAY_TAG) {
+                                            BArray array = (BArray) value;
+                                            if (array.size() > 0) {
+                                                for (int i = 0; i < array.size(); i++) {
+                                                    Object element = array.get(i);
+                                                    if (element != null) {
+                                                        Type actualType = TypeUtils.getType(element);
+                                                        if (TypeUtils.getReferredType(actualType).getTag() ==
+                                                                TypeTags.RECORD_TYPE_TAG) {
+                                                            isAnyArrayField = true;
+                                                            break;
                                                         }
                                                     }
                                                 }
                                             }
                                         }
-                                        // Note: For optional concrete record arrays like PersonInfo[]?, 
-                                        // we do NOT apply @Any special handling based on test expectations
                                         break;
                                     }
                                 }
@@ -280,10 +273,7 @@ public class ToXmlUtils {
                             Type referredValueType = TypeUtils.getReferredType(valueType);
                             RecordType recordValueType = null;
 
-                            if (referredValueType instanceof RecordType) {
-                                recordValueType = (RecordType) referredValueType;
-                            } else {
-                                Type childType = getChildElementType(referredType, recordKey);
+                            Type childType = getChildElementType(referredType, recordKey);
                                 Type referredChildType = TypeUtils.getReferredType(childType);
                                 if (referredChildType instanceof RecordType) {
                                     recordValueType = (RecordType) referredChildType;
@@ -296,7 +286,6 @@ public class ToXmlUtils {
                                         }
                                     }
                                 }
-                            }
 
                             if (recordValueType != null) {
                                 String typeName = getRecordTypeName(recordValueType);
@@ -549,8 +538,7 @@ public class ToXmlUtils {
                 if (typeName.equals(recordKey)) {
                     return Optional.of(fieldType);
                 }
-            } else if (fieldType.getTag() == TypeTags.ANYDATA_TAG
-                    || fieldType.getTag() == TypeTags.JSON_TAG) {
+            } else if (fieldType.getTag() == TypeTags.ANYDATA_TAG || fieldType.getTag() == TypeTags.JSON_TAG) {
                 return Optional.of(fieldType);
             }
         }
@@ -562,7 +550,7 @@ public class ToXmlUtils {
             if (DataUtils.isNameAnnotationKey(annotation.getKey().getValue())) {
                 return ((BMap<BString, Object>) annotation.getValue()).get(Constants.VALUE).toString();
             }
-        }
+    }
         return recordType.getName();
     }
 

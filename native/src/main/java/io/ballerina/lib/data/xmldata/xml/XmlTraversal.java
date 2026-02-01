@@ -1173,17 +1173,6 @@ class XmlTraversal {
                 Type elementType = TypeUtils.getReferredType(((ArrayType) referredType).getElementType());
                 return elementType.getTag() == TypeTags.RECORD_TYPE_TAG;
             }
-            if (typeTag == TypeTags.UNION_TAG) {
-                for (Type memberType : ((UnionType) referredType).getMemberTypes()) {
-                    Type referredMemberType = TypeUtils.getReferredType(memberType);
-                    if (referredMemberType.getTag() == TypeTags.ARRAY_TAG) {
-                        Type elementType = TypeUtils.getReferredType(((ArrayType) referredMemberType).getElementType());
-                        if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
-                            return true;
-                        }
-                    }
-                }
-            }
             return false;
         }
 
