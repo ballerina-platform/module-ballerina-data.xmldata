@@ -170,7 +170,7 @@ public class ToXmlUtils {
         if (jNode instanceof BMap jMap) {
             BMap<BString, Object> mapNode = (BMap<BString, Object>) jMap;
             BString[] orderedRecordKeysIfXsdSequencePresent = DataUtils.getOrderedRecordKeysIfXsdSequencePresent(
-                    mapNode, DataUtils.getXsdSequencePriorityOrder(referredType, isParentSequence));
+                    mapNode, DataUtils.getXsdSequencePriorityOrder(referredType, isParentSequence), referredType);
 
             if (parentModelGroupInfo instanceof ChoiceInfo) {
                 validateChoiceFields(parentModelGroupInfo, jMap, elementInfoRelatedFieldNames,
@@ -207,7 +207,44 @@ public class ToXmlUtils {
                                 isSequenceField, isSequenceField, modelGroupInfo, elementInfo);
                         xNode = Concat.concat(xNode, childElement);
                     } else {
-                        childElement = getElementFromRecordMember(k, traverseRecordAndGenerateXml(
+                        BString elementKey = k;
+                        if (referredType instanceof RecordType recordType &&
+                            DataUtils.isFieldAnnotatedWithAny(recordType, recordKey)) {
+                            Type valueType = TypeUtils.getType(value);
+                            Type referredValueType = TypeUtils.getReferredType(valueType);
+                            RecordType recordValueType = null;
+
+                            if (referredValueType instanceof RecordType) {
+                                recordValueType = (RecordType) referredValueType;
+                            } else {
+                                Type childType = getChildElementType(referredType, recordKey);
+                                Type referredChildType = TypeUtils.getReferredType(childType);
+                                if (referredChildType instanceof RecordType) {
+                                    recordValueType = (RecordType) referredChildType;
+                                } else if (referredChildType instanceof UnionType unionType) {
+                                    for (Type memberType : unionType.getMemberTypes()) {
+                                        Type referredMemberType = TypeUtils.getReferredType(memberType);
+                                        if (referredMemberType instanceof RecordType) {
+                                            recordValueType = (RecordType) referredMemberType;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (recordValueType != null) {
+                                String typeName = getRecordTypeName(recordValueType);
+                                String namespacePrefix = getRecordTypeNamespacePrefix(recordValueType);
+                                if (namespacePrefix != null && !namespacePrefix.isEmpty()) {
+                                    elementKey = StringUtils.fromString(namespacePrefix + ":" + typeName);
+                                    BMap<BString, Object> typeAnnotations = recordValueType.getAnnotations();
+                                    addNamespacesFromTypeAnnotations(typeAnnotations, allNamespaces, namespacesOfElem);
+                                } else {
+                                    elementKey = StringUtils.fromString(typeName);
+                                }
+                            }
+                        }
+                        childElement = getElementFromRecordMember(elementKey, traverseRecordAndGenerateXml(
                                 value, allNamespaces, namespacesOfElem, options, null, getChildElementType(
                             referredType, recordKey), isSequenceField, isSequenceField, modelGroupInfo, elementInfo),
                             allNamespaces, options, getAttributesMap(value, options, allNamespaces, parentNamespaces));
@@ -254,10 +291,28 @@ public class ToXmlUtils {
                 namespacesOfElem = getNamespacesMap(i, options, parentNamespaces);
                 addNamespaces(allNamespaces, namespacesOfElem);
                 if (options.get(Constants.ARRAY_ENTRY_TAG).toString().isEmpty()) {
-                    childElement = getElementFromRecordMember(StringUtils.fromString(arrayEntryTagKey),
-                        traverseRecordAndGenerateXml(i, allNamespaces, namespacesOfElem,
-                                options, keyObj, getChildElementType(referredType, null),
-                                isParentSequence, isParentSequenceArray, parentModelGroupInfo, parentElementInfo),
+                    Type childType = getChildElementType(referredType, null);
+                    BXml inner = traverseRecordAndGenerateXml(i, allNamespaces, namespacesOfElem,
+                            options, keyObj, childType,
+                            isParentSequence, isParentSequenceArray, parentModelGroupInfo, parentElementInfo);
+                    String elementTagKey = arrayEntryTagKey;
+                    if (i instanceof BMap) {
+                        Type elementValueType = TypeUtils.getType(i);
+                        Type referredElementType = TypeUtils.getReferredType(elementValueType);
+                        if (referredElementType instanceof RecordType recordValueType) {
+                            String typeName = getRecordTypeName(recordValueType);
+                            String namespacePrefix = getRecordTypeNamespacePrefix(recordValueType);
+                            if (namespacePrefix != null && !namespacePrefix.isEmpty()) {
+                                elementTagKey = namespacePrefix + ":" + typeName;
+                                BMap<BString, Object> typeAnnotations = recordValueType.getAnnotations();
+                                addNamespacesFromTypeAnnotations(typeAnnotations, allNamespaces, namespacesOfElem);
+                            } else {
+                                elementTagKey = typeName;
+                            }
+                        }
+                    }
+                    childElement = getElementFromRecordMember(StringUtils.fromString(elementTagKey),
+                        inner,
                         allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces));
                 } else {
                     childElement = getElementFromRecordMember(StringUtils.fromString(arrayEntryTagKey),
@@ -269,7 +324,27 @@ public class ToXmlUtils {
                 xNode = Concat.concat(xNode, isParentSequenceArray ? childElement.children() : childElement);
             }
         } else {
-            xNode = CreateText.createText(StringUtils.fromString(StringUtils.getStringValue(jNode)));
+            if (jNode instanceof BMap<?, ?> mapValue && mapValue.size() > 0) {
+                boolean allKeysAreStrings = true;
+                for (Object key : mapValue.getKeys()) {
+                    if (!(key instanceof BString)) {
+                        allKeysAreStrings = false;
+                        break;
+                    }
+                }
+                
+                if (allKeysAreStrings) {
+                    BMap<BString, BString> currentNamespacesOfElem = getNamespacesMap(jNode, options, parentNamespaces);
+                    addNamespaces(allNamespaces, currentNamespacesOfElem);
+                    xNode = traverseRecordAndGenerateXml(jNode, allNamespaces, currentNamespacesOfElem, options, null, 
+                            PredefinedTypes.TYPE_ANYDATA, isParentSequence, isParentSequenceArray, 
+                            parentModelGroupInfo, parentElementInfo);
+                } else {
+                    xNode = CreateText.createText(StringUtils.fromString(StringUtils.getStringValue(jNode)));
+                }
+            } else {
+                xNode = CreateText.createText(StringUtils.fromString(StringUtils.getStringValue(jNode)));
+            }
         }
         return xNode;
     }
@@ -432,6 +507,9 @@ public class ToXmlUtils {
                 if (typeName.equals(recordKey)) {
                     return Optional.of(fieldType);
                 }
+            } else if (fieldType.getTag() == TypeTags.ANYDATA_TAG
+                    || fieldType.getTag() == TypeTags.JSON_TAG) {
+                return Optional.of(fieldType);
             }
         }
         return Optional.empty();
@@ -444,6 +522,39 @@ public class ToXmlUtils {
             }
         }
         return recordType.getName();
+    }
+
+    private static String getRecordTypeNamespacePrefix(RecordType recordType) {
+        for (Map.Entry<BString, Object> annotation : recordType.getAnnotations().entrySet()) {
+            String key = annotation.getKey().getValue();
+            if (key.endsWith(Constants.NAMESPACE)) {
+                BMap<BString, Object> nsAnnotation = (BMap<BString, Object>) annotation.getValue();
+                Object prefix = nsAnnotation.get(Constants.PREFIX);
+                if (prefix != null && !prefix.toString().isEmpty()) {
+                    return prefix.toString();
+                }
+            }
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void addNamespacesFromTypeAnnotations(BMap<BString, Object> typeAnnotations,
+                                                          BMap<BString, BString> allNamespaces,
+                                                          BMap<BString, BString> namespacesOfElem) {
+        for (Map.Entry<BString, Object> annotation : typeAnnotations.entrySet()) {
+            String key = annotation.getKey().getValue();
+            if (key.endsWith(Constants.NAMESPACE)) {
+                BMap<BString, Object> nsAnnotation = (BMap<BString, Object>) annotation.getValue();
+                Object prefix = nsAnnotation.get(Constants.PREFIX);
+                Object uri = nsAnnotation.get(Constants.URI);
+                if (prefix != null && !prefix.toString().isEmpty() && uri != null) {
+                    String nsKey = getXmlnsNameUrI() + prefix.toString();
+                    allNamespaces.put(StringUtils.fromString(nsKey), StringUtils.fromString(uri.toString()));
+                    namespacesOfElem.put(StringUtils.fromString(nsKey), StringUtils.fromString(uri.toString()));
+                }
+            }
+        }
     }
 
     public static boolean isSingleRecordMember(Object node) {
@@ -506,16 +617,30 @@ public class ToXmlUtils {
             }
 
             BMap<BString, BString> newAttributes = attributes;
+            String defaultNamespaceUri = Constants.EMPTY_STRING;
+            // Check for namespace stored with full namespace URI key
             if (newAttributes.containsKey(StringUtils.fromString(getXmlnsNameUrI()))) {
                 String value = newAttributes.get(StringUtils.fromString(getXmlnsNameUrI())).toString();
                 newAttributes.remove(StringUtils.fromString(getXmlnsNameUrI()));
                 newAttributes.put(XMLNS, StringUtils.fromString(value));
+                defaultNamespaceUri = value;
+            } else if (newAttributes.containsKey(XMLNS)) {
+                defaultNamespaceUri = newAttributes.get(XMLNS).getValue();
             }
+
+            String finalElementName = nameStr;
             if (!userAttributePrefix.equals(Constants.EMPTY_STRING)) {
-                element = CreateElement.createElement(removeUserAttributePrefix(StringUtils.fromString(nameStr),
-                        StringUtils.fromString(userAttributePrefix), null), newAttributes, children);
+                finalElementName = removeUserAttributePrefix(StringUtils.fromString(nameStr),
+                        StringUtils.fromString(userAttributePrefix), null).getValue();
+            }
+
+            if (!defaultNamespaceUri.equals(Constants.EMPTY_STRING)) {
+                element = CreateElement.createElement(
+                        StringUtils.fromString("{" + defaultNamespaceUri + "}" + finalElementName),
+                        newAttributes, children);
             } else {
-                element = CreateElement.createElement(StringUtils.fromString(nameStr), newAttributes, children);
+                element = CreateElement.createElement(StringUtils.fromString(finalElementName),
+                        newAttributes, children);
             }
         }
         return element;

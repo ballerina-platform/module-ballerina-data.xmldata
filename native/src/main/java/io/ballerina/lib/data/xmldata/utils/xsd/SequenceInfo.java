@@ -47,6 +47,7 @@ public class SequenceInfo implements ModelGroupInfo {
     private final Map<String, Integer> maxElementCount = new HashMap<>();
     private final Map<String, Boolean> elementOptionality = new HashMap<>();
     private final List<String> allElements = new ArrayList<>();
+    private final List<String> anyAnnotatedFields = new ArrayList<>();
     int currentIndex = 0;
     int elementCount;
     String lastElement = "";
@@ -123,7 +124,16 @@ public class SequenceInfo implements ModelGroupInfo {
 
     @Override
     public boolean isElementContains(String elementName) {
-        return this.allElements.contains(elementName);
+        if (elementName == null || elementName.isEmpty()) {
+            return false;
+        }
+        if (this.allElements.contains(elementName)) {
+            return true;
+        }
+        if (!anyAnnotatedFields.isEmpty()) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -166,38 +176,45 @@ public class SequenceInfo implements ModelGroupInfo {
     }
 
     private void checkElementOrderAndUpdateElementOccurences(String element) {
+        String elementToProcess = element;
+        if (!allElements.contains(element) && !anyAnnotatedFields.isEmpty()) {
+            elementToProcess = anyAnnotatedFields.get(0);
+        }
+
         String nextElement;
         boolean isLastElement = false;
 
-        if (element.equals(lastElement)) {
+        if (elementToProcess.equals(lastElement)) {
             nextElement = lastElement;
             isLastElement = true;
         } else {
             nextElement = allElements.get(currentIndex == this.elementCount ? currentIndex - 1 : currentIndex);
         }
 
-        while (!nextElement.equals(element)) {
+        while (!nextElement.equals(elementToProcess)) {
             if (!elementOptionality.get(nextElement)) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.INCORRECT_ELEMENT_ORDER,
-                        xmlElementNameMap.get(element), fieldName);
+                        xmlElementNameMap.getOrDefault(element, element), fieldName);
             }
             currentIndex++;
             nextElement = allElements.get(currentIndex);
 
             if (currentIndex == this.elementCount) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.INCORRECT_ELEMENT_ORDER,
-                        xmlElementNameMap.get(element), fieldName);
+                        xmlElementNameMap.getOrDefault(element, element), fieldName);
             }
         }
 
         if (remainingElementCount.get(nextElement) == 0) {
-            throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_MORE_THAN_MAX_ALLOWED_TIMES_IN_SEQUENCES,
-                    xmlElementNameMap.get(nextElement), fieldName);
+            if (!anyAnnotatedFields.contains(nextElement)) {
+                throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_MORE_THAN_MAX_ALLOWED_TIMES_IN_SEQUENCES,
+                        xmlElementNameMap.get(nextElement), fieldName);
+            }
         } else {
-            remainingElementCount.put(element, remainingElementCount.get(nextElement) - 1);
-            int elementCount = maxElementCount.get(element) - remainingElementCount.get(element);
+            remainingElementCount.put(elementToProcess, remainingElementCount.get(nextElement) - 1);
+            int elementCount = maxElementCount.get(elementToProcess) - remainingElementCount.get(elementToProcess);
 
-            if (elementCount >= minimumElementCount.get(element) && !isLastElement
+            if (elementCount >= minimumElementCount.get(elementToProcess) && !isLastElement
                     && currentIndex != this.elementCount) {
                 currentIndex++;
             } else {
@@ -206,7 +223,7 @@ public class SequenceInfo implements ModelGroupInfo {
                 }
             }
 
-            if (currentIndex == this.elementCount && elementCount >= minimumElementCount.get(element)) {
+            if (currentIndex == this.elementCount && elementCount >= minimumElementCount.get(elementToProcess)) {
                 isCompleted = true;
             }
         }
@@ -226,7 +243,13 @@ public class SequenceInfo implements ModelGroupInfo {
     }
 
     private void updateUnvisitedElementsBasedOnPriorityOrder(RecordType fieldType) {
-        this.allElements.addAll(DataUtils.getXsdSequencePriorityOrder(fieldType, true).entrySet().stream()
+        HashMap<String, Integer> priorityOrder = DataUtils.getXsdSequencePriorityOrder(fieldType, true);
+        for (String fieldName : priorityOrder.keySet()) {
+            if (DataUtils.isFieldAnnotatedWithAny(fieldType, fieldName)) {
+                anyAnnotatedFields.add(fieldName);
+            }
+        }
+        this.allElements.addAll(priorityOrder.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey)
                 .toList());
