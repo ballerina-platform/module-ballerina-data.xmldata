@@ -300,14 +300,7 @@ public class ToXmlUtils {
 
                             if (recordValueType != null) {
                                 String typeName = getRecordTypeName(recordValueType);
-                                String namespacePrefix = getRecordTypeNamespacePrefix(recordValueType);
-                                if (namespacePrefix != null && !namespacePrefix.isEmpty()) {
-                                    elementKey = StringUtils.fromString(namespacePrefix + ":" + typeName);
-                                    BMap<BString, Object> typeAnnotations = recordValueType.getAnnotations();
-                                    addNamespacesFromTypeAnnotations(typeAnnotations, allNamespaces, namespacesOfElem);
-                                } else {
-                                    elementKey = StringUtils.fromString(typeName);
-                                }
+                                elementKey = StringUtils.fromString(typeName);
                             }
                         }
                         childElement = getElementFromRecordMember(elementKey, traverseRecordAndGenerateXml(
@@ -371,28 +364,12 @@ public class ToXmlUtils {
                         Type elementValueType = TypeUtils.getType(i);
                         Type referredElementType = TypeUtils.getReferredType(elementValueType);
                         if (referredElementType instanceof RecordType recordValueType) {
-                            String typeName = getRecordTypeName(recordValueType);
-                            String namespacePrefix = getRecordTypeNamespacePrefix(recordValueType);
-                            if (namespacePrefix != null && !namespacePrefix.isEmpty()) {
-                                elementTagKey = namespacePrefix + ":" + typeName;
-                                BMap<BString, Object> typeAnnotations = recordValueType.getAnnotations();
-                                addNamespacesFromTypeAnnotations(typeAnnotations, allNamespaces, namespacesOfElem);
-                            } else {
-                                elementTagKey = typeName;
-                            }
+                            elementTagKey = getRecordTypeName(recordValueType);
                         } else {
                             // Fallback to declared child type if runtime type is not a RecordType
                             Type referredChildType = TypeUtils.getReferredType(childType);
                             if (referredChildType instanceof RecordType recordChildType) {
-                                String typeName = getRecordTypeName(recordChildType);
-                                String namespacePrefix = getRecordTypeNamespacePrefix(recordChildType);
-                                if (namespacePrefix != null && !namespacePrefix.isEmpty()) {
-                                    elementTagKey = namespacePrefix + ":" + typeName;
-                                    BMap<BString, Object> typeAnnotations = recordChildType.getAnnotations();
-                                    addNamespacesFromTypeAnnotations(typeAnnotations, allNamespaces, namespacesOfElem);
-                                } else {
-                                    elementTagKey = typeName;
-                                }
+                                elementTagKey = getRecordTypeName(recordChildType);
                             }
                         }
                     }
@@ -409,27 +386,7 @@ public class ToXmlUtils {
                 xNode = Concat.concat(xNode, isParentSequenceArray ? childElement.children() : childElement);
             }
         } else {
-            if (jNode instanceof BMap<?, ?> mapValue && mapValue.size() > 0) {
-                boolean allKeysAreStrings = true;
-                for (Object key : mapValue.getKeys()) {
-                    if (!(key instanceof BString)) {
-                        allKeysAreStrings = false;
-                        break;
-                    }
-                }
-                
-                if (allKeysAreStrings) {
-                    BMap<BString, BString> currentNamespacesOfElem = getNamespacesMap(jNode, options, parentNamespaces);
-                    addNamespaces(allNamespaces, currentNamespacesOfElem);
-                    xNode = traverseRecordAndGenerateXml(jNode, allNamespaces, currentNamespacesOfElem, options, null, 
-                            PredefinedTypes.TYPE_ANYDATA, isParentSequence, isParentSequenceArray, 
-                            parentModelGroupInfo, parentElementInfo);
-                } else {
-                    xNode = CreateText.createText(StringUtils.fromString(StringUtils.getStringValue(jNode)));
-                }
-            } else {
-                xNode = CreateText.createText(StringUtils.fromString(StringUtils.getStringValue(jNode)));
-            }
+            xNode = CreateText.createText(StringUtils.fromString(StringUtils.getStringValue(jNode)));
         }
         return xNode;
     }
@@ -607,39 +564,6 @@ public class ToXmlUtils {
             }
         }
         return recordType.getName();
-    }
-
-    private static String getRecordTypeNamespacePrefix(RecordType recordType) {
-        for (Map.Entry<BString, Object> annotation : recordType.getAnnotations().entrySet()) {
-            String key = annotation.getKey().getValue();
-            if (key.endsWith(Constants.NAMESPACE)) {
-                BMap<BString, Object> nsAnnotation = (BMap<BString, Object>) annotation.getValue();
-                Object prefix = nsAnnotation.get(Constants.PREFIX);
-                if (prefix != null && !prefix.toString().isEmpty()) {
-                    return prefix.toString();
-                }
-            }
-        }
-        return null;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void addNamespacesFromTypeAnnotations(BMap<BString, Object> typeAnnotations,
-                                                          BMap<BString, BString> allNamespaces,
-                                                          BMap<BString, BString> namespacesOfElem) {
-        for (Map.Entry<BString, Object> annotation : typeAnnotations.entrySet()) {
-            String key = annotation.getKey().getValue();
-            if (key.endsWith(Constants.NAMESPACE)) {
-                BMap<BString, Object> nsAnnotation = (BMap<BString, Object>) annotation.getValue();
-                Object prefix = nsAnnotation.get(Constants.PREFIX);
-                Object uri = nsAnnotation.get(Constants.URI);
-                if (prefix != null && !prefix.toString().isEmpty() && uri != null) {
-                    String nsKey = getXmlnsNameUrI() + prefix.toString();
-                    allNamespaces.put(StringUtils.fromString(nsKey), StringUtils.fromString(uri.toString()));
-                    namespacesOfElem.put(StringUtils.fromString(nsKey), StringUtils.fromString(uri.toString()));
-                }
-            }
-        }
     }
 
     public static boolean isSingleRecordMember(Object node) {
