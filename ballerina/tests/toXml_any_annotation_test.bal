@@ -369,7 +369,6 @@ type RecordWithOptionalAnyUnion record {|
     (PersonInfo|AddressInfo)? optionalUnion;
 |};
 
-
 type Level3Record record {|
     @Any
     PersonInfo? level3Person;
@@ -445,6 +444,31 @@ type SingleOptionalAnyGroup record {|
     @SequenceOrder {value: 2}
     @Any
     PersonData? optionalAny;
+|};
+
+public type PersonRecord1 record {
+    string name;
+};
+
+@Name {value: "Object"}
+@Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
+public type Object123 record {|
+    @Sequence {minOccurs: 0}
+    SequenceGroup123[] sequenceGroup62;
+    @Attribute
+    string Id?;
+    @Attribute
+    string MimeType?;
+    @Attribute
+    string Encoding?;
+|};
+
+@Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
+public type SequenceGroup123 record {|
+    @Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
+    @SequenceOrder {value: 1}
+    @Any
+    anydata anyElement;
 |};
 
 @test:Config {
@@ -1659,7 +1683,7 @@ type RecordWithAnyJsonNil record {|
 type RecordWithEmptyAnyArray record {|
     string id;
     @Any
-    PersonInfo[] people;
+    PersonInfo[] people?;
 |};
 
 type RecordWithAnyUnionWithNilType record {|
@@ -1938,6 +1962,20 @@ function testXmlWithAnyArray() returns error? {
     xml expected = xml `<RecordWithEmptyAnyArray><id>empty-array</id><PersonInfo><age>29</age><country>India</country></PersonInfo></RecordWithEmptyAnyArray>`;
     test:assertEquals(result, expected);
     RecordWithEmptyAnyArray parsedRec = check parseAsType(result);
+    test:assertEquals(parsedRec, rec);
+}
+
+@test:Config {
+    groups: ["toXml", "any"]
+}
+function testXmlWithAnyArray2() returns error? {
+    Object123 rec = {
+        sequenceGroup62: []
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<Object xmlns="http://www.w3.org/2000/09/xmldsig#"/>`;
+    test:assertEquals(result.toString(), expected.toString());
+    Object123 parsedRec = check parseAsType(result);
     test:assertEquals(parsedRec, rec);
 }
 
