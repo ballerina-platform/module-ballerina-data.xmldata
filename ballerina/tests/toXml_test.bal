@@ -16,6 +16,128 @@
 
 import ballerina/test;
 
+type RecordWithIntStringUnion record {|
+    string id;
+    int|string value;
+|};
+
+type RecordWithBooleanIntUnion record {|
+    string name;
+    boolean|int flag;
+|};
+
+type RecordWithDecimalFloatUnion record {|
+    string label;
+    decimal|float amount;
+|};
+
+type RecordWithMultiplePrimitiveUnion record {|
+    string id;
+    int|string|boolean|decimal mixedValue;
+|};
+
+type RecordWithArrayOrSingleRecord record {|
+    string id;
+    PersonInfo[]|PersonInfo items;
+|};
+
+type RecordWithStringArrayOrString record {|
+    string name;
+    string[]|string values;
+|};
+
+type RecordWithIntArrayOrInt record {|
+    string label;
+    int[]|int numbers;
+|};
+
+type SimpleRecord record {|
+    string name;
+|};
+
+type ComplexRecord record {|
+    string name;
+    int count;
+    string description;
+|};
+
+type RecordWithNestedUnion record {|
+    string id;
+    SimpleRecord|ComplexRecord nested;
+|};
+
+type RecordWithMapOrRecord record {|
+    string id;
+    map<string>|PersonInfo data;
+|};
+
+type Level1Union record {|
+    string l1Name;
+|};
+
+type Level2Union record {|
+    string l2Name;
+    Level1Union inner;
+|};
+
+type RecordWithDeepUnion record {|
+    string id;
+    Level1Union|Level2Union deepField;
+|};
+
+type RecordWithXmlOrRecord record {|
+    string id;
+    xml|PersonInfo content;
+|};
+
+type RecordWithXmlOrMap record {|
+    string name;
+    xml|map<string> xmlOrMap;
+|};
+
+type RecordWithAnydataUnion record {|
+    string id;
+    anydata|string flexible;
+|};
+
+type PersonRef PersonInfo;
+type AddressRef AddressInfo;
+
+type RecordWithRefTypeUnion record {|
+    string id;
+    PersonRef|AddressRef refField;
+|};
+
+type RecordWithOptionalPrimitiveUnion record {|
+    string id;
+    (int|string)? optionalValue;
+|};
+
+type RecordWithNullableUnionMembers record {|
+    string name;
+    int?|string? nullableField;
+|};
+
+type RecordWithEmptyArray record {|
+    string id;
+    int[]|string items;
+|};
+
+type RecordWithRecordArrayUnion record {|
+    string id;
+    PersonInfo|PersonInfo[] people;
+|};
+
+type RecordWithByteArrayUnion record {|
+    string id;
+    byte[]|string data;
+|};
+
+type RecordWithTupleUnion record {|
+    string id;
+    [int, string]|string tupleOrString;
+|};
+
 @test:Config {
     groups: ["toXml"]
 }
@@ -1934,4 +2056,530 @@ function testFullyNestedXmlElementWithDifferentNamespaces() returns error? {
                     </CompanyDetails>`;
     FullyNestedRecord recValue = check parseAsType(xmlValue);
     test:assertEquals(recValue, data, string `expected: ${recValue.toString()}, actual: ${data.toString()}`);
+}
+
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithIntStringUnionIntValue() returns error? {
+    RecordWithIntStringUnion rec = {
+        id: "001",
+        value: 42
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<RecordWithIntStringUnion><id>001</id><value>42</value></RecordWithIntStringUnion>`;
+    test:assertEquals(result, expected);
+
+    RecordWithIntStringUnion parsed = check parseAsType(result);
+    test:assertEquals(parsed, rec);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithIntStringUnionStringValue() returns error? {
+    RecordWithIntStringUnion rec = {
+        id: "002",
+        value: "hello"
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<RecordWithIntStringUnion><id>002</id><value>hello</value></RecordWithIntStringUnion>`;
+    test:assertEquals(result, expected);
+
+    RecordWithIntStringUnion parsed = check parseAsType(result);
+    test:assertEquals(parsed, rec);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithBooleanIntUnionBooleanValue() returns error? {
+    RecordWithBooleanIntUnion rec = {
+        name: "test",
+        flag: true
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<RecordWithBooleanIntUnion><name>test</name><flag>true</flag></RecordWithBooleanIntUnion>`;
+    test:assertEquals(result, expected);
+
+    RecordWithBooleanIntUnion parsed = check parseAsType(result);
+    test:assertEquals(parsed, rec);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithBooleanIntUnionIntValue() returns error? {
+    RecordWithBooleanIntUnion rec = {
+        name: "test",
+        flag: 100
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<RecordWithBooleanIntUnion><name>test</name><flag>100</flag></RecordWithBooleanIntUnion>`;
+    test:assertEquals(result, expected);
+
+    RecordWithBooleanIntUnion parsed = check parseAsType(result);
+    test:assertEquals(parsed, rec);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithDecimalFloatUnionDecimalValue() returns error? {
+    RecordWithDecimalFloatUnion rec = {
+        label: "price",
+        amount: <decimal>99.99
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("99.99"));
+
+    RecordWithDecimalFloatUnion parsed = check parseAsType(result);
+    test:assertEquals(parsed.label, rec.label);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithMultiplePrimitiveUnionInt() returns error? {
+    RecordWithMultiplePrimitiveUnion rec = {
+        id: "multi-int",
+        mixedValue: 123
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<RecordWithMultiplePrimitiveUnion><id>multi-int</id><mixedValue>123</mixedValue></RecordWithMultiplePrimitiveUnion>`;
+    test:assertEquals(result, expected);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithMultiplePrimitiveUnionString() returns error? {
+    RecordWithMultiplePrimitiveUnion rec = {
+        id: "multi-string",
+        mixedValue: "text value"
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<RecordWithMultiplePrimitiveUnion><id>multi-string</id><mixedValue>text value</mixedValue></RecordWithMultiplePrimitiveUnion>`;
+    test:assertEquals(result, expected);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithMultiplePrimitiveUnionBoolean() returns error? {
+    RecordWithMultiplePrimitiveUnion rec = {
+        id: "multi-bool",
+        mixedValue: false
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<RecordWithMultiplePrimitiveUnion><id>multi-bool</id><mixedValue>false</mixedValue></RecordWithMultiplePrimitiveUnion>`;
+    test:assertEquals(result, expected);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithMultiplePrimitiveUnionDecimal() returns error? {
+    RecordWithMultiplePrimitiveUnion rec = {
+        id: "multi-decimal",
+        mixedValue: <decimal>45.67
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("45.67"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithArrayOrSingleRecordArray() returns error? {
+    RecordWithArrayOrSingleRecord rec = {
+        id: "arr-001",
+        items: [{age: 25, country: "USA"}, {age: 30, country: "UK"}]
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("USA"));
+    test:assertTrue(result.toString().includes("UK"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithArrayOrSingleRecordSingle() returns error? {
+    RecordWithArrayOrSingleRecord rec = {
+        id: "single-001",
+        items: {age: 35, country: "Canada"}
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("Canada"));
+    test:assertTrue(result.toString().includes("35"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithStringArrayOrStringArray() returns error? {
+    RecordWithStringArrayOrString rec = {
+        name: "test-array",
+        values: ["one", "two", "three"]
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("one"));
+    test:assertTrue(result.toString().includes("two"));
+    test:assertTrue(result.toString().includes("three"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithStringArrayOrStringSingle() returns error? {
+    RecordWithStringArrayOrString rec = {
+        name: "test-single",
+        values: "single value"
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<RecordWithStringArrayOrString><name>test-single</name><values>single value</values></RecordWithStringArrayOrString>`;
+    test:assertEquals(result, expected);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithIntArrayOrIntArray() returns error? {
+    RecordWithIntArrayOrInt rec = {
+        label: "single-num",
+        numbers: 99
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<RecordWithIntArrayOrInt><label>single-num</label><numbers>99</numbers></RecordWithIntArrayOrInt>`;
+    test:assertEquals(result, expected);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithIntArrayOrIntSingle() returns error? {
+    RecordWithIntArrayOrInt rec = {
+        label: "single-num",
+        numbers: 42
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<RecordWithIntArrayOrInt><label>single-num</label><numbers>42</numbers></RecordWithIntArrayOrInt>`;
+    test:assertEquals(result, expected);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithNestedUnionSimpleRecord() returns error? {
+    RecordWithNestedUnion rec = {
+        id: "nested-simple",
+        nested: <SimpleRecord>{name: "Simple"}
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("Simple"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithNestedUnionComplexRecord() returns error? {
+    RecordWithNestedUnion rec = {
+        id: "nested-complex",
+        nested: <ComplexRecord>{name: "Complex", count: 10, description: "A complex record"}
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("Complex"));
+    test:assertTrue(result.toString().includes("10"));
+    test:assertTrue(result.toString().includes("A complex record"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithDeepUnionLevel1() returns error? {
+    RecordWithDeepUnion rec = {
+        id: "deep-l1",
+        deepField: <Level1Union>{l1Name: "Level 1"}
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("Level 1"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithDeepUnionLevel2() returns error? {
+    RecordWithDeepUnion rec = {
+        id: "deep-l2",
+        deepField: <Level2Union>{l2Name: "Level 2", inner: {l1Name: "Inner Level 1"}}
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("Level 2"));
+    test:assertTrue(result.toString().includes("Inner Level 1"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithMapOrRecordMap() returns error? {
+    RecordWithMapOrRecord rec = {
+        id: "map-test",
+        data: {"key1": "value1", "key2": "value2"}
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("value1"));
+    test:assertTrue(result.toString().includes("value2"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithMapOrRecordRecord() returns error? {
+    RecordWithMapOrRecord rec = {
+        id: "record-test",
+        data: <PersonInfo>{age: 28, country: "Germany"}
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("28"));
+    test:assertTrue(result.toString().includes("Germany"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithXmlOrRecordXml() returns error? {
+    RecordWithXmlOrRecord rec = {
+        id: "xml-test",
+        content: xml `<inner>XML Content</inner>`
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("XML Content"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithXmlOrRecordRecord() returns error? {
+    RecordWithXmlOrRecord rec = {
+        id: "record-in-union",
+        content: <PersonInfo>{age: 33, country: "France"}
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("33"));
+    test:assertTrue(result.toString().includes("France"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithRefTypeUnionPerson() returns error? {
+    RecordWithRefTypeUnion rec = {
+        id: "ref-person",
+        refField: <PersonRef>{age: 40, country: "Italy"}
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("40"));
+    test:assertTrue(result.toString().includes("Italy"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithRefTypeUnionAddress() returns error? {
+    RecordWithRefTypeUnion rec = {
+        id: "ref-address",
+        refField: <AddressRef>{city: "Rome", zip: "00100"}
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("Rome"));
+    test:assertTrue(result.toString().includes("00100"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithOptionalPrimitiveUnionInt() returns error? {
+    RecordWithOptionalPrimitiveUnion rec = {
+        id: "opt-int",
+        optionalValue: 55
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<RecordWithOptionalPrimitiveUnion><id>opt-int</id><optionalValue>55</optionalValue></RecordWithOptionalPrimitiveUnion>`;
+    test:assertEquals(result, expected);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithOptionalPrimitiveUnionString() returns error? {
+    RecordWithOptionalPrimitiveUnion rec = {
+        id: "opt-string",
+        optionalValue: "optional text"
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<RecordWithOptionalPrimitiveUnion><id>opt-string</id><optionalValue>optional text</optionalValue></RecordWithOptionalPrimitiveUnion>`;
+    test:assertEquals(result, expected);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithOptionalPrimitiveUnionNil() returns error? {
+    RecordWithOptionalPrimitiveUnion rec = {
+        id: "opt-nil",
+        optionalValue: ()
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<RecordWithOptionalPrimitiveUnion><id>opt-nil</id></RecordWithOptionalPrimitiveUnion>`;
+    test:assertEquals(result, expected);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithAnydataUnionString() returns error? {
+    RecordWithAnydataUnion rec = {
+        id: "anydata-str",
+        flexible: "string value"
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("string value"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithAnydataUnionInt() returns error? {
+    RecordWithAnydataUnion rec = {
+        id: "anydata-int",
+        flexible: 999
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("999"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithAnydataUnionRecord() returns error? {
+    RecordWithAnydataUnion rec = {
+        id: "anydata-record",
+        flexible: {name: "test record"}
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("test record"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithNullableUnionMembersInt() returns error? {
+    RecordWithNullableUnionMembers rec = {
+        name: "nullable-test",
+        nullableField: 77
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("77"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithNullableUnionMembersString() returns error? {
+    RecordWithNullableUnionMembers rec = {
+        name: "nullable-str",
+        nullableField: "nullable string"
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("nullable string"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithNullableUnionMembersNil() returns error? {
+    RecordWithNullableUnionMembers rec = {
+        name: "nullable-nil",
+        nullableField: ()
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<RecordWithNullableUnionMembers><name>nullable-nil</name></RecordWithNullableUnionMembers>`;
+    test:assertEquals(result, expected);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithEmptyArrayInUnion() returns error? {
+    RecordWithEmptyArray rec = {
+        id: "empty-arr",
+        items: []
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("empty-arr"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithRecordArrayUnionSingle() returns error? {
+    RecordWithRecordArrayUnion rec = {
+        id: "single-person",
+        people: {age: 22, country: "Spain"}
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("Spain"));
+    test:assertTrue(result.toString().includes("22"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithRecordArrayUnionArray() returns error? {
+    RecordWithRecordArrayUnion rec = {
+        id: "multi-person",
+        people: [{age: 20, country: "Portugal"}, {age: 25, country: "Greece"}]
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("Portugal"));
+    test:assertTrue(result.toString().includes("Greece"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithByteArrayUnionString() returns error? {
+    RecordWithByteArrayUnion rec = {
+        id: "byte-str",
+        data: "text data"
+    };
+    xml result = check toXml(rec);
+    xml expected = xml `<RecordWithByteArrayUnion><id>byte-str</id><data>text data</data></RecordWithByteArrayUnion>`;
+    test:assertEquals(result, expected);
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithTupleUnionString() returns error? {
+    RecordWithTupleUnion rec = {
+        id: "tuple-str",
+        tupleOrString: "plain string"
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("plain string"));
+}
+
+@test:Config {
+    groups: ["toXml", "union"]
+}
+function testToXmlWithTupleUnionTuple() returns error? {
+    RecordWithTupleUnion rec = {
+        id: "tuple-val",
+        tupleOrString: [42, "answer"]
+    };
+    xml result = check toXml(rec);
+    test:assertTrue(result.toString().includes("42"));
+    test:assertTrue(result.toString().includes("answer"));
 }
