@@ -124,6 +124,7 @@ class XmlTraversal {
                     ValueCreator.createRecordValue(recordType.getPackage(), recordType.getName());
             BXml nextXml = validateRootElement(xml, recordType, analyzerData);
             Object resultRecordValue = traverseXml(nextXml, recordType, analyzerData);
+            
             validateModelGroupStackForRootElement(analyzerData);
             validateCurrentElementInfo(analyzerData);
             DataUtils.validateRequiredFields(analyzerData, analyzerData.currentNode);
@@ -506,11 +507,39 @@ class XmlTraversal {
             RecordType prevRecord = analyzerData.rootRecord;
             analyzerData.rootRecord = elementType;
             traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
+            
             validateCurrentElementInfo(analyzerData);
             DataUtils.validateRequiredFields(analyzerData, analyzerData.currentNode);
             DataUtils.popExpectedTypeStacks(analyzerData);
             analyzerData.rootRecord = prevRecord;
             analyzerData.currentNode = (BMap<BString, Object>) analyzerData.nodesStack.pop();
+        }
+
+        
+        private void initializeEmptySequenceArraysForEmptySequence(BMap<BString, Object> recordValue, 
+                                                                   RecordType recordType) {
+            HashMap<String, ModelGroupInfo> xsdModelGroupInfo = 
+                    DataUtils.getFieldNamesWithModelGroupAnnotations(recordType, new HashMap<>());
+            
+            // Only initialize sequence fields that are currently null
+            for (Map.Entry<String, Field> field : recordType.getFields().entrySet()) {
+                String fieldName = field.getValue().getFieldName();
+                BString fieldKey = StringUtils.fromString(fieldName);
+                
+                if (xsdModelGroupInfo.containsKey(fieldName)) {
+                    ModelGroupInfo modelGroup = xsdModelGroupInfo.get(fieldName);
+                    if (modelGroup.getMinOccurs() == 0) {
+                        Type fieldType = TypeUtils.getReferredType(field.getValue().getFieldType());
+                        
+                        if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
+                            Object currentValue = recordValue.get(fieldKey);
+                            if (currentValue == null) {
+                                recordValue.put(fieldKey, ValueCreator.createArrayValue((ArrayType) fieldType));
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         private void convertToMapType(BXmlItem xmlItem, Type fieldType, Type elementType, String fieldName,
@@ -806,6 +835,14 @@ class XmlTraversal {
             List<BXml> newSequence = filterEmptyValuesOrCommentOrPi(xmlSequence.getChildrenList());
 
             if (newSequence.isEmpty()) {
+                // Special case: initialize empty arrays
+                if (type.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                    RecordType recordType = (RecordType) type;
+                    if (analyzerData.currentNode != null) {
+                        initializeEmptySequenceArraysForEmptySequence(
+                            (BMap<BString, Object>) analyzerData.currentNode, recordType);
+                    }
+                }
                 return;
             }
 
