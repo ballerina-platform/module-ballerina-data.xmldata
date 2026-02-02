@@ -821,10 +821,6 @@ public class DataUtils {
                     BMap<BString, Object> mapValue = (BMap<BString, Object>) value;
                     Type valueType = TypeUtils.getReferredType(mapValue.getType());
                     if (valueType.getTag() == TypeTags.RECORD_TYPE_TAG) {
-                        if (isFieldAnnotatedWithAnyFromAnnotations(annotations, key)) {
-                            processRecord(key, annotations, recordValue, value, (RecordType) valueType);
-                            return;
-                        }
                         processRecord(key, annotations, recordValue, value, (RecordType) valueType);
                         return;
                     }

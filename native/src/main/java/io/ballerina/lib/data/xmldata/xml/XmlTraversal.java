@@ -323,8 +323,7 @@ class XmlTraversal {
 
                 Type restType = analyzerData.restTypes.peek();
                 String elementName = elementQName.getLocalPart();
-                Field anyAnyDataField = findAnyAnydataField(analyzerData.rootRecord, fieldsMap,
-                        analyzerData.useSemanticEquality);
+                Field anyAnyDataField = findAnyAnydataField(analyzerData.rootRecord);
                 if (anyAnyDataField != null) {
                     currentField = anyAnyDataField;
                     Type currentFieldType = currentField.getFieldType();
@@ -343,8 +342,7 @@ class XmlTraversal {
                     return;
                 }
 
-                Field anyTypedArrayField = findAnyTypedArrayField(analyzerData.rootRecord, elementName,
-                        fieldsMap, analyzerData.useSemanticEquality);
+                Field anyTypedArrayField = findAnyTypedArrayField(analyzerData.rootRecord, elementName);
                 if (anyTypedArrayField != null) {
                     currentField = anyTypedArrayField;
                     analyzerData.visitedFieldHierarchy.peek().put(elementQName, currentField);
@@ -1110,8 +1108,7 @@ class XmlTraversal {
                     QualifiedNameFactory.createQualifiedName("", "", "", analyzerData.useSemanticEquality), false);
         }
 
-        private Field findAnyAnydataField(RecordType recordType, QualifiedNameMap<Field> fieldsMap,
-                                          boolean useSemanticEquality) {
+        private Field findAnyAnydataField(RecordType recordType) {
             if (recordType == null) {
                 return null;
             }
@@ -1176,8 +1173,7 @@ class XmlTraversal {
             return false;
         }
 
-        private Field findAnyTypedArrayField(RecordType recordType, String elementName,
-                                           QualifiedNameMap<Field> fieldsMap, boolean useSemanticEquality) {
+        private Field findAnyTypedArrayField(RecordType recordType, String elementName) {
             if (recordType == null) {
                 return null;
             }
@@ -1187,14 +1183,10 @@ class XmlTraversal {
                 Field field = entry.getValue();
                 Type fieldType = TypeUtils.getReferredType(field.getFieldType());
                 if (DataUtils.isFieldAnnotatedWithAny(recordType, fieldName) && isTypedArrayForAnyField(fieldType)) {
-                    if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
-                        Type elementType = TypeUtils.getReferredType(((ArrayType) fieldType).getElementType());
-                        if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
-                            String typeName = getRecordTypeName((RecordType) elementType);
-                            if (elementName.equals(typeName)) {
-                                return field;
-                            }
-                        }
+                    Type elementType = TypeUtils.getReferredType(((ArrayType) fieldType).getElementType());
+                    String typeName = getRecordTypeName((RecordType) elementType);
+                    if (elementName.equals(typeName)) {
+                        return field;
                     }
                 }
             }

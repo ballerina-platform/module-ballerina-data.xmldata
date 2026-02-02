@@ -211,19 +211,15 @@ public class ToXmlUtils {
                                 if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
                                     isAnyArrayField = true;
                                 } else if (elementType.getTag() == TypeTags.ANYDATA_TAG) {
-                                    if (value instanceof BArray) {
-                                        BArray array = (BArray) value;
-                                        if (array.size() > 0) {
-                                            for (int i = 0; i < array.size(); i++) {
-                                                Object element = array.get(i);
-                                                if (element != null) {
-                                                    Type actualType = TypeUtils.getType(element);
-                                                    if (TypeUtils.getReferredType(actualType).getTag() == 
-                                                            TypeTags.RECORD_TYPE_TAG) {
-                                                        isAnyArrayField = true;
-                                                        break;
-                                                    }
-                                                }
+                                    BArray array = (BArray) value;
+                                    for (int i = 0; i < array.size(); i++) {
+                                        Object element = array.get(i);
+                                        if (element != null) {
+                                            Type actualType = TypeUtils.getType(element);
+                                            if (TypeUtils.getReferredType(actualType).getTag() ==
+                                                    TypeTags.RECORD_TYPE_TAG) {
+                                                isAnyArrayField = true;
+                                                break;
                                             }
                                         }
                                     }
