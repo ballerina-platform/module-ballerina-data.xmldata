@@ -450,6 +450,29 @@ public type PersonRecord1 record {
     string name;
 };
 
+type Person345 record {
+    string name;
+};
+
+@Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
+public type Sign record {|
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    SequenceGroup52 sequenceGroup52;
+    @Attribute
+    string data;
+|};
+
+@Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
+public type SequenceGroup52 record {|
+    @Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
+    @SequenceOrder {value: 1}
+    int outputLength?;
+    @Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
+    @SequenceOrder {value: 2}
+    @Any
+    anydata[]? anyElement;
+|};
+
 @Name {value: "Object"}
 @Namespace {uri: "http://www.w3.org/2000/09/xmldsig#"}
 public type Object123 record {|
@@ -2074,4 +2097,20 @@ function testRoundTripWithNilAnyFields() returns error? {
 
     test:assertEquals(parsed.name, original.name);
     test:assertEquals(parsed?.address, original?.address);
+}
+
+@test:Config {
+    groups: ["toXml", "any"]
+}
+function testEmptyValuesForAnyElements() returns error? {
+    Sign sigMethod = {
+        data: "", 
+        sequenceGroup52: {
+            outputLength: 5,
+            anyElement: []
+        }
+    };
+    xml parsedValue = check toXml(sigMethod);
+    Sign parsedBack = check parseAsType(parsedValue);
+    test:assertEquals(parsedBack, sigMethod);
 }
