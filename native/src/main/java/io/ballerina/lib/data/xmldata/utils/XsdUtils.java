@@ -22,9 +22,14 @@ import io.ballerina.lib.data.xmldata.utils.xsd.ChoiceInfo;
 import io.ballerina.lib.data.xmldata.utils.xsd.ElementInfo;
 import io.ballerina.lib.data.xmldata.utils.xsd.ModelGroupInfo;
 import io.ballerina.lib.data.xmldata.utils.xsd.SequenceInfo;
+import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.types.ArrayType;
+import io.ballerina.runtime.api.types.Field;
 import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.types.Type;
+import io.ballerina.runtime.api.types.TypeTags;
+import io.ballerina.runtime.api.types.UnionType;
+import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.utils.TypeUtils;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
@@ -179,6 +184,7 @@ public static void popXsdValidationStacks(XmlAnalyzerMetaData xmlAnalyzerMetaDat
 
     public static void validateModelGroup(ModelGroupInfo modelGroup,
                                           XmlAnalyzerMetaData xmlAnalyzerMetaData, boolean isTerminated) {
+        initializeAnyAnnotatedArrayFields(xmlAnalyzerMetaData.currentNode, xmlAnalyzerMetaData.rootRecord);
         modelGroup.validate();
         if (isTerminated) {
             modelGroup.validateMinOccurrences();
@@ -188,6 +194,39 @@ public static void popXsdValidationStacks(XmlAnalyzerMetaData xmlAnalyzerMetaDat
         xmlAnalyzerMetaData.rootRecord = xmlAnalyzerMetaData.recordTypeStack.pop();
         validateCurrentElementInfo(xmlAnalyzerMetaData);
         popElementStacksForValidatingGroup(xmlAnalyzerMetaData);
+    }
+
+    private static void initializeAnyAnnotatedArrayFields(BMap<BString, Object> recordValue, RecordType recordType) {
+        if (recordValue == null || recordType == null) {
+            return;
+        }
+        for (Map.Entry<String, Field> entry : recordType.getFields().entrySet()) {
+            String fieldName = entry.getValue().getFieldName();
+            BString fieldKey = StringUtils.fromString(fieldName);
+            Object currentValue = recordValue.get(fieldKey);
+
+            if (currentValue == null && DataUtils.isFieldAnnotatedWithAny(recordType, fieldName)) {
+                Type fieldType = TypeUtils.getReferredType(entry.getValue().getFieldType());
+                ArrayType arrayType = getArrayTypeFromField(fieldType);
+                if (arrayType != null) {
+                    recordValue.put(fieldKey, ValueCreator.createArrayValue(arrayType));
+                }
+            }
+        }
+    }
+
+    private static ArrayType getArrayTypeFromField(Type fieldType) {
+        if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
+            return (ArrayType) fieldType;
+        } else if (fieldType.getTag() == TypeTags.UNION_TAG) {
+            for (Type memberType : ((UnionType) fieldType).getMemberTypes()) {
+                Type referredMemberType = TypeUtils.getReferredType(memberType);
+                if (referredMemberType.getTag() == TypeTags.ARRAY_TAG) {
+                    return (ArrayType) referredMemberType;
+                }
+            }
+        }
+        return null;
     }
 
     public static void popElementStacksForValidatingGroup(XmlAnalyzerMetaData xmlAnalyzerMetaData) {

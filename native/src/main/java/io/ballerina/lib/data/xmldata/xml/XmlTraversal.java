@@ -124,6 +124,7 @@ class XmlTraversal {
                     ValueCreator.createRecordValue(recordType.getPackage(), recordType.getName());
             BXml nextXml = validateRootElement(xml, recordType, analyzerData);
             Object resultRecordValue = traverseXml(nextXml, recordType, analyzerData);
+            
             validateModelGroupStackForRootElement(analyzerData);
             validateCurrentElementInfo(analyzerData);
             DataUtils.validateRequiredFields(analyzerData, analyzerData.currentNode);
@@ -322,6 +323,37 @@ class XmlTraversal {
 
                 Type restType = analyzerData.restTypes.peek();
                 String elementName = elementQName.getLocalPart();
+                Field anyAnyDataField = findAnyAnydataField(analyzerData.rootRecord);
+                if (anyAnyDataField != null) {
+                    currentField = anyAnyDataField;
+                    Type currentFieldType = currentField.getFieldType();
+                    if (!isArrayTypeField(currentFieldType)) {
+                        QualifiedName fieldQName = QualifiedNameFactory.createQualifiedName(
+                                Constants.NS_ANNOT_NOT_DEFINED, anyAnyDataField.getFieldName(), "",
+                                analyzerData.useSemanticEquality);
+                        fieldsMap.remove(fieldQName);
+                    }
+                    analyzerData.visitedFieldHierarchy.peek().put(elementQName, currentField);
+                    analyzerData.currentField = currentField;
+                    String fieldName = anyAnyDataField.getFieldName();
+                    convertAnyAnydataField(xmlItem, fieldName, currentFieldType,
+                            analyzerData.currentNode, analyzerData);
+                    validateModelGroupStack(analyzerData, elementQName, false);
+                    return;
+                }
+
+                Field anyTypedArrayField = findAnyTypedArrayField(analyzerData.rootRecord, elementName);
+                if (anyTypedArrayField != null) {
+                    currentField = anyTypedArrayField;
+                    analyzerData.visitedFieldHierarchy.peek().put(elementQName, currentField);
+                    analyzerData.currentField = currentField;
+                    convertToArrayType(xmlItem, currentField, analyzerData.currentNode,
+                            StringUtils.fromString(anyTypedArrayField.getFieldName()),
+                            (ArrayType) TypeUtils.getReferredType(currentField.getFieldType()), analyzerData);
+                    validateModelGroupStack(analyzerData, elementQName, false);
+                    return;
+                }
+                
                 if (restType != null) {
                     if (fieldsMap.contains(elementName)) {
                         throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, elementName,
@@ -473,11 +505,72 @@ class XmlTraversal {
             RecordType prevRecord = analyzerData.rootRecord;
             analyzerData.rootRecord = elementType;
             traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
+
+            initializeAnyAnnotatedArrayFields(analyzerData.currentNode, elementType);
             validateCurrentElementInfo(analyzerData);
             DataUtils.validateRequiredFields(analyzerData, analyzerData.currentNode);
             DataUtils.popExpectedTypeStacks(analyzerData);
             analyzerData.rootRecord = prevRecord;
             analyzerData.currentNode = (BMap<BString, Object>) analyzerData.nodesStack.pop();
+        }
+
+        
+        private void initializeEmptySequenceArraysForEmptySequence(BMap<BString, Object> recordValue,
+                                                                   RecordType recordType) {
+            HashMap<String, ModelGroupInfo> xsdModelGroupInfo =
+                    DataUtils.getFieldNamesWithModelGroupAnnotations(recordType, new HashMap<>());
+            for (Map.Entry<String, Field> field : recordType.getFields().entrySet()) {
+                String fieldName = field.getValue().getFieldName();
+                BString fieldKey = StringUtils.fromString(fieldName);
+                Type fieldType = TypeUtils.getReferredType(field.getValue().getFieldType());
+                Object currentValue = recordValue.get(fieldKey);
+
+                if (xsdModelGroupInfo.containsKey(fieldName)) {
+                    ModelGroupInfo modelGroup = xsdModelGroupInfo.get(fieldName);
+                    if (modelGroup.getMinOccurs() == 0) {
+                        if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
+                            if (currentValue == null) {
+                                recordValue.put(fieldKey, ValueCreator.createArrayValue((ArrayType) fieldType));
+                            }
+                        }
+                    }
+                } else if (DataUtils.isFieldAnnotatedWithAny(recordType, fieldName)) {
+                    ArrayType arrayType = getArrayTypeFromField(fieldType);
+                    if (arrayType != null && currentValue == null) {
+                        recordValue.put(fieldKey, ValueCreator.createArrayValue(arrayType));
+                    }
+                }
+            }
+        }
+
+        private ArrayType getArrayTypeFromField(Type fieldType) {
+            if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
+                return (ArrayType) fieldType;
+            } else if (fieldType.getTag() == TypeTags.UNION_TAG) {
+                for (Type memberType : ((UnionType) fieldType).getMemberTypes()) {
+                    Type referredMemberType = TypeUtils.getReferredType(memberType);
+                    if (referredMemberType.getTag() == TypeTags.ARRAY_TAG) {
+                        return (ArrayType) referredMemberType;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private void initializeAnyAnnotatedArrayFields(BMap<BString, Object> recordValue, RecordType recordType) {
+            for (Map.Entry<String, Field> entry : recordType.getFields().entrySet()) {
+                String fieldName = entry.getValue().getFieldName();
+                BString fieldKey = StringUtils.fromString(fieldName);
+                Object currentValue = recordValue.get(fieldKey);
+
+                if (currentValue == null && DataUtils.isFieldAnnotatedWithAny(recordType, fieldName)) {
+                    Type fieldType = TypeUtils.getReferredType(entry.getValue().getFieldType());
+                    ArrayType arrayType = getArrayTypeFromField(fieldType);
+                    if (arrayType != null) {
+                        recordValue.put(fieldKey, ValueCreator.createArrayValue(arrayType));
+                    }
+                }
+            }
         }
 
         private void convertToMapType(BXmlItem xmlItem, Type fieldType, Type elementType, String fieldName,
@@ -773,6 +866,14 @@ class XmlTraversal {
             List<BXml> newSequence = filterEmptyValuesOrCommentOrPi(xmlSequence.getChildrenList());
 
             if (newSequence.isEmpty()) {
+                // Special case: initialize empty arrays
+                if (type.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                    RecordType recordType = (RecordType) type;
+                    if (analyzerData.currentNode != null) {
+                        initializeEmptySequenceArraysForEmptySequence(
+                            (BMap<BString, Object>) analyzerData.currentNode, recordType);
+                    }
+                }
                 return;
             }
 
@@ -1038,6 +1139,165 @@ class XmlTraversal {
         private void validateModelGroupStackForRootElement(XmlAnalyzerData analyzerData) {
             validateModelGroupStack(analyzerData,
                     QualifiedNameFactory.createQualifiedName("", "", "", analyzerData.useSemanticEquality), false);
+        }
+
+        private Field findAnyAnydataField(RecordType recordType) {
+            if (recordType == null) {
+                return null;
+            }
+            Map<String, Field> fields = recordType.getFields();
+            for (Map.Entry<String, Field> entry : fields.entrySet()) {
+                String fieldName = entry.getKey();
+                Field field = entry.getValue();
+                Type fieldType = TypeUtils.getReferredType(field.getFieldType());
+                if (DataUtils.isFieldAnnotatedWithAny(recordType, fieldName)) {
+                    if (isAnydataOrJsonType(fieldType)) {
+                        return field;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private boolean isAnydataOrJsonType(Type fieldType) {
+            int typeTag = fieldType.getTag();
+            if (typeTag == TypeTags.ANYDATA_TAG || typeTag == TypeTags.JSON_TAG) {
+                return true;
+            }
+            if (typeTag == TypeTags.ARRAY_TAG) {
+                Type elementType = TypeUtils.getReferredType(((ArrayType) fieldType).getElementType());
+                return isAnydataOrJsonType(elementType);
+            }
+            if (typeTag == TypeTags.UNION_TAG) {
+                for (Type memberType : ((UnionType) fieldType).getMemberTypes()) {
+                    Type referredMemberType = TypeUtils.getReferredType(memberType);
+                    if (referredMemberType.getTag() != TypeTags.NULL_TAG && isAnydataOrJsonType(referredMemberType)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private boolean isArrayTypeField(Type fieldType) {
+            Type referredType = TypeUtils.getReferredType(fieldType);
+            int typeTag = referredType.getTag();
+            if (typeTag == TypeTags.ARRAY_TAG) {
+                return true;
+            }
+            if (typeTag == TypeTags.UNION_TAG) {
+                for (Type memberType : ((UnionType) referredType).getMemberTypes()) {
+                    Type referredMemberType = TypeUtils.getReferredType(memberType);
+                    if (referredMemberType.getTag() == TypeTags.ARRAY_TAG) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private boolean isTypedArrayForAnyField(Type fieldType) {
+            Type referredType = TypeUtils.getReferredType(fieldType);
+            int typeTag = referredType.getTag();
+            if (typeTag == TypeTags.ARRAY_TAG) {
+                Type elementType = TypeUtils.getReferredType(((ArrayType) referredType).getElementType());
+                return elementType.getTag() == TypeTags.RECORD_TYPE_TAG;
+            }
+            return false;
+        }
+
+        private Field findAnyTypedArrayField(RecordType recordType, String elementName) {
+            if (recordType == null) {
+                return null;
+            }
+            Map<String, Field> fields = recordType.getFields();
+            for (Map.Entry<String, Field> entry : fields.entrySet()) {
+                String fieldName = entry.getKey();
+                Field field = entry.getValue();
+                Type fieldType = TypeUtils.getReferredType(field.getFieldType());
+                if (DataUtils.isFieldAnnotatedWithAny(recordType, fieldName) && isTypedArrayForAnyField(fieldType)) {
+                    Type elementType = TypeUtils.getReferredType(((ArrayType) fieldType).getElementType());
+                    String typeName = getRecordTypeName((RecordType) elementType);
+                    if (elementName.equals(typeName)) {
+                        return field;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private String getRecordTypeName(RecordType recordType) {
+            String typeName = recordType.getName();
+            if (typeName.contains("$")) {
+                return typeName.split("\\$")[0];
+            }
+            return typeName;
+        }
+
+        private void convertAnyAnydataField(BXmlItem xmlItem, String fieldName, Type fieldType,
+                                           BMap<BString, Object> mapValue, XmlAnalyzerData analyzerData) {
+            BString bFieldName = StringUtils.fromString(fieldName);
+            ArrayList<ModelGroupInfo> savedModelGroups = new ArrayList<>();
+            while (!analyzerData.modelGroupStack.isEmpty()) {
+                savedModelGroups.add(analyzerData.modelGroupStack.pop());
+            }
+
+            RecordType savedRootRecord = analyzerData.rootRecord;
+            analyzerData.rootRecord = null;
+
+            Type elementType = getArrayElementTypeForAnyField(fieldType);
+            BMap<BString, Object> contentMap =
+                    ValueCreator.createMapValue(DataUtils.getMapTypeFromConstraintType(
+                            elementType != null ? elementType : fieldType));
+
+            updateNextMap(elementType != null ? elementType : fieldType, analyzerData);
+            analyzerData.nodesStack.push(analyzerData.currentNode);
+            analyzerData.currentNode = contentMap;
+            analyzerData.arrayIndexes.push(new HashMap<>());
+
+            handleAttributesRest(xmlItem, contentMap, elementType != null ? elementType : fieldType,
+                    analyzerData.useSemanticEquality);
+            traverseXml(xmlItem.getChildrenSeq(), elementType != null ? elementType : fieldType, analyzerData);
+
+            DataUtils.popExpectedTypeStacks(analyzerData);
+            analyzerData.currentNode = (BMap<BString, Object>) analyzerData.nodesStack.pop();
+
+            analyzerData.rootRecord = savedRootRecord;
+
+            if (elementType != null) {
+                BArray array;
+                Object existingValue = mapValue.get(bFieldName);
+                if (existingValue instanceof BArray) {
+                    array = (BArray) existingValue;
+                } else {
+                    array = ValueCreator.createArrayValue(TypeCreator.createArrayType(elementType));
+                    mapValue.put(bFieldName, array);
+                }
+                array.append(contentMap);
+            } else {
+                mapValue.put(bFieldName, contentMap);
+            }
+
+            for (int i = savedModelGroups.size() - 1; i >= 0; i--) {
+                analyzerData.modelGroupStack.push(savedModelGroups.get(i));
+            }
+        }
+
+        private Type getArrayElementTypeForAnyField(Type fieldType) {
+            Type referredType = TypeUtils.getReferredType(fieldType);
+            int typeTag = referredType.getTag();
+            if (typeTag == TypeTags.ARRAY_TAG) {
+                return TypeUtils.getReferredType(((ArrayType) referredType).getElementType());
+            }
+            if (typeTag == TypeTags.UNION_TAG) {
+                for (Type memberType : ((UnionType) referredType).getMemberTypes()) {
+                    Type referredMemberType = TypeUtils.getReferredType(memberType);
+                    if (referredMemberType.getTag() == TypeTags.ARRAY_TAG) {
+                        return TypeUtils.getReferredType(((ArrayType) referredMemberType).getElementType());
+                    }
+                }
+            }
+            return null;
         }
     }
 }

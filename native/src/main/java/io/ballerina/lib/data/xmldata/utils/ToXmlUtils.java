@@ -170,7 +170,7 @@ public class ToXmlUtils {
         if (jNode instanceof BMap jMap) {
             BMap<BString, Object> mapNode = (BMap<BString, Object>) jMap;
             BString[] orderedRecordKeysIfXsdSequencePresent = DataUtils.getOrderedRecordKeysIfXsdSequencePresent(
-                    mapNode, DataUtils.getXsdSequencePriorityOrder(referredType, isParentSequence));
+                    mapNode, DataUtils.getXsdSequencePriorityOrder(referredType, isParentSequence), referredType);
 
             if (parentModelGroupInfo instanceof ChoiceInfo) {
                 validateChoiceFields(parentModelGroupInfo, jMap, elementInfoRelatedFieldNames,
@@ -201,13 +201,94 @@ public class ToXmlUtils {
                 } else {
                     addNamespaces(allNamespaces, namespacesOfElem);
                     if (value instanceof BArray) {
+                        boolean isAnyArrayField = false;
+                        if (DataUtils.isFieldAnnotatedWithAny(referredType, recordKey)) {
+                            Type childElementType = getChildElementType(referredType, recordKey);
+                            Type referredChildType = TypeUtils.getReferredType(childElementType);
+                            if (referredChildType.getTag() == TypeTags.ARRAY_TAG) {
+                                ArrayType arrayType = (ArrayType) referredChildType;
+                                Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
+                                if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                                    isAnyArrayField = true;
+                                } else if (elementType.getTag() == TypeTags.ANYDATA_TAG) {
+                                    BArray array = (BArray) value;
+                                    for (int i = 0; i < array.size(); i++) {
+                                        Object element = array.get(i);
+                                        if (element != null) {
+                                            Type actualType = TypeUtils.getType(element);
+                                            if (TypeUtils.getReferredType(actualType).getTag() ==
+                                                    TypeTags.RECORD_TYPE_TAG) {
+                                                isAnyArrayField = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            } else if (referredChildType.getTag() == TypeTags.UNION_TAG) {
+                                UnionType unionType = (UnionType) referredChildType;
+                                for (Type memberType : unionType.getMemberTypes()) {
+                                    Type referredMemberType = TypeUtils.getReferredType(memberType);
+                                    if (referredMemberType.getTag() == TypeTags.ARRAY_TAG) {
+                                        ArrayType arrayType = (ArrayType) referredMemberType;
+                                        Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
+                                        if (elementType.getTag() == TypeTags.ANYDATA_TAG &&
+                                                TypeUtils.getType(value).getTag() == TypeTags.ARRAY_TAG) {
+                                            BArray array = (BArray) value;
+                                            if (array.size() > 0) {
+                                                for (int i = 0; i < array.size(); i++) {
+                                                    Object element = array.get(i);
+                                                    if (element != null) {
+                                                        Type actualType = TypeUtils.getType(element);
+                                                        if (TypeUtils.getReferredType(actualType).getTag() ==
+                                                                TypeTags.RECORD_TYPE_TAG) {
+                                                            isAnyArrayField = true;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        BString keyToPass = isAnyArrayField ? 
+                                StringUtils.fromString("@Any:" + k.getValue()) : k;
+                        
                         childElement = traverseRecordAndGenerateXml(value, allNamespaces, namespacesOfElem, options,
-                                k,
+                                keyToPass,
                                 getChildElementType(referredType, recordKey),
                                 isSequenceField, isSequenceField, modelGroupInfo, elementInfo);
                         xNode = Concat.concat(xNode, childElement);
                     } else {
-                        childElement = getElementFromRecordMember(k, traverseRecordAndGenerateXml(
+                        BString elementKey = k;
+                        if (referredType instanceof RecordType recordType &&
+                            DataUtils.isFieldAnnotatedWithAny(recordType, recordKey)) {
+                            Type valueType = TypeUtils.getType(value);
+                            Type referredValueType = TypeUtils.getReferredType(valueType);
+                            RecordType recordValueType = null;
+
+                            Type childType = getChildElementType(referredType, recordKey);
+                                Type referredChildType = TypeUtils.getReferredType(childType);
+                                if (referredChildType instanceof RecordType) {
+                                    recordValueType = (RecordType) referredChildType;
+                                } else if (referredChildType instanceof UnionType unionType) {
+                                    for (Type memberType : unionType.getMemberTypes()) {
+                                        Type referredMemberType = TypeUtils.getReferredType(memberType);
+                                        if (referredMemberType instanceof RecordType) {
+                                            recordValueType = (RecordType) referredMemberType;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                            if (recordValueType != null) {
+                                String typeName = getRecordTypeName(recordValueType);
+                                elementKey = StringUtils.fromString(typeName);
+                            }
+                        }
+                        childElement = getElementFromRecordMember(elementKey, traverseRecordAndGenerateXml(
                                 value, allNamespaces, namespacesOfElem, options, null, getChildElementType(
                             referredType, recordKey), isSequenceField, isSequenceField, modelGroupInfo, elementInfo),
                             allNamespaces, options, getAttributesMap(value, options, allNamespaces, parentNamespaces));
@@ -254,10 +335,31 @@ public class ToXmlUtils {
                 namespacesOfElem = getNamespacesMap(i, options, parentNamespaces);
                 addNamespaces(allNamespaces, namespacesOfElem);
                 if (options.get(Constants.ARRAY_ENTRY_TAG).toString().isEmpty()) {
-                    childElement = getElementFromRecordMember(StringUtils.fromString(arrayEntryTagKey),
-                        traverseRecordAndGenerateXml(i, allNamespaces, namespacesOfElem,
-                                options, keyObj, getChildElementType(referredType, null),
-                                isParentSequence, isParentSequenceArray, parentModelGroupInfo, parentElementInfo),
+                    Type childType = getChildElementType(referredType, null);
+                    BXml inner = traverseRecordAndGenerateXml(i, allNamespaces, namespacesOfElem,
+                            options, keyObj, childType,
+                            isParentSequence, isParentSequenceArray, parentModelGroupInfo, parentElementInfo);
+                    String elementTagKey = arrayEntryTagKey;
+                    boolean isAnyAnnotatedField = keyObj instanceof BString fieldNameBString && 
+                            fieldNameBString.getValue().startsWith("@Any:");
+                    
+                    if (isAnyAnnotatedField && i instanceof BMap) {
+                        String actualFieldName = ((BString) keyObj).getValue().substring("@Any:".length());
+                        arrayEntryTagKey = actualFieldName;
+                        Type elementValueType = TypeUtils.getType(i);
+                        Type referredElementType = TypeUtils.getReferredType(elementValueType);
+                        if (referredElementType instanceof RecordType recordValueType) {
+                            elementTagKey = getRecordTypeName(recordValueType);
+                        } else {
+                            // Fallback to declared child type if runtime type is not a RecordType
+                            Type referredChildType = TypeUtils.getReferredType(childType);
+                            if (referredChildType instanceof RecordType recordChildType) {
+                                elementTagKey = getRecordTypeName(recordChildType);
+                            }
+                        }
+                    }
+                    childElement = getElementFromRecordMember(StringUtils.fromString(elementTagKey),
+                        inner,
                         allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces));
                 } else {
                     childElement = getElementFromRecordMember(StringUtils.fromString(arrayEntryTagKey),
@@ -432,6 +534,8 @@ public class ToXmlUtils {
                 if (typeName.equals(recordKey)) {
                     return Optional.of(fieldType);
                 }
+            } else if (fieldType.getTag() == TypeTags.ANYDATA_TAG || fieldType.getTag() == TypeTags.JSON_TAG) {
+                return Optional.of(fieldType);
             }
         }
         return Optional.empty();
@@ -442,7 +546,7 @@ public class ToXmlUtils {
             if (DataUtils.isNameAnnotationKey(annotation.getKey().getValue())) {
                 return ((BMap<BString, Object>) annotation.getValue()).get(Constants.VALUE).toString();
             }
-        }
+    }
         return recordType.getName();
     }
 
@@ -506,16 +610,30 @@ public class ToXmlUtils {
             }
 
             BMap<BString, BString> newAttributes = attributes;
+            String defaultNamespaceUri = Constants.EMPTY_STRING;
+            // Check for namespace stored with full namespace URI key
             if (newAttributes.containsKey(StringUtils.fromString(getXmlnsNameUrI()))) {
                 String value = newAttributes.get(StringUtils.fromString(getXmlnsNameUrI())).toString();
                 newAttributes.remove(StringUtils.fromString(getXmlnsNameUrI()));
                 newAttributes.put(XMLNS, StringUtils.fromString(value));
+                defaultNamespaceUri = value;
+            } else if (newAttributes.containsKey(XMLNS)) {
+                defaultNamespaceUri = newAttributes.get(XMLNS).getValue();
             }
+
+            String finalElementName = nameStr;
             if (!userAttributePrefix.equals(Constants.EMPTY_STRING)) {
-                element = CreateElement.createElement(removeUserAttributePrefix(StringUtils.fromString(nameStr),
-                        StringUtils.fromString(userAttributePrefix), null), newAttributes, children);
+                finalElementName = removeUserAttributePrefix(StringUtils.fromString(nameStr),
+                        StringUtils.fromString(userAttributePrefix), null).getValue();
+            }
+
+            if (!defaultNamespaceUri.equals(Constants.EMPTY_STRING)) {
+                element = CreateElement.createElement(
+                        StringUtils.fromString("{" + defaultNamespaceUri + "}" + finalElementName),
+                        newAttributes, children);
             } else {
-                element = CreateElement.createElement(StringUtils.fromString(nameStr), newAttributes, children);
+                element = CreateElement.createElement(StringUtils.fromString(finalElementName),
+                        newAttributes, children);
             }
         }
         return element;

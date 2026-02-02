@@ -50,6 +50,7 @@ import io.ballerina.stdlib.constraint.Constraints;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -713,6 +714,9 @@ public class DataUtils {
         for (Map.Entry<BString, Object> entry: input.entrySet()) {
             String key = entry.getKey().getValue();
             Object value = entry.getValue();
+            if (value == null) {
+                continue;
+            }
             if (fields.containsKey(key)) {
                 processRecordField(fields.get(key).getFieldType(), mergedAnnotations, recordValue, entry, key, value);
             } else {
@@ -724,16 +728,59 @@ public class DataUtils {
 
     static BString[] getOrderedRecordKeysIfXsdSequencePresent(BMap<BString, Object> input,
                                                               HashMap<String, Integer> xsdSequencePriorityOrder) {
+        return getOrderedRecordKeysIfXsdSequencePresent(input, xsdSequencePriorityOrder, null);
+    }
+
+    static BString[] getOrderedRecordKeysIfXsdSequencePresent(BMap<BString, Object> input,
+                                                              HashMap<String, Integer> xsdSequencePriorityOrder,
+                                                              Type recordType) {
         HashMap<String, String> localPartKeys = getLocalPartKeys(input);
         if (xsdSequencePriorityOrder.isEmpty()) {
             return input.getKeys();
-        } else {
-            return xsdSequencePriorityOrder.entrySet().stream()
-                    .filter(entry -> localPartKeys.containsKey(entry.getKey()))
+        }
+
+        HashMap<String, Integer> anyFieldsWithOrder = new HashMap<>();
+        if (recordType instanceof RecordType recType) {
+            for (Map.Entry<String, Integer> entry : xsdSequencePriorityOrder.entrySet()) {
+                String fieldName = entry.getKey();
+                if (isFieldAnnotatedWithAny(recType, fieldName)) {
+                    anyFieldsWithOrder.put(fieldName, entry.getValue());
+                }
+            }
+        }
+
+        if (!anyFieldsWithOrder.isEmpty() && recordType instanceof RecordType recType) {
+            Set<String> regularFieldNames = recType.getFields().keySet();
+            List<Map.Entry<String, Integer>> orderedEntries = new ArrayList<>();
+
+            for (Map.Entry<String, Integer> entry : xsdSequencePriorityOrder.entrySet()) {
+                String fieldName = entry.getKey();
+                if (anyFieldsWithOrder.containsKey(fieldName)) {
+                    if (localPartKeys.containsKey(fieldName)) {
+                        orderedEntries.add(new AbstractMap.SimpleEntry<>(fieldName, entry.getValue()));
+                    } else {
+                        for (String inputKey : localPartKeys.keySet()) {
+                            if (!regularFieldNames.contains(inputKey)
+                                    && !inputKey.startsWith(ATTRIBUTE_PREFIX)) {
+                                orderedEntries.add(new AbstractMap.SimpleEntry<>(inputKey, entry.getValue()));
+                            }
+                        }
+                    }
+                } else if (localPartKeys.containsKey(fieldName)) {
+                    orderedEntries.add(new AbstractMap.SimpleEntry<>(fieldName, entry.getValue()));
+                }
+            }
+            return orderedEntries.stream()
                     .sorted(Comparator.comparingInt(Map.Entry::getValue))
                     .map(entry -> StringUtils.fromString(localPartKeys.get(entry.getKey())))
                     .toArray(BString[]::new);
         }
+
+        return xsdSequencePriorityOrder.entrySet().stream()
+                .filter(entry -> localPartKeys.containsKey(entry.getKey()))
+                .sorted(Comparator.comparingInt(Map.Entry::getValue))
+                .map(entry -> StringUtils.fromString(localPartKeys.get(entry.getKey())))
+                .toArray(BString[]::new);
     }
 
     private static HashMap<String, String> getLocalPartKeys(BMap<BString, Object> input) {
@@ -768,6 +815,18 @@ public class DataUtils {
                     return;
                 }
                 processTypeReferenceType(fieldType, annotations, recordValue, key, value);
+            }
+            case TypeTags.ANYDATA_TAG, TypeTags.JSON_TAG, TypeTags.UNION_TAG, TypeTags.MAP_TAG -> {
+                if (value instanceof BMap) {
+                    BMap<BString, Object> mapValue = (BMap<BString, Object>) value;
+                    Type valueType = TypeUtils.getReferredType(mapValue.getType());
+                    if (valueType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                        processRecord(key, annotations, recordValue, value, (RecordType) valueType);
+                        return;
+                    }
+                }
+                addPrimitiveValue(addFieldNamespaceAnnotation(key, key, annotations, recordValue),
+                        annotations, recordValue, value);
             }
             default -> addPrimitiveValue(addFieldNamespaceAnnotation(key, key, annotations, recordValue),
                     annotations, recordValue, value);
@@ -1001,9 +1060,19 @@ public class DataUtils {
 
     public static Type getTypeFromUnionType(Type childType, Object value) {
         if (childType instanceof UnionType bUnionType) {
+            String valueClassName = value.getClass().getName().toUpperCase(Locale.ROOT);
             for (Type memberType : bUnionType.getMemberTypes()) {
-                if (value.getClass().getName().toUpperCase(Locale.ROOT).contains(
-                        memberType.getName().toUpperCase(Locale.ROOT))) {
+                String memberName = memberType.getName().toUpperCase(Locale.ROOT);
+                if (valueClassName.contains(memberName)) {
+                    if (memberType.getTag() == TypeTags.ARRAY_TAG &&
+                            TypeUtils.getType(value).getTag() != TypeTags.ARRAY_TAG) {
+                        continue;
+                    }
+                    if (memberType.getTag() == TypeTags.XML_TAG &&
+                            (TypeUtils.getType(value).getTag() == TypeTags.MAP_TAG
+                                    || TypeUtils.getType(value).getTag() == TypeTags.RECORD_TYPE_TAG)) {
+                        continue;
+                    }
                     childType = TypeUtils.getReferredType(memberType);
                 }
             }

@@ -22,6 +22,8 @@ import io.ballerina.lib.data.xmldata.utils.Constants;
 import io.ballerina.lib.data.xmldata.utils.DataUtils;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
+import io.ballerina.runtime.api.flags.SymbolFlags;
+import io.ballerina.runtime.api.types.Field;
 import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
@@ -47,6 +49,7 @@ public class SequenceInfo implements ModelGroupInfo {
     private final Map<String, Integer> maxElementCount = new HashMap<>();
     private final Map<String, Boolean> elementOptionality = new HashMap<>();
     private final List<String> allElements = new ArrayList<>();
+    private final List<String> anyAnnotatedFields = new ArrayList<>();
     int currentIndex = 0;
     int elementCount;
     String lastElement = "";
@@ -54,10 +57,12 @@ public class SequenceInfo implements ModelGroupInfo {
     private boolean isMiddleOfElement = false;
     private final Stack<HashMap<String, ElementInfo>> xmlElementInfo;
     private HashMap<String, String> xmlElementNameMap = new HashMap<>();
+    private final RecordType fieldType;
 
     public SequenceInfo(String fieldName, BMap<BString, Object> element, RecordType fieldType,
                         Stack<HashMap<String, ElementInfo>> xmlElementInfo) {
         this.fieldName = fieldName;
+        this.fieldType = fieldType;
         if (element.containsKey(Constants.MIN_OCCURS)) {
             this.minOccurs = element.getIntValue(Constants.MIN_OCCURS);
         } else {
@@ -123,7 +128,16 @@ public class SequenceInfo implements ModelGroupInfo {
 
     @Override
     public boolean isElementContains(String elementName) {
-        return this.allElements.contains(elementName);
+        if (elementName == null || elementName.isEmpty()) {
+            return false;
+        }
+        if (this.allElements.contains(elementName)) {
+            return true;
+        }
+        if (!anyAnnotatedFields.isEmpty()) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -166,38 +180,45 @@ public class SequenceInfo implements ModelGroupInfo {
     }
 
     private void checkElementOrderAndUpdateElementOccurences(String element) {
+        String elementToProcess = element;
+        if (!allElements.contains(element) && !anyAnnotatedFields.isEmpty()) {
+            elementToProcess = anyAnnotatedFields.get(0);
+        }
+
         String nextElement;
         boolean isLastElement = false;
 
-        if (element.equals(lastElement)) {
+        if (elementToProcess.equals(lastElement)) {
             nextElement = lastElement;
             isLastElement = true;
         } else {
             nextElement = allElements.get(currentIndex == this.elementCount ? currentIndex - 1 : currentIndex);
         }
 
-        while (!nextElement.equals(element)) {
+        while (!nextElement.equals(elementToProcess)) {
             if (!elementOptionality.get(nextElement)) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.INCORRECT_ELEMENT_ORDER,
-                        xmlElementNameMap.get(element), fieldName);
+                        xmlElementNameMap.getOrDefault(element, element), fieldName);
             }
             currentIndex++;
             nextElement = allElements.get(currentIndex);
 
             if (currentIndex == this.elementCount) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.INCORRECT_ELEMENT_ORDER,
-                        xmlElementNameMap.get(element), fieldName);
+                        xmlElementNameMap.getOrDefault(element, element), fieldName);
             }
         }
 
         if (remainingElementCount.get(nextElement) == 0) {
-            throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_MORE_THAN_MAX_ALLOWED_TIMES_IN_SEQUENCES,
-                    xmlElementNameMap.get(nextElement), fieldName);
+            if (!anyAnnotatedFields.contains(nextElement)) {
+                throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_MORE_THAN_MAX_ALLOWED_TIMES_IN_SEQUENCES,
+                        xmlElementNameMap.get(nextElement), fieldName);
+            }
         } else {
-            remainingElementCount.put(element, remainingElementCount.get(nextElement) - 1);
-            int elementCount = maxElementCount.get(element) - remainingElementCount.get(element);
+            remainingElementCount.put(elementToProcess, remainingElementCount.get(nextElement) - 1);
+            int elementCount = maxElementCount.get(elementToProcess) - remainingElementCount.get(elementToProcess);
 
-            if (elementCount >= minimumElementCount.get(element) && !isLastElement
+            if (elementCount >= minimumElementCount.get(elementToProcess) && !isLastElement
                     && currentIndex != this.elementCount) {
                 currentIndex++;
             } else {
@@ -206,7 +227,7 @@ public class SequenceInfo implements ModelGroupInfo {
                 }
             }
 
-            if (currentIndex == this.elementCount && elementCount >= minimumElementCount.get(element)) {
+            if (currentIndex == this.elementCount && elementCount >= minimumElementCount.get(elementToProcess)) {
                 isCompleted = true;
             }
         }
@@ -226,7 +247,13 @@ public class SequenceInfo implements ModelGroupInfo {
     }
 
     private void updateUnvisitedElementsBasedOnPriorityOrder(RecordType fieldType) {
-        this.allElements.addAll(DataUtils.getXsdSequencePriorityOrder(fieldType, true).entrySet().stream()
+        HashMap<String, Integer> priorityOrder = DataUtils.getXsdSequencePriorityOrder(fieldType, true);
+        for (String fieldName : priorityOrder.keySet()) {
+            if (DataUtils.isFieldAnnotatedWithAny(fieldType, fieldName)) {
+                anyAnnotatedFields.add(fieldName);
+            }
+        }
+        this.allElements.addAll(priorityOrder.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey)
                 .toList());
@@ -246,21 +273,38 @@ public class SequenceInfo implements ModelGroupInfo {
                         maxElementCount.put(element, (int) info.maxOccurs);
                         minimumElementCount.put(element, (int) info.minOccurs);
                     } else {
-                        elementOptionality.put(element, false);
+                        boolean isOptional = isFieldOptional(element);
+                        elementOptionality.put(element, isOptional);
                         remainingElementCount.put(element, 1);
                         maxElementCount.put(element, 1);
-                        minimumElementCount.put(element, 1);
+                        minimumElementCount.put(element, isOptional ? 0 : 1);
                     }
                 });
             } else {
                 allElements.forEach(element -> {
-                    elementOptionality.put(element, false);
+                    boolean isOptional = isFieldOptional(element);
+                    elementOptionality.put(element, isOptional);
                     remainingElementCount.put(element, 1);
                     maxElementCount.put(element, 1);
-                    minimumElementCount.put(element, 1);
+                    minimumElementCount.put(element, isOptional ? 0 : 1);
                 });
             }
         }
+    }
+
+    private boolean isFieldOptional(String element) {
+        if (fieldType == null) {
+            return false;
+        }
+        String fieldName = xmlElementNameMap.getOrDefault(element, element);
+        Field field = fieldType.getFields().get(fieldName);
+        if (field == null) {
+            return false;
+        }
+        if (SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.OPTIONAL)) {
+            return true;
+        }
+        return anyAnnotatedFields.contains(fieldName);
     }
 
     private void reOrderElementNamesBasedOnTheNameAnnotation() {
