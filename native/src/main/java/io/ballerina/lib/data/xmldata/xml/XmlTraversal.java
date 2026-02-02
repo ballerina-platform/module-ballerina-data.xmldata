@@ -505,7 +505,8 @@ class XmlTraversal {
             RecordType prevRecord = analyzerData.rootRecord;
             analyzerData.rootRecord = elementType;
             traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
-            
+
+            initializeAnyAnnotatedArrayFields(analyzerData.currentNode, elementType);
             validateCurrentElementInfo(analyzerData);
             DataUtils.validateRequiredFields(analyzerData, analyzerData.currentNode);
             DataUtils.popExpectedTypeStacks(analyzerData);
@@ -514,27 +515,59 @@ class XmlTraversal {
         }
 
         
-        private void initializeEmptySequenceArraysForEmptySequence(BMap<BString, Object> recordValue, 
+        private void initializeEmptySequenceArraysForEmptySequence(BMap<BString, Object> recordValue,
                                                                    RecordType recordType) {
-            HashMap<String, ModelGroupInfo> xsdModelGroupInfo = 
+            HashMap<String, ModelGroupInfo> xsdModelGroupInfo =
                     DataUtils.getFieldNamesWithModelGroupAnnotations(recordType, new HashMap<>());
-            
-            // Only initialize sequence fields that are currently null
             for (Map.Entry<String, Field> field : recordType.getFields().entrySet()) {
                 String fieldName = field.getValue().getFieldName();
                 BString fieldKey = StringUtils.fromString(fieldName);
-                
+                Type fieldType = TypeUtils.getReferredType(field.getValue().getFieldType());
+                Object currentValue = recordValue.get(fieldKey);
+
                 if (xsdModelGroupInfo.containsKey(fieldName)) {
                     ModelGroupInfo modelGroup = xsdModelGroupInfo.get(fieldName);
                     if (modelGroup.getMinOccurs() == 0) {
-                        Type fieldType = TypeUtils.getReferredType(field.getValue().getFieldType());
-                        
                         if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
-                            Object currentValue = recordValue.get(fieldKey);
                             if (currentValue == null) {
                                 recordValue.put(fieldKey, ValueCreator.createArrayValue((ArrayType) fieldType));
                             }
                         }
+                    }
+                } else if (DataUtils.isFieldAnnotatedWithAny(recordType, fieldName)) {
+                    ArrayType arrayType = getArrayTypeFromField(fieldType);
+                    if (arrayType != null && currentValue == null) {
+                        recordValue.put(fieldKey, ValueCreator.createArrayValue(arrayType));
+                    }
+                }
+            }
+        }
+
+        private ArrayType getArrayTypeFromField(Type fieldType) {
+            if (fieldType.getTag() == TypeTags.ARRAY_TAG) {
+                return (ArrayType) fieldType;
+            } else if (fieldType.getTag() == TypeTags.UNION_TAG) {
+                for (Type memberType : ((UnionType) fieldType).getMemberTypes()) {
+                    Type referredMemberType = TypeUtils.getReferredType(memberType);
+                    if (referredMemberType.getTag() == TypeTags.ARRAY_TAG) {
+                        return (ArrayType) referredMemberType;
+                    }
+                }
+            }
+            return null;
+        }
+
+        private void initializeAnyAnnotatedArrayFields(BMap<BString, Object> recordValue, RecordType recordType) {
+            for (Map.Entry<String, Field> entry : recordType.getFields().entrySet()) {
+                String fieldName = entry.getValue().getFieldName();
+                BString fieldKey = StringUtils.fromString(fieldName);
+                Object currentValue = recordValue.get(fieldKey);
+
+                if (currentValue == null && DataUtils.isFieldAnnotatedWithAny(recordType, fieldName)) {
+                    Type fieldType = TypeUtils.getReferredType(entry.getValue().getFieldType());
+                    ArrayType arrayType = getArrayTypeFromField(fieldType);
+                    if (arrayType != null) {
+                        recordValue.put(fieldKey, ValueCreator.createArrayValue(arrayType));
                     }
                 }
             }

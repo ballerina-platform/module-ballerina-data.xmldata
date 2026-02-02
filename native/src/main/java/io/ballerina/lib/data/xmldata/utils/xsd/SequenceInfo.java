@@ -22,6 +22,8 @@ import io.ballerina.lib.data.xmldata.utils.Constants;
 import io.ballerina.lib.data.xmldata.utils.DataUtils;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
+import io.ballerina.runtime.api.flags.SymbolFlags;
+import io.ballerina.runtime.api.types.Field;
 import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
@@ -55,10 +57,12 @@ public class SequenceInfo implements ModelGroupInfo {
     private boolean isMiddleOfElement = false;
     private final Stack<HashMap<String, ElementInfo>> xmlElementInfo;
     private HashMap<String, String> xmlElementNameMap = new HashMap<>();
+    private final RecordType fieldType;
 
     public SequenceInfo(String fieldName, BMap<BString, Object> element, RecordType fieldType,
                         Stack<HashMap<String, ElementInfo>> xmlElementInfo) {
         this.fieldName = fieldName;
+        this.fieldType = fieldType;
         if (element.containsKey(Constants.MIN_OCCURS)) {
             this.minOccurs = element.getIntValue(Constants.MIN_OCCURS);
         } else {
@@ -269,21 +273,38 @@ public class SequenceInfo implements ModelGroupInfo {
                         maxElementCount.put(element, (int) info.maxOccurs);
                         minimumElementCount.put(element, (int) info.minOccurs);
                     } else {
-                        elementOptionality.put(element, false);
+                        boolean isOptional = isFieldOptional(element);
+                        elementOptionality.put(element, isOptional);
                         remainingElementCount.put(element, 1);
                         maxElementCount.put(element, 1);
-                        minimumElementCount.put(element, 1);
+                        minimumElementCount.put(element, isOptional ? 0 : 1);
                     }
                 });
             } else {
                 allElements.forEach(element -> {
-                    elementOptionality.put(element, false);
+                    boolean isOptional = isFieldOptional(element);
+                    elementOptionality.put(element, isOptional);
                     remainingElementCount.put(element, 1);
                     maxElementCount.put(element, 1);
-                    minimumElementCount.put(element, 1);
+                    minimumElementCount.put(element, isOptional ? 0 : 1);
                 });
             }
         }
+    }
+
+    private boolean isFieldOptional(String element) {
+        if (fieldType == null) {
+            return false;
+        }
+        String fieldName = xmlElementNameMap.getOrDefault(element, element);
+        Field field = fieldType.getFields().get(fieldName);
+        if (field == null) {
+            return false;
+        }
+        if (SymbolFlags.isFlagOn(field.getFlags(), SymbolFlags.OPTIONAL)) {
+            return true;
+        }
+        return anyAnnotatedFields.contains(fieldName);
     }
 
     private void reOrderElementNamesBasedOnTheNameAnnotation() {
