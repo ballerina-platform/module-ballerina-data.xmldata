@@ -25,6 +25,7 @@ import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
 import io.ballerina.runtime.api.flags.SymbolFlags;
 import io.ballerina.runtime.api.types.Field;
 import io.ballerina.runtime.api.types.RecordType;
+import io.ballerina.runtime.api.types.TypeTags;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 
@@ -274,22 +275,56 @@ public class SequenceInfo implements ModelGroupInfo {
                         minimumElementCount.put(element, (int) info.minOccurs);
                     } else {
                         boolean isOptional = isFieldOptional(element);
+                        int maxValue = getMaxValue(element);
                         elementOptionality.put(element, isOptional);
-                        remainingElementCount.put(element, 1);
-                        maxElementCount.put(element, 1);
+                        remainingElementCount.put(element, maxValue);
+                        maxElementCount.put(element, maxValue);
                         minimumElementCount.put(element, isOptional ? 0 : 1);
                     }
                 });
             } else {
                 allElements.forEach(element -> {
                     boolean isOptional = isFieldOptional(element);
+                    int maxValue = getMaxValue(element);
                     elementOptionality.put(element, isOptional);
-                    remainingElementCount.put(element, 1);
-                    maxElementCount.put(element, 1);
+                    remainingElementCount.put(element, maxValue);
+                    maxElementCount.put(element, maxValue);
                     minimumElementCount.put(element, isOptional ? 0 : 1);
                 });
             }
         }
+    }
+
+    private boolean isArrayField(String element) {
+        if (fieldType == null) {
+            return false;
+        }
+        String fieldName = xmlElementNameMap.getOrDefault(element, element);
+        Field field = fieldType.getFields().get(fieldName);
+        if (field == null) {
+            return false;
+        }
+        return field.getFieldType().getTag() == TypeTags.ARRAY_TAG;
+    }
+
+    private int getMaxValue(String element) {
+        boolean isArray = isArrayField(element);
+        long maxOccurs = getElementMaxOccurs(element);
+        if (maxOccurs > 0 && isArray) {
+            return (int) maxOccurs;
+        } else if (isArray) {
+            return Integer.MAX_VALUE;
+        }
+        return 1;
+    }
+
+    private long getElementMaxOccurs(String element) {
+        for (HashMap<String, ElementInfo> elementInfo : xmlElementInfo) {
+            if (elementInfo.containsKey(element)) {
+                return elementInfo.get(element).maxOccurs;
+            }
+        }
+        return -1;
     }
 
     private boolean isFieldOptional(String element) {
