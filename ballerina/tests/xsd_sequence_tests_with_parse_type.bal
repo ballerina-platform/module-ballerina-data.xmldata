@@ -1043,3 +1043,46 @@ function testXsdSequenceWithXmlValue13() returns error? {
     test:assertTrue(e is Error);
     test:assertEquals((<Error>e).message(), "Invalid XML found: 'Element 'field5' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValue13_2''");
 }
+
+@Name {
+    value: "Root"
+}
+type XSDSequenceRecordWithArrayAndXmlValue record {|
+    @Sequence {
+        minOccurs: 0,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecordWithArrayAndXmlValue seq;
+|};
+
+type Seq_XSDSequenceRecordWithArrayAndXmlValue record {|
+    @SequenceOrder {value: 1}
+    string[] Source;
+    @SequenceOrder {value: 2}
+    string Dest;
+|};
+
+@test:Config {
+    groups: ["xsd", "xsd_sequence"]
+}
+function testXsdSequenceWithArrayFieldAndXmlValue() returns error? {
+    xml xmlValue = xml `<Root><Source>A</Source><Source>B</Source><Dest>Z</Dest></Root>`;
+    XSDSequenceRecordWithArrayAndXmlValue|Error value = parseAsType(xmlValue);
+    test:assertEquals(value, {seq: {Source: ["A", "B"], Dest: "Z"}});
+    Error? response = validate(xmlValue, XSDSequenceRecordWithArrayAndXmlValue);
+    test:assertTrue(response is ());
+
+    xmlValue = xml `<Root><Source>A</Source><Dest>Z</Dest></Root>`;
+    value = parseAsType(xmlValue);
+    test:assertEquals(value, {seq: {Source: ["A"], Dest: "Z"}});
+    response = validate(xmlValue, XSDSequenceRecordWithArrayAndXmlValue);
+    test:assertTrue(response is ());
+
+    xmlValue = xml `<Root><Dest>Z</Dest><Source>A</Source></Root>`;
+    value = parseAsType(xmlValue);
+    test:assertTrue(value is Error);
+    test:assertEquals((<Error>value).message(), "Element 'Dest' is not in the correct order in 'seq'");
+    response = validate(xmlValue, XSDSequenceRecordWithArrayAndXmlValue);
+    test:assertTrue(response is Error);
+    test:assertEquals((<Error>response).message(), "Invalid XML found: 'Element 'Dest' is not in the correct order in 'seq''");
+}

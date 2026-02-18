@@ -1072,3 +1072,71 @@ function testXsdSequence13() returns error? {
     test:assertTrue(v2 is Error);
     test:assertEquals((<Error>v2).message(), ("Element 'field5' is not in the correct order in 'seq_XSDSequenceRecord13_2'"), msg = (<Error>v2).message());
 }
+
+type XSDSequenceRecordWithArray record {|
+    @Sequence {
+        minOccurs: 0,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecordWithArray seq;
+|};
+
+type Seq_XSDSequenceRecordWithArray record {|
+    @SequenceOrder {value: 1}
+    string[] Source;
+    @SequenceOrder {value: 2}
+    string Dest;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequenceWithArrayField() returns error? {
+    string xmlStr = string `<Root><Source>A</Source><Source>B</Source><Dest>Z</Dest></Root>`;
+    XSDSequenceRecordWithArray|Error value = parseString(xmlStr);
+    test:assertEquals(value, {seq: {Source: ["A", "B"], Dest: "Z"}});
+
+    xmlStr = string `<Root><Source>A</Source><Dest>Z</Dest></Root>`;
+    value = parseString(xmlStr);
+    test:assertEquals(value, {seq: {Source: ["A"], Dest: "Z"}});
+
+    xmlStr = string `<Root><Dest>Z</Dest><Source>A</Source></Root>`;
+    value = parseString(xmlStr);
+    test:assertTrue(value is Error);
+    test:assertEquals((<Error>value).message(), "Element 'Dest' is not in the correct order in 'seq'");
+}
+
+type XSDSequenceRecordWithRecordArray record {|
+    @Sequence {
+        minOccurs: 0,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecordWithRecordArray seq;
+|};
+
+type Seq_XSDSequenceRecordWithRecordArray record {|
+    @SequenceOrder {value: 1}
+    RecordItem[] items;
+    @SequenceOrder {value: 2}
+    string status;
+|};
+
+type RecordItem record {|
+    string name;
+    int value;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequenceWithRecordArrayField() returns error? {
+    string xmlStr = string `<Root><items><name>Item1</name><value>10</value></items><items><name>Item2</name><value>20</value></items><status>active</status></Root>`;
+    XSDSequenceRecordWithRecordArray|Error value = parseString(xmlStr);
+    test:assertEquals(value, {seq: {items: [{name: "Item1", value: 10}, {name: "Item2", value: 20}], status: "active"}});
+
+    xmlStr = string `<Root><items><name>Item1</name><value>10</value></items><status>active</status></Root>`;
+    value = parseString(xmlStr);
+    test:assertEquals(value, {seq: {items: [{name: "Item1", value: 10}], status: "active"}});
+
+    xmlStr = string `<Root><status>active</status><items><name>Item1</name><value>10</value></items></Root>`;
+    value = parseString(xmlStr);
+    test:assertTrue(value is Error);
+    test:assertEquals((<Error>value).message(), "Element 'status' is not in the correct order in 'seq'");
+}
+
