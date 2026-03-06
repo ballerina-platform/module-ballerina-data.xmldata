@@ -75,6 +75,22 @@ public class ChoiceInfo implements ModelGroupInfo {
         this.xmlElementNameMap = DataUtils.getXmlElementNameMap(fieldType);
         reOrderElementNamesBasedOnTheNameAnnotation();
         this.xmlElementInfo = xmlElementInfo;
+    private void initElementCountsFromFieldType(RecordType fieldType) {
+        HashMap<String, ElementInfo> elementAnnotations = DataUtils.getFieldNamesWithElementGroupAnnotations(fieldType);
+        allElements.forEach(element -> {
+            ElementInfo info = elementAnnotations.get(element);
+            if (info != null) {
+                elementOptionality.put(element, info.minOccurs == 0);
+                remainingElementCount.put(element, (int) info.maxOccurs);
+                maxElementCount.put(element, (int) info.maxOccurs);
+                minimumElementCount.put(element, (int) info.minOccurs);
+            } else {
+                elementOptionality.put(element, false);
+                remainingElementCount.put(element, 1);
+                maxElementCount.put(element, 1);
+                minimumElementCount.put(element, 1);
+            }
+        });
     }
 
     public void updateOccurrences() {
