@@ -333,3 +333,80 @@ function testXSDChoiceArrayRecord6() returns error? {
     XSDChoiceArrayRecord6|Error v2 = parseString(xmlStr);
     test:assertEquals(v2, {choice_XSDChoiceArrayRecord6_1: {field1: [{value1: {a: ["1", "1"]}}, {value1: {a:["1", "1"]}}], field2: [{value2: {d: ["1", "1"]}}, {value2: {d: ["1", "1"]}}]}, choice_XSDChoiceArrayRecord6_2: {field4: [{value1: {a: ["1", "1"]}}, {value1: {a:["1", "1"]}}], field5: [{value2: {d: ["1", "1"]}}, {value2: {d: ["1","1"]}}]}});
 }
+
+type XsdChoiceArrayField record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 2
+    }
+    Choice_XsdChoiceArrayField[] choice_XsdChoiceArrayField;
+|};
+
+type Choice_XsdChoiceArrayField record {|
+    int age?;
+    float salary?;
+|};
+
+type XsdChoiceArrayFieldWithChildArray record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 3
+    }
+    Choice_XsdChoiceArrayFieldWithChildArray[] choice_XsdChoiceArrayFieldWithChildArray;
+|};
+
+type Choice_XsdChoiceArrayFieldWithChildArray record {|
+    @Element {maxOccurs: 2, minOccurs: 0}
+    int[] age?;
+    @Element {maxOccurs: 2, minOccurs: 0}
+    float[] salary?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_choice"]}
+function testXsdChoiceArrayField() returns error? {
+    string xmlStr = string `<Root><age>10</age></Root>`;
+    XsdChoiceArrayField choiceValue = check parseString(xmlStr);
+    test:assertEquals(choiceValue, {choice_XsdChoiceArrayField: [{age: 10}]});
+
+    xmlStr = string `<Root><salary>11.1</salary></Root>`;
+    choiceValue = check parseString(xmlStr);
+    test:assertEquals(choiceValue, {choice_XsdChoiceArrayField: [{salary: 11.1}]});
+
+    xmlStr = string `<Root><age>10</age><salary>11.1</salary></Root>`;
+    choiceValue = check parseString(xmlStr);
+    test:assertEquals(choiceValue, {choice_XsdChoiceArrayField: [{age: 10}, {salary: 11.1}]});
+
+    xmlStr = string `<Root><age>10</age><age>20</age></Root>`;
+    choiceValue = check parseString(xmlStr);
+    test:assertEquals(choiceValue, {choice_XsdChoiceArrayField: [{age: 10}, {age: 20}]});
+
+    xmlStr = string `<Root><age>10</age><salary>11.1</salary><age>30</age></Root>`;
+    XsdChoiceArrayField|Error errorValue = parseString(xmlStr);
+    test:assertTrue(errorValue is Error);
+    test:assertEquals((<Error>errorValue).message(), "'choice_XsdChoiceArrayField' occurs more than the max allowed times");
+
+    xmlStr = string `<Root></Root>`;
+    errorValue = parseString(xmlStr);
+    test:assertTrue(errorValue is Error);
+    test:assertEquals((<Error>errorValue).message(), "required field 'choice_XsdChoiceArrayField' not present in XML");
+}
+
+@test:Config {groups: ["xsd", "xsd_choice"]}
+function testXsdChoiceArrayFieldWithChildArray() returns error? {
+    string xmlStr = string `<Root><age>10</age><age>20</age></Root>`;
+    XsdChoiceArrayFieldWithChildArray choiceValue = check parseString(xmlStr);
+    test:assertEquals(choiceValue, {choice_XsdChoiceArrayFieldWithChildArray: [{age: [10, 20]}]});
+
+    xmlStr = string `<Root><salary>1.1</salary><salary>2.2</salary></Root>`;
+    choiceValue = check parseString(xmlStr);
+    test:assertEquals(choiceValue, {choice_XsdChoiceArrayFieldWithChildArray: [{salary: [1.1, 2.2]}]});
+
+    xmlStr = string `<Root><age>10</age><age>20</age><age>30</age></Root>`;
+    choiceValue = check parseString(xmlStr);
+    test:assertEquals(choiceValue, {choice_XsdChoiceArrayFieldWithChildArray: [{age: [10, 20]}, {age: [30]}]});
+
+    xmlStr = string `<Root><age>10</age><age>20</age><salary>1.1</salary><salary>2.2</salary><age>30</age><age>40</age><salary>3.3</salary></Root>`;
+    XsdChoiceArrayFieldWithChildArray|Error errorValue = parseString(xmlStr);
+    test:assertTrue(errorValue is Error);
+    test:assertEquals((<Error>errorValue).message(), "'choice_XsdChoiceArrayFieldWithChildArray' occurs more than the max allowed times");
+}
