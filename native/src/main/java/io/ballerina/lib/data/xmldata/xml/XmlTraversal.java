@@ -264,8 +264,8 @@ class XmlTraversal {
         @SuppressWarnings("unchecked")
         private void convertElement(BXmlItem xmlItem, XmlAnalyzerData analyzerData) {
             QualifiedName elementQName = DataUtils.getElementName(xmlItem.getQName(), analyzerData.useSemanticEquality);
-            updateElementOccurrence(analyzerData, elementQName);
             validateModelGroupStack(analyzerData, elementQName, true);
+            updateElementOccurrence(analyzerData, elementQName);
             QualifiedNameMap<Field> fieldsMap = analyzerData.fieldHierarchy.peek();
             Field currentField;
             if (analyzerData.visitedFieldHierarchy.peek().contains(elementQName)) {
