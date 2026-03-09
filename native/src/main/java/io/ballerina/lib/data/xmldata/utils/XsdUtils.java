@@ -117,7 +117,15 @@ public class XsdUtils {
                 .getFields().get(fieldName).getFieldType());
         if (fieldType instanceof RecordType recType) {
             parserData.xsdModelGroupInfo.peek().put(fieldName,
-                    new ChoiceInfo(fieldName, fieldAnnotationValue, recType, parserData.xmlElementInfo));
+                    new ChoiceInfo(fieldName, fieldAnnotationValue, recType, parserData.xmlElementInfo, false));
+        } else if (fieldType instanceof ArrayType arrayType) {
+            Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
+            if (elementType instanceof RecordType recType) {
+                parserData.xsdModelGroupInfo.peek().put(fieldName,
+                        new ChoiceInfo(fieldName, fieldAnnotationValue, recType, parserData.xmlElementInfo, true));
+            } else {
+                throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_CHOICE_ANNOTATION, fieldName, fieldType);
+            }
         } else {
             throw DiagnosticLog.error(DiagnosticErrorCode.INVALID_CHOICE_ANNOTATION, fieldName, fieldType);
         }
