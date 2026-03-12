@@ -54,10 +54,11 @@ public class ChoiceInfo implements ModelGroupInfo {
     public final Set<String> containElements = new HashSet<>();
     private final HashMap<String, String> xmlElementNameMap;
     private boolean isMiddleOfElement = false;
+    private final boolean isArrayField;
 
 
     public ChoiceInfo(String fieldName, BMap<BString, Object> element, RecordType fieldType,
-                      Stack<HashMap<String, ElementInfo>> xmlElementInfo) {
+                      Stack<HashMap<String, ElementInfo>> xmlElementInfo, boolean isArrayField) {
         this.fieldName = fieldName;
         if (element.containsKey(Constants.MIN_OCCURS)) {
             this.minOccurs = element.getIntValue(Constants.MIN_OCCURS);
@@ -75,6 +76,28 @@ public class ChoiceInfo implements ModelGroupInfo {
         this.xmlElementNameMap = DataUtils.getXmlElementNameMap(fieldType);
         reOrderElementNamesBasedOnTheNameAnnotation();
         this.xmlElementInfo = xmlElementInfo;
+        this.isArrayField = isArrayField;
+        if (isArrayField) {
+            initElementCountsFromFieldType(fieldType);
+        }
+    }
+
+    private void initElementCountsFromFieldType(RecordType fieldType) {
+        HashMap<String, ElementInfo> elementAnnotations = DataUtils.getFieldNamesWithElementGroupAnnotations(fieldType);
+        allElements.forEach(element -> {
+            ElementInfo info = elementAnnotations.get(element);
+            if (info != null) {
+                elementOptionality.put(element, info.minOccurs == 0);
+                remainingElementCount.put(element, (int) info.maxOccurs);
+                maxElementCount.put(element, (int) info.maxOccurs);
+                minimumElementCount.put(element, (int) info.minOccurs);
+            } else {
+                elementOptionality.put(element, false);
+                remainingElementCount.put(element, 1);
+                maxElementCount.put(element, 1);
+                minimumElementCount.put(element, 1);
+            }
+        });
     }
 
     public void updateOccurrences() {
@@ -167,6 +190,12 @@ public class ChoiceInfo implements ModelGroupInfo {
     @Override
     public boolean predictStartNewModelGroup(String element) {
         generateElementOptionalityMapIfNotPresent();
+        if (!isMiddleOfElement && isArrayField && isElementContains(element) && !containElements.isEmpty()
+                && maxOccurs > 1) {
+            Integer remaining = remainingElementCount.get(element);
+            Integer max = maxElementCount.get(element);
+            return remaining != null && max != null && remaining.equals(max);
+        }
         return !isMiddleOfElement && !isElementContains(element);
     }
 

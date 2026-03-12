@@ -1597,7 +1597,7 @@ public class DataUtils {
                 if (fieldAnnotationKeyStr.endsWith(Constants.CHOICE)) {
                     ChoiceInfo choiceInfo = new ChoiceInfo(fieldName,
                             (BMap<BString, Object>) fieldAnnotation.get(fieldAnnotationKey),
-                            fieldType, null);
+                            fieldType, null, false);
                     fieldNamesWithModelGroupAnnotations.put(fieldName, choiceInfo);
                 }
             }

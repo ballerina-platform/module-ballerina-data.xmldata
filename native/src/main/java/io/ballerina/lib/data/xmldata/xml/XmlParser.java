@@ -513,8 +513,8 @@ class XmlParser {
 
     private void readElement(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
         QualifiedName elemQName = getElementName(xmlStreamReader, xmlParserData.useSemanticEquality);
-        updateElementOccurrence(xmlParserData, elemQName);
         validateModelGroupStack(xmlParserData, elemQName, true);
+        updateElementOccurrence(xmlParserData, elemQName);
 
         QualifiedNameMap<Field> fieldMap = xmlParserData.fieldHierarchy.peek();
         Field currentField = null;
