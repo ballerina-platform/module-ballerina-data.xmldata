@@ -23,16 +23,22 @@ import io.ballerina.lib.data.xmldata.utils.DataUtils;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticErrorCode;
 import io.ballerina.lib.data.xmldata.utils.DiagnosticLog;
 import io.ballerina.runtime.api.flags.SymbolFlags;
+import io.ballerina.runtime.api.types.ArrayType;
 import io.ballerina.runtime.api.types.Field;
 import io.ballerina.runtime.api.types.RecordType;
+import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.types.TypeTags;
+import io.ballerina.runtime.api.utils.StringUtils;
+import io.ballerina.runtime.api.utils.TypeUtils;
 import io.ballerina.runtime.api.values.BMap;
 import io.ballerina.runtime.api.values.BString;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 
 /**
@@ -51,6 +57,8 @@ public class SequenceInfo implements ModelGroupInfo {
     private final Map<String, Boolean> elementOptionality = new HashMap<>();
     private final List<String> allElements = new ArrayList<>();
     private final List<String> anyAnnotatedFields = new ArrayList<>();
+    private final Set<String> nestedSequenceElements = new HashSet<>();
+    private final Set<String> nestedSequenceFieldNames = new HashSet<>();
     int currentIndex = 0;
     int elementCount;
     String lastElement = "";
@@ -81,6 +89,7 @@ public class SequenceInfo implements ModelGroupInfo {
         this.xmlElementNameMap = DataUtils.getXmlElementNameMap(fieldType);
         reOrderElementNamesBasedOnTheNameAnnotation();
         this.elementCount = allElements.size();
+        buildNestedSequenceElements(fieldType);
     }
 
     public void updateOccurrences() {
@@ -118,6 +127,12 @@ public class SequenceInfo implements ModelGroupInfo {
             return;
         }
 
+        // Elements that belong to nested sequences are tracked by inner model groups.
+        // The outer sequence state is updated via notifyNestedGroupCompleted when the inner group completes.
+        if (nestedSequenceElements.contains(element)) {
+            return;
+        }
+
         isMiddleOfElement = isStartElement;
         if (isStartElement) {
             isCompleted = false;
@@ -125,6 +140,17 @@ public class SequenceInfo implements ModelGroupInfo {
         }
 
         checkElementOrderAndUpdateElementOccurences(element);
+    }
+
+    @Override
+    public void notifyNestedGroupCompleted(String fieldName) {
+        // Only update state if fieldName is a direct nested sequence field of this group.
+        // Other inner model groups (e.g., sequence fields within element-typed fields) are not tracked here.
+        if (!nestedSequenceFieldNames.contains(fieldName)) {
+            return;
+        }
+        generateElementOptionalityMapIfNotPresent();
+        checkElementOrderAndUpdateElementOccurences(fieldName);
     }
 
     @Override
@@ -136,6 +162,9 @@ public class SequenceInfo implements ModelGroupInfo {
             return true;
         }
         if (!anyAnnotatedFields.isEmpty()) {
+            return true;
+        }
+        if (this.nestedSequenceElements.contains(elementName)) {
             return true;
         }
         return false;
@@ -340,6 +369,75 @@ public class SequenceInfo implements ModelGroupInfo {
             return true;
         }
         return anyAnnotatedFields.contains(fieldName);
+    }
+
+    private void buildNestedSequenceElements(RecordType recordType) {
+        if (recordType == null) {
+            return;
+        }
+        BMap<BString, Object> annotations = recordType.getAnnotations();
+        for (String xmlElementName : allElements) {
+            String fieldName = xmlElementNameMap.getOrDefault(xmlElementName, xmlElementName);
+            if (isFieldAnnotatedWithModuleSequence(annotations, fieldName)) {
+                nestedSequenceFieldNames.add(xmlElementName);
+                Field field = recordType.getFields().get(fieldName);
+                if (field != null) {
+                    Type fType = TypeUtils.getReferredType(field.getFieldType());
+                    collectNestedSequenceElements(fType, nestedSequenceElements);
+                }
+            }
+        }
+    }
+
+    private static boolean isFieldAnnotatedWithModuleSequence(BMap<BString, Object> annotations, String fieldName) {
+        BString annotationKey = StringUtils.fromString(Constants.FIELD
+                + fieldName.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0"));
+        if (!annotations.containsKey(annotationKey)) {
+            return false;
+        }
+        BMap<BString, Object> fieldAnnotation = (BMap<BString, Object>) annotations.get(annotationKey);
+        for (BString key : fieldAnnotation.getKeys()) {
+            String keyStr = key.getValue();
+            if (keyStr.startsWith(Constants.MODULE_NAME) && keyStr.endsWith(Constants.SEQUENCE)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void collectNestedSequenceElements(Type type, Set<String> result) {
+        RecordType recordType = null;
+        if (type.getTag() == TypeTags.RECORD_TYPE_TAG) {
+            recordType = (RecordType) type;
+        } else if (type.getTag() == TypeTags.ARRAY_TAG) {
+            Type elementType = TypeUtils.getReferredType(((ArrayType) type).getElementType());
+            if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                recordType = (RecordType) elementType;
+            }
+        }
+        if (recordType == null) {
+            return;
+        }
+
+        BMap<BString, Object> annotations = recordType.getAnnotations();
+        HashMap<String, Integer> priorityOrder = DataUtils.getXsdSequencePriorityOrder(recordType, true);
+        HashMap<String, String> elementNameMap = DataUtils.getXmlElementNameMap(recordType);
+
+        // Build reverse map: fieldName -> xmlElementName
+        HashMap<String, String> fieldToXmlName = new HashMap<>();
+        elementNameMap.forEach((xmlName, fieldName) -> fieldToXmlName.put(fieldName, xmlName));
+
+        for (String fieldName : priorityOrder.keySet()) {
+            String xmlElementName = fieldToXmlName.getOrDefault(fieldName, fieldName);
+            if (isFieldAnnotatedWithModuleSequence(annotations, fieldName)) {
+                Field field = recordType.getFields().get(fieldName);
+                if (field != null) {
+                    collectNestedSequenceElements(TypeUtils.getReferredType(field.getFieldType()), result);
+                }
+            } else {
+                result.add(xmlElementName);
+            }
+        }
     }
 
     private void reOrderElementNamesBasedOnTheNameAnnotation() {

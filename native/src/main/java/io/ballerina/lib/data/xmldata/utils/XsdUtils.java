@@ -197,11 +197,17 @@ public static void popXsdValidationStacks(XmlAnalyzerMetaData xmlAnalyzerMetaDat
         if (isTerminated) {
             modelGroup.validateMinOccurrences();
         }
+        String completedFieldName = modelGroup.getFieldName();
         xmlAnalyzerMetaData.currentNode = (BMap<BString, Object>) xmlAnalyzerMetaData.nodesStack.pop();
         xmlAnalyzerMetaData.modelGroupStack.pop();
         xmlAnalyzerMetaData.rootRecord = xmlAnalyzerMetaData.recordTypeStack.pop();
         validateCurrentElementInfo(xmlAnalyzerMetaData);
         popElementStacksForValidatingGroup(xmlAnalyzerMetaData);
+        // Notify the outer model group that the inner nested sequence has completed,
+        // so the outer sequence can update its element-order tracking state.
+        if (!xmlAnalyzerMetaData.modelGroupStack.isEmpty()) {
+            xmlAnalyzerMetaData.modelGroupStack.peek().notifyNestedGroupCompleted(completedFieldName);
+        }
     }
 
     private static void initializeAnyAnnotatedArrayFields(BMap<BString, Object> recordValue, RecordType recordType) {

@@ -518,12 +518,12 @@ function testXsdChoiceWithXmlValue8() returns error? {
     xmlValue = xml `<Root><test><age>10</age></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceWithXmlValueRecord8_2' occurs less than the min required times");
+    test:assertEquals((<Error>v2).message(), "required field 'num' not present in XML");
 
     xmlValue = xml `<Root><test><status><value1>Success</value1><value2>Fail</value2></status></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceWithXmlValueRecord8_1' occurs less than the min required times");
+    test:assertEquals((<Error>v2).message(), "required field 'num' not present in XML");
 }
 
 @Name {

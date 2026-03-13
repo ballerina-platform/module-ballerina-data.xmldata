@@ -371,7 +371,7 @@ function testXsdSequenceWithElementAnnotationWithXmlValue3() returns error? {
     xmlValue = xml `<Root><field1><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><a>2</a><a>3</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h></field6></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertEquals((<Error>v2).message(), "required field 'i' not present in XML");
+    test:assertEquals((<Error>v2).message(), "Element(s) 'i' is not found in 'value3'");
 
     xmlValue = xml `<Root><field1><a>1</a><b>2</b><c>3</c></field1><field1><a>1</a><b>2</b><c>3</c></field1><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field2><d>1</d><e>2</e><f>3</f></field2><field3><g>1</g><h>2</h><i>3</i></field3><field4><a>1</a><b>2</b><c>3</c></field4><field5><d>1</d><e>2</e><f>3</f></field5><field5><d>1</d><e>2</e><f>3</f></field5><field5><d>1</d><e>2</e><f>3</f></field5><field5><d>1</d><e>2</e><f>3</f></field5><field6><g>1</g><h>2</h><i>3</i></field6></Root>`;
     v2 = parseAsType(xmlValue);
@@ -385,4 +385,75 @@ function testXsdSequenceWithElementAnnotationWithXmlValue3() returns error? {
     xml|Error toXmlResult = toXml(<XsdSequenceWithElementAnnotationWithXmlValue3>{seq_XsdSequenceWithElementAnnotationWithXmlValue3_1: {field1: [{value1: {a: ["1"], b: ["2"], c: "3"}}, {value1: {a: ["1"], b: ["2", "2", "2", "2", "2"], c: "3"}}], field2: [{value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}, {value2: {d: "1", e: "2", f: "3"}}], field3: {value3: {g: "1", h: "2", i: "3"}}}});
     test:assertTrue(toXmlResult is Error);
     test:assertEquals((<Error>toXmlResult).message(), "'b' occurs more than the max allowed times");
+}
+
+// Test for nested sequences (sequence within a sequence)
+// Models the XSD pattern where an xs:sequence contains another xs:sequence as a group
+@Name {
+    value: "Root"
+}
+type XsdNestedSequence record {|
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    NestedSeqOuter nestedSeqOuter;
+|};
+
+type NestedSeqOuter record {|
+    @SequenceOrder {value: 1}
+    @Element {minOccurs: 0, maxOccurs: 1}
+    NestedSeqItemA itemA?;
+
+    @SequenceOrder {value: 2}
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    NestedSeqInner nestedSeqInner;
+|};
+
+type NestedSeqInner record {|
+    @SequenceOrder {value: 1}
+    @Element {minOccurs: 1, maxOccurs: 3}
+    NestedSeqItemB[] itemB;
+
+    @SequenceOrder {value: 2}
+    @Element {minOccurs: 1, maxOccurs: 1}
+    NestedSeqItemC itemC;
+|};
+
+type NestedSeqItemA record {|
+    string name;
+|};
+
+type NestedSeqItemB record {|
+    string val;
+|};
+
+type NestedSeqItemC record {|
+    string val;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence", "xsd_nested_sequence"]}
+function testXsdNestedSequence() returns error? {
+    xml xmlValue;
+    XsdNestedSequence|Error v;
+
+    // Basic nested sequence: outer has optional itemA and inner sequence with itemB[] + itemC
+    xmlValue = xml `<Root><itemB><val>b1</val></itemB><itemC><val>c1</val></itemC></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {nestedSeqOuter: {nestedSeqInner: {itemB: [{val: "b1"}], itemC: {val: "c1"}}}});
+
+    // With optional itemA present
+    xmlValue = xml `<Root><itemA><name>a1</name></itemA><itemB><val>b1</val></itemB><itemC><val>c1</val></itemC></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {nestedSeqOuter: {itemA: {name: "a1"}, nestedSeqInner: {itemB: [{val: "b1"}], itemC: {val: "c1"}}}});
+
+    // Multiple itemB elements (array)
+    xmlValue = xml `<Root><itemB><val>b1</val></itemB><itemB><val>b2</val></itemB><itemC><val>c1</val></itemC></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {nestedSeqOuter: {nestedSeqInner: {itemB: [{val: "b1"}, {val: "b2"}], itemC: {val: "c1"}}}});
+
+    // Missing required itemC should fail
+    xmlValue = xml `<Root><itemB><val>b1</val></itemB></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
 }
