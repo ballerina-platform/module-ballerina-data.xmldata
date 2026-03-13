@@ -231,12 +231,11 @@ public class SequenceInfo implements ModelGroupInfo {
                         xmlElementNameMap.getOrDefault(element, element), fieldName);
             }
             currentIndex++;
-            nextElement = allElements.get(currentIndex);
-
             if (currentIndex == this.elementCount) {
                 throw DiagnosticLog.error(DiagnosticErrorCode.INCORRECT_ELEMENT_ORDER,
                         xmlElementNameMap.getOrDefault(element, element), fieldName);
             }
+            nextElement = allElements.get(currentIndex);
         }
 
         if (remainingElementCount.get(nextElement) == 0) {
