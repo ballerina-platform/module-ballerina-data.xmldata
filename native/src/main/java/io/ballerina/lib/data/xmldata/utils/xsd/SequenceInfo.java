@@ -341,7 +341,7 @@ public class SequenceInfo implements ModelGroupInfo {
         if (maxOccurs > 0 && isArray) {
             return (int) maxOccurs;
         } else if (isArray) {
-            return Integer.MAX_VALUE;
+            return Character.MAX_VALUE;
         }
         return 1;
     }
