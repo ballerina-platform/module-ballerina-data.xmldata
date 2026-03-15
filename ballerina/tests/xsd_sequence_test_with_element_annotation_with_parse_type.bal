@@ -387,8 +387,6 @@ function testXsdSequenceWithElementAnnotationWithXmlValue3() returns error? {
     test:assertEquals((<Error>toXmlResult).message(), "'b' occurs more than the max allowed times");
 }
 
-// Test for nested sequences (sequence within a sequence)
-// Models the XSD pattern where an xs:sequence contains another xs:sequence as a group
 @Name {
     value: "Root"
 }
@@ -434,25 +432,21 @@ function testXsdNestedSequence() returns error? {
     xml xmlValue;
     XsdNestedSequence|Error v;
 
-    // Basic nested sequence: outer has optional itemA and inner sequence with itemB[] + itemC
     xmlValue = xml `<Root><itemB><val>b1</val></itemB><itemC><val>c1</val></itemC></Root>`;
     v = parseAsType(xmlValue);
     test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
     test:assertEquals(v, {nestedSeqOuter: {nestedSeqInner: {itemB: [{val: "b1"}], itemC: {val: "c1"}}}});
 
-    // With optional itemA present
     xmlValue = xml `<Root><itemA><name>a1</name></itemA><itemB><val>b1</val></itemB><itemC><val>c1</val></itemC></Root>`;
     v = parseAsType(xmlValue);
     test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
     test:assertEquals(v, {nestedSeqOuter: {itemA: {name: "a1"}, nestedSeqInner: {itemB: [{val: "b1"}], itemC: {val: "c1"}}}});
 
-    // Multiple itemB elements (array)
     xmlValue = xml `<Root><itemB><val>b1</val></itemB><itemB><val>b2</val></itemB><itemC><val>c1</val></itemC></Root>`;
     v = parseAsType(xmlValue);
     test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
     test:assertEquals(v, {nestedSeqOuter: {nestedSeqInner: {itemB: [{val: "b1"}, {val: "b2"}], itemC: {val: "c1"}}}});
 
-    // Missing required itemC should fail
     xmlValue = xml `<Root><itemB><val>b1</val></itemB></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);

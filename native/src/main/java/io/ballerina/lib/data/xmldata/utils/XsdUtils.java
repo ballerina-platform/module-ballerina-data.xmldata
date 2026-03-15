@@ -203,8 +203,6 @@ public static void popXsdValidationStacks(XmlAnalyzerMetaData xmlAnalyzerMetaDat
         xmlAnalyzerMetaData.rootRecord = xmlAnalyzerMetaData.recordTypeStack.pop();
         validateCurrentElementInfo(xmlAnalyzerMetaData);
         popElementStacksForValidatingGroup(xmlAnalyzerMetaData);
-        // Notify the outer model group that the inner nested sequence has completed,
-        // so the outer sequence can update its element-order tracking state.
         if (!xmlAnalyzerMetaData.modelGroupStack.isEmpty()) {
             xmlAnalyzerMetaData.modelGroupStack.peek().notifyNestedGroupCompleted(completedFieldName);
         }

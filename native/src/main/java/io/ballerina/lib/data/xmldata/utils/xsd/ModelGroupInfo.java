@@ -34,13 +34,7 @@ public interface ModelGroupInfo {
     long getMaxOccurs();
     String getFieldName();
 
-    /**
-     * Notifies this model group that a nested sequence field has completed.
-     * This allows the outer sequence to update its state as if the nested sequence field was visited.
-     *
-     * @param fieldName the field name of the completed nested sequence
-     */
     default void notifyNestedGroupCompleted(String fieldName) {
-        // Default no-op; overridden in SequenceInfo for nested sequence support
+        // Implemented in SequenceInfo for nested sequence support
     }
 }

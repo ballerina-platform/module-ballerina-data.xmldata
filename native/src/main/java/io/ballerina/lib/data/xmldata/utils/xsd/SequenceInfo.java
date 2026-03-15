@@ -47,6 +47,7 @@ import java.util.Stack;
  * @since 1.1.0
  */
 public class SequenceInfo implements ModelGroupInfo {
+    public static final String SPECIAL_CHAR_REGEX = "\\\\$0";
     public String fieldName;
     public long minOccurs;
     public long maxOccurs;
@@ -127,8 +128,6 @@ public class SequenceInfo implements ModelGroupInfo {
             return;
         }
 
-        // Elements that belong to nested sequences are tracked by inner model groups.
-        // The outer sequence state is updated via notifyNestedGroupCompleted when the inner group completes.
         if (nestedSequenceElements.contains(element)) {
             return;
         }
@@ -144,8 +143,6 @@ public class SequenceInfo implements ModelGroupInfo {
 
     @Override
     public void notifyNestedGroupCompleted(String fieldName) {
-        // Only update state if fieldName is a direct nested sequence field of this group.
-        // Other inner model groups (e.g., sequence fields within element-typed fields) are not tracked here.
         if (!nestedSequenceFieldNames.contains(fieldName)) {
             return;
         }
@@ -390,7 +387,7 @@ public class SequenceInfo implements ModelGroupInfo {
 
     private static boolean isFieldAnnotatedWithModuleSequence(BMap<BString, Object> annotations, String fieldName) {
         BString annotationKey = StringUtils.fromString(Constants.FIELD
-                + fieldName.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, "\\\\$0"));
+                + fieldName.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, SPECIAL_CHAR_REGEX));
         if (!annotations.containsKey(annotationKey)) {
             return false;
         }
@@ -422,7 +419,6 @@ public class SequenceInfo implements ModelGroupInfo {
         HashMap<String, Integer> priorityOrder = DataUtils.getXsdSequencePriorityOrder(recordType, true);
         HashMap<String, String> elementNameMap = DataUtils.getXmlElementNameMap(recordType);
 
-        // Build reverse map: fieldName -> xmlElementName
         HashMap<String, String> fieldToXmlName = new HashMap<>();
         elementNameMap.forEach((xmlName, fieldName) -> fieldToXmlName.put(fieldName, xmlName));
 
