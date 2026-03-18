@@ -1052,7 +1052,7 @@ type XSDSequenceRecordWithArrayAndXmlValue record {|
         minOccurs: 0,
         maxOccurs: 1
     }
-    Seq_XSDSequenceRecordWithArrayAndXmlValue seq;
+    Seq_XSDSequenceRecordWithArrayAndXmlValue seq?;
 |};
 
 type Seq_XSDSequenceRecordWithArrayAndXmlValue record {|
@@ -1359,5 +1359,7 @@ function testXsdThreeLevelNestedSeqAndXmlValue() returns error? {
     xmlValue = xml `<Root><level1Field>a</level1Field><level3Field>c</level3Field></Root>`;
     v = parseAsType(xmlValue);
     test:assertTrue(v is Error);
-    check validate(xmlValue, XSDThreeLevelNestedSeqXmlValue);
+    e = validate(xmlValue, XSDThreeLevelNestedSeqXmlValue);
+    test:assertTrue(e is Error);
+    test:assertEquals((<Error>e).message(), "Invalid XML found: 'Element(s) 'level2Field' is not found in 'level2Seq''");
 }

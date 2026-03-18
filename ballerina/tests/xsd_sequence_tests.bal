@@ -1216,3 +1216,137 @@ function testXsdNestedSequenceWithArrayInnerField() returns error? {
     test:assertTrue(value is Error);
 }
 
+type XSDThreeLevelNestedSeq record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Level1Seq level1Seq;
+|};
+
+type Level1Seq record {|
+    @SequenceOrder {value: 1}
+    string level1Field;
+
+    @SequenceOrder {value: 2}
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    Level2Seq level2Seq;
+|};
+
+type Level2Seq record {|
+    @SequenceOrder {value: 1}
+    string level2Field;
+
+    @SequenceOrder {value: 2}
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    Level3Seq level3Seq;
+|};
+
+type Level3Seq record {|
+    @SequenceOrder {value: 1}
+    string level3Field;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdThreeLevelNestedSeq() returns error? {
+    string xmlStr;
+    XSDThreeLevelNestedSeq|Error v;
+
+    xmlStr = string `<Root><level1Field>a</level1Field><level2Field>b</level2Field><level3Field>c</level3Field></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {level1Seq: {level1Field: "a", level2Seq: {level2Field: "b", level3Seq: {level3Field: "c"}}}});
+
+    xmlStr = string `<Root><level2Field>b</level2Field><level1Field>a</level1Field><level3Field>c</level3Field></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+
+    xmlStr = string `<Root><level1Field>a</level1Field><level2Field>b</level2Field></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+}
+
+type XSDSeqWithArrayNestedSeq record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithArrayNested seqMain;
+|};
+
+type SeqWithArrayNested record {|
+    @SequenceOrder {value: 1}
+    string before;
+
+    @Sequence {minOccurs: 1, maxOccurs: 3}
+    @SequenceOrder {value: 2}
+    ArrayNestedSeq[] nestedArr;
+
+    @SequenceOrder {value: 3}
+    string after;
+|};
+
+type ArrayNestedSeq record {|
+    @SequenceOrder {value: 1}
+    string x;
+
+    @SequenceOrder {value: 2}
+    string y;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithArrayNestedSeq() returns error? {
+    string xmlStr;
+    XSDSeqWithArrayNestedSeq|Error v;
+
+    xmlStr = string `<Root><before>start</before><x>a1</x><y>b1</y><x>a2</x><y>b2</y><after>end</after></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seqMain: {before: "start", nestedArr: [{x: "a1", y: "b1"}, {x: "a2", y: "b2"}], after: "end"}});
+
+    xmlStr = string `<Root><x>a1</x><y>b1</y><before>start</before><after>end</after></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+
+    xmlStr = string `<Root><before>start</before><x>a1</x><y>b1</y></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+}
+
+type XSDSeqWithNameAnnotationDirect record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqNameDirect seqNameDirect;
+|};
+
+type SeqNameDirect record {|
+    @Name {value: "first-name"}
+    @SequenceOrder {value: 1}
+    string firstName;
+
+    @Name {value: "last-name"}
+    @SequenceOrder {value: 2}
+    string lastName;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithNameAnnotationDirect() returns error? {
+    string xmlStr;
+    XSDSeqWithNameAnnotationDirect|Error v;
+
+    xmlStr = string `<Root><first-name>John</first-name><last-name>Doe</last-name></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seqNameDirect: {firstName: "John", lastName: "Doe"}});
+
+    xmlStr = string `<Root><last-name>Doe</last-name><first-name>John</first-name></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+
+    xmlStr = string `<Root><first-name>John</first-name></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+}
+

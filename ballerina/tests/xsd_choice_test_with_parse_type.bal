@@ -519,15 +519,17 @@ function testXsdChoiceWithXmlValue8() returns error? {
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
     string response = (<Error>v2).message();
-    test:assertTrue(response == "required field 'num' not present in XML" 
-        || response == "required field 'num2' not present in XML");
+    test:assertTrue(response == "required field 'num' not present in XML"
+        || response == "required field 'num2' not present in XML"
+        || response == "required field 'choice_XSDChoiceWithXmlValueRecord8_2' not present in XML");
 
     xmlValue = xml `<Root><test><status><value1>Success</value1><value2>Fail</value2></status></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
     response = (<Error>v2).message();
-    test:assertTrue(response == "required field 'num' not present in XML" 
-        || response == "required field 'num2' not present in XML");
+    test:assertTrue(response == "required field 'num' not present in XML"
+        || response == "required field 'num2' not present in XML"
+        || response == "required field 'choice_XSDChoiceWithXmlValueRecord8_1' not present in XML");
 }
 
 @Name {
