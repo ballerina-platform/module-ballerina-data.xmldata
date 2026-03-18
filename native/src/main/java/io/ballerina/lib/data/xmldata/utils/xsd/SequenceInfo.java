@@ -129,7 +129,10 @@ public class SequenceInfo implements ModelGroupInfo {
         }
 
         if (nestedSequenceElements.contains(element)) {
-            return;
+            int directChildIdx = allElements.indexOf(element);
+            if (directChildIdx < 0 || currentIndex > directChildIdx) {
+                return;
+            }
         }
 
         isMiddleOfElement = isStartElement;
