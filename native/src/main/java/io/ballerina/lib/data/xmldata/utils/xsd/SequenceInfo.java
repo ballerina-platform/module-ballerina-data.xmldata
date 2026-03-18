@@ -289,34 +289,23 @@ public class SequenceInfo implements ModelGroupInfo {
 
     private void generateElementOptionalityMapIfNotPresent() {
         if (elementOptionality.isEmpty()) {
-            if (!xmlElementInfo.isEmpty()) {
-                allElements.forEach(element -> {
-                    HashMap<String, ElementInfo> elementInfo = xmlElementInfo.peek();
-                    if (elementInfo.containsKey(element)) {
-                        ElementInfo info = elementInfo.get(element);
-                        elementOptionality.put(element, info.minOccurs == 0);
-                        remainingElementCount.put(element, (int) info.maxOccurs);
-                        maxElementCount.put(element, (int) info.maxOccurs);
-                        minimumElementCount.put(element, (int) info.minOccurs);
-                    } else {
-                        boolean isOptional = isFieldOptional(element);
-                        int maxValue = getMaxValue(element);
-                        elementOptionality.put(element, isOptional);
-                        remainingElementCount.put(element, maxValue);
-                        maxElementCount.put(element, maxValue);
-                        minimumElementCount.put(element, isOptional ? 0 : 1);
-                    }
-                });
-            } else {
-                allElements.forEach(element -> {
+            allElements.forEach(element -> {
+                HashMap<String, ElementInfo> elementInfo = xmlElementInfo.peek();
+                if (elementInfo.containsKey(element)) {
+                    ElementInfo info = elementInfo.get(element);
+                    elementOptionality.put(element, info.minOccurs == 0);
+                    remainingElementCount.put(element, (int) info.maxOccurs);
+                    maxElementCount.put(element, (int) info.maxOccurs);
+                    minimumElementCount.put(element, (int) info.minOccurs);
+                } else {
                     boolean isOptional = isFieldOptional(element);
                     int maxValue = getMaxValue(element);
                     elementOptionality.put(element, isOptional);
                     remainingElementCount.put(element, maxValue);
                     maxElementCount.put(element, maxValue);
                     minimumElementCount.put(element, isOptional ? 0 : 1);
-                });
-            }
+                }
+            });
         }
     }
 
@@ -368,9 +357,6 @@ public class SequenceInfo implements ModelGroupInfo {
     }
 
     private void buildNestedSequenceElements(RecordType recordType) {
-        if (recordType == null) {
-            return;
-        }
         BMap<BString, Object> annotations = recordType.getAnnotations();
         for (String xmlElementName : allElements) {
             String fieldName = xmlElementNameMap.getOrDefault(xmlElementName, xmlElementName);
