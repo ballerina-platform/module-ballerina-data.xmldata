@@ -224,6 +224,10 @@ public class SequenceInfo implements ModelGroupInfo {
 
         while (!nextElement.equals(elementToProcess)) {
             if (!elementOptionality.get(nextElement)) {
+                if (nestedSequenceFieldNames.contains(elementToProcess)) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_ELEMENT_NOT_FOUND,
+                            xmlElementNameMap.getOrDefault(nextElement, nextElement), fieldName);
+                }
                 throw DiagnosticLog.error(DiagnosticErrorCode.INCORRECT_ELEMENT_ORDER,
                         xmlElementNameMap.getOrDefault(element, element), fieldName);
             }
