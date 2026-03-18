@@ -232,10 +232,6 @@ public class SequenceInfo implements ModelGroupInfo {
                         xmlElementNameMap.getOrDefault(element, element), fieldName);
             }
             currentIndex++;
-            if (currentIndex == this.elementCount) {
-                throw DiagnosticLog.error(DiagnosticErrorCode.INCORRECT_ELEMENT_ORDER,
-                        xmlElementNameMap.getOrDefault(element, element), fieldName);
-            }
             nextElement = allElements.get(currentIndex);
         }
 
@@ -314,15 +310,9 @@ public class SequenceInfo implements ModelGroupInfo {
     }
 
     private boolean isArrayField(String element) {
-        if (fieldType == null) {
-            return false;
-        }
         String fieldName = xmlElementNameMap.getOrDefault(element, element);
         Field field = fieldType.getFields().get(fieldName);
-        if (field == null) {
-            return false;
-        }
-        return field.getFieldType().getTag() == TypeTags.ARRAY_TAG;
+        return field != null && field.getFieldType().getTag() == TypeTags.ARRAY_TAG;
     }
 
     private int getMaxValue(String element) {
@@ -378,9 +368,6 @@ public class SequenceInfo implements ModelGroupInfo {
     private static boolean isFieldAnnotatedWithModuleSequence(BMap<BString, Object> annotations, String fieldName) {
         BString annotationKey = StringUtils.fromString(Constants.FIELD
                 + fieldName.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, SPECIAL_CHAR_REGEX));
-        if (!annotations.containsKey(annotationKey)) {
-            return false;
-        }
         BMap<BString, Object> fieldAnnotation = (BMap<BString, Object>) annotations.get(annotationKey);
         for (BString key : fieldAnnotation.getKeys()) {
             String keyStr = key.getValue();
@@ -400,9 +387,6 @@ public class SequenceInfo implements ModelGroupInfo {
             if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
                 recordType = (RecordType) elementType;
             }
-        }
-        if (recordType == null) {
-            return;
         }
 
         BMap<BString, Object> annotations = recordType.getAnnotations();
