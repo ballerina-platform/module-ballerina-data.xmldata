@@ -1313,6 +1313,50 @@ function testXsdSeqWithArrayNestedSeq() returns error? {
     test:assertTrue(v is Error);
 }
 
+type XSDSeqWithSharedElementName record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithSharedName seqMain;
+|};
+
+type SeqWithSharedName record {|
+    @SequenceOrder {value: 1}
+    string id;
+
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    @SequenceOrder {value: 2}
+    SharedNameNested nested;
+|};
+
+type SharedNameNested record {|
+    @SequenceOrder {value: 1}
+    string name;
+
+    @SequenceOrder {value: 2}
+    string id;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithSharedElementName() returns error? {
+    string xmlStr;
+    XSDSeqWithSharedElementName|Error v;
+
+    xmlStr = string `<Root><id>parent-id</id><name>some-name</name><id>nested-id</id></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seqMain: {id: "parent-id", nested: {name: "some-name", id: "nested-id"}}});
+
+    xmlStr = string `<Root><name>some-name</name><id>nested-id</id><id>parent-id</id></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+
+    xmlStr = string `<Root><id>parent-id</id><name>some-name</name></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+}
+
 type XSDSeqWithNameAnnotationDirect record {|
     @Sequence {
         minOccurs: 1,

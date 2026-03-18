@@ -1363,3 +1363,53 @@ function testXsdThreeLevelNestedSeqAndXmlValue() returns error? {
     test:assertTrue(e is Error);
     test:assertEquals((<Error>e).message(), "Invalid XML found: 'Element(s) 'level2Field' is not found in 'level2Seq''");
 }
+
+type XSDSeqWithSharedElementNameXmlValue record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithSharedNameXmlValue seqMain;
+|};
+
+type SeqWithSharedNameXmlValue record {|
+    @SequenceOrder {value: 1}
+    string id;
+
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    @SequenceOrder {value: 2}
+    SharedNameNestedXmlValue nested;
+|};
+
+type SharedNameNestedXmlValue record {|
+    @SequenceOrder {value: 1}
+    string name;
+
+    @SequenceOrder {value: 2}
+    string id;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithSharedElementNameAndXmlValue() returns error? {
+    xml xmlValue;
+    XSDSeqWithSharedElementNameXmlValue|Error v;
+
+    xmlValue = xml `<Root><id>parent-id</id><name>some-name</name><id>nested-id</id></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seqMain: {id: "parent-id", nested: {name: "some-name", id: "nested-id"}}});
+    Error? e = validate(xmlValue, XSDSeqWithSharedElementNameXmlValue);
+    test:assertTrue(e is ());
+
+    xmlValue = xml `<Root><name>some-name</name><id>nested-id</id><id>parent-id</id></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    e = validate(xmlValue, XSDSeqWithSharedElementNameXmlValue);
+    test:assertTrue(e is Error);
+
+    xmlValue = xml `<Root><id>parent-id</id><name>some-name</name></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    e = validate(xmlValue, XSDSeqWithSharedElementNameXmlValue);
+    test:assertTrue(e is Error);
+}
