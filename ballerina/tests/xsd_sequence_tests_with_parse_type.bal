@@ -1086,3 +1086,101 @@ function testXsdSequenceWithArrayFieldAndXmlValue() returns error? {
     test:assertTrue(response is Error);
     test:assertEquals((<Error>response).message(), "Invalid XML found: 'Element 'Dest' is not in the correct order in 'seq''");
 }
+
+@Name {
+    value: "Root"
+}
+type XSDSequenceRecordWithUnboundedArrayAndXmlValue record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecordWithUnboundedArrayAndXmlValue seq;
+|};
+
+type Seq_XSDSequenceRecordWithUnboundedArrayAndXmlValue record {|
+    @SequenceOrder {value: 1}
+    string[] tags;
+    @SequenceOrder {value: 2}
+    string label;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequenceWithUnboundedArrayFieldAndXmlValue() returns error? {
+    xml xmlValue = xml `<Root><tags>a</tags><label>end</label></Root>`;
+    XSDSequenceRecordWithUnboundedArrayAndXmlValue|Error value = parseAsType(xmlValue);
+    test:assertEquals(value, {seq: {tags: ["a"], label: "end"}});
+    Error? response = validate(xmlValue, XSDSequenceRecordWithUnboundedArrayAndXmlValue);
+    test:assertTrue(response is ());
+
+    xmlValue = xml `<Root><tags>a</tags><tags>b</tags><tags>c</tags><tags>d</tags><tags>e</tags><label>end</label></Root>`;
+    value = parseAsType(xmlValue);
+    test:assertEquals(value, {seq: {tags: ["a", "b", "c", "d", "e"], label: "end"}});
+    response = validate(xmlValue, XSDSequenceRecordWithUnboundedArrayAndXmlValue);
+    test:assertTrue(response is ());
+
+    xmlValue = xml `<Root><label>end</label><tags>a</tags></Root>`;
+    value = parseAsType(xmlValue);
+    test:assertTrue(value is Error);
+    test:assertEquals((<Error>value).message(), "Element 'label' is not in the correct order in 'seq'");
+    response = validate(xmlValue, XSDSequenceRecordWithUnboundedArrayAndXmlValue);
+    test:assertTrue(response is Error);
+    test:assertEquals((<Error>response).message(), "Invalid XML found: 'Element 'label' is not in the correct order in 'seq''");
+
+    xmlValue = xml `<Root><tags>a</tags><tags>b</tags></Root>`;
+    value = parseAsType(xmlValue);
+    test:assertTrue(value is Error);
+    test:assertEquals((<Error>value).message(), "Element(s) 'label' is not found in 'seq'");
+    response = validate(xmlValue, XSDSequenceRecordWithUnboundedArrayAndXmlValue);
+    test:assertTrue(response is Error);
+    test:assertEquals((<Error>response).message(), "Invalid XML found: 'Element(s) 'label' is not found in 'seq''");
+}
+
+@Name {
+    value: "Root"
+}
+type XSDNestedSequenceWithArrayInnerAndXmlValue record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    OuterArraySeqXmlValue outerSeq;
+|};
+
+type OuterArraySeqXmlValue record {|
+    @SequenceOrder {value: 1}
+    string header;
+
+    @SequenceOrder {value: 2}
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    OuterArraySeqInnerXmlValue innerSeq;
+|};
+
+type OuterArraySeqInnerXmlValue record {|
+    @SequenceOrder {value: 1}
+    string item;
+    @SequenceOrder {value: 2}
+    int count;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdNestedSequenceWithArrayInnerFieldAndXmlValue() returns error? {
+    xml xmlValue = xml `<Root><header>h1</header><item>x</item><count>3</count></Root>`;
+    XSDNestedSequenceWithArrayInnerAndXmlValue|Error value = parseAsType(xmlValue);
+    test:assertFalse(value is Error, (value is Error) ? (<Error>value).message() : "");
+    test:assertEquals(value, {outerSeq: {header: "h1", innerSeq: {item: "x", count: 3}}});
+    Error? response = validate(xmlValue, XSDNestedSequenceWithArrayInnerAndXmlValue);
+    test:assertTrue(response is ());
+
+    xmlValue = xml `<Root><item>x</item><count>3</count><header>h1</header></Root>`;
+    value = parseAsType(xmlValue);
+    test:assertTrue(value is Error);
+    response = validate(xmlValue, XSDNestedSequenceWithArrayInnerAndXmlValue);
+    test:assertTrue(response is Error);
+
+    xmlValue = xml `<Root><header>h1</header><count>3</count></Root>`;
+    value = parseAsType(xmlValue);
+    test:assertTrue(value is Error);
+    response = validate(xmlValue, XSDNestedSequenceWithArrayInnerAndXmlValue);
+    test:assertTrue(response is Error);
+}

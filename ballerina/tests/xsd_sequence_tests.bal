@@ -1140,3 +1140,79 @@ function testXsdSequenceWithRecordArrayField() returns error? {
     test:assertEquals((<Error>value).message(), "Element 'status' is not in the correct order in 'seq'");
 }
 
+type XSDSequenceRecordWithUnboundedArray record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecordWithUnboundedArray seq;
+|};
+
+type Seq_XSDSequenceRecordWithUnboundedArray record {|
+    @SequenceOrder {value: 1}
+    string[] tags;
+    @SequenceOrder {value: 2}
+    string label;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequenceWithUnboundedArrayField() returns error? {
+    string xmlStr = string `<Root><tags>a</tags><label>end</label></Root>`;
+    XSDSequenceRecordWithUnboundedArray|Error value = parseString(xmlStr);
+    test:assertEquals(value, {seq: {tags: ["a"], label: "end"}});
+
+    xmlStr = string `<Root><tags>a</tags><tags>b</tags><tags>c</tags><tags>d</tags><tags>e</tags><label>end</label></Root>`;
+    value = parseString(xmlStr);
+    test:assertEquals(value, {seq: {tags: ["a", "b", "c", "d", "e"], label: "end"}});
+
+    xmlStr = string `<Root><label>end</label><tags>a</tags></Root>`;
+    value = parseString(xmlStr);
+    test:assertTrue(value is Error);
+    test:assertEquals((<Error>value).message(), "Element 'label' is not in the correct order in 'seq'");
+
+    xmlStr = string `<Root><tags>a</tags></Root>`;
+    value = parseString(xmlStr);
+    test:assertTrue(value is Error);
+    test:assertEquals((<Error>value).message(), "Element(s) 'label' is not found in 'seq'");
+}
+
+type XSDNestedSequenceWithArrayInner record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    OuterArraySeq outerSeq;
+|};
+
+type OuterArraySeq record {|
+    @SequenceOrder {value: 1}
+    string header;
+
+    @SequenceOrder {value: 2}
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    OuterArraySeqInner innerSeq;
+|};
+
+type OuterArraySeqInner record {|
+    @SequenceOrder {value: 1}
+    string item;
+    @SequenceOrder {value: 2}
+    int count;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdNestedSequenceWithArrayInnerField() returns error? {
+    string xmlStr = string `<Root><header>h1</header><item>x</item><count>3</count></Root>`;
+    XSDNestedSequenceWithArrayInner|Error value = parseString(xmlStr);
+    test:assertFalse(value is Error, (value is Error) ? (<Error>value).message() : "");
+    test:assertEquals(value, {outerSeq: {header: "h1", innerSeq: {item: "x", count: 3}}});
+
+    xmlStr = string `<Root><item>x</item><count>3</count><header>h1</header></Root>`;
+    value = parseString(xmlStr);
+    test:assertTrue(value is Error);
+
+    xmlStr = string `<Root><header>h1</header><count>3</count></Root>`;
+    value = parseString(xmlStr);
+    test:assertTrue(value is Error);
+}
+
