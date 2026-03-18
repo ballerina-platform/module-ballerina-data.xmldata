@@ -143,11 +143,21 @@ public class SequenceInfo implements ModelGroupInfo {
 
     @Override
     public void notifyNestedGroupCompleted(String fieldName) {
-        if (!nestedSequenceFieldNames.contains(fieldName)) {
+        String xmlElementName = getXmlElementNameFromFieldName(fieldName);
+        if (!nestedSequenceFieldNames.contains(xmlElementName)) {
             return;
         }
         generateElementOptionalityMapIfNotPresent();
-        checkElementOrderAndUpdateElementOccurences(fieldName);
+        checkElementOrderAndUpdateElementOccurences(xmlElementName);
+    }
+
+    private String getXmlElementNameFromFieldName(String fieldName) {
+        for (Map.Entry<String, String> entry : xmlElementNameMap.entrySet()) {
+            if (entry.getValue().equals(fieldName)) {
+                return entry.getKey();
+            }
+        }
+        return fieldName;
     }
 
     @Override
