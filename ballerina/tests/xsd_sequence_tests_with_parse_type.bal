@@ -1413,3 +1413,76 @@ function testXsdSeqWithSharedElementNameAndXmlValue() returns error? {
     e = validate(xmlValue, XSDSeqWithSharedElementNameXmlValue);
     test:assertTrue(e is Error);
 }
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testErrorInXsdSeqWithSharedElementNameAndXmlValue() returns error? {
+    xml xmlValue;
+    XSDSeqWithSharedElementNameXmlValue|Error v;
+
+    xmlValue = xml `<Root><age>12</age><id>parent-id</id><name>some-name</name><id>nested-id</id></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+}
+
+@Name {value: "Root"}
+type XSDSeqWithNestedChoiceXmlValue record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithNestedChoiceXmlValue seq_with_choice;
+|};
+
+type SeqWithNestedChoiceXmlValue record {|
+    @SequenceOrder {value: 1}
+    string before;
+
+    @SequenceOrder {value: 2}
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    ChoiceInSeqXmlValue choice_in_seq;
+
+    @SequenceOrder {value: 3}
+    string after;
+|};
+
+type ChoiceInSeqXmlValue record {|
+    int p?;
+    string q?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithNestedChoiceXmlValue() returns error? {
+    xml xmlValue;
+    XSDSeqWithNestedChoiceXmlValue|Error v;
+
+    xmlValue = xml `<Root><before>start</before><p>1</p><after>end</after></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_with_choice: {before: "start", choice_in_seq: {p: 1}, after: "end"}});
+    Error? e = validate(xmlValue, XSDSeqWithNestedChoiceXmlValue);
+    test:assertEquals(e, ());
+
+    xmlValue = xml `<Root><before>start</before><q>hello</q><after>end</after></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_with_choice: {before: "start", choice_in_seq: {q: "hello"}, after: "end"}});
+    e = validate(xmlValue, XSDSeqWithNestedChoiceXmlValue);
+    test:assertEquals(e, ());
+
+    xmlValue = xml `<Root><before>start</before><p>1</p><q>hello</q><after>end</after></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'choice_in_seq' occurs more than the max allowed times");
+    e = validate(xmlValue, XSDSeqWithNestedChoiceXmlValue);
+    test:assertEquals((<Error>e).message(), "Invalid XML found: ''choice_in_seq' occurs more than the max allowed times'");
+
+    xmlValue = xml `<Root><before>start</before><after>end</after></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'choice_in_seq' is not found in 'seq_with_choice'");
+    e = validate(xmlValue, XSDSeqWithNestedChoiceXmlValue);
+    test:assertEquals((<Error>e).message(), "Invalid XML found: 'Element(s) 'choice_in_seq' is not found in 'seq_with_choice''");
+}

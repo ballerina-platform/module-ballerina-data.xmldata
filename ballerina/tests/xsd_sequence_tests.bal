@@ -1394,3 +1394,134 @@ function testXsdSeqWithNameAnnotationDirect() returns error? {
     test:assertTrue(v is Error);
 }
 
+type XSDSeqWithNestedChoiceRecord record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithNestedChoice seq_with_choice;
+|};
+
+type SeqWithNestedChoice record {|
+    @SequenceOrder {value: 1}
+    string before;
+
+    @SequenceOrder {value: 2}
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    ChoiceInSeq choice_in_seq;
+
+    @SequenceOrder {value: 3}
+    string after;
+|};
+
+type ChoiceInSeq record {|
+    int p?;
+    string q?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithNestedChoice() returns error? {
+    string xmlStr;
+    XSDSeqWithNestedChoiceRecord|Error v;
+
+    xmlStr = string `<Root><before>start</before><p>1</p><after>end</after></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_with_choice: {before: "start", choice_in_seq: {p: 1}, after: "end"}});
+
+    xmlStr = string `<Root><before>start</before><q>hello</q><after>end</after></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_with_choice: {before: "start", choice_in_seq: {q: "hello"}, after: "end"}});
+
+    xmlStr = string `<Root><before>start</before><p>1</p><q>hello</q><after>end</after></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'choice_in_seq' occurs more than the max allowed times");
+
+    xmlStr = string `<Root><before>start</before><after>end</after></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'choice_in_seq' is not found in 'seq_with_choice'");
+
+    xmlStr = string `<Root><p>1</p><after>end</after></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'before' is not found in 'seq_with_choice'");
+}
+
+type XSDSeqWithMixedNestedRecord record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithMixedNested seq_mixed;
+|};
+
+type SeqWithMixedNested record {|
+    @SequenceOrder {value: 1}
+    string first;
+
+    @SequenceOrder {value: 2}
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    MixedNestedSeq nested_seq;
+
+    @SequenceOrder {value: 3}
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    MixedNestedChoice nested_choice;
+
+    @SequenceOrder {value: 4}
+    string last;
+|};
+
+type MixedNestedSeq record {|
+    @SequenceOrder {value: 1}
+    string ns1;
+
+    @SequenceOrder {value: 2}
+    string ns2;
+|};
+
+type MixedNestedChoice record {|
+    int nc1?;
+    string nc2?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithMixedNestedGroups() returns error? {
+    string xmlStr;
+    XSDSeqWithMixedNestedRecord|Error v;
+
+    xmlStr = string `<Root><first>a</first><ns1>b</ns1><ns2>c</ns2><nc1>1</nc1><last>d</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_mixed: {first: "a", nested_seq: {ns1: "b", ns2: "c"}, nested_choice: {nc1: 1}, last: "d"}});
+
+    xmlStr = string `<Root><first>a</first><ns1>b</ns1><ns2>c</ns2><nc2>hello</nc2><last>d</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_mixed: {first: "a", nested_seq: {ns1: "b", ns2: "c"}, nested_choice: {nc2: "hello"}, last: "d"}});
+
+    xmlStr = string `<Root><first>a</first><ns1>b</ns1><nc1>1</nc1><last>d</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+
+    xmlStr = string `<Root><first>a</first><ns1>b</ns1><ns2>c</ns2><last>d</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'nested_choice' is not found in 'seq_mixed'");
+
+    xmlStr = string `<Root><first>a</first><nc1>1</nc1><ns1>b</ns1><ns2>c</ns2><last>d</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'nested_seq' is not found in 'seq_mixed'");
+}

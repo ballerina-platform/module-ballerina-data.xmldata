@@ -644,3 +644,208 @@ function testXsdChoice10() returns error? {
     test:assertTrue(v2 is Error);
     test:assertEquals((<Error>v2).message(), "'value2' occurs more than the max allowed times");
 }
+
+type XSDChoiceRecordNestedChoice record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    OuterChoiceNested outer_choice?;
+|};
+
+type OuterChoiceNested record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    InnerChoiceNested1 inner_choice1?;
+
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    InnerChoiceNested2 inner_choice2?;
+
+    int direct?;
+|};
+
+type InnerChoiceNested1 record {|
+    string a?;
+    string b?;
+|};
+
+type InnerChoiceNested2 record {|
+    int x?;
+    int y?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_choice"]}
+function testXsdNestedChoiceGroups() returns error? {
+    string xmlStr;
+    XSDChoiceRecordNestedChoice|Error v;
+
+    xmlStr = string `<Root><a>hello</a></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {outer_choice: {inner_choice1: {a: "hello"}}});
+
+    xmlStr = string `<Root><b>world</b></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {outer_choice: {inner_choice1: {b: "world"}}});
+
+    xmlStr = string `<Root><x>1</x></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {outer_choice: {inner_choice2: {x: 1}}});
+
+    xmlStr = string `<Root><y>2</y></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {outer_choice: {inner_choice2: {y: 2}}});
+
+    xmlStr = string `<Root><direct>5</direct></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {outer_choice: {direct: 5}});
+
+    xmlStr = string `<Root><a>hello</a><x>1</x></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'outer_choice' occurs more than the max allowed times");
+
+    xmlStr = string `<Root><a>hello</a><b>world</b></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'inner_choice1' occurs more than the max allowed times");
+
+    xmlStr = string `<Root></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'outer_choice' occurs less than the min required times");
+}
+
+type XSDChoiceWithNestedSeqRecord record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    ChoiceWithNestedSeq choice_with_seq?;
+|};
+
+type ChoiceWithNestedSeq record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqInChoice seq_in_choice?;
+
+    int direct?;
+|};
+
+type SeqInChoice record {|
+    @SequenceOrder {value: 1}
+    string m;
+
+    @SequenceOrder {value: 2}
+    string n;
+|};
+
+@test:Config {groups: ["xsd", "xsd_choice"]}
+function testXsdChoiceWithNestedSequence() returns error? {
+    string xmlStr;
+    XSDChoiceWithNestedSeqRecord|Error v;
+
+    xmlStr = string `<Root><m>hello</m><n>world</n></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_with_seq: {seq_in_choice: {m: "hello", n: "world"}}});
+
+    xmlStr = string `<Root><direct>1</direct></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_with_seq: {direct: 1}});
+
+    xmlStr = string `<Root><m>hello</m><n>world</n><direct>1</direct></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'choice_with_seq' occurs more than the max allowed times");
+
+    xmlStr = string `<Root></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'choice_with_seq' occurs less than the min required times");
+}
+
+type XSDChoiceWithMixedNestedRecord record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    ChoiceWithMixedNested choice_with_mixed;
+|};
+
+type ChoiceWithMixedNested record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    MixedSeqAlt seq_alt?;
+
+    @Choice {
+        minOccurs: 0,
+        maxOccurs: 1
+    }
+    MixedChoiceAlt choice_alt?;
+
+    int direct?;
+|};
+
+type MixedSeqAlt record {|
+    @SequenceOrder {value: 1}
+    string s1;
+
+    @SequenceOrder {value: 2}
+    string s2;
+|};
+
+type MixedChoiceAlt record {|
+    string c1?;
+    string c2?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_choice"]}
+function testXsdChoiceWithMixedNestedGroups() returns error? {
+    string xmlStr;
+    XSDChoiceWithMixedNestedRecord|Error v;
+
+    xmlStr = string `<Root><s1>hello</s1><s2>world</s2></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_with_mixed: {seq_alt: {s1: "hello", s2: "world"}}});
+
+    xmlStr = string `<Root><c1>hello</c1></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_with_mixed: {choice_alt: {c1: "hello"}}});
+
+    xmlStr = string `<Root><c2>world</c2></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_with_mixed: {choice_alt: {c2: "world"}}});
+
+    xmlStr = string `<Root><direct>1</direct></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_with_mixed: {direct: 1}});
+
+    xmlStr = string `<Root><s1>hello</s1><s2>world</s2><c1>test</c1></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'choice_with_mixed' occurs more than the max allowed times");
+
+    xmlStr = string `<Root><c1>hello</c1><c2>world</c2></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'choice_alt' occurs more than the max allowed times");
+}
