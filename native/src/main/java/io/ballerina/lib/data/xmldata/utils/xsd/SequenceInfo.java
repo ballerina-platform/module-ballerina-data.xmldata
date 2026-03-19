@@ -333,7 +333,7 @@ public class SequenceInfo implements ModelGroupInfo {
     private boolean isArrayField(String element) {
         String fieldName = xmlElementNameMap.getOrDefault(element, element);
         Field field = fieldType.getFields().get(fieldName);
-        return field != null && field.getFieldType().getTag() == TypeTags.ARRAY_TAG;
+        return field != null && TypeUtils.getReferredType(field.getFieldType()).getTag() == TypeTags.ARRAY_TAG;
     }
 
     private int getMaxValue(String element) {
@@ -426,11 +426,12 @@ public class SequenceInfo implements ModelGroupInfo {
     }
 
     private static void collectNestedSequenceElements(Type type, Set<String> result) {
+        Type referredType = TypeUtils.getReferredType(type);
         RecordType recordType = null;
-        if (type.getTag() == TypeTags.RECORD_TYPE_TAG) {
-            recordType = (RecordType) type;
-        } else if (type.getTag() == TypeTags.ARRAY_TAG) {
-            Type elementType = TypeUtils.getReferredType(((ArrayType) type).getElementType());
+        if (referredType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+            recordType = (RecordType) referredType;
+        } else if (referredType.getTag() == TypeTags.ARRAY_TAG) {
+            Type elementType = TypeUtils.getReferredType(((ArrayType) referredType).getElementType());
             if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
                 recordType = (RecordType) elementType;
             }
@@ -462,11 +463,12 @@ public class SequenceInfo implements ModelGroupInfo {
     }
 
     private static void collectNestedChoiceElements(Type type, Set<String> result) {
+        Type referredType = TypeUtils.getReferredType(type);
         RecordType recordType = null;
-        if (type.getTag() == TypeTags.RECORD_TYPE_TAG) {
-            recordType = (RecordType) type;
-        } else if (type.getTag() == TypeTags.ARRAY_TAG) {
-            Type elementType = TypeUtils.getReferredType(((ArrayType) type).getElementType());
+        if (referredType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+            recordType = (RecordType) referredType;
+        } else if (referredType.getTag() == TypeTags.ARRAY_TAG) {
+            Type elementType = TypeUtils.getReferredType(((ArrayType) referredType).getElementType());
             if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
                 recordType = (RecordType) elementType;
             }
