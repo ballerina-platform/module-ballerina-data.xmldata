@@ -849,3 +849,170 @@ function testXsdChoiceWithMixedNestedGroups() returns error? {
     test:assertTrue(v is Error);
     test:assertEquals((<Error>v).message(), "'choice_alt' occurs more than the max allowed times");
 }
+
+type XSDChoiceComplexElementRecord record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 2
+    }
+    ChoiceComplexAndSimple choice_complex?;
+|};
+
+type ChoiceComplexAndSimple record {|
+    ComplexChoiceElem complex_elem?;
+    string b?;
+|};
+
+type ComplexChoiceElem record {|
+    string b?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_choice"]}
+function testXsdChoiceIsMiddleOfElement() returns error? {
+    string xmlStr = string `<Root><complex_elem><b>hello</b></complex_elem></Root>`;
+    XSDChoiceComplexElementRecord|Error v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_complex: {complex_elem: {b: "hello"}}});
+}
+
+type XSDChoiceWithArraySeqRecord record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    ChoiceContainingArraySeq choice_arr_seq?;
+|};
+
+type ChoiceContainingArraySeq record {|
+    @Sequence {
+        minOccurs: 0,
+        maxOccurs: 3
+    }
+    ArraySeqElem[] arr_seq?;
+    string direct?;
+|};
+
+type ArraySeqElem record {|
+    @SequenceOrder {value: 1}
+    string x;
+
+    @SequenceOrder {value: 2}
+    string y;
+|};
+
+@test:Config {groups: ["xsd", "xsd_choice"]}
+function testXsdChoiceWithArrayNestedSeq() returns error? {
+    string xmlStr;
+    XSDChoiceWithArraySeqRecord|Error v;
+    xmlStr = string `<Root><x>val1</x><y>val2</y></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_arr_seq: {arr_seq: [{x: "val1", y: "val2"}]}});
+
+    xmlStr = string `<Root><direct>hello</direct></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_arr_seq: {direct: "hello"}});
+}
+
+type XSDChoiceWithDeepNestedSeqRecord record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    ChoiceWithTwoLevelSeq choice_two_lvl?;
+|};
+
+type ChoiceWithTwoLevelSeq record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    TwoLevelOuterSeq two_level_seq?;
+    string direct?;
+|};
+
+type TwoLevelOuterSeq record {|
+    @SequenceOrder {value: 1}
+    string first;
+
+    @SequenceOrder {value: 2}
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    TwoLevelInnerSeq inner_seq;
+|};
+
+type TwoLevelInnerSeq record {|
+    @SequenceOrder {value: 1}
+    string x;
+
+    @SequenceOrder {value: 2}
+    string y;
+|};
+
+@test:Config {groups: ["xsd", "xsd_choice"]}
+function testXsdChoiceWithDeepNestedSeq() returns error? {
+    string xmlStr;
+    XSDChoiceWithDeepNestedSeqRecord|Error v;
+
+    xmlStr = string `<Root><first>hello</first><x>one</x><y>two</y></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_two_lvl: {two_level_seq: {first: "hello", inner_seq: {x: "one", y: "two"}}}});
+
+    xmlStr = string `<Root><direct>test</direct></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_two_lvl: {direct: "test"}});
+}
+
+type XSDChoiceWithSeqInnerChoiceRecord record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    ChoiceWithSeqContainingChoice choice_seq_ch?;
+|};
+
+type ChoiceWithSeqContainingChoice record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithInnerChoiceRec seq_inner_ch?;
+    string direct?;
+|};
+
+type SeqWithInnerChoiceRec record {|
+    @SequenceOrder {value: 1}
+    string first;
+
+    @SequenceOrder {value: 2}
+    @Choice {minOccurs: 1, maxOccurs: 1}
+    InnerChoiceInSeq inner_ch;
+|};
+
+type InnerChoiceInSeq record {|
+    string p?;
+    string q?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_choice"]}
+function testXsdChoiceWithSeqContainingInnerChoice() returns error? {
+    string xmlStr;
+    XSDChoiceWithSeqInnerChoiceRecord|Error v;
+
+    xmlStr = string `<Root><first>hello</first><p>foo</p></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_seq_ch: {seq_inner_ch: {first: "hello", inner_ch: {p: "foo"}}}});
+
+    xmlStr = string `<Root><first>hello</first><q>bar</q></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_seq_ch: {seq_inner_ch: {first: "hello", inner_ch: {q: "bar"}}}});
+
+    xmlStr = string `<Root><direct>test</direct></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_seq_ch: {direct: "test"}});
+}
