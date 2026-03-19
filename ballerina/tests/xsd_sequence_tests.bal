@@ -1525,3 +1525,95 @@ function testXsdSeqWithMixedNestedGroups() returns error? {
     test:assertTrue(v is Error);
     test:assertEquals((<Error>v).message(), "Element(s) 'nested_seq' is not found in 'seq_mixed'");
 }
+
+type AliasedInnerSeqRec record {|
+    @SequenceOrder {value: 1}
+    string a;
+
+    @SequenceOrder {value: 2}
+    string b;
+|};
+
+type AliasedInnerSeq AliasedInnerSeqRec;
+
+type SeqWithTypeAliasFields record {|
+    @SequenceOrder {value: 1}
+    string first;
+
+    @SequenceOrder {value: 2}
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    AliasedInnerSeq nested_seq;
+
+    @SequenceOrder {value: 3}
+    string last;
+|};
+
+type XSDSeqWithTypeAliasRecord record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithTypeAliasFields seq_type_alias?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithTypeAliasedNestedSeq() returns error? {
+    string xmlStr;
+    XSDSeqWithTypeAliasRecord|Error v;
+
+    xmlStr = string `<Root><first>start</first><a>x</a><b>y</b><last>end</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_type_alias: {first: "start", nested_seq: {a: "x", b: "y"}, last: "end"}});
+
+    xmlStr = string `<Root><first>start</first><last>end</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'nested_seq' is not found in 'seq_type_alias'");
+
+    xmlStr = string `<Root><a>x</a><b>y</b><last>end</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'first' is not found in 'seq_type_alias'");
+}
+
+type IntList int[];
+
+type SeqWithAliasedArrayFields record {|
+    @SequenceOrder {value: 1}
+    IntList nums;
+
+    @SequenceOrder {value: 2}
+    string label;
+|};
+
+type XSDSeqWithAliasedArrayRecord record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithAliasedArrayFields seq_arr?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithTypeAliasedArrayField() returns error? {
+    string xmlStr;
+    XSDSeqWithAliasedArrayRecord|Error v;
+
+    xmlStr = string `<Root><nums>1</nums><nums>2</nums><nums>3</nums><label>done</label></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_arr: {nums: [1, 2, 3], label: "done"}});
+
+    xmlStr = string `<Root><nums>5</nums><label>single</label></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_arr: {nums: [5], label: "single"}});
+
+    xmlStr = string `<Root><label>missing-nums</label></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+}
