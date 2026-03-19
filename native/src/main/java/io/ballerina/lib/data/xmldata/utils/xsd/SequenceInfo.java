@@ -60,6 +60,7 @@ public class SequenceInfo implements ModelGroupInfo {
     private final List<String> anyAnnotatedFields = new ArrayList<>();
     private final Set<String> nestedSequenceElements = new HashSet<>();
     private final Set<String> nestedSequenceFieldNames = new HashSet<>();
+    private final Set<String> nestedChoiceFieldNames = new HashSet<>();
     int currentIndex = 0;
     int elementCount;
     String lastElement = "";
@@ -146,8 +147,12 @@ public class SequenceInfo implements ModelGroupInfo {
 
     @Override
     public void notifyNestedGroupCompleted(String fieldName) {
+        if (fieldName == null) {
+            this.occurrences = (int) this.minOccurs;
+            return;
+        }
         String xmlElementName = getXmlElementNameFromFieldName(fieldName);
-        if (!nestedSequenceFieldNames.contains(xmlElementName)) {
+        if (!nestedSequenceFieldNames.contains(xmlElementName) && !nestedChoiceFieldNames.contains(xmlElementName)) {
             return;
         }
         generateElementOptionalityMapIfNotPresent();
@@ -237,7 +242,10 @@ public class SequenceInfo implements ModelGroupInfo {
 
         while (!nextElement.equals(elementToProcess)) {
             if (!elementOptionality.get(nextElement)) {
-                if (nestedSequenceFieldNames.contains(elementToProcess)) {
+                if (nestedSequenceFieldNames.contains(elementToProcess)
+                        || nestedChoiceFieldNames.contains(elementToProcess)
+                        || nestedSequenceFieldNames.contains(nextElement)
+                        || nestedChoiceFieldNames.contains(nextElement)) {
                     throw DiagnosticLog.error(DiagnosticErrorCode.REQUIRED_ELEMENT_NOT_FOUND,
                             xmlElementNameMap.getOrDefault(nextElement, nextElement), fieldName);
                 }
@@ -374,6 +382,13 @@ public class SequenceInfo implements ModelGroupInfo {
                     Type fType = TypeUtils.getReferredType(field.getFieldType());
                     collectNestedSequenceElements(fType, nestedSequenceElements);
                 }
+            } else if (isFieldAnnotatedWithModuleChoice(annotations, fieldName)) {
+                nestedChoiceFieldNames.add(xmlElementName);
+                Field field = recordType.getFields().get(fieldName);
+                if (field != null) {
+                    Type fType = TypeUtils.getReferredType(field.getFieldType());
+                    collectNestedChoiceElements(fType, nestedSequenceElements);
+                }
             }
         }
     }
@@ -382,9 +397,28 @@ public class SequenceInfo implements ModelGroupInfo {
         BString annotationKey = StringUtils.fromString(Constants.FIELD
                 + fieldName.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, SPECIAL_CHAR_REGEX));
         BMap<BString, Object> fieldAnnotation = (BMap<BString, Object>) annotations.get(annotationKey);
+        if (fieldAnnotation == null) {
+            return false;
+        }
         for (BString key : fieldAnnotation.getKeys()) {
             String keyStr = key.getValue();
             if (keyStr.startsWith(Constants.MODULE_NAME) && keyStr.endsWith(Constants.SEQUENCE)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static boolean isFieldAnnotatedWithModuleChoice(BMap<BString, Object> annotations, String fieldName) {
+        BString annotationKey = StringUtils.fromString(Constants.FIELD
+                + fieldName.replaceAll(Constants.RECORD_FIELD_NAME_ESCAPE_CHAR_REGEX, SPECIAL_CHAR_REGEX));
+        BMap<BString, Object> fieldAnnotation = (BMap<BString, Object>) annotations.get(annotationKey);
+        if (fieldAnnotation == null) {
+            return false;
+        }
+        for (BString key : fieldAnnotation.getKeys()) {
+            String keyStr = key.getValue();
+            if (keyStr.startsWith(Constants.MODULE_NAME) && keyStr.endsWith(Constants.CHOICE)) {
                 return true;
             }
         }
@@ -415,6 +449,48 @@ public class SequenceInfo implements ModelGroupInfo {
                 Field field = recordType.getFields().get(fieldName);
                 if (field != null) {
                     collectNestedSequenceElements(TypeUtils.getReferredType(field.getFieldType()), result);
+                }
+            } else if (isFieldAnnotatedWithModuleChoice(annotations, fieldName)) {
+                Field field = recordType.getFields().get(fieldName);
+                if (field != null) {
+                    collectNestedChoiceElements(TypeUtils.getReferredType(field.getFieldType()), result);
+                }
+            } else {
+                result.add(xmlElementName);
+            }
+        }
+    }
+
+    private static void collectNestedChoiceElements(Type type, Set<String> result) {
+        RecordType recordType = null;
+        if (type.getTag() == TypeTags.RECORD_TYPE_TAG) {
+            recordType = (RecordType) type;
+        } else if (type.getTag() == TypeTags.ARRAY_TAG) {
+            Type elementType = TypeUtils.getReferredType(((ArrayType) type).getElementType());
+            if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                recordType = (RecordType) elementType;
+            }
+        }
+        if (recordType == null) {
+            return;
+        }
+
+        BMap<BString, Object> annotations = recordType.getAnnotations();
+        HashMap<String, String> elementNameMap = DataUtils.getXmlElementNameMap(recordType);
+        HashMap<String, String> fieldToXmlName = new HashMap<>();
+        elementNameMap.forEach((xmlName, fieldName) -> fieldToXmlName.put(fieldName, xmlName));
+
+        for (String fieldName : recordType.getFields().keySet()) {
+            String xmlElementName = fieldToXmlName.getOrDefault(fieldName, fieldName);
+            if (isFieldAnnotatedWithModuleSequence(annotations, fieldName)) {
+                Field field = recordType.getFields().get(fieldName);
+                if (field != null) {
+                    collectNestedSequenceElements(TypeUtils.getReferredType(field.getFieldType()), result);
+                }
+            } else if (isFieldAnnotatedWithModuleChoice(annotations, fieldName)) {
+                Field field = recordType.getFields().get(fieldName);
+                if (field != null) {
+                    collectNestedChoiceElements(TypeUtils.getReferredType(field.getFieldType()), result);
                 }
             } else {
                 result.add(xmlElementName);

@@ -202,6 +202,14 @@ public static void popXsdValidationStacks(XmlAnalyzerMetaData xmlAnalyzerMetaDat
         xmlAnalyzerMetaData.modelGroupStack.pop();
         xmlAnalyzerMetaData.rootRecord = xmlAnalyzerMetaData.recordTypeStack.pop();
         validateCurrentElementInfo(xmlAnalyzerMetaData);
+        if (modelGroup instanceof ChoiceInfo && !xmlAnalyzerMetaData.xsdModelGroupInfo.isEmpty()) {
+            ChoiceInfo choiceInfo = (ChoiceInfo) modelGroup;
+            xmlAnalyzerMetaData.xsdModelGroupInfo.peek().forEach((key, nestedGroup) -> {
+                if (choiceInfo.isUnusedNestedGroupField(key)) {
+                    nestedGroup.notifyNestedGroupCompleted(null);
+                }
+            });
+        }
         popElementStacksForValidatingGroup(xmlAnalyzerMetaData);
         if (!xmlAnalyzerMetaData.modelGroupStack.isEmpty()) {
             xmlAnalyzerMetaData.modelGroupStack.peek().notifyNestedGroupCompleted(completedFieldName);

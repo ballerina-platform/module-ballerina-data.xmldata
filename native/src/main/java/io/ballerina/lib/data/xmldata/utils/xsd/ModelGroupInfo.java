@@ -33,8 +33,5 @@ public interface ModelGroupInfo {
     long getMinOccurs();
     long getMaxOccurs();
     String getFieldName();
-
-    default void notifyNestedGroupCompleted(String fieldName) {
-        // Implemented in SequenceInfo for nested sequence support
-    }
+    void notifyNestedGroupCompleted(String fieldName);
 }
