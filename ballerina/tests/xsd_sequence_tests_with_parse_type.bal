@@ -1420,7 +1420,7 @@ function testErrorInXsdSeqWithSharedElementNameAndXmlValue() returns error? {
     XSDSeqWithSharedElementNameXmlValue|Error v;
 
     xmlValue = xml `<Root><age>12</age><id>parent-id</id><name>some-name</name><id>nested-id</id></Root>`;
-    v = parseAsType(xmlValue);
+    v = parseAsType(xmlValue, {allowDataProjection: false});
     test:assertTrue(v is Error);
 }
 
