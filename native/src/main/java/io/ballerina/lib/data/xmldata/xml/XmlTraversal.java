@@ -1096,6 +1096,10 @@ class XmlTraversal {
                     }
                 }
             }
+            if (!xmlAnalyzerData.allowDataProjection) {
+                throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, elemQName.getLocalPart(),
+                        xmlAnalyzerData.rootRecord);
+            }
         }
 
         private void updateNextRecordForXsd(XmlAnalyzerData xmlAnalyzerData, String fieldName,
