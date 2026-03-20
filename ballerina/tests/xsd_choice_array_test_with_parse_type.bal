@@ -262,3 +262,118 @@ function testXSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord6() retur
     test:assertEquals(v2, {choice_XSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord6_1: {field1: [{value1: {a: ["1", "1"]}}, {value1: {a:["1", "1"]}}], field2: [{value2: {d: ["1", "1"]}}, {value2: {d: ["1", "1"]}}]}, choice_XSDChoiceArrayWithXmlValueXsdChoiceArrayWithXmlValueRecord6_2: {field4: [{value1: {a: ["1", "1"]}}, {value1: {a:["1", "1"]}}], field5: [{value2: {d: ["1", "1"]}}, {value2: {d: ["1","1"]}}]}});
     test:assertEquals(toXml(check v2), xml `<Root><field1><a>1</a><a>1</a></field1><field1><a>1</a><a>1</a></field1><field2><d>1</d><d>1</d></field2><field2><d>1</d><d>1</d></field2><field4><a>1</a><a>1</a></field4><field4><a>1</a><a>1</a></field4><field5><d>1</d><d>1</d></field5><field5><d>1</d><d>1</d></field5></Root>`);
 }
+
+@Name {
+    value: "Root"
+}
+type XsdChoiceArrayWithNestedSeqXmlValue record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 2
+    }
+    ChoiceArrNestedSeqItemXmlValue[] choice_arr_nested_seq;
+|};
+
+type ChoiceArrNestedSeqItemXmlValue record {|
+    @Sequence {
+        minOccurs: 0,
+        maxOccurs: 1
+    }
+    SeqInsideChoiceArrXmlValue seq_in_arr?;
+    string direct?;
+|};
+
+type SeqInsideChoiceArrXmlValue record {|
+    @SequenceOrder {value: 1}
+    string p;
+
+    @SequenceOrder {value: 2}
+    string q;
+|};
+
+@test:Config {groups: ["xsd", "xsd_choice"]}
+function testXsdChoiceArrayWithNestedSeqXmlValue() returns error? {
+    xml xmlValue;
+    XsdChoiceArrayWithNestedSeqXmlValue|Error v;
+
+    xmlValue = xml `<Root><p>hello</p><q>world</q></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_arr_nested_seq: [{seq_in_arr: {p: "hello", q: "world"}}]});
+
+    xmlValue = xml `<Root><direct>test</direct></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_arr_nested_seq: [{direct: "test"}]});
+
+    xmlValue = xml `<Root><p>hello</p><q>world</q><direct>test</direct></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_arr_nested_seq: [{seq_in_arr: {p: "hello", q: "world"}}, {direct: "test"}]});
+
+    xmlValue = xml `<Root><p>hello</p><q>world</q><direct>test</direct><p>foo</p><q>bar</q></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'choice_arr_nested_seq' occurs more than the max allowed times");
+
+    xmlValue = xml `<Root></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'choice_arr_nested_seq' occurs less than the min required times");
+}
+
+@Name {
+    value: "Root"
+}
+type XsdChoiceArrayWithNestedChoiceXmlValue record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 2
+    }
+    ChoiceArrNestedChoiceItemXmlValue[] choice_arr_nested_ch;
+|};
+
+type ChoiceArrNestedChoiceItemXmlValue record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    InnerChoiceInArrXmlValue inner_ch?;
+    string direct?;
+|};
+
+type InnerChoiceInArrXmlValue record {|
+    string x?;
+    string y?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_choice"]}
+function testXsdChoiceArrayWithNestedChoiceXmlValue() returns error? {
+    xml xmlValue;
+    XsdChoiceArrayWithNestedChoiceXmlValue|Error v;
+
+    xmlValue = xml `<Root><x>foo</x></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_arr_nested_ch: [{inner_ch: {x: "foo"}}]});
+
+    xmlValue = xml `<Root><direct>test</direct></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_arr_nested_ch: [{direct: "test"}]});
+
+    xmlValue = xml `<Root><x>foo</x><direct>test</direct></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_arr_nested_ch: [{inner_ch: {x: "foo"}}, {direct: "test"}]});
+
+    xmlValue = xml `<Root><x>foo</x><direct>test</direct><y>bar</y></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'choice_arr_nested_ch' occurs more than the max allowed times");
+
+    xmlValue = xml `<Root></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'choice_arr_nested_ch' occurs less than the min required times");
+}
