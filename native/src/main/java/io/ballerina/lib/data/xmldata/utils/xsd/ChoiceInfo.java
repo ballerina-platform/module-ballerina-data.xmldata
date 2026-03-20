@@ -147,6 +147,7 @@ public class ChoiceInfo implements ModelGroupInfo {
         this.remainingElementCount.putAll(this.maxElementCount);
         this.lastElement = "";
         this.containElements.clear();
+        this.usedNestedGroupFieldNames.clear();
     }
 
     @Override
