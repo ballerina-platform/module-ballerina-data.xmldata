@@ -95,3 +95,38 @@ function testXsdChoiceWithInvalidRecord() returns error? {
     XSDChoiceInvalidRecord|Error v4 = parseString(xmlStr);
     test:assertEquals((<Error>v4).message(), "Cannot include Choice annotation into 'a' of type 'int'");
 }
+
+type XSDSequenceWithUndefinedFieldRecord record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceWithUndefinedField seq_XSDSequenceWithUndefinedField;
+|};
+
+type Seq_XSDSequenceWithUndefinedField record {|
+    @SequenceOrder {
+        value: 1
+    }
+    int age;
+
+    @SequenceOrder {
+        value: 2
+    }
+    float salary;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequenceWithUndefinedField() returns error? {
+    string xmlStr = string `<Root><age>13</age><salary>11.1</salary></Root>`;
+    XSDSequenceWithUndefinedFieldRecord|Error v = parseString(xmlStr);
+    test:assertEquals(v, {seq_XSDSequenceWithUndefinedField: {age: 13, salary: 11.1}});
+
+    xmlStr = string `<Root><age>13</age><salary>11.1</salary><unknown>value</unknown></Root>`;
+    v = parseString(xmlStr);
+    test:assertEquals(v, {seq_XSDSequenceWithUndefinedField: {age: 13, salary: 11.1}});
+
+    v = parseString(xmlStr, {allowDataProjection: false});
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "undefined field 'unknown' in record 'data.xmldata:XSDSequenceWithUndefinedFieldRecord'");
+}
