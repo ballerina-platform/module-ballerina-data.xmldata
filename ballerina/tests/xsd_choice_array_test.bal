@@ -410,3 +410,112 @@ function testXsdChoiceArrayFieldWithChildArray() returns error? {
     test:assertTrue(errorValue is Error);
     test:assertEquals((<Error>errorValue).message(), "'choice_XsdChoiceArrayFieldWithChildArray' occurs more than the max allowed times");
 }
+
+type XsdChoiceArrayWithNestedSeq record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 2
+    }
+    ChoiceArrNestedSeqItem[] choice_arr_nested_seq;
+|};
+
+type ChoiceArrNestedSeqItem record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqInsideChoiceArr seq_in_arr?;
+    string direct?;
+|};
+
+type SeqInsideChoiceArr record {|
+    @SequenceOrder {value: 1}
+    string p;
+
+    @SequenceOrder {value: 2}
+    string q;
+|};
+
+@test:Config {groups: ["xsd", "xsd_choice"]}
+function testXsdChoiceArrayWithNestedSeq() returns error? {
+    string xmlStr;
+    XsdChoiceArrayWithNestedSeq|Error v;
+
+    xmlStr = string `<Root><p>hello</p><q>world</q></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_arr_nested_seq: [{seq_in_arr: {p: "hello", q: "world"}}]});
+
+    xmlStr = string `<Root><direct>test</direct></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_arr_nested_seq: [{direct: "test"}]});
+
+    xmlStr = string `<Root><p>hello</p><q>world</q><direct>test</direct></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_arr_nested_seq: [{seq_in_arr: {p: "hello", q: "world"}}, {direct: "test"}]});
+
+    xmlStr = string `<Root><p>hello</p><q>world</q><direct>test</direct><p>foo</p><q>bar</q></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'choice_arr_nested_seq' occurs more than the max allowed times");
+
+    xmlStr = string `<Root></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "required field 'choice_arr_nested_seq' not present in XML");
+}
+
+type XsdChoiceArrayWithNestedChoice record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 2
+    }
+    ChoiceArrNestedChoiceItem[] choice_arr_nested_ch;
+|};
+
+type ChoiceArrNestedChoiceItem record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    InnerChoiceInArr inner_ch?;
+    string direct?;
+|};
+
+type InnerChoiceInArr record {|
+    string x?;
+    string y?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_choice"]}
+function testXsdChoiceArrayWithNestedChoice() returns error? {
+    string xmlStr;
+    XsdChoiceArrayWithNestedChoice|Error v;
+
+    xmlStr = string `<Root><x>foo</x></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_arr_nested_ch: [{inner_ch: {x: "foo"}}]});
+
+    xmlStr = string `<Root><direct>test</direct></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_arr_nested_ch: [{direct: "test"}]});
+
+    xmlStr = string `<Root><x>foo</x><direct>test</direct></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_arr_nested_ch: [{inner_ch: {x: "foo"}}, {direct: "test"}]});
+
+    xmlStr = string `<Root><x>foo</x><direct>test</direct><y>bar</y></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'choice_arr_nested_ch' occurs more than the max allowed times");
+
+    xmlStr = string `<Root></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "required field 'choice_arr_nested_ch' not present in XML");
+}

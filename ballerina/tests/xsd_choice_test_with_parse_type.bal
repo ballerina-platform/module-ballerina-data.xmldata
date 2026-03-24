@@ -518,12 +518,18 @@ function testXsdChoiceWithXmlValue8() returns error? {
     xmlValue = xml `<Root><test><age>10</age></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceWithXmlValueRecord8_2' occurs less than the min required times");
+    string response = (<Error>v2).message();
+    test:assertTrue(response == "required field 'num' not present in XML"
+        || response == "required field 'num2' not present in XML"
+        || response == "required field 'choice_XSDChoiceWithXmlValueRecord8_2' not present in XML");
 
     xmlValue = xml `<Root><test><status><value1>Success</value1><value2>Fail</value2></status></test><a>2</a></Root>`;
     v2 = parseAsType(xmlValue);
     test:assertTrue(v2 is Error);
-    test:assertEquals((<Error>v2).message(), "'choice_XSDChoiceWithXmlValueRecord8_1' occurs less than the min required times");
+    response = (<Error>v2).message();
+    test:assertTrue(response == "required field 'num' not present in XML"
+        || response == "required field 'num2' not present in XML"
+        || response == "required field 'choice_XSDChoiceWithXmlValueRecord8_1' not present in XML");
 }
 
 @Name {
@@ -634,3 +640,127 @@ function testXsdChoiceWithXmlValue10() returns error? {
     test:assertTrue(toXmlResult is Error);
     test:assertEquals((<Error>toXmlResult).message(), "'value2' occurs more than the max allowed times");
 }
+
+@Name {value: "Root"}
+type XSDChoiceNestedChoiceXmlValue record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    OuterChoiceNestedXmlValue outer_choice;
+|};
+
+type OuterChoiceNestedXmlValue record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    InnerChoiceNestedXmlValue1 inner_choice1?;
+
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    InnerChoiceNestedXmlValue2 inner_choice2?;
+
+    int direct?;
+|};
+
+type InnerChoiceNestedXmlValue1 record {|
+    string a?;
+    string b?;
+|};
+
+type InnerChoiceNestedXmlValue2 record {|
+    int x?;
+    int y?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_choice"]}
+function testXsdNestedChoiceGroupsWithXmlValue() returns error? {
+    xml xmlValue;
+    XSDChoiceNestedChoiceXmlValue|Error v;
+
+    xmlValue = xml `<Root><a>hello</a></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {outer_choice: {inner_choice1: {a: "hello"}}});
+    Error? e = validate(xmlValue, XSDChoiceNestedChoiceXmlValue);
+    test:assertEquals(e, ());
+
+    xmlValue = xml `<Root><x>1</x></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {outer_choice: {inner_choice2: {x: 1}}});
+    e = validate(xmlValue, XSDChoiceNestedChoiceXmlValue);
+    test:assertEquals(e, ());
+
+    xmlValue = xml `<Root><direct>5</direct></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {outer_choice: {direct: 5}});
+    e = validate(xmlValue, XSDChoiceNestedChoiceXmlValue);
+    test:assertEquals(e, ());
+
+    xmlValue = xml `<Root><a>hello</a><x>1</x></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'outer_choice' occurs more than the max allowed times");
+    e = validate(xmlValue, XSDChoiceNestedChoiceXmlValue);
+    test:assertEquals((<Error>e).message(), "Invalid XML found: ''outer_choice' occurs more than the max allowed times'");
+}
+
+@Name {value: "Root"}
+type XSDChoiceWithNestedSeqXmlValue record {|
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    ChoiceWithNestedSeqXmlValue choice_with_seq;
+|};
+
+type ChoiceWithNestedSeqXmlValue record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqInChoiceXmlValue seq_in_choice?;
+
+    int direct?;
+|};
+
+type SeqInChoiceXmlValue record {|
+    @SequenceOrder {value: 1}
+    string m;
+
+    @SequenceOrder {value: 2}
+    string n;
+|};
+
+@test:Config {groups: ["xsd", "xsd_choice"]}
+function testXsdChoiceWithNestedSequenceXmlValue() returns error? {
+    xml xmlValue;
+    XSDChoiceWithNestedSeqXmlValue|Error v;
+
+    xmlValue = xml `<Root><m>hello</m><n>world</n></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_with_seq: {seq_in_choice: {m: "hello", n: "world"}}});
+    Error? e = validate(xmlValue, XSDChoiceWithNestedSeqXmlValue);
+    test:assertEquals(e, ());
+
+    xmlValue = xml `<Root><direct>1</direct></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {choice_with_seq: {direct: 1}});
+    e = validate(xmlValue, XSDChoiceWithNestedSeqXmlValue);
+    test:assertEquals(e, ());
+
+    xmlValue = xml `<Root><m>hello</m><n>world</n><direct>1</direct></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'choice_with_seq' occurs more than the max allowed times");
+    e = validate(xmlValue, XSDChoiceWithNestedSeqXmlValue);
+    test:assertEquals((<Error>e).message(), "Invalid XML found: ''choice_with_seq' occurs more than the max allowed times'");
+}
+

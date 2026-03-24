@@ -1072,3 +1072,835 @@ function testXsdSequence13() returns error? {
     test:assertTrue(v2 is Error);
     test:assertEquals((<Error>v2).message(), ("Element 'field5' is not in the correct order in 'seq_XSDSequenceRecord13_2'"), msg = (<Error>v2).message());
 }
+
+type XSDSequenceRecordWithArray record {|
+    @Sequence {
+        minOccurs: 0,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecordWithArray seq;
+|};
+
+type Seq_XSDSequenceRecordWithArray record {|
+    @SequenceOrder {value: 1}
+    string[] Source;
+    @SequenceOrder {value: 2}
+    string Dest;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequenceWithArrayField() returns error? {
+    string xmlStr = string `<Root><Source>A</Source><Source>B</Source><Dest>Z</Dest></Root>`;
+    XSDSequenceRecordWithArray|Error value = parseString(xmlStr);
+    test:assertEquals(value, {seq: {Source: ["A", "B"], Dest: "Z"}});
+
+    xmlStr = string `<Root><Source>A</Source><Dest>Z</Dest></Root>`;
+    value = parseString(xmlStr);
+    test:assertEquals(value, {seq: {Source: ["A"], Dest: "Z"}});
+
+    xmlStr = string `<Root><Dest>Z</Dest><Source>A</Source></Root>`;
+    value = parseString(xmlStr);
+    test:assertTrue(value is Error);
+    test:assertEquals((<Error>value).message(), "Element 'Dest' is not in the correct order in 'seq'");
+}
+
+type XSDSequenceRecordWithRecordArray record {|
+    @Sequence {
+        minOccurs: 0,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecordWithRecordArray seq;
+|};
+
+type Seq_XSDSequenceRecordWithRecordArray record {|
+    @SequenceOrder {value: 1}
+    RecordItem[] items;
+    @SequenceOrder {value: 2}
+    string status;
+|};
+
+type RecordItem record {|
+    string name;
+    int value;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequenceWithRecordArrayField() returns error? {
+    string xmlStr = string `<Root><items><name>Item1</name><value>10</value></items><items><name>Item2</name><value>20</value></items><status>active</status></Root>`;
+    XSDSequenceRecordWithRecordArray|Error value = parseString(xmlStr);
+    test:assertEquals(value, {seq: {items: [{name: "Item1", value: 10}, {name: "Item2", value: 20}], status: "active"}});
+
+    xmlStr = string `<Root><items><name>Item1</name><value>10</value></items><status>active</status></Root>`;
+    value = parseString(xmlStr);
+    test:assertEquals(value, {seq: {items: [{name: "Item1", value: 10}], status: "active"}});
+
+    xmlStr = string `<Root><status>active</status><items><name>Item1</name><value>10</value></items></Root>`;
+    value = parseString(xmlStr);
+    test:assertTrue(value is Error);
+    test:assertEquals((<Error>value).message(), "Element 'status' is not in the correct order in 'seq'");
+}
+
+type XSDSequenceRecordWithUnboundedArray record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecordWithUnboundedArray seq;
+|};
+
+type Seq_XSDSequenceRecordWithUnboundedArray record {|
+    @SequenceOrder {value: 1}
+    string[] tags;
+    @SequenceOrder {value: 2}
+    string label;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequenceWithUnboundedArrayField() returns error? {
+    string xmlStr = string `<Root><tags>a</tags><label>end</label></Root>`;
+    XSDSequenceRecordWithUnboundedArray|Error value = parseString(xmlStr);
+    test:assertEquals(value, {seq: {tags: ["a"], label: "end"}});
+
+    xmlStr = string `<Root><tags>a</tags><tags>b</tags><tags>c</tags><tags>d</tags><tags>e</tags><label>end</label></Root>`;
+    value = parseString(xmlStr);
+    test:assertEquals(value, {seq: {tags: ["a", "b", "c", "d", "e"], label: "end"}});
+
+    xmlStr = string `<Root><label>end</label><tags>a</tags></Root>`;
+    value = parseString(xmlStr);
+    test:assertTrue(value is Error);
+    test:assertEquals((<Error>value).message(), "Element 'label' is not in the correct order in 'seq'");
+
+    xmlStr = string `<Root><tags>a</tags></Root>`;
+    value = parseString(xmlStr);
+    test:assertTrue(value is Error);
+    test:assertEquals((<Error>value).message(), "Element(s) 'label' is not found in 'seq'");
+}
+
+type XSDNestedSequenceWithArrayInner record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    OuterArraySeq outerSeq;
+|};
+
+type OuterArraySeq record {|
+    @SequenceOrder {value: 1}
+    string header;
+
+    @SequenceOrder {value: 2}
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    OuterArraySeqInner innerSeq;
+|};
+
+type OuterArraySeqInner record {|
+    @SequenceOrder {value: 1}
+    string item;
+    @SequenceOrder {value: 2}
+    int count;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdNestedSequenceWithArrayInnerField() returns error? {
+    string xmlStr = string `<Root><header>h1</header><item>x</item><count>3</count></Root>`;
+    XSDNestedSequenceWithArrayInner|Error value = parseString(xmlStr);
+    test:assertFalse(value is Error, (value is Error) ? (<Error>value).message() : "");
+    test:assertEquals(value, {outerSeq: {header: "h1", innerSeq: {item: "x", count: 3}}});
+
+    xmlStr = string `<Root><item>x</item><count>3</count><header>h1</header></Root>`;
+    value = parseString(xmlStr);
+    test:assertTrue(value is Error);
+
+    xmlStr = string `<Root><header>h1</header><count>3</count></Root>`;
+    value = parseString(xmlStr);
+    test:assertTrue(value is Error);
+}
+
+type XSDThreeLevelNestedSeq record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Level1Seq level1Seq;
+|};
+
+type Level1Seq record {|
+    @SequenceOrder {value: 1}
+    string level1Field;
+
+    @SequenceOrder {value: 2}
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    Level2Seq level2Seq;
+|};
+
+type Level2Seq record {|
+    @SequenceOrder {value: 1}
+    string level2Field;
+
+    @SequenceOrder {value: 2}
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    Level3Seq level3Seq;
+|};
+
+type Level3Seq record {|
+    @SequenceOrder {value: 1}
+    string level3Field;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdThreeLevelNestedSeq() returns error? {
+    string xmlStr;
+    XSDThreeLevelNestedSeq|Error v;
+
+    xmlStr = string `<Root><level1Field>a</level1Field><level2Field>b</level2Field><level3Field>c</level3Field></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {level1Seq: {level1Field: "a", level2Seq: {level2Field: "b", level3Seq: {level3Field: "c"}}}});
+
+    xmlStr = string `<Root><level2Field>b</level2Field><level1Field>a</level1Field><level3Field>c</level3Field></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+
+    xmlStr = string `<Root><level1Field>a</level1Field><level2Field>b</level2Field></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+}
+
+type XSDSeqWithArrayNestedSeq record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithArrayNested seqMain;
+|};
+
+type SeqWithArrayNested record {|
+    @SequenceOrder {value: 1}
+    string before;
+
+    @Sequence {minOccurs: 1, maxOccurs: 3}
+    @SequenceOrder {value: 2}
+    ArrayNestedSeq[] nestedArr;
+
+    @SequenceOrder {value: 3}
+    string after;
+|};
+
+type ArrayNestedSeq record {|
+    @SequenceOrder {value: 1}
+    string x;
+
+    @SequenceOrder {value: 2}
+    string y;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithArrayNestedSeq() returns error? {
+    string xmlStr;
+    XSDSeqWithArrayNestedSeq|Error v;
+
+    xmlStr = string `<Root><before>start</before><x>a1</x><y>b1</y><x>a2</x><y>b2</y><after>end</after></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seqMain: {before: "start", nestedArr: [{x: "a1", y: "b1"}, {x: "a2", y: "b2"}], after: "end"}});
+
+    xmlStr = string `<Root><x>a1</x><y>b1</y><before>start</before><after>end</after></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+
+    xmlStr = string `<Root><before>start</before><x>a1</x><y>b1</y></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+}
+
+type XSDSeqWithSharedElementName record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithSharedName seqMain;
+|};
+
+type SeqWithSharedName record {|
+    @SequenceOrder {value: 1}
+    string id;
+
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    @SequenceOrder {value: 2}
+    SharedNameNested nested;
+|};
+
+type SharedNameNested record {|
+    @SequenceOrder {value: 1}
+    string name;
+
+    @SequenceOrder {value: 2}
+    string id;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithSharedElementName() returns error? {
+    string xmlStr;
+    XSDSeqWithSharedElementName|Error v;
+
+    xmlStr = string `<Root><id>parent-id</id><name>some-name</name><id>nested-id</id></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seqMain: {id: "parent-id", nested: {name: "some-name", id: "nested-id"}}});
+
+    xmlStr = string `<Root><name>some-name</name><id>nested-id</id><id>parent-id</id></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+
+    xmlStr = string `<Root><id>parent-id</id><name>some-name</name></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+}
+
+type XSDSeqWithNameAnnotationDirect record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqNameDirect seqNameDirect;
+|};
+
+type SeqNameDirect record {|
+    @Name {value: "first-name"}
+    @SequenceOrder {value: 1}
+    string firstName;
+
+    @Name {value: "last-name"}
+    @SequenceOrder {value: 2}
+    string lastName;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithNameAnnotationDirect() returns error? {
+    string xmlStr;
+    XSDSeqWithNameAnnotationDirect|Error v;
+
+    xmlStr = string `<Root><first-name>John</first-name><last-name>Doe</last-name></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seqNameDirect: {firstName: "John", lastName: "Doe"}});
+
+    xmlStr = string `<Root><last-name>Doe</last-name><first-name>John</first-name></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+
+    xmlStr = string `<Root><first-name>John</first-name></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+}
+
+type XSDSeqWithNestedChoiceRecord record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithNestedChoice seq_with_choice;
+|};
+
+type SeqWithNestedChoice record {|
+    @SequenceOrder {value: 1}
+    string before;
+
+    @SequenceOrder {value: 2}
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    ChoiceInSeq choice_in_seq;
+
+    @SequenceOrder {value: 3}
+    string after;
+|};
+
+type ChoiceInSeq record {|
+    int p?;
+    string q?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithNestedChoice() returns error? {
+    string xmlStr;
+    XSDSeqWithNestedChoiceRecord|Error v;
+
+    xmlStr = string `<Root><before>start</before><p>1</p><after>end</after></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_with_choice: {before: "start", choice_in_seq: {p: 1}, after: "end"}});
+
+    xmlStr = string `<Root><before>start</before><q>hello</q><after>end</after></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_with_choice: {before: "start", choice_in_seq: {q: "hello"}, after: "end"}});
+
+    xmlStr = string `<Root><before>start</before><p>1</p><q>hello</q><after>end</after></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'choice_in_seq' occurs more than the max allowed times");
+
+    xmlStr = string `<Root><before>start</before><after>end</after></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'choice_in_seq' is not found in 'seq_with_choice'");
+
+    xmlStr = string `<Root><p>1</p><after>end</after></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'before' is not found in 'seq_with_choice'");
+}
+
+type XSDSeqWithMixedNestedRecord record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithMixedNested seq_mixed;
+|};
+
+type SeqWithMixedNested record {|
+    @SequenceOrder {value: 1}
+    string first;
+
+    @SequenceOrder {value: 2}
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    MixedNestedSeq nested_seq;
+
+    @SequenceOrder {value: 3}
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    MixedNestedChoice nested_choice;
+
+    @SequenceOrder {value: 4}
+    string last;
+|};
+
+type MixedNestedSeq record {|
+    @SequenceOrder {value: 1}
+    string ns1;
+
+    @SequenceOrder {value: 2}
+    string ns2;
+|};
+
+type MixedNestedChoice record {|
+    int nc1?;
+    string nc2?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithMixedNestedGroups() returns error? {
+    string xmlStr;
+    XSDSeqWithMixedNestedRecord|Error v;
+
+    xmlStr = string `<Root><first>a</first><ns1>b</ns1><ns2>c</ns2><nc1>1</nc1><last>d</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_mixed: {first: "a", nested_seq: {ns1: "b", ns2: "c"}, nested_choice: {nc1: 1}, last: "d"}});
+
+    xmlStr = string `<Root><first>a</first><ns1>b</ns1><ns2>c</ns2><nc2>hello</nc2><last>d</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_mixed: {first: "a", nested_seq: {ns1: "b", ns2: "c"}, nested_choice: {nc2: "hello"}, last: "d"}});
+
+    xmlStr = string `<Root><first>a</first><ns1>b</ns1><nc1>1</nc1><last>d</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+
+    xmlStr = string `<Root><first>a</first><ns1>b</ns1><ns2>c</ns2><last>d</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'nested_choice' is not found in 'seq_mixed'");
+
+    xmlStr = string `<Root><first>a</first><nc1>1</nc1><ns1>b</ns1><ns2>c</ns2><last>d</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'nested_seq' is not found in 'seq_mixed'");
+}
+
+type AliasedInnerSeqRec record {|
+    @SequenceOrder {value: 1}
+    string a;
+
+    @SequenceOrder {value: 2}
+    string b;
+|};
+
+type AliasedInnerSeq AliasedInnerSeqRec;
+
+type SeqWithTypeAliasFields record {|
+    @SequenceOrder {value: 1}
+    string first;
+
+    @SequenceOrder {value: 2}
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    AliasedInnerSeq nested_seq;
+
+    @SequenceOrder {value: 3}
+    string last;
+|};
+
+type XSDSeqWithTypeAliasRecord record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithTypeAliasFields seq_type_alias?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithTypeAliasedNestedSeq() returns error? {
+    string xmlStr;
+    XSDSeqWithTypeAliasRecord|Error v;
+
+    xmlStr = string `<Root><first>start</first><a>x</a><b>y</b><last>end</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_type_alias: {first: "start", nested_seq: {a: "x", b: "y"}, last: "end"}});
+
+    xmlStr = string `<Root><first>start</first><last>end</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'nested_seq' is not found in 'seq_type_alias'");
+
+    xmlStr = string `<Root><a>x</a><b>y</b><last>end</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'first' is not found in 'seq_type_alias'");
+}
+
+type IntList int[];
+
+type SeqWithAliasedArrayFields record {|
+    @SequenceOrder {value: 1}
+    IntList nums;
+
+    @SequenceOrder {value: 2}
+    string label;
+|};
+
+type XSDSeqWithAliasedArrayRecord record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithAliasedArrayFields seq_arr?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithTypeAliasedArrayField() returns error? {
+    string xmlStr;
+    XSDSeqWithAliasedArrayRecord|Error v;
+
+    xmlStr = string `<Root><nums>1</nums><nums>2</nums><nums>3</nums><label>done</label></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_arr: {nums: [1, 2, 3], label: "done"}});
+
+    xmlStr = string `<Root><nums>5</nums><label>single</label></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_arr: {nums: [5], label: "single"}});
+
+    xmlStr = string `<Root><label>missing-nums</label></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+}
+
+type SeqRepeatTopItem record {|
+    @SequenceOrder {value: 1}
+    string p;
+
+    @SequenceOrder {value: 2}
+    string q;
+|};
+
+type XSDSeqTopLevelRepeatRecord record {|
+    @Sequence {
+        minOccurs: 2,
+        maxOccurs: 3
+    }
+    SeqRepeatTopItem[] items;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqTopLevelRepeat() returns error? {
+    string xmlStr;
+    XSDSeqTopLevelRepeatRecord|Error v;
+
+    xmlStr = string `<Root><p>a1</p><q>b1</q><p>a2</p><q>b2</q></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {items: [{p: "a1", q: "b1"}, {p: "a2", q: "b2"}]});
+
+    xmlStr = string `<Root><p>a1</p><q>b1</q><p>a2</p><q>b2</q><p>a3</p><q>b3</q></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {items: [{p: "a1", q: "b1"}, {p: "a2", q: "b2"}, {p: "a3", q: "b3"}]});
+
+    xmlStr = string `<Root><p>a1</p><q>b1</q></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+}
+
+type SeqThreeRequiredFields record {|
+    @SequenceOrder {value: 1}
+    string a;
+
+    @SequenceOrder {value: 2}
+    string b;
+
+    @SequenceOrder {value: 3}
+    string c;
+|};
+
+type XSDSeqMultipleMissingRecord record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqThreeRequiredFields seq_three?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqMultipleMissingElements() returns error? {
+    string xmlStr;
+    XSDSeqMultipleMissingRecord|Error v;
+
+    xmlStr = string `<Root><a>val</a></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'b, c' is not found in 'seq_three'");
+
+    xmlStr = string `<Root><a>val</a><b>val2</b></Root>`;
+    v = parseString(xmlStr);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'c' is not found in 'seq_three'");
+}
+
+type ChoiceInsideSeqRecord record {|
+    string opt_x?;
+    string opt_y?;
+|};
+
+type SeqContainingChoiceField record {|
+    @SequenceOrder {value: 1}
+    string fixed_part;
+
+    @SequenceOrder {value: 2}
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    ChoiceInsideSeqRecord choice_part;
+|};
+
+type OuterSeqWithInnerSeqContainingChoice record {|
+    @SequenceOrder {value: 1}
+    string first;
+
+    @SequenceOrder {value: 2}
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqContainingChoiceField inner_seq;
+
+    @SequenceOrder {value: 3}
+    string last;
+|};
+
+type XSDSeqWithChoiceInsideSeqRecord record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    OuterSeqWithInnerSeqContainingChoice seq_ch?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithChoiceInsideNestedSeq() returns error? {
+    string xmlStr;
+    XSDSeqWithChoiceInsideSeqRecord|Error v;
+
+    xmlStr = string `<Root><first>start</first><fixed_part>mid</fixed_part><opt_x>xval</opt_x><last>end</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_ch: {first: "start", inner_seq: {fixed_part: "mid", choice_part: {opt_x: "xval"}}, last: "end"}});
+
+    xmlStr = string `<Root><first>start</first><fixed_part>mid</fixed_part><opt_y>yval</opt_y><last>end</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_ch: {first: "start", inner_seq: {fixed_part: "mid", choice_part: {opt_y: "yval"}}, last: "end"}});
+}
+
+type ArrayChoiceItem record {|
+    string item_a?;
+    string item_b?;
+|};
+
+type SeqWithArrayChoiceField record {|
+    @SequenceOrder {value: 1}
+    string header;
+
+    @SequenceOrder {value: 2}
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 3
+    }
+    ArrayChoiceItem[] arr_choice;
+
+    @SequenceOrder {value: 3}
+    string footer;
+|};
+
+type XSDSeqWithArrayChoiceRecord record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithArrayChoiceField seq_arr_ch?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithArrayChoiceField() returns error? {
+    string xmlStr;
+    XSDSeqWithArrayChoiceRecord|Error v;
+
+    xmlStr = string `<Root><header>h</header><item_a>a1</item_a><item_b>b1</item_b><footer>f</footer></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_arr_ch: {header: "h", arr_choice: [{item_a: "a1"}, {item_b: "b1"}], footer: "f"}});
+
+    xmlStr = string `<Root><header>h</header><item_a>only</item_a><footer>f</footer></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_arr_ch: {header: "h", arr_choice: [{item_a: "only"}], footer: "f"}});
+}
+
+type InnerSeqInChoiceRecord record {|
+    @SequenceOrder {value: 1}
+    string s1;
+
+    @SequenceOrder {value: 2}
+    string s2;
+|};
+
+type ChoiceContainingSeqField record {|
+    string direct_opt?;
+
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    InnerSeqInChoiceRecord seq_in_ch?;
+|};
+
+type SeqWithChoiceContainingSeqField record {|
+    @SequenceOrder {value: 1}
+    string first;
+
+    @SequenceOrder {value: 2}
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    ChoiceContainingSeqField ch_inner;
+
+    @SequenceOrder {value: 3}
+    string last;
+|};
+
+type XSDSeqWithChoiceContainingSeqRecord record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithChoiceContainingSeqField seq_ch_seq?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithChoiceContainingNestedSeq() returns error? {
+    string xmlStr;
+    XSDSeqWithChoiceContainingSeqRecord|Error v;
+
+    xmlStr = string `<Root><first>f</first><direct_opt>d</direct_opt><last>l</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_ch_seq: {first: "f", ch_inner: {direct_opt: "d"}, last: "l"}});
+
+    xmlStr = string `<Root><first>f</first><s1>v1</s1><s2>v2</s2><last>l</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_ch_seq: {first: "f", ch_inner: {seq_in_ch: {s1: "v1", s2: "v2"}}, last: "l"}});
+}
+
+type InnerChoiceInChoiceRecord record {|
+    string p?;
+    string q?;
+|};
+
+type ChoiceContainingChoiceField record {|
+    string direct_opt?;
+
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    InnerChoiceInChoiceRecord ch_in_ch?;
+|};
+
+type SeqWithChoiceContainingChoiceField record {|
+    @SequenceOrder {value: 1}
+    string first;
+
+    @SequenceOrder {value: 2}
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    ChoiceContainingChoiceField ch_outer;
+
+    @SequenceOrder {value: 3}
+    string last;
+|};
+
+type XSDSeqWithNestedChoiceInChoiceRecord record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithChoiceContainingChoiceField seq_ch_ch?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithChoiceContainingNestedChoice() returns error? {
+    string xmlStr;
+    XSDSeqWithNestedChoiceInChoiceRecord|Error v;
+
+    xmlStr = string `<Root><first>f</first><direct_opt>d</direct_opt><last>l</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_ch_ch: {first: "f", ch_outer: {direct_opt: "d"}, last: "l"}});
+
+    xmlStr = string `<Root><first>f</first><p>pval</p><last>l</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_ch_ch: {first: "f", ch_outer: {ch_in_ch: {p: "pval"}}, last: "l"}});
+
+    xmlStr = string `<Root><first>f</first><q>qval</q><last>l</last></Root>`;
+    v = parseString(xmlStr);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_ch_ch: {first: "f", ch_outer: {ch_in_ch: {q: "qval"}}, last: "l"}});
+}

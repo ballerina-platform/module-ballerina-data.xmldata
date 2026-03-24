@@ -613,6 +613,10 @@ class XmlParser {
                 }
             }
         }
+        if (!xmlParserData.allowDataProjection) {
+            throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, elemQName.getLocalPart(),
+                    xmlParserData.rootRecord);
+        }
     }
 
     private void updateNextRecordForXsd(XmlParserData xmlParserData,

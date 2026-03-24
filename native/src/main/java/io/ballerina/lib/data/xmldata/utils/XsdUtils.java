@@ -193,15 +193,26 @@ public static void popXsdValidationStacks(XmlAnalyzerMetaData xmlAnalyzerMetaDat
     public static void validateModelGroup(ModelGroupInfo modelGroup,
                                           XmlAnalyzerMetaData xmlAnalyzerMetaData, boolean isTerminated) {
         initializeAnyAnnotatedArrayFields(xmlAnalyzerMetaData.currentNode, xmlAnalyzerMetaData.rootRecord);
+        if (modelGroup instanceof ChoiceInfo choiceInfo && !xmlAnalyzerMetaData.xsdModelGroupInfo.isEmpty()) {
+            xmlAnalyzerMetaData.xsdModelGroupInfo.peek().forEach((key, nestedGroup) -> {
+                if (choiceInfo.isUnusedNestedGroupField(key)) {
+                    nestedGroup.notifyNestedGroupCompleted(null);
+                }
+            });
+        }
         modelGroup.validate();
         if (isTerminated) {
             modelGroup.validateMinOccurrences();
         }
+        String completedFieldName = modelGroup.getFieldName();
         xmlAnalyzerMetaData.currentNode = (BMap<BString, Object>) xmlAnalyzerMetaData.nodesStack.pop();
         xmlAnalyzerMetaData.modelGroupStack.pop();
         xmlAnalyzerMetaData.rootRecord = xmlAnalyzerMetaData.recordTypeStack.pop();
         validateCurrentElementInfo(xmlAnalyzerMetaData);
         popElementStacksForValidatingGroup(xmlAnalyzerMetaData);
+        if (!xmlAnalyzerMetaData.modelGroupStack.isEmpty()) {
+            xmlAnalyzerMetaData.modelGroupStack.peek().notifyNestedGroupCompleted(completedFieldName);
+        }
     }
 
     private static void initializeAnyAnnotatedArrayFields(BMap<BString, Object> recordValue, RecordType recordType) {

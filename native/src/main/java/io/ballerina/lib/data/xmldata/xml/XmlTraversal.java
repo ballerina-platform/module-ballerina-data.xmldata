@@ -505,7 +505,7 @@ class XmlTraversal {
             RecordType prevRecord = analyzerData.rootRecord;
             analyzerData.rootRecord = elementType;
             traverseXml(xmlItem.getChildrenSeq(), currentFieldType, analyzerData);
-
+            validateModelGroupStackForRootElement(analyzerData);
             initializeAnyAnnotatedArrayFields(analyzerData.currentNode, elementType);
             validateCurrentElementInfo(analyzerData);
             DataUtils.validateRequiredFields(analyzerData, analyzerData.currentNode);
@@ -1095,6 +1095,10 @@ class XmlTraversal {
                         return;
                     }
                 }
+            }
+            if (!xmlAnalyzerData.allowDataProjection) {
+                throw DiagnosticLog.error(DiagnosticErrorCode.UNDEFINED_FIELD, elemQName.getLocalPart(),
+                        xmlAnalyzerData.rootRecord);
             }
         }
 

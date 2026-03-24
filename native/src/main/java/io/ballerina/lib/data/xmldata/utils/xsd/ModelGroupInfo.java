@@ -33,4 +33,5 @@ public interface ModelGroupInfo {
     long getMinOccurs();
     long getMaxOccurs();
     String getFieldName();
+    void notifyNestedGroupCompleted(String fieldName);
 }

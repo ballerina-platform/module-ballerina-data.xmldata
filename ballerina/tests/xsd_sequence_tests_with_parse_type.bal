@@ -1043,3 +1043,446 @@ function testXsdSequenceWithXmlValue13() returns error? {
     test:assertTrue(e is Error);
     test:assertEquals((<Error>e).message(), "Invalid XML found: 'Element 'field5' is not in the correct order in 'seq_XSDSequenceRecordWithXmlValue13_2''");
 }
+
+@Name {
+    value: "Root"
+}
+type XSDSequenceRecordWithArrayAndXmlValue record {|
+    @Sequence {
+        minOccurs: 0,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecordWithArrayAndXmlValue seq?;
+|};
+
+type Seq_XSDSequenceRecordWithArrayAndXmlValue record {|
+    @SequenceOrder {value: 1}
+    string[] Source;
+    @SequenceOrder {value: 2}
+    string Dest;
+|};
+
+@test:Config {
+    groups: ["xsd", "xsd_sequence"]
+}
+function testXsdSequenceWithArrayFieldAndXmlValue() returns error? {
+    xml xmlValue = xml `<Root><Source>A</Source><Source>B</Source><Dest>Z</Dest></Root>`;
+    XSDSequenceRecordWithArrayAndXmlValue|Error value = parseAsType(xmlValue);
+    test:assertEquals(value, {seq: {Source: ["A", "B"], Dest: "Z"}});
+    Error? response = validate(xmlValue, XSDSequenceRecordWithArrayAndXmlValue);
+    test:assertTrue(response is ());
+
+    xmlValue = xml `<Root><Source>A</Source><Dest>Z</Dest></Root>`;
+    value = parseAsType(xmlValue);
+    test:assertEquals(value, {seq: {Source: ["A"], Dest: "Z"}});
+    response = validate(xmlValue, XSDSequenceRecordWithArrayAndXmlValue);
+    test:assertTrue(response is ());
+
+    xmlValue = xml `<Root><Dest>Z</Dest><Source>A</Source></Root>`;
+    value = parseAsType(xmlValue);
+    test:assertTrue(value is Error);
+    test:assertEquals((<Error>value).message(), "Element 'Dest' is not in the correct order in 'seq'");
+    response = validate(xmlValue, XSDSequenceRecordWithArrayAndXmlValue);
+    test:assertTrue(response is Error);
+    test:assertEquals((<Error>response).message(), "Invalid XML found: 'Element 'Dest' is not in the correct order in 'seq''");
+}
+
+@Name {
+    value: "Root"
+}
+type XSDSequenceRecordWithUnboundedArrayAndXmlValue record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_XSDSequenceRecordWithUnboundedArrayAndXmlValue seq;
+|};
+
+type Seq_XSDSequenceRecordWithUnboundedArrayAndXmlValue record {|
+    @SequenceOrder {value: 1}
+    string[] tags;
+    @SequenceOrder {value: 2}
+    string label;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSequenceWithUnboundedArrayFieldAndXmlValue() returns error? {
+    xml xmlValue = xml `<Root><tags>a</tags><label>end</label></Root>`;
+    XSDSequenceRecordWithUnboundedArrayAndXmlValue|Error value = parseAsType(xmlValue);
+    test:assertEquals(value, {seq: {tags: ["a"], label: "end"}});
+    Error? response = validate(xmlValue, XSDSequenceRecordWithUnboundedArrayAndXmlValue);
+    test:assertTrue(response is ());
+
+    xmlValue = xml `<Root><tags>a</tags><tags>b</tags><tags>c</tags><tags>d</tags><tags>e</tags><label>end</label></Root>`;
+    value = parseAsType(xmlValue);
+    test:assertEquals(value, {seq: {tags: ["a", "b", "c", "d", "e"], label: "end"}});
+    response = validate(xmlValue, XSDSequenceRecordWithUnboundedArrayAndXmlValue);
+    test:assertTrue(response is ());
+
+    xmlValue = xml `<Root><label>end</label><tags>a</tags></Root>`;
+    value = parseAsType(xmlValue);
+    test:assertTrue(value is Error);
+    test:assertEquals((<Error>value).message(), "Element 'label' is not in the correct order in 'seq'");
+    response = validate(xmlValue, XSDSequenceRecordWithUnboundedArrayAndXmlValue);
+    test:assertTrue(response is Error);
+    test:assertEquals((<Error>response).message(), "Invalid XML found: 'Element 'label' is not in the correct order in 'seq''");
+
+    xmlValue = xml `<Root><tags>a</tags><tags>b</tags></Root>`;
+    value = parseAsType(xmlValue);
+    test:assertTrue(value is Error);
+    test:assertEquals((<Error>value).message(), "Element(s) 'label' is not found in 'seq'");
+    response = validate(xmlValue, XSDSequenceRecordWithUnboundedArrayAndXmlValue);
+    test:assertTrue(response is Error);
+    test:assertEquals((<Error>response).message(), "Invalid XML found: 'Element(s) 'label' is not found in 'seq''");
+}
+
+@Name {
+    value: "Root"
+}
+type XSDNestedSequenceWithArrayInnerAndXmlValue record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    OuterArraySeqXmlValue outerSeq;
+|};
+
+type OuterArraySeqXmlValue record {|
+    @SequenceOrder {value: 1}
+    string header;
+
+    @SequenceOrder {value: 2}
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    OuterArraySeqInnerXmlValue innerSeq;
+|};
+
+type OuterArraySeqInnerXmlValue record {|
+    @SequenceOrder {value: 1}
+    string item;
+    @SequenceOrder {value: 2}
+    int count;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdNestedSequenceWithArrayInnerFieldAndXmlValue() returns error? {
+    xml xmlValue = xml `<Root><header>h1</header><item>x</item><count>3</count></Root>`;
+    XSDNestedSequenceWithArrayInnerAndXmlValue|Error value = parseAsType(xmlValue);
+    test:assertFalse(value is Error, (value is Error) ? (<Error>value).message() : "");
+    test:assertEquals(value, {outerSeq: {header: "h1", innerSeq: {item: "x", count: 3}}});
+    Error? response = validate(xmlValue, XSDNestedSequenceWithArrayInnerAndXmlValue);
+    test:assertTrue(response is ());
+
+    xmlValue = xml `<Root><item>x</item><count>3</count><header>h1</header></Root>`;
+    value = parseAsType(xmlValue);
+    test:assertTrue(value is Error);
+    response = validate(xmlValue, XSDNestedSequenceWithArrayInnerAndXmlValue);
+    test:assertTrue(response is Error);
+
+    xmlValue = xml `<Root><header>h1</header><count>3</count></Root>`;
+    value = parseAsType(xmlValue);
+    test:assertTrue(value is Error);
+    response = validate(xmlValue, XSDNestedSequenceWithArrayInnerAndXmlValue);
+    test:assertTrue(response is Error);
+}
+
+@Name {
+    value: "Root"
+}
+type XSDSeqOptionalLeadingRequiredTrailingXmlValue record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Seq_OptionalLeadingRequiredTrailingXmlValue seq_optionalLeadingRequiredTrailing;
+|};
+
+type Seq_OptionalLeadingRequiredTrailingXmlValue record {|
+    @SequenceOrder {value: 1}
+    string optionalElem?;
+
+    @SequenceOrder {value: 2}
+    int requiredElem;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqOptionalLeadingRequiredTrailingXmlValue() returns error? {
+    xml xmlValue;
+    XSDSeqOptionalLeadingRequiredTrailingXmlValue|Error v;
+
+    xmlValue = xml `<Root><optionalElem>hello</optionalElem><requiredElem>42</requiredElem></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_optionalLeadingRequiredTrailing: {optionalElem: "hello", requiredElem: 42}});
+    Error? e = validate(xmlValue, XSDSeqOptionalLeadingRequiredTrailingXmlValue);
+    test:assertTrue(e is ());
+
+    xmlValue = xml `<Root><requiredElem>42</requiredElem></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_optionalLeadingRequiredTrailing: {requiredElem: 42}});
+    e = validate(xmlValue, XSDSeqOptionalLeadingRequiredTrailingXmlValue);
+    test:assertTrue(e is ());
+
+    xmlValue = xml `<Root><optionalElem>hello</optionalElem></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'requiredElem' is not found in 'seq_optionalLeadingRequiredTrailing'");
+    e = validate(xmlValue, XSDSeqOptionalLeadingRequiredTrailingXmlValue);
+    test:assertTrue(e is Error);
+    test:assertEquals((<Error>e).message(), "Invalid XML found: 'Element(s) 'requiredElem' is not found in 'seq_optionalLeadingRequiredTrailing''");
+}
+
+@Name {
+    value: "Root"
+}
+type XSDNestedSeqWithRecordArrayAndXmlValue record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    OuterSeqRecordArrayXmlValue outerSeqRecordArray;
+|};
+
+type OuterSeqRecordArrayXmlValue record {|
+    @SequenceOrder {value: 1}
+    string header;
+
+    @SequenceOrder {value: 2}
+    @Sequence {minOccurs: 1, maxOccurs: 2}
+    InnerSeqRecordArrayXmlValue[] innerSeqs;
+|};
+
+type InnerSeqRecordArrayXmlValue record {|
+    @SequenceOrder {value: 1}
+    string item;
+
+    @SequenceOrder {value: 2}
+    int count;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdNestedSeqWithRecordArrayAndXmlValue() returns error? {
+    xml xmlValue;
+    XSDNestedSeqWithRecordArrayAndXmlValue|Error v;
+
+    xmlValue = xml `<Root><header>h1</header><item>x</item><count>3</count></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {outerSeqRecordArray: {header: "h1", innerSeqs: [{item: "x", count: 3}]}});
+    Error? e = validate(xmlValue, XSDNestedSeqWithRecordArrayAndXmlValue);
+    test:assertTrue(e is ());
+
+    xmlValue = xml `<Root><header>h1</header><item>x</item><count>3</count><item>y</item><count>4</count></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {outerSeqRecordArray: {header: "h1", innerSeqs: [{item: "x", count: 3}, {item: "y", count: 4}]}});
+    e = validate(xmlValue, XSDNestedSeqWithRecordArrayAndXmlValue);
+    test:assertTrue(e is ());
+
+    xmlValue = xml `<Root><header>h1</header><item>x</item><count>3</count><item>y</item><count>4</count><item>z</item><count>5</count></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'innerSeqs' occurs more than the max allowed times");
+    e = validate(xmlValue, XSDNestedSeqWithRecordArrayAndXmlValue);
+    test:assertTrue(e is Error);
+    test:assertEquals((<Error>e).message(), "Invalid XML found: ''innerSeqs' occurs more than the max allowed times'");
+
+    xmlValue = xml `<Root><header>h1</header></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    e = validate(xmlValue, XSDNestedSeqWithRecordArrayAndXmlValue);
+    test:assertTrue(e is Error);
+}
+
+@Name {
+    value: "Root"
+}
+type XSDThreeLevelNestedSeqXmlValue record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    Level1SeqXmlValue level1Seq;
+|};
+
+type Level1SeqXmlValue record {|
+    @SequenceOrder {value: 1}
+    string level1Field;
+
+    @SequenceOrder {value: 2}
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    Level2SeqXmlValue level2Seq;
+|};
+
+type Level2SeqXmlValue record {|
+    @SequenceOrder {value: 1}
+    string level2Field;
+
+    @SequenceOrder {value: 2}
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    Level3SeqXmlValue level3Seq;
+|};
+
+type Level3SeqXmlValue record {|
+    @SequenceOrder {value: 1}
+    string level3Field;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdThreeLevelNestedSeqAndXmlValue() returns error? {
+    xml xmlValue;
+    XSDThreeLevelNestedSeqXmlValue|Error v;
+
+    xmlValue = xml `<Root><level1Field>a</level1Field><level2Field>b</level2Field><level3Field>c</level3Field></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {level1Seq: {level1Field: "a", level2Seq: {level2Field: "b", level3Seq: {level3Field: "c"}}}});
+    Error? e = validate(xmlValue, XSDThreeLevelNestedSeqXmlValue);
+    test:assertTrue(e is ());
+
+    xmlValue = xml `<Root><level2Field>b</level2Field><level1Field>a</level1Field><level3Field>c</level3Field></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    e = validate(xmlValue, XSDThreeLevelNestedSeqXmlValue);
+    test:assertTrue(e is Error);
+
+    xmlValue = xml `<Root><level1Field>a</level1Field><level2Field>b</level2Field></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    test:assertTrue((<Error>v).message() == "Element(s) 'level3Field' is not found in 'level3Seq'" ||
+        (<Error>v).message() == "Element(s) 'level3Seq' is not found in 'level2Seq'");
+    e = validate(xmlValue, XSDThreeLevelNestedSeqXmlValue);
+    test:assertTrue(e is Error);
+    test:assertTrue((<Error>e).message() == "Invalid XML found: 'Element(s) 'level3Field' is not found in 'level3Seq''" ||
+        (<Error>e).message() == "Invalid XML found: 'Element(s) 'level3Seq' is not found in 'level2Seq''");
+
+    xmlValue = xml `<Root><level1Field>a</level1Field><level3Field>c</level3Field></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    e = validate(xmlValue, XSDThreeLevelNestedSeqXmlValue);
+    test:assertTrue(e is Error);
+    test:assertEquals((<Error>e).message(), "Invalid XML found: 'Element(s) 'level2Field' is not found in 'level2Seq''");
+}
+
+type XSDSeqWithSharedElementNameXmlValue record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithSharedNameXmlValue seqMain;
+|};
+
+type SeqWithSharedNameXmlValue record {|
+    @SequenceOrder {value: 1}
+    string id;
+
+    @Sequence {minOccurs: 1, maxOccurs: 1}
+    @SequenceOrder {value: 2}
+    SharedNameNestedXmlValue nested;
+|};
+
+type SharedNameNestedXmlValue record {|
+    @SequenceOrder {value: 1}
+    string name;
+
+    @SequenceOrder {value: 2}
+    string id;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithSharedElementNameAndXmlValue() returns error? {
+    xml xmlValue;
+    XSDSeqWithSharedElementNameXmlValue|Error v;
+
+    xmlValue = xml `<Root><id>parent-id</id><name>some-name</name><id>nested-id</id></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seqMain: {id: "parent-id", nested: {name: "some-name", id: "nested-id"}}});
+    Error? e = validate(xmlValue, XSDSeqWithSharedElementNameXmlValue);
+    test:assertTrue(e is ());
+
+    xmlValue = xml `<Root><name>some-name</name><id>nested-id</id><id>parent-id</id></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    e = validate(xmlValue, XSDSeqWithSharedElementNameXmlValue);
+    test:assertTrue(e is Error);
+
+    xmlValue = xml `<Root><id>parent-id</id><name>some-name</name></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    e = validate(xmlValue, XSDSeqWithSharedElementNameXmlValue);
+    test:assertTrue(e is Error);
+}
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testErrorInXsdSeqWithSharedElementNameAndXmlValue() returns error? {
+    xml xmlValue;
+    XSDSeqWithSharedElementNameXmlValue|Error v;
+
+    xmlValue = xml `<Root><age>12</age><id>parent-id</id><name>some-name</name><id>nested-id</id></Root>`;
+    v = parseAsType(xmlValue, {allowDataProjection: false});
+    test:assertTrue(v is Error);
+}
+
+@Name {value: "Root"}
+type XSDSeqWithNestedChoiceXmlValue record {|
+    @Sequence {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    SeqWithNestedChoiceXmlValue seq_with_choice;
+|};
+
+type SeqWithNestedChoiceXmlValue record {|
+    @SequenceOrder {value: 1}
+    string before;
+
+    @SequenceOrder {value: 2}
+    @Choice {
+        minOccurs: 1,
+        maxOccurs: 1
+    }
+    ChoiceInSeqXmlValue choice_in_seq;
+
+    @SequenceOrder {value: 3}
+    string after;
+|};
+
+type ChoiceInSeqXmlValue record {|
+    int p?;
+    string q?;
+|};
+
+@test:Config {groups: ["xsd", "xsd_sequence"]}
+function testXsdSeqWithNestedChoiceXmlValue() returns error? {
+    xml xmlValue;
+    XSDSeqWithNestedChoiceXmlValue|Error v;
+
+    xmlValue = xml `<Root><before>start</before><p>1</p><after>end</after></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_with_choice: {before: "start", choice_in_seq: {p: 1}, after: "end"}});
+    Error? e = validate(xmlValue, XSDSeqWithNestedChoiceXmlValue);
+    test:assertEquals(e, ());
+
+    xmlValue = xml `<Root><before>start</before><q>hello</q><after>end</after></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertFalse(v is Error, (v is Error) ? (<Error>v).message() : "");
+    test:assertEquals(v, {seq_with_choice: {before: "start", choice_in_seq: {q: "hello"}, after: "end"}});
+    e = validate(xmlValue, XSDSeqWithNestedChoiceXmlValue);
+    test:assertEquals(e, ());
+
+    xmlValue = xml `<Root><before>start</before><p>1</p><q>hello</q><after>end</after></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "'choice_in_seq' occurs more than the max allowed times");
+    e = validate(xmlValue, XSDSeqWithNestedChoiceXmlValue);
+    test:assertEquals((<Error>e).message(), "Invalid XML found: ''choice_in_seq' occurs more than the max allowed times'");
+
+    xmlValue = xml `<Root><before>start</before><after>end</after></Root>`;
+    v = parseAsType(xmlValue);
+    test:assertTrue(v is Error);
+    test:assertEquals((<Error>v).message(), "Element(s) 'choice_in_seq' is not found in 'seq_with_choice'");
+    e = validate(xmlValue, XSDSeqWithNestedChoiceXmlValue);
+    test:assertEquals((<Error>e).message(), "Invalid XML found: 'Element(s) 'choice_in_seq' is not found in 'seq_with_choice''");
+}
