@@ -26,6 +26,7 @@ pluginManagement {
     }
 
     repositories {
+        mavenLocal()
         gradlePluginPortal()
         maven {
             url = 'https://maven.pkg.github.com/ballerina-platform/*'
@@ -38,7 +39,7 @@ pluginManagement {
 }
 
 plugins {
-    id "com.gradle.enterprise" version "3.2"
+    id "com.gradle.develocity" version "3.19.2"
 }
 
 rootProject.name = 'data.xmldata'
@@ -54,9 +55,9 @@ project(':data.xmldata-ballerina').projectDir = file('ballerina')
 project(':data.xmldata-compiler-plugin').projectDir = file('compiler-plugin')
 project(':data.xmldata-compiler-plugin-tests').projectDir = file('compiler-plugin-test')
 
-gradleEnterprise {
+develocity {
     buildScan {
-        termsOfServiceUrl = 'https://gradle.com/terms-of-service'
-        termsOfServiceAgree = 'yes'
+        termsOfUseUrl = 'https://gradle.com/terms-of-service'
+        termsOfUseAgree = 'yes'
     }
 }
