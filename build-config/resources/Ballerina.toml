@@ -6,27 +6,27 @@ authors = ["Ballerina"]
 keywords = ["xml"]
 repository = "https://github.com/ballerina-platform/module-ballerina-data-xmldata"
 license = ["Apache-2.0"]
-distribution = "2201.11.0"
+distribution = "2201.14.0-20260527-050400-74f7e6bf"
 
 [data.xmldata]
 export = true
 
-[[platform.java21.dependency]]
+[[platform.java25.dependency]]
 groupId = "io.ballerina.lib"
 artifactId = "data-native"
 version = "@toml.version@"
 path = "../native/build/libs/data.xmldata-native-@project.version@.jar"
 
-[[platform.java21.dependency]]
+[[platform.java25.dependency]]
 groupId = "io.ballerina.stdlib"
 artifactId = "constraint-native"
 version = "@constraint.version@"
 path = "./lib/constraint-native-@stdlib.constraintnative.version@.jar"
 
-[[platform.java21.dependency]]
+[[platform.java25.dependency]]
 path = "./lib/Saxon-HE-@project.saxonHeVersion@.jar"
 version = "@project.saxonHeVersion@"
 
-[[platform.java21.dependency]]
+[[platform.java25.dependency]]
 path = "./lib/xmlresolver-@project.xmlResolverVersion@.jar"
 version = "@xmlresolver.version@"
