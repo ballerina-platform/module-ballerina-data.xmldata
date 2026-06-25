@@ -866,12 +866,19 @@ class XmlTraversal {
             List<BXml> newSequence = filterEmptyValuesOrCommentOrPi(xmlSequence.getChildrenList());
 
             if (newSequence.isEmpty()) {
-                // Special case: initialize empty arrays
                 if (type.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                    // Special case: initialize empty arrays
                     RecordType recordType = (RecordType) type;
                     if (analyzerData.currentNode != null) {
                         initializeEmptySequenceArraysForEmptySequence(
                             (BMap<BString, Object>) analyzerData.currentNode, recordType);
+                    }
+                } else {
+                    Field currentField = analyzerData.currentField;
+                    if (currentField != null && DataUtils.isNonNilablePrimitive(type.getTag())
+                            && !SymbolFlags.isFlagOn(currentField.getFlags(), SymbolFlags.OPTIONAL)) {
+                        throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE,
+                                currentField.getFieldName(), currentField.getFieldType());
                     }
                 }
                 return;
