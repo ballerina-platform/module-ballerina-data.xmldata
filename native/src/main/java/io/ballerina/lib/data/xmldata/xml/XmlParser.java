@@ -474,6 +474,7 @@ class XmlParser {
 
     @SuppressWarnings("unchecked")
     private void endElement(XMLStreamReader xmlStreamReader, XmlParserData xmlParserData) {
+        Field currentField = xmlParserData.currentField;
         xmlParserData.currentField = null;
         QualifiedName elemQName = getElementName(xmlStreamReader, xmlParserData.useSemanticEquality);
         QualifiedNameMap<Boolean> siblings = xmlParserData.siblings;
@@ -482,6 +483,17 @@ class XmlParser {
         if (siblings.contains(elemQName) && !siblings.get(elemQName)) {
             siblings.put(elemQName, true);
         }
+
+        if (currentField != null) {
+            Type fieldType = TypeUtils.getReferredType(currentField.getFieldType());
+            if (DataUtils.isNonNilablePrimitive(fieldType.getTag())
+                    && !SymbolFlags.isFlagOn(currentField.getFlags(), SymbolFlags.OPTIONAL)
+                    && xmlParserData.currentNode.get(StringUtils.fromString(currentField.getFieldName())) == null) {
+                throw DiagnosticLog.error(DiagnosticErrorCode.FIELD_CANNOT_CAST_INTO_TYPE,
+                        currentField.getFieldName(), currentField.getFieldType());
+            }
+        }
+
         if (parents.isEmpty() || !parents.peek().contains(elemQName)) {
             validateModelGroupStack(xmlParserData, elemQName, false);
             return;
