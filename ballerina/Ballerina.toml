@@ -6,7 +6,7 @@ authors = ["Ballerina"]
 keywords = ["xml"]
 repository = "https://github.com/ballerina-platform/module-ballerina-data-xmldata"
 license = ["Apache-2.0"]
-distribution = "2201.14.0-20260527-050400-74f7e6bf"
+distribution = "2201.14.0"
 
 [data.xmldata]
 export = true
