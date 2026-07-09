@@ -482,6 +482,11 @@ public class DataUtils {
         return typeTag == TypeTags.STRING_TAG || typeTag == TypeTags.ANYDATA_TAG || typeTag == TypeTags.JSON_TAG;
     }
 
+    public static boolean isNonNilablePrimitive(int typeTag) {
+        return typeTag == TypeTags.STRING_TAG || typeTag == TypeTags.INT_TAG || typeTag == TypeTags.FLOAT_TAG
+                || typeTag == TypeTags.DECIMAL_TAG || typeTag == TypeTags.BOOLEAN_TAG || typeTag == TypeTags.BYTE_TAG;
+    }
+
     public static BArray createArrayValue(Type type) {
         return switch (type.getTag()) {
             case TypeTags.ARRAY_TAG -> ValueCreator.createArrayValue((ArrayType) type);

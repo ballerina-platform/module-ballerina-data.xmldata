@@ -3931,3 +3931,58 @@ function testFromXmlWithNamespaceAnnotation() returns error? {
     test:assertTrue(rec2 is error);
     test:assertEquals((<error>rec2).message(), "namespace mismatched for the type: 'RecValue2'");
 }
+
+type PersonWithRequiredLastname record {
+    string? firstname?;
+    string lastname;
+};
+
+@test:Config {
+    groups: ["fromXml", "emptyElement"]
+}
+function testParseAsTypeEmptyElementForNonNilableField() {
+    xml xmlVal = xml `<root><firstname>Julie</firstname><lastname></lastname></root>`;
+    PersonWithRequiredLastname|error result = parseAsType(xmlVal);
+    test:assertTrue(result is error, "Expected an error for empty element assigned to non-nilable field");
+    test:assertEquals((<error>result).message(), "field 'lastname' cannot be converted into the type 'string'");
+}
+
+@test:Config {
+    groups: ["fromXml", "emptyElement"]
+}
+function testParseStringEmptyElementForNonNilableField() {
+    string xmlStr = "<root><firstname>Julie</firstname><lastname></lastname></root>";
+    PersonWithRequiredLastname|error result = parseString(xmlStr);
+    test:assertTrue(result is error, "Expected an error for empty element assigned to non-nilable field");
+    test:assertEquals((<error>result).message(), "field 'lastname' cannot be converted into the type 'string'");
+}
+
+@test:Config {
+    groups: ["fromXml", "emptyElement"]
+}
+function testParseAsTypeWhitespaceOnlyElementForNonNilableField() {
+    xml xmlVal2 = xml `<root><lastname>     </lastname></root>`;
+    PersonWithRequiredLastname|error result = parseAsType(xmlVal2);
+    test:assertTrue(result is error, "Expected an error for whitespace-only element assigned to non-nilable field");
+    test:assertEquals((<error>result).message(), "field 'lastname' cannot be converted into the type 'string'");
+}
+
+@test:Config {
+    groups: ["fromXml", "emptyElement"]
+}
+function testParseStringWhitespaceOnlyElementForNonNilableField() {
+    string xmlStr = "<root><lastname>     </lastname></root>";
+    PersonWithRequiredLastname|error result = parseString(xmlStr);
+    test:assertTrue(result is error, "Expected an error for whitespace-only element assigned to non-nilable field");
+    test:assertEquals((<error>result).message(), "field 'lastname' cannot be converted into the type 'string'");
+}
+
+@test:Config {
+    groups: ["fromXml", "emptyElement"]
+}
+function testParseAsTypeEmptyElementForNilableField() returns error? {
+    xml xmlVal = xml `<root><lastname>Smith</lastname></root>`;
+    PersonWithRequiredLastname result = check parseAsType(xmlVal);
+    test:assertEquals(result.lastname, "Smith");
+    test:assertEquals(result?.firstname, ());
+}
