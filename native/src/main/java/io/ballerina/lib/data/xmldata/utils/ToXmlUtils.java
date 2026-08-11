@@ -22,7 +22,6 @@ import io.ballerina.lib.data.xmldata.utils.xsd.ChoiceInfo;
 import io.ballerina.lib.data.xmldata.utils.xsd.ElementInfo;
 import io.ballerina.lib.data.xmldata.utils.xsd.ModelGroupInfo;
 import io.ballerina.lib.data.xmldata.utils.xsd.SequenceInfo;
-import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.types.ArrayType;
 import io.ballerina.runtime.api.types.Field;
@@ -117,7 +116,7 @@ public class ToXmlUtils {
             BMap<BString, Object> jMap = null;
             try {
                 jMap = (BMap<BString, Object>) ValueUtils
-                        .convert(jsonValue, TypeCreator.createMapType(PredefinedTypes.TYPE_JSON));
+                        .convert(jsonValue, Constants.JSON_MAP_TYPE);
             } catch (BError e) {
                 return jsonValue == null ? ValueCreator.createXmlValue(Constants.EMPTY_STRING)
                         : CreateText.createText(StringUtils.fromString(jsonValue.toString()));
@@ -186,6 +185,439 @@ public class ToXmlUtils {
         return (BMap<BString, BString>) ((BMap<?, ?>) ValueCreator.createMapValue());
     }
 
+    /**
+     * String-producing twin of {@link #fromRecordToXml}. Mirrors the tree-building
+     * conversion step by step but composes the XML text directly, so peak memory is
+     * proportional to the produced text instead of the materialized {@code BXml} tree.
+     * Element open tags (names, attributes, namespace declarations, escaping) are
+     * produced by serializing an empty element through the exact same code path the
+     * tree conversion uses, so the emitted markup stays faithful to {@code toXml}.
+     */
+    public static Object fromRecordToXmlString(Object jsonValue, BMap<BString, Object> options, BTypedesc typed) {
+        try {
+            Type type = typed.getDescribingType();
+            Type referredType = TypeUtils.getReferredType(type);
+            Object rootTag = options.get(StringUtils.fromString(Constants.ROOT_TAG));
+            BMap<BString, BString> allNamespaces = getEmptyStringMap();
+            IdentityHashMap<Type, TypeMetadata> typeMetadataCache = new IdentityHashMap<>();
+            BString rootTagBstring =
+                    StringUtils.fromString(rootTag == null ? Constants.EMPTY_STRING : rootTag.toString());
+
+            if (!isSingleRecordMember(jsonValue)) {
+                BMap<BString, BString> rootDeclarations = getNamespacesMap(jsonValue, options, getEmptyStringMap());
+                addNamespaces(allNamespaces, rootDeclarations);
+                StringBuilder out = new StringBuilder();
+                traverseRecordAndGenerateXmlString(out, jsonValue, allNamespaces,
+                        getEmptyStringMap(), options, null, type, false, false, null, null, typeMetadataCache,
+                        rootDeclarations);
+                insertElementAround(out, 0, elementShellString(
+                        rootTag == null ? StringUtils.fromString(Constants.ROOT) : rootTagBstring,
+                        allNamespaces, options,
+                        getAttributesMap(jsonValue, options, allNamespaces, getEmptyStringMap()),
+                        getEmptyStringMap(), getEmptyStringMap()));
+                return StringUtils.fromString(out.toString());
+            }
+
+            BMap<BString, Object> jMap = null;
+            try {
+                jMap = (BMap<BString, Object>) ValueUtils
+                        .convert(jsonValue, Constants.JSON_MAP_TYPE);
+            } catch (BError e) {
+                return jsonValue == null ? StringUtils.fromString(Constants.EMPTY_STRING)
+                        : StringUtils.fromString(
+                                CreateText.createText(StringUtils.fromString(jsonValue.toString())).toString());
+            }
+
+            if (jMap.isEmpty()) {
+                return StringUtils.fromString(Constants.EMPTY_STRING);
+            }
+
+            BString key = jMap.getKeys()[0];
+            String jsonKey = key.getValue();
+            TypeMetadata typeMetadata = getTypeMetadata(typeMetadataCache, referredType);
+            HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap = typeMetadata.elementNamesMap;
+            ArrayList<String> sequenceFieldNames = typeMetadata.sequenceFieldNames;
+            HashMap<String, ModelGroupInfo> modelGroupRelatedFieldNames = typeMetadata.modelGroupRelatedFieldNames;
+            HashMap<String, ElementInfo> elementInfoRelatedFieldNames = typeMetadata.elementInfoRelatedFieldNames;
+
+            boolean isKeyContainsPrefix = jsonKey.contains(Constants.COLON);
+            Object value = ToArray.toArray(jMap).getValues()[0];
+            addNamespaces(allNamespaces, getNamespacesMap(value, options, getEmptyStringMap()));
+            String localJsonKeyPart = getElementLocalKeyPart(isKeyContainsPrefix, jsonKey);
+            DataUtils.FieldAnnotationValue jsonKeyFieldAnnotation = getElementNamesMapKey(
+                    isKeyContainsPrefix, jsonKey, allNamespaces, localJsonKeyPart);
+
+            String recordKey = elementNamesMap.getOrDefault(jsonKeyFieldAnnotation, localJsonKeyPart);
+            boolean isSequenceField = sequenceFieldNames.contains(recordKey);
+            boolean isContainsModelGroup = modelGroupRelatedFieldNames.containsKey(recordKey);
+            ModelGroupInfo parentModelGroupInfo = modelGroupRelatedFieldNames.get(recordKey);
+            ElementInfo elementInfo = elementInfoRelatedFieldNames.get(recordKey);
+
+            if (value instanceof BArray) {
+                StringBuilder out = new StringBuilder();
+                traverseRecordAndGenerateXmlString(out, value, allNamespaces, getEmptyStringMap(),
+                        options, key, getChildElementType(referredType, recordKey), isSequenceField, isSequenceField,
+                        parentModelGroupInfo, elementInfo, typeMetadataCache,
+                        getNamespacesMap(value, options, getEmptyStringMap()));
+                insertElementAround(out, 0, elementShellString(rootTag == null
+                                ? StringUtils.fromString(Constants.ROOT) : rootTagBstring,
+                        allNamespaces, options, getAttributesMap(value, options, allNamespaces, getEmptyStringMap()),
+                        getEmptyStringMap(), getEmptyStringMap()));
+                return StringUtils.fromString(out.toString());
+            }
+
+            if (key.equals(options.get(Constants.TEXT_FIELD_NAME))) {
+                if (rootTagBstring.equals(StringUtils.fromString(Constants.EMPTY_STRING))) {
+                    rootTagBstring = StringUtils.fromString(Constants.ROOT);
+                }
+                return StringUtils.fromString(spliceChildrenIntoElement(
+                        CreateElement.createElement(rootTagBstring, getEmptyStringMap(),
+                                ValueCreator.createXmlValue(Constants.EMPTY_STRING)).toString(),
+                        textString(value.toString())));
+            }
+
+            StringBuilder out = new StringBuilder();
+            traverseRecordAndGenerateXmlString(out, value, allNamespaces, getEmptyStringMap(),
+                    options, null, getChildElementType(referredType, recordKey), isSequenceField,
+                    isSequenceField, parentModelGroupInfo, elementInfo, typeMetadataCache,
+                    getNamespacesMap(value, options, getEmptyStringMap()));
+            String shell = elementShellString(key, allNamespaces, options,
+                    getAttributesMap(value, options, allNamespaces, getEmptyStringMap()), getEmptyStringMap(),
+                    getEmptyStringMap());
+            if (!isContainsModelGroup) {
+                insertElementAround(out, 0, shell);
+            }
+            if (rootTag != null) {
+                insertElementAround(out, 0, CreateElement.createElement(rootTagBstring, getEmptyStringMap(),
+                        ValueCreator.createXmlValue(Constants.EMPTY_STRING)).toString());
+            }
+            return StringUtils.fromString(out.toString());
+        } catch (Exception e) {
+            return DiagnosticLog.createXmlError(e.getMessage());
+        }
+    }
+
+    private static void traverseRecordAndGenerateXmlString(StringBuilder out, Object jNode,
+            BMap<BString, BString> allNamespaces,
+            BMap<BString, BString> parentNamespaces, BMap<BString, Object> options, Object keyObj, Type type,
+            boolean isParentSequence, boolean isParentSequenceArray,
+            ModelGroupInfo parentModelGroupInfo, ElementInfo parentElementInfo,
+            IdentityHashMap<Type, TypeMetadata> typeMetadataCache,
+            BMap<BString, BString> rootDeclarations) throws BError {
+        BMap<BString, BString> namespacesOfElem;
+        String attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
+        Type referredType = TypeUtils.getReferredType(type);
+        TypeMetadata typeMetadata = getTypeMetadata(typeMetadataCache, referredType);
+        HashMap<DataUtils.FieldAnnotationValue, String> elementNamesMap = typeMetadata.elementNamesMap;
+        HashMap<String, ModelGroupInfo> modelGroupRelatedFieldNames = typeMetadata.modelGroupRelatedFieldNames;
+        HashMap<String, ElementInfo> elementInfoRelatedFieldNames = typeMetadata.elementInfoRelatedFieldNames;
+        ArrayList<String> sequenceFieldNames = typeMetadata.sequenceFieldNames;
+
+        if (jNode instanceof BMap jMap) {
+            BMap<BString, Object> mapNode = (BMap<BString, Object>) jMap;
+            BString[] orderedRecordKeysIfXsdSequencePresent = DataUtils.getOrderedRecordKeysIfXsdSequencePresent(
+                    mapNode, isParentSequence ? typeMetadata.xsdSequencePriorityOrderWhenInSequence
+                            : DataUtils.getXsdSequencePriorityOrder(referredType, false), referredType);
+
+            if (parentModelGroupInfo instanceof ChoiceInfo) {
+                validateChoiceFields(parentModelGroupInfo, jMap, elementInfoRelatedFieldNames,
+                        elementNamesMap, options, parentNamespaces);
+            }
+
+            for (BString k : orderedRecordKeysIfXsdSequencePresent) {
+                Object value = mapNode.get(k);
+                String jsonKey = k.getValue().trim();
+                boolean isKeyContainsPrefix = jsonKey.contains(Constants.COLON);
+                namespacesOfElem = getNamespacesMap(value, options, parentNamespaces);
+                String localJsonKeyPart = getElementLocalKeyPart(isKeyContainsPrefix, jsonKey);
+                DataUtils.FieldAnnotationValue jsonKeyFieldAnnotation = getElementNamesMapKey(
+                        isKeyContainsPrefix, jsonKey, namespacesOfElem, localJsonKeyPart);
+
+                String recordKey = elementNamesMap.getOrDefault(jsonKeyFieldAnnotation, localJsonKeyPart);
+                boolean isContainsModelGroup = modelGroupRelatedFieldNames.containsKey(recordKey);
+                ModelGroupInfo modelGroupInfo = modelGroupRelatedFieldNames.get(recordKey);
+                ElementInfo elementInfo = elementInfoRelatedFieldNames.get(recordKey);
+                boolean isSequenceField = sequenceFieldNames.contains(recordKey);
+
+                if (jsonKey.startsWith(attributePrefix)) {
+                    continue;
+                }
+
+                if (jsonKey.equals(options.get(Constants.TEXT_FIELD_NAME).toString())) {
+                    out.append(textString(value.toString()));
+                } else {
+                    addNamespaces(allNamespaces, namespacesOfElem);
+                    if (value instanceof BArray) {
+                        BString keyToPass = isAnyArrayFieldKey(referredType, recordKey, value)
+                                ? StringUtils.fromString("@Any:" + k.getValue()) : k;
+                        traverseRecordAndGenerateXmlString(out, value, allNamespaces, namespacesOfElem,
+                                options, keyToPass, getChildElementType(referredType, recordKey),
+                                isSequenceField, isSequenceField, modelGroupInfo, elementInfo, typeMetadataCache,
+                                rootDeclarations);
+                    } else {
+                        BString elementKey = resolveAnyAnnotatedElementKey(referredType, recordKey, k);
+                        int mark = out.length();
+                        traverseRecordAndGenerateXmlString(out, value, allNamespaces, namespacesOfElem,
+                                options, null, getChildElementType(referredType, recordKey), isSequenceField,
+                                isSequenceField, modelGroupInfo, elementInfo, typeMetadataCache, rootDeclarations);
+                        String shell = elementShellString(elementKey, allNamespaces, options,
+                                getAttributesMap(value, options, allNamespaces, parentNamespaces), parentNamespaces,
+                                rootDeclarations);
+                        if (!isContainsModelGroup || isParentSequenceArray) {
+                            insertElementAround(out, mark, shell);
+                        }
+                    }
+                }
+            }
+        } else if (jNode instanceof BArray arrayNode) {
+            int size = arrayNode.size();
+            if (isParentSequenceArray && parentModelGroupInfo != null && parentModelGroupInfo instanceof SequenceInfo) {
+                if (size < parentModelGroupInfo.getMinOccurs()) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_LESS_THAN_MIN_REQUIRED_TIMES,
+                            parentModelGroupInfo.getFieldName());
+                }
+
+                if (size > parentModelGroupInfo.getMaxOccurs()) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_MORE_THAN_MAX_ALLOWED_TIMES,
+                            parentModelGroupInfo.getFieldName());
+                }
+            } else {
+                if (parentElementInfo != null && size > parentElementInfo.maxOccurs) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_MORE_THAN_MAX_ALLOWED_TIMES,
+                            parentElementInfo.fieldName);
+                }
+
+                if (parentElementInfo != null && size < parentElementInfo.minOccurs) {
+                    throw DiagnosticLog.error(DiagnosticErrorCode.ELEMENT_OCCURS_LESS_THAN_MIN_REQUIRED_TIMES,
+                            parentElementInfo.fieldName);
+                }
+            }
+
+            for (Object i : arrayNode.getValues()) {
+                if (i == null) {
+                    continue;
+                }
+                String arrayEntryTagKey = Constants.EMPTY_STRING;
+                if (keyObj instanceof BString key) {
+                    arrayEntryTagKey = key.getValue();
+                } else if (!options.get(Constants.ARRAY_ENTRY_TAG).toString().isEmpty()) {
+                    arrayEntryTagKey = options.get(Constants.ARRAY_ENTRY_TAG).toString();
+                }
+
+                namespacesOfElem = getNamespacesMap(i, options, parentNamespaces);
+                addNamespaces(allNamespaces, namespacesOfElem);
+                int mark = out.length();
+                String shell;
+                if (options.get(Constants.ARRAY_ENTRY_TAG).toString().isEmpty()) {
+                    Type childType = getChildElementType(referredType, null);
+                    traverseRecordAndGenerateXmlString(out, i, allNamespaces, namespacesOfElem,
+                            options, keyObj, childType,
+                            isParentSequence, isParentSequenceArray, parentModelGroupInfo, parentElementInfo,
+                            typeMetadataCache, rootDeclarations);
+                    String elementTagKey = arrayEntryTagKey;
+                    boolean isAnyAnnotatedField = keyObj instanceof BString fieldNameBString &&
+                            fieldNameBString.getValue().startsWith("@Any:");
+
+                    if (isAnyAnnotatedField && i instanceof BMap) {
+                        Type elementValueType = TypeUtils.getType(i);
+                        Type referredElementType = TypeUtils.getReferredType(elementValueType);
+                        if (referredElementType instanceof RecordType recordValueType) {
+                            elementTagKey = getRecordTypeName(recordValueType);
+                        } else {
+                            // Fallback to declared child type if runtime type is not a RecordType
+                            Type referredChildType = TypeUtils.getReferredType(childType);
+                            if (referredChildType instanceof RecordType recordChildType) {
+                                elementTagKey = getRecordTypeName(recordChildType);
+                            }
+                        }
+                    }
+                    shell = elementShellString(StringUtils.fromString(elementTagKey),
+                            allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces),
+                            parentNamespaces, rootDeclarations);
+                } else {
+                    traverseRecordAndGenerateXmlString(out, i, allNamespaces, namespacesOfElem,
+                            options, null, getChildElementType(referredType, null),
+                            isParentSequence, isParentSequenceArray, parentModelGroupInfo, parentElementInfo,
+                            typeMetadataCache, rootDeclarations);
+                    shell = elementShellString(StringUtils.fromString(arrayEntryTagKey),
+                            allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces),
+                            parentNamespaces, rootDeclarations);
+                }
+                if (!isParentSequenceArray) {
+                    insertElementAround(out, mark, shell);
+                }
+            }
+        } else {
+            out.append(textString(StringUtils.getStringValue(jNode)));
+        }
+    }
+
+    /**
+     * Builds an element's serialized "shell" — the element with no children — through the
+     * exact name/attribute/namespace logic of {@link #getElementFromRecordMember}. The
+     * already-serialized children are later placed inside it by
+     * {@link #insertElementAround}.
+     */
+    private static String elementShellString(BString name, BMap<BString, BString> namespaces,
+            BMap<BString, Object> options, BMap<BString, BString> attributes,
+            BMap<BString, BString> nearestScopeNamespaces, BMap<BString, BString> rootScopeNamespaces) {
+        // Fast path for the common case: no attributes, no prefix, plain name, no name
+        // rewriting configured. The full path builds an XML element value and runs the
+        // serializer, which allocates heavily (element, attribute map, type objects) —
+        // for an attribute-less simple name the serialized form is fixed.
+        String nameStr = name.getValue();
+        if (attributes.isEmpty() && isPlainElementName(nameStr)
+                && options.get(Constants.USER_ATTRIBUTE_PREFIX).toString().isEmpty()
+                && !nameStr.startsWith(options.get(Constants.ATTRIBUTE_PREFIX).toString())) {
+            return "<" + nameStr + "/>";
+        }
+        BXml emptyElement = getElementFromRecordMember(name, ValueCreator.createXmlValue(Constants.EMPTY_STRING),
+                namespaces, options, attributes);
+        return serializeWithinScope(emptyElement, nearestScopeNamespaces, rootScopeNamespaces);
+    }
+
+    private static boolean isPlainElementName(String name) {
+        if (name.isEmpty()) {
+            return false;
+        }
+        char first = name.charAt(0);
+        if (!(Character.isLetter(first) || first == '_')) {
+            return false;
+        }
+        for (int i = 1; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (!(Character.isLetterOrDigit(c) || c == '_' || c == '.' || c == '-')) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Wraps the builder content from {@code mark} onward in the given element shell,
+     * inserting the open tag at {@code mark} and appending the close tag — so children
+     * are written once into a single shared builder instead of being copied at every
+     * nesting level.
+     */
+    private static void insertElementAround(StringBuilder out, int mark, String shellString) {
+        if (out.length() == mark) {
+            out.append(shellString);
+            return;
+        }
+        if (shellString.endsWith("/>")) {
+            int nameEnd = 1;
+            while (nameEnd < shellString.length()) {
+                char c = shellString.charAt(nameEnd);
+                if (c == ' ' || c == '/' || c == '>' || c == '\t' || c == '\n' || c == '\r') {
+                    break;
+                }
+                nameEnd++;
+            }
+            String qualifiedName = shellString.substring(1, nameEnd);
+            out.insert(mark, ">").insert(mark, shellString.substring(0, shellString.length() - 2));
+            out.append("</").append(qualifiedName).append(">");
+            return;
+        }
+        // <tag ...></tag> form: '<' never occurs unescaped inside attribute values, so the
+        // first "></" is the boundary between the open and close tags.
+        int boundary = shellString.indexOf("></");
+        if (boundary == -1) {
+            throw new IllegalStateException("unexpected empty element serialization: " + shellString);
+        }
+        out.insert(mark, shellString.substring(0, boundary + 1));
+        out.append(shellString.substring(boundary + 1));
+    }
+
+    /**
+     * Serializes an element as it would appear under ancestors that declare the given
+     * namespaces: the element is placed inside a synthetic wrapper element carrying the
+     * in-scope declarations, so the runtime serializer itself suppresses duplicate xmlns
+     * attributes — exactly as it does when a whole tree is serialized — and the wrapper
+     * tags are then stripped. The nearest scope wins over the root element's declarations.
+     */
+    private static String serializeWithinScope(BXml element, BMap<BString, BString> nearestScope,
+            BMap<BString, BString> rootScope) {
+        if (nearestScope.isEmpty() && rootScope.isEmpty()) {
+            return element.toString();
+        }
+        BMap<BString, BString> scopeDeclarations = getEmptyStringMap();
+        putScopeDeclarations(scopeDeclarations, rootScope);
+        putScopeDeclarations(scopeDeclarations, nearestScope);
+        BXml wrapper = CreateElement.createElement(StringUtils.fromString("w"), scopeDeclarations, element);
+        String serialized = wrapper.toString();
+        int openTagEnd = serialized.indexOf('>');
+        return serialized.substring(openTagEnd + 1, serialized.length() - "</w>".length());
+    }
+
+    /**
+     * Copies namespace declarations into an attribute map for element creation. The
+     * default namespace is keyed as {@code {xmlns-uri}} (empty local part) in scope maps
+     * and must be stored under the plain {@code xmlns} attribute name, as
+     * {@link #getElementFromRecordMember} does for regular elements.
+     */
+    private static void putScopeDeclarations(BMap<BString, BString> target, BMap<BString, BString> scope) {
+        String xmlnsNameUri = getXmlnsNameUrI();
+        for (Map.Entry<BString, BString> declaration : scope.entrySet()) {
+            BString declarationKey = declaration.getKey();
+            target.put(declarationKey.getValue().equals(xmlnsNameUri) ? XMLNS : declarationKey,
+                    declaration.getValue());
+        }
+    }
+
+    /**
+     * Serializes text exactly as it appears inside an element in a serialized tree
+     * (standalone text serialization escapes additional characters, e.g. {@code >}),
+     * by wrapping it in a single-character element and stripping the wrapper tags.
+     */
+    private static String textString(String textValue) {
+        if (textValue.isEmpty()) {
+            return Constants.EMPTY_STRING;
+        }
+        // Fast path: text without characters the serializer escapes (or may escape) is
+        // emitted verbatim. Anything else takes the exact serializer round trip.
+        boolean needsEscaping = false;
+        for (int i = 0; i < textValue.length(); i++) {
+            char c = textValue.charAt(i);
+            if (c == '&' || c == '<' || c == '>' || c == '\r' || c == '\n' || c == '"' || c == '\'') {
+                needsEscaping = true;
+                break;
+            }
+        }
+        if (!needsEscaping) {
+            return textValue;
+        }
+        String wrapped = CreateElement.createElement(StringUtils.fromString("x"), getEmptyStringMap(),
+                CreateText.createText(StringUtils.fromString(textValue))).toString();
+        return wrapped.substring(3, wrapped.length() - 4);
+    }
+
+    private static String spliceChildrenIntoElement(String emptyElementString, String childrenString) {
+        if (childrenString.isEmpty()) {
+            return emptyElementString;
+        }
+        if (emptyElementString.endsWith("/>")) {
+            int nameEnd = 1;
+            while (nameEnd < emptyElementString.length()) {
+                char c = emptyElementString.charAt(nameEnd);
+                if (c == ' ' || c == '/' || c == '>' || c == '\t' || c == '\n' || c == '\r') {
+                    break;
+                }
+                nameEnd++;
+            }
+            String qualifiedName = emptyElementString.substring(1, nameEnd);
+            return emptyElementString.substring(0, emptyElementString.length() - 2) + ">" + childrenString
+                    + "</" + qualifiedName + ">";
+        }
+        // <tag ...></tag> form: '<' never occurs unescaped inside attribute values, so the
+        // first "></" is the boundary between the open and close tags.
+        int boundary = emptyElementString.indexOf("></");
+        if (boundary == -1) {
+            throw new IllegalStateException("unexpected empty element serialization: " + emptyElementString);
+        }
+        return emptyElementString.substring(0, boundary + 1) + childrenString
+                + emptyElementString.substring(boundary + 1);
+    }
+
     public static BXml traverseRecordAndGenerateXml(Object jNode, BMap<BString, BString> allNamespaces,
             BMap<BString, BString> parentNamespaces, BMap<BString, Object> options, Object keyObj, Type type,
             boolean isParentSequence, boolean isParentSequenceArray,
@@ -250,93 +682,16 @@ public class ToXmlUtils {
                 } else {
                     addNamespaces(allNamespaces, namespacesOfElem);
                     if (value instanceof BArray) {
-                        boolean isAnyArrayField = false;
-                        if (DataUtils.isFieldAnnotatedWithAny(referredType, recordKey)) {
-                            Type childElementType = getChildElementType(referredType, recordKey);
-                            Type referredChildType = TypeUtils.getReferredType(childElementType);
-                            if (referredChildType.getTag() == TypeTags.ARRAY_TAG) {
-                                ArrayType arrayType = (ArrayType) referredChildType;
-                                Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
-                                if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
-                                    isAnyArrayField = true;
-                                } else if (elementType.getTag() == TypeTags.ANYDATA_TAG) {
-                                    BArray array = (BArray) value;
-                                    for (int i = 0; i < array.size(); i++) {
-                                        Object element = array.get(i);
-                                        if (element != null) {
-                                            Type actualType = TypeUtils.getType(element);
-                                            if (TypeUtils.getReferredType(actualType).getTag() ==
-                                                    TypeTags.RECORD_TYPE_TAG) {
-                                                isAnyArrayField = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                            } else if (referredChildType.getTag() == TypeTags.UNION_TAG) {
-                                UnionType unionType = (UnionType) referredChildType;
-                                for (Type memberType : unionType.getMemberTypes()) {
-                                    Type referredMemberType = TypeUtils.getReferredType(memberType);
-                                    if (referredMemberType.getTag() == TypeTags.ARRAY_TAG) {
-                                        ArrayType arrayType = (ArrayType) referredMemberType;
-                                        Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
-                                        if (elementType.getTag() == TypeTags.ANYDATA_TAG &&
-                                                TypeUtils.getType(value).getTag() == TypeTags.ARRAY_TAG) {
-                                            BArray array = (BArray) value;
-                                            if (array.size() > 0) {
-                                                for (int i = 0; i < array.size(); i++) {
-                                                    Object element = array.get(i);
-                                                    if (element != null) {
-                                                        Type actualType = TypeUtils.getType(element);
-                                                        if (TypeUtils.getReferredType(actualType).getTag() ==
-                                                                TypeTags.RECORD_TYPE_TAG) {
-                                                            isAnyArrayField = true;
-                                                            break;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        BString keyToPass = isAnyArrayField ? 
-                                StringUtils.fromString("@Any:" + k.getValue()) : k;
-                        
+                        BString keyToPass = isAnyArrayFieldKey(referredType, recordKey, value)
+                                ? StringUtils.fromString("@Any:" + k.getValue()) : k;
+
                         childElement = traverseRecordAndGenerateXml(value, allNamespaces, namespacesOfElem, options,
                                 keyToPass,
                                 getChildElementType(referredType, recordKey),
                                 isSequenceField, isSequenceField, modelGroupInfo, elementInfo, typeMetadataCache);
                         childParts.add(childElement);
                     } else {
-                        BString elementKey = k;
-                        if (referredType instanceof RecordType recordType &&
-                            DataUtils.isFieldAnnotatedWithAny(recordType, recordKey)) {
-                            Type valueType = TypeUtils.getType(value);
-                            Type referredValueType = TypeUtils.getReferredType(valueType);
-                            RecordType recordValueType = null;
-
-                            Type childType = getChildElementType(referredType, recordKey);
-                                Type referredChildType = TypeUtils.getReferredType(childType);
-                                if (referredChildType instanceof RecordType) {
-                                    recordValueType = (RecordType) referredChildType;
-                                } else if (referredChildType instanceof UnionType unionType) {
-                                    for (Type memberType : unionType.getMemberTypes()) {
-                                        Type referredMemberType = TypeUtils.getReferredType(memberType);
-                                        if (referredMemberType instanceof RecordType) {
-                                            recordValueType = (RecordType) referredMemberType;
-                                            break;
-                                        }
-                                    }
-                                }
-
-                            if (recordValueType != null) {
-                                String typeName = getRecordTypeName(recordValueType);
-                                elementKey = StringUtils.fromString(typeName);
-                            }
-                        }
+                        BString elementKey = resolveAnyAnnotatedElementKey(referredType, recordKey, k);
                         childElement = getElementFromRecordMember(elementKey, traverseRecordAndGenerateXml(
                                 value, allNamespaces, namespacesOfElem, options, null, getChildElementType(
                             referredType, recordKey), isSequenceField, isSequenceField, modelGroupInfo, elementInfo,
@@ -429,6 +784,86 @@ public class ToXmlUtils {
             xNode = Concat.concat(childParts.toArray());
         }
         return xNode;
+    }
+
+    private static boolean isAnyArrayFieldKey(Type referredType, String recordKey, Object value) {
+        if (!DataUtils.isFieldAnnotatedWithAny(referredType, recordKey)) {
+            return false;
+        }
+        Type childElementType = getChildElementType(referredType, recordKey);
+        Type referredChildType = TypeUtils.getReferredType(childElementType);
+        if (referredChildType.getTag() == TypeTags.ARRAY_TAG) {
+            ArrayType arrayType = (ArrayType) referredChildType;
+            Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
+            if (elementType.getTag() == TypeTags.RECORD_TYPE_TAG) {
+                return true;
+            } else if (elementType.getTag() == TypeTags.ANYDATA_TAG) {
+                BArray array = (BArray) value;
+                for (int i = 0; i < array.size(); i++) {
+                    Object element = array.get(i);
+                    if (element != null) {
+                        Type actualType = TypeUtils.getType(element);
+                        if (TypeUtils.getReferredType(actualType).getTag() == TypeTags.RECORD_TYPE_TAG) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        } else if (referredChildType.getTag() == TypeTags.UNION_TAG) {
+            UnionType unionType = (UnionType) referredChildType;
+            for (Type memberType : unionType.getMemberTypes()) {
+                Type referredMemberType = TypeUtils.getReferredType(memberType);
+                if (referredMemberType.getTag() == TypeTags.ARRAY_TAG) {
+                    ArrayType arrayType = (ArrayType) referredMemberType;
+                    Type elementType = TypeUtils.getReferredType(arrayType.getElementType());
+                    if (elementType.getTag() == TypeTags.ANYDATA_TAG &&
+                            TypeUtils.getType(value).getTag() == TypeTags.ARRAY_TAG) {
+                        BArray array = (BArray) value;
+                        if (array.size() > 0) {
+                            for (int i = 0; i < array.size(); i++) {
+                                Object element = array.get(i);
+                                if (element != null) {
+                                    Type actualType = TypeUtils.getType(element);
+                                    if (TypeUtils.getReferredType(actualType).getTag() == TypeTags.RECORD_TYPE_TAG) {
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static BString resolveAnyAnnotatedElementKey(Type referredType, String recordKey, BString k) {
+        BString elementKey = k;
+        if (referredType instanceof RecordType recordType &&
+                DataUtils.isFieldAnnotatedWithAny(recordType, recordKey)) {
+            RecordType recordValueType = null;
+
+            Type childType = getChildElementType(referredType, recordKey);
+            Type referredChildType = TypeUtils.getReferredType(childType);
+            if (referredChildType instanceof RecordType) {
+                recordValueType = (RecordType) referredChildType;
+            } else if (referredChildType instanceof UnionType unionType) {
+                for (Type memberType : unionType.getMemberTypes()) {
+                    Type referredMemberType = TypeUtils.getReferredType(memberType);
+                    if (referredMemberType instanceof RecordType) {
+                        recordValueType = (RecordType) referredMemberType;
+                        break;
+                    }
+                }
+            }
+
+            if (recordValueType != null) {
+                String typeName = getRecordTypeName(recordValueType);
+                elementKey = StringUtils.fromString(typeName);
+            }
+        }
+        return elementKey;
     }
 
     private static void validateChoiceFields(ModelGroupInfo parentModelGroupInfo, BMap jMap,
@@ -607,6 +1042,10 @@ public class ToXmlUtils {
 
     public static boolean isSingleRecordMember(Object node) {
         if (node instanceof BArray arrayNode) {
+            // Intentionally compares the declared element type without resolving type
+            // references, matching the pre-optimization behavior exactly: previously a
+            // named-json-alias array failed the JSON_TAG check and then threw inside
+            // ValueUtils.convert, which also resulted in true.
             return arrayNode.getElementType().getTag() != TypeTags.JSON_TAG;
         }
 
@@ -714,7 +1153,7 @@ public class ToXmlUtils {
         }
         try {
             BMap<BString, Object> attr = (BMap<BString, Object>) ValueUtils.convert(
-                    jsonTree, TypeCreator.createMapType(PredefinedTypes.TYPE_JSON));
+                    jsonTree, Constants.JSON_MAP_TYPE);
 
             String attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
             for (Map.Entry<BString, Object> entry : attr.entrySet()) {
@@ -788,7 +1227,7 @@ public class ToXmlUtils {
             return namespaces;
         }
         try {
-            Object jsonTreeObject = ValueUtils.convert(jsonTree, TypeCreator.createMapType(PredefinedTypes.TYPE_JSON));
+            Object jsonTreeObject = ValueUtils.convert(jsonTree, Constants.JSON_MAP_TYPE);
             BMap<BString, Object> attr = (BMap<BString, Object>) jsonTreeObject;
             String attributePrefix = options.get(Constants.ATTRIBUTE_PREFIX).toString();
 
