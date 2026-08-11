@@ -37,6 +37,11 @@ type TextFieldRecord record {|
     string \#content;
 |};
 
+# Asserts that `toXmlString` produces exactly the text `toXml(...).toString()` produces
+# for the given value.
+#
+# + value - The value to convert through both APIs
+# + return - An error if either conversion fails or the outputs differ
 isolated function assertToXmlStringParity(map<anydata> value) returns error? {
     xml treeResult = check toXml(value);
     string stringResult = check toXmlString(value);

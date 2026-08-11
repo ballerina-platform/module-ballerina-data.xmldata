@@ -83,6 +83,14 @@ public class ToXmlUtils {
         }
     }
 
+    /**
+     * Returns the annotation-derived metadata for a type, computing it on first use and
+     * reusing it for every subsequent value of the same type within one conversion.
+     *
+     * @param cache        the per-conversion metadata cache, keyed by type identity
+     * @param referredType the referred (dereferenced) type to look up
+     * @return the cached or freshly computed metadata for the type
+     */
     private static TypeMetadata getTypeMetadata(IdentityHashMap<Type, TypeMetadata> cache, Type referredType) {
         TypeMetadata metadata = cache.get(referredType);
         if (metadata == null) {
@@ -92,6 +100,15 @@ public class ToXmlUtils {
         return metadata;
     }
 
+    /**
+     * Converts a record or map value to an {@code xml} value. This is the native
+     * implementation behind {@code xmldata:toXml}.
+     *
+     * @param jsonValue the value to convert, already pre-processed by {@code getModifiedRecord}
+     * @param options   the JSON-to-XML conversion options
+     * @param typed     the typedesc of the original input, used to read annotations
+     * @return the converted {@code BXml} value, or a {@code BError} on failure
+     */
     public static Object fromRecordToXml(Object jsonValue, BMap<BString, Object> options, BTypedesc typed) {
         try {
             Type type = typed.getDescribingType();
@@ -297,6 +314,27 @@ public class ToXmlUtils {
         }
     }
 
+    /**
+     * String-producing twin of {@link #traverseRecordAndGenerateXml}: walks the value in
+     * the same order and writes the children's markup directly into the shared builder.
+     * Elements are wrapped in place via {@link #insertElementAround}, so no intermediate
+     * {@code BXml} nodes or per-level string copies are created.
+     *
+     * @param out               the shared builder the markup is written into
+     * @param jNode             the value whose children are being converted
+     * @param allNamespaces     all namespace declarations seen so far (mutated)
+     * @param parentNamespaces  namespace declarations in scope from the parent chain
+     * @param options           the JSON-to-XML conversion options
+     * @param keyObj            the field key for array traversals, or {@code null}
+     * @param type              the declared type of {@code jNode}
+     * @param isParentSequence  whether the parent field carries an XSD sequence annotation
+     * @param isParentSequenceArray whether the parent is a sequence-annotated array
+     * @param parentModelGroupInfo  the parent's XSD model group metadata, if any
+     * @param parentElementInfo the parent's XSD element metadata, if any
+     * @param typeMetadataCache the per-conversion type metadata cache
+     * @param rootDeclarations  namespace declarations emitted on the root element
+     * @throws BError on XSD occurrence violations
+     */
     private static void traverseRecordAndGenerateXmlString(StringBuilder out, Object jNode,
             BMap<BString, BString> allNamespaces,
             BMap<BString, BString> parentNamespaces, BMap<BString, Object> options, Object keyObj, Type type,
@@ -476,6 +514,14 @@ public class ToXmlUtils {
         return serializeWithinScope(emptyElement, nearestScopeNamespaces, rootScopeNamespaces);
     }
 
+    /**
+     * Reports whether an element name is emitted verbatim by the serializer: a letter or
+     * underscore followed by letters, digits, {@code _}, {@code .} or {@code -}. Names
+     * outside this conservative subset take the full element-construction path.
+     *
+     * @param name the element name to check
+     * @return true if the serialized form of the name is the name itself
+     */
     private static boolean isPlainElementName(String name) {
         if (name.isEmpty()) {
             return false;
@@ -591,6 +637,14 @@ public class ToXmlUtils {
         return wrapped.substring(3, wrapped.length() - 4);
     }
 
+    /**
+     * Places already-serialized children inside a serialized empty element, handling both
+     * the self-closing ({@code <tag/>}) and expanded ({@code <tag></tag>}) forms.
+     *
+     * @param emptyElementString the serialized element with no children
+     * @param childrenString     the serialized children markup
+     * @return the serialized element containing the children
+     */
     private static String spliceChildrenIntoElement(String emptyElementString, String childrenString) {
         if (childrenString.isEmpty()) {
             return emptyElementString;
@@ -618,6 +672,23 @@ public class ToXmlUtils {
                 + emptyElementString.substring(boundary + 1);
     }
 
+    /**
+     * Converts a value's children to XML nodes. Kept for API compatibility: delegates to
+     * the cached variant with a fresh per-call type metadata cache.
+     *
+     * @param jNode             the value whose children are being converted
+     * @param allNamespaces     all namespace declarations seen so far (mutated)
+     * @param parentNamespaces  namespace declarations in scope from the parent chain
+     * @param options           the JSON-to-XML conversion options
+     * @param keyObj            the field key for array traversals, or {@code null}
+     * @param type              the declared type of {@code jNode}
+     * @param isParentSequence  whether the parent field carries an XSD sequence annotation
+     * @param isParentSequenceArray whether the parent is a sequence-annotated array
+     * @param parentModelGroupInfo  the parent's XSD model group metadata, if any
+     * @param parentElementInfo the parent's XSD element metadata, if any
+     * @return the children of the element being built, as an XML sequence
+     * @throws BError on XSD occurrence violations
+     */
     public static BXml traverseRecordAndGenerateXml(Object jNode, BMap<BString, BString> allNamespaces,
             BMap<BString, BString> parentNamespaces, BMap<BString, Object> options, Object keyObj, Type type,
             boolean isParentSequence, boolean isParentSequenceArray,
@@ -786,6 +857,16 @@ public class ToXmlUtils {
         return xNode;
     }
 
+    /**
+     * Reports whether an array-valued field annotated with {@code @xmldata:Any} holds
+     * record elements, in which case the array traversal names each element after its
+     * runtime record type instead of the field key.
+     *
+     * @param referredType the record type owning the field
+     * @param recordKey    the field name
+     * @param value        the array value of the field
+     * @return true if the field is {@code @Any}-annotated and holds record elements
+     */
     private static boolean isAnyArrayFieldKey(Type referredType, String recordKey, Object value) {
         if (!DataUtils.isFieldAnnotatedWithAny(referredType, recordKey)) {
             return false;
@@ -838,6 +919,16 @@ public class ToXmlUtils {
         return false;
     }
 
+    /**
+     * Resolves the element name for a field annotated with {@code @xmldata:Any}: the name
+     * of the record type of the value (or of the first record member of a union field
+     * type), falling back to the field key when no record type applies.
+     *
+     * @param referredType the record type owning the field
+     * @param recordKey    the field name
+     * @param k            the original field key
+     * @return the element name to emit for the field
+     */
     private static BString resolveAnyAnnotatedElementKey(Type referredType, String recordKey, BString k) {
         BString elementKey = k;
         if (referredType instanceof RecordType recordType &&
@@ -1040,6 +1131,13 @@ public class ToXmlUtils {
         return recordType.getName();
     }
 
+    /**
+     * Reports whether a value converts through the single-member path: maps with at most
+     * one entry, scalars, and arrays whose declared element type is not plain {@code json}.
+     *
+     * @param node the value being converted
+     * @return true if the single-member conversion path applies
+     */
     public static boolean isSingleRecordMember(Object node) {
         if (node instanceof BArray arrayNode) {
             // Intentionally compares the declared element type without resolving type
@@ -1141,6 +1239,16 @@ public class ToXmlUtils {
         return StringUtils.fromString(nameStr);
     }
 
+    /**
+     * Collects the XML attributes of a value: the parent's namespace declarations plus
+     * the value's attribute-prefixed fields, with namespace-qualified keys resolved.
+     *
+     * @param jsonTree         the value whose attribute fields are read
+     * @param options          the JSON-to-XML conversion options
+     * @param namespaces       all namespace declarations seen so far, for prefix lookups
+     * @param parentNamespaces namespace declarations inherited from the parent
+     * @return the attribute map for the element being built
+     */
     public static BMap<BString, BString> getAttributesMap(Object jsonTree,
                                                           BMap<BString, Object> options,
                                                           BMap<BString, BString> namespaces,
@@ -1217,6 +1325,15 @@ public class ToXmlUtils {
         return (long) startIndex;
     }
 
+    /**
+     * Collects the namespace declarations in scope for a value: the parent's declarations
+     * plus any {@code xmlns} attribute fields the value itself carries.
+     *
+     * @param jsonTree         the value whose namespace attribute fields are read
+     * @param options          the JSON-to-XML conversion options
+     * @param parentNamespaces namespace declarations inherited from the parent
+     * @return the namespace map in scope for the value
+     */
     public static BMap<BString, BString> getNamespacesMap(Object jsonTree,
                                                            BMap<BString, Object> options,
                                                            BMap<BString, BString> parentNamespaces) {
