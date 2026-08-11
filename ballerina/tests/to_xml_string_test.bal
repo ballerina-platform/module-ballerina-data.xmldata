@@ -229,6 +229,18 @@ isolated function testToXmlStringParityForXsdSequenceArray() returns error? {
 @test:Config {
     groups: ["toXmlString"]
 }
+isolated function testToXmlStringErrorParityForXsdSequenceArrayMaxOccurs() returns error? {
+    XsdSequenceArrayWithXmlValue5 data = {
+        seq_XsdSequenceArrayWithXmlValue5: [
+            {age: 1, salary: 1.0}, {age: 2, salary: 2.0}, {age: 3, salary: 3.0}, {age: 4, salary: 4.0}
+        ]
+    };
+    check assertToXmlStringOutcomeParity(data);
+}
+
+@test:Config {
+    groups: ["toXmlString"]
+}
 isolated function testToXmlStringErrorParityForXsdSequenceArray() returns error? {
     XsdSequenceArrayWithXmlValue5 data = {
         seq_XsdSequenceArrayWithXmlValue5: [{age: 1, salary: 1.0}]

@@ -444,42 +444,33 @@ public class ToXmlUtils {
                 namespacesOfElem = getNamespacesMap(i, options, parentNamespaces);
                 addNamespaces(allNamespaces, namespacesOfElem);
                 int mark = out.length();
-                String shell;
-                if (options.get(Constants.ARRAY_ENTRY_TAG).toString().isEmpty()) {
-                    Type childType = getChildElementType(referredType, null);
-                    traverseRecordAndGenerateXmlString(out, i, allNamespaces, namespacesOfElem,
-                            options, keyObj, childType,
-                            isParentSequence, isParentSequenceArray, parentModelGroupInfo, parentElementInfo,
-                            typeMetadataCache, rootDeclarations);
-                    String elementTagKey = arrayEntryTagKey;
-                    boolean isAnyAnnotatedField = keyObj instanceof BString fieldNameBString &&
-                            fieldNameBString.getValue().startsWith("@Any:");
+                // The tree traversal also handles a configured array entry tag here; this path
+                // is only reachable through toXmlString, which always uses an empty entry tag.
+                Type childType = getChildElementType(referredType, null);
+                traverseRecordAndGenerateXmlString(out, i, allNamespaces, namespacesOfElem,
+                        options, keyObj, childType,
+                        isParentSequence, isParentSequenceArray, parentModelGroupInfo, parentElementInfo,
+                        typeMetadataCache, rootDeclarations);
+                String elementTagKey = arrayEntryTagKey;
+                boolean isAnyAnnotatedField = keyObj instanceof BString fieldNameBString &&
+                        fieldNameBString.getValue().startsWith("@Any:");
 
-                    if (isAnyAnnotatedField && i instanceof BMap) {
-                        Type elementValueType = TypeUtils.getType(i);
-                        Type referredElementType = TypeUtils.getReferredType(elementValueType);
-                        if (referredElementType instanceof RecordType recordValueType) {
-                            elementTagKey = getRecordTypeName(recordValueType);
-                        } else {
-                            // Fallback to declared child type if runtime type is not a RecordType
-                            Type referredChildType = TypeUtils.getReferredType(childType);
-                            if (referredChildType instanceof RecordType recordChildType) {
-                                elementTagKey = getRecordTypeName(recordChildType);
-                            }
+                if (isAnyAnnotatedField && i instanceof BMap) {
+                    Type elementValueType = TypeUtils.getType(i);
+                    Type referredElementType = TypeUtils.getReferredType(elementValueType);
+                    if (referredElementType instanceof RecordType recordValueType) {
+                        elementTagKey = getRecordTypeName(recordValueType);
+                    } else {
+                        // Fallback to declared child type if runtime type is not a RecordType
+                        Type referredChildType = TypeUtils.getReferredType(childType);
+                        if (referredChildType instanceof RecordType recordChildType) {
+                            elementTagKey = getRecordTypeName(recordChildType);
                         }
                     }
-                    shell = elementShellString(StringUtils.fromString(elementTagKey),
-                            allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces),
-                            parentNamespaces, rootDeclarations);
-                } else {
-                    traverseRecordAndGenerateXmlString(out, i, allNamespaces, namespacesOfElem,
-                            options, null, getChildElementType(referredType, null),
-                            isParentSequence, isParentSequenceArray, parentModelGroupInfo, parentElementInfo,
-                            typeMetadataCache, rootDeclarations);
-                    shell = elementShellString(StringUtils.fromString(arrayEntryTagKey),
-                            allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces),
-                            parentNamespaces, rootDeclarations);
                 }
+                String shell = elementShellString(StringUtils.fromString(elementTagKey),
+                        allNamespaces, options, getAttributesMap(i, options, allNamespaces, parentNamespaces),
+                        parentNamespaces, rootDeclarations);
                 if (!isParentSequenceArray) {
                     insertElementAround(out, mark, shell);
                 }
@@ -563,14 +554,9 @@ public class ToXmlUtils {
             out.append("</").append(qualifiedName).append(">");
             return;
         }
-        // <tag ...></tag> form: '<' never occurs unescaped inside attribute values, so the
-        // first "></" is the boundary between the open and close tags.
-        int boundary = shellString.indexOf("></");
-        if (boundary == -1) {
-            throw new IllegalStateException("unexpected empty element serialization: " + shellString);
-        }
-        out.insert(mark, shellString.substring(0, boundary + 1));
-        out.append(shellString.substring(boundary + 1));
+        String childrenString = out.substring(mark);
+        out.setLength(mark);
+        out.append(spliceChildrenIntoElement(shellString, childrenString));
     }
 
     /**
