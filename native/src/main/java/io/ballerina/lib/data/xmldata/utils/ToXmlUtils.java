@@ -25,7 +25,6 @@ import io.ballerina.lib.data.xmldata.utils.xsd.SequenceInfo;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.types.ArrayType;
 import io.ballerina.runtime.api.types.Field;
-import io.ballerina.runtime.api.types.PredefinedTypes;
 import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.types.TypeTags;
@@ -639,7 +638,7 @@ public class ToXmlUtils {
 
     /**
      * Places already-serialized children inside a serialized empty element, handling both
-     * the self-closing ({@code <tag/>}) and expanded ({@code <tag></tag>}) forms.
+     * the self-closing and the open/close-pair serialized forms.
      *
      * @param emptyElementString the serialized element with no children
      * @param childrenString     the serialized children markup
