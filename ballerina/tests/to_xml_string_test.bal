@@ -182,3 +182,219 @@ isolated function testToXmlStringParityWithCustomOptions() returns error? {
     test:assertEquals(stringResult, treeResult.toString(),
             msg = "toXmlString output differs from toXml(...).toString() with custom options");
 }
+
+type ContentOnlyRecord record {|
+    string \#content;
+|};
+
+type RecordWithEmptyNested record {|
+    record {||} inner;
+    string name;
+|};
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringParityForRootTextContent() returns error? {
+    ContentOnlyRecord data = {\#content: "only text"};
+    check assertToXmlStringParity(data);
+}
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringParityForMapOfXml() returns error? {
+    map<xml> data = {"value": xml `<text>1</text>`, "value1": xml `<text>2</text>`};
+    check assertToXmlStringParity(data);
+}
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringParityForAnyAnnotatedField() returns error? {
+    EmployeeWithAny data = {name: "n1", anyElement: <PersonInfo>{age: 3, country: "LK"}};
+    check assertToXmlStringParity(data);
+}
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringParityForXsdSequenceArray() returns error? {
+    XsdSequenceArrayWithXmlValue5 data = {
+        seq_XsdSequenceArrayWithXmlValue5: [{age: 1, salary: 1.0}, {age: 2, salary: 2.0}]
+    };
+    check assertToXmlStringParity(data);
+}
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringErrorParityForXsdSequenceArray() returns error? {
+    XsdSequenceArrayWithXmlValue5 data = {
+        seq_XsdSequenceArrayWithXmlValue5: [{age: 1, salary: 1.0}]
+    };
+    xml|Error treeResult = toXml(data);
+    string|Error stringResult = toXmlString(data);
+    if treeResult is Error && stringResult is Error {
+        test:assertEquals(stringResult.message(), treeResult.message(),
+                msg = "error messages differ between toXml and toXmlString");
+        return;
+    }
+    test:assertFail("both APIs were expected to return an occurrence-violation error");
+}
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringParityForNonPlainKeyNames() returns error? {
+    map<string> data = {"item.one": "1", "item-two": "2", "_three": "3"};
+    check assertToXmlStringParity(data);
+}
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringParityForArrayWithNilElements() returns error? {
+    record {|string name; (int|())[] values;|} data = {name: "n", values: [1, (), 3]};
+    check assertToXmlStringParity(data);
+}
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringParityForDefaultNamespaceReset() returns error? {
+    Purchased_Bill data = {
+        PurchasedItems: {
+            PLine: [
+                {ItemCode: "223345", Count: 10},
+                {ItemCode: {"discount": "22%", "#content": "200777"}, Count: 7}
+            ]
+        },
+        Address: {StreetAddress: "20, Palm grove, Colombo 3", City: "Colombo", Zip: 300, Country: "LK"},
+        attr: "attr-val"
+    };
+    check assertToXmlStringParity(data);
+}
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringParityForNestedPrefixedNamespaces() returns error? {
+    Purchased_Bill2 data = {
+        PurchasedItems: {
+            pLine: [
+                {itemCode: "223345", count: 10},
+                {itemCode: {discount: "22%", \#content: "200777"}, count: 7}
+            ]
+        },
+        attr: "attr-val"
+    };
+    check assertToXmlStringParity(data);
+}
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringParityForEmptyMap() returns error? {
+    map<string> data = {};
+    check assertToXmlStringParity(data);
+}
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringParityForTextOnlyMap() returns error? {
+    map<string> data = {"#content": "top level text"};
+    check assertToXmlStringParity(data);
+    map<string> emptyText = {"#content": ""};
+    check assertToXmlStringParity(emptyText);
+}
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringParityForEmptyNestedRecordAndEmptyText() returns error? {
+    RecordWithEmptyNested data = {inner: {}, name: ""};
+    check assertToXmlStringParity(data);
+}
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringParityForXsdChoice() returns error? {
+    XSDChoiceWithXmlValueRecord data = {choice_XSDChoiceWithXmlValueRecord: {age: 3}};
+    check assertToXmlStringParity(data);
+}
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringParityForAnyAnnotatedArray() returns error? {
+    RecordWithOptionalAnyArray data = {
+        id: "1",
+        people: [{age: 1, country: "LK"}, {age: 2, country: "LK"}]
+    };
+    check assertToXmlStringParity(data);
+}
+
+# Asserts that both APIs produce the same outcome — equal text on success, or the
+# same error message on failure — for inputs that may not be convertible.
+#
+# + value - The value to convert through both APIs
+# + return - An error if the outcomes differ
+isolated function assertToXmlStringOutcomeParity(map<anydata> value) returns error? {
+    xml|Error treeResult = toXml(value);
+    string|Error stringResult = toXmlString(value);
+    if treeResult is xml && stringResult is string {
+        test:assertEquals(stringResult, treeResult.toString());
+        return;
+    }
+    if treeResult is Error && stringResult is Error {
+        test:assertEquals(stringResult.message(), treeResult.message());
+        return;
+    }
+    test:assertFail("one API succeeded while the other returned an error");
+}
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringOutcomeParityForUnusualKeyNames() returns error? {
+    check assertToXmlStringOutcomeParity({"1number": "v"});
+    check assertToXmlStringOutcomeParity({"with space": "v"});
+    check assertToXmlStringOutcomeParity({"with\"quote": "v"});
+}
+
+type RecordWithAnydataAnyArray record {|
+    string id;
+    @Any
+    anydata[] anyElement;
+|};
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringParityForAnydataAnyArray() returns error? {
+    RecordWithAnydataAnyArray data = {
+        id: "1",
+        anyElement: [<PersonInfo>{age: 1, country: "LK"}, <AddressInfo>{city: "c", zip: "z"}]
+    };
+    check assertToXmlStringParity(data);
+}
+
+type RecordWithElementOccurrence record {|
+    @Element {
+        minOccurs: 1,
+        maxOccurs: 2
+    }
+    int[] counts;
+|};
+
+@test:Config {
+    groups: ["toXmlString"]
+}
+isolated function testToXmlStringErrorParityForElementOccurrence() returns error? {
+    check assertToXmlStringOutcomeParity(<RecordWithElementOccurrence>{counts: [1, 2, 3]});
+    check assertToXmlStringOutcomeParity(<RecordWithElementOccurrence>{counts: []});
+    check assertToXmlStringOutcomeParity(<RecordWithElementOccurrence>{counts: [1]});
+}
