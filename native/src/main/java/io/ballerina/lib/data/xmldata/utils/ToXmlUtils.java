@@ -234,15 +234,10 @@ public class ToXmlUtils {
                 return StringUtils.fromString(out.toString());
             }
 
-            BMap<BString, Object> jMap = null;
-            try {
-                jMap = (BMap<BString, Object>) ValueUtils
-                        .convert(jsonValue, Constants.JSON_MAP_TYPE);
-            } catch (BError e) {
-                return jsonValue == null ? StringUtils.fromString(Constants.EMPTY_STRING)
-                        : StringUtils.fromString(
-                                CreateText.createText(StringUtils.fromString(jsonValue.toString())).toString());
-            }
+            // Unlike the tree twin, jsonValue is always a map here: toXmlString routes
+            // record-typed input through the json[] branch and map input through toJson().
+            BMap<BString, Object> jMap = (BMap<BString, Object>) ValueUtils
+                    .convert(jsonValue, Constants.JSON_MAP_TYPE);
 
             if (jMap.isEmpty()) {
                 return StringUtils.fromString(Constants.EMPTY_STRING);
@@ -513,20 +508,15 @@ public class ToXmlUtils {
      * @return true if the serialized form of the name is the name itself
      */
     private static boolean isPlainElementName(String name) {
-        if (name.isEmpty()) {
-            return false;
-        }
-        char first = name.charAt(0);
-        if (!(Character.isLetter(first) || first == '_')) {
-            return false;
-        }
-        for (int i = 1; i < name.length(); i++) {
+        for (int i = 0; i < name.length(); i++) {
             char c = name.charAt(i);
-            if (!(Character.isLetterOrDigit(c) || c == '_' || c == '.' || c == '-')) {
+            boolean valid = i == 0 ? Character.isLetter(c) || c == '_'
+                    : Character.isLetterOrDigit(c) || c == '_' || c == '.' || c == '-';
+            if (!valid) {
                 return false;
             }
         }
-        return true;
+        return !name.isEmpty();
     }
 
     /**
@@ -655,32 +645,6 @@ public class ToXmlUtils {
         }
         return emptyElementString.substring(0, boundary + 1) + childrenString
                 + emptyElementString.substring(boundary + 1);
-    }
-
-    /**
-     * Converts a value's children to XML nodes. Kept for API compatibility: delegates to
-     * the cached variant with a fresh per-call type metadata cache.
-     *
-     * @param jNode             the value whose children are being converted
-     * @param allNamespaces     all namespace declarations seen so far (mutated)
-     * @param parentNamespaces  namespace declarations in scope from the parent chain
-     * @param options           the JSON-to-XML conversion options
-     * @param keyObj            the field key for array traversals, or {@code null}
-     * @param type              the declared type of {@code jNode}
-     * @param isParentSequence  whether the parent field carries an XSD sequence annotation
-     * @param isParentSequenceArray whether the parent is a sequence-annotated array
-     * @param parentModelGroupInfo  the parent's XSD model group metadata, if any
-     * @param parentElementInfo the parent's XSD element metadata, if any
-     * @return the children of the element being built, as an XML sequence
-     * @throws BError on XSD occurrence violations
-     */
-    public static BXml traverseRecordAndGenerateXml(Object jNode, BMap<BString, BString> allNamespaces,
-            BMap<BString, BString> parentNamespaces, BMap<BString, Object> options, Object keyObj, Type type,
-            boolean isParentSequence, boolean isParentSequenceArray,
-            ModelGroupInfo parentModelGroupInfo, ElementInfo parentElementInfo) throws BError {
-        return traverseRecordAndGenerateXml(jNode, allNamespaces, parentNamespaces, options, keyObj, type,
-                isParentSequence, isParentSequenceArray, parentModelGroupInfo, parentElementInfo,
-                new IdentityHashMap<>());
     }
 
     private static BXml traverseRecordAndGenerateXml(Object jNode, BMap<BString, BString> allNamespaces,
