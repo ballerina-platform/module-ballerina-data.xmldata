@@ -2,7 +2,7 @@
 org = "ballerina"
 name = "data.xmldata"
 version = "@toml.version@"
-authors = ["Ballerina"]
+authors = ["Ballerina", "Name/XML Data"]
 keywords = ["xml"]
 repository = "https://github.com/ballerina-platform/module-ballerina-data-xmldata"
 license = ["Apache-2.0"]
