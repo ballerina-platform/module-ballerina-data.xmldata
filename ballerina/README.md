@@ -4,7 +4,7 @@ The Ballerina XML Data Library is a comprehensive toolkit designed to facilitate
 
 This library is the refined successor of the `ballerina/xmldata` module, incorporating enhanced functionalities and improved performance.
 
-## Features
+### Key Features
 
 - **Versatile XML Data Input**: Accept XML data as a xml, a string, byte array, or a stream and convert it into a Record value.
 - **XML to Record Value Conversion**: Transform XML data into Ballerina records with ease in compliance with OpenAPI 3 standards.
