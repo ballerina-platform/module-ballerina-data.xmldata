@@ -2,8 +2,8 @@
 org = "ballerina"
 name = "data.xmldata"
 version = "1.6.3"
-authors = ["Ballerina", "Name/XML Data"]
-keywords = ["xml"]
+authors = ["Ballerina"]
+keywords = ["xml", "Type/Library", "Name/XML Data"]
 repository = "https://github.com/ballerina-platform/module-ballerina-data-xmldata"
 license = ["Apache-2.0"]
 distribution = "2201.11.0"
