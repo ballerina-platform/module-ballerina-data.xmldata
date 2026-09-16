@@ -1,6 +1,13 @@
 {
-  "bundles":[{
-    "name":"error",
-    "locales":[""]
-  }]
+  "bundles": [
+    {
+      "name": "error",
+      "locales": [
+        ""
+      ]
+    },
+    {
+      "name": "com.sun.org.apache.xerces.internal.impl.msg.XMLSchemaMessages"
+    }
+  ]
 }
