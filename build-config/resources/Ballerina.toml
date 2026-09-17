@@ -13,7 +13,7 @@ export = true
 
 [[platform.java25.dependency]]
 groupId = "io.ballerina.lib"
-artifactId = "data-native"
+artifactId = "data.xmldata-native"
 version = "@toml.version@"
 path = "../native/build/libs/data.xmldata-native-@project.version@.jar"
 
