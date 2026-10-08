@@ -3,5 +3,8 @@ This file contains all the notable changes done to the Ballerina XML Data packag
 
 ## [Unreleased]
 
+### Added
+- [[#9274] Add package icon for the stdlib packages missing a logo in the Integration Store](https://github.com/ballerina-platform/ballerina-library/issues/9274)
+
 ### Changed
 - [[#9132] Updated Keywords and Reformat README for Connector Store Discoverability](https://github.com/ballerina-platform/ballerina-library/issues/9132)
