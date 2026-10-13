@@ -204,6 +204,49 @@ isolated function convertMapXml(map<xml>|map<xml[]> mapValue) returns xml {
 isolated function getModifiedRecord(map<anydata> mapValue, string textFieldName, typedesc<(map<anydata>|json)> inputType)
     returns json|record {}|Error = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.DataUtils"} external;
 
+# Converts a `Map` or `Record` representation to its XML text representation.
+#
+# Unlike `toXml`, this does not materialize an intermediate `xml` value tree: the
+# text is composed directly during the traversal, so peak memory stays proportional
+# to the produced text rather than the tree. This makes converting large payloads
+# (for example bulk or batch documents with many repeated records) practical in
+# bounded heaps where `toXml` would require several times the output size.
+#
+# The produced text is the same as `toXml(mapValue, options).toString()`.
+#
+# + mapValue - The `Map` or `Record` representation source to be converted to XML text
+# + options - The `xmldata:Options` record for XML conversion properties
+# + return - XML text representation of the given source if the source is
+# successfully converted or else an `xmldata:Error`
+public isolated function toXmlString(map<anydata> mapValue, Options options = {}) returns string|Error {
+    string textFieldName = options.textFieldName;
+    JsonOptions jsonOptions = {
+        attributePrefix: ATTRIBUTE_PREFIX,
+        arrayEntryTag: EMPTY_STRING,
+        textFieldName,
+        userAttributePrefix: options.attributePrefix
+    };
+    typedesc<(map<anydata>)> inputType = typeof mapValue;
+    json|record {} jsonValue = check getModifiedRecord(mapValue, textFieldName, inputType);
+    if jsonValue is map<xml>|map<xml[]> {
+        return convertMapXml(jsonValue).toString();
+    } else if jsonValue is json[] {
+        jsonOptions.rootTag = jsonValue[1].toString();
+        return fromRecordToXmlString(jsonValue[0], jsonOptions, inputType);
+    }
+    return fromRecordToXmlString(jsonValue.toJson(), jsonOptions, inputType);
+}
+
+# Converts a pre-processed record or map representation directly to its XML text,
+# without materializing an intermediate `xml` value tree.
+#
+# + jsonValue - The pre-processed source produced by `getModifiedRecord`
+# + options - The `xmldata:JsonOptions` record for the conversion properties
+# + inputType - The typedesc of the original input, used to read annotations
+# + return - The XML text if the source is successfully converted, or an `xmldata:Error`
+isolated function fromRecordToXmlString(json jsonValue, JsonOptions options, typedesc<anydata> inputType)
+    returns string|Error = @java:Method {'class: "io.ballerina.lib.data.xmldata.utils.ToXmlUtils"} external;
+
 # Provides configurations for converting JSON to XML.
 public type JsonOptions record {|
     # The prefix of JSON elements' key which is to be treated as an attribute in the XML representation
