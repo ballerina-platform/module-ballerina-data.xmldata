@@ -1,8 +1,7 @@
 # Change Log
 This file contains all the notable changes done to the Ballerina XML Data package through the releases.
 
-## [Unreleased]
-
+## [1.7.1] - 2026-10-16
 ### Changed
 
 - [[#9301] Regroup standard library packages under new Area categories](https://github.com/ballerina-platform/ballerina-library/issues/9301)
