@@ -1,8 +1,10 @@
 # Ballerina XML Data Library
 
+## Overview
+
 The Ballerina XML Data Library is a comprehensive toolkit designed to facilitate the handling and manipulation of XML data within Ballerina applications. It streamlines the process of converting XML data to native Ballerina data types, enabling developers to work with XML content seamlessly and efficiently.
 
-This library is the refined successor of the `ballerina/xmldata` module, incorporating enhanced functionalities and improved performance.
+This library is the refined successor of the earlier `xmldata` module, incorporating enhanced functionalities and improved performance.
 
 ### Key Features
 
